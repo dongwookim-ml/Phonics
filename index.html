@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>PixelTown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <header class="hud">
+    <div id="stars" class="stars" aria-label="stars">
+      <span class="icon">⭐</span><span class="count">0</span><span class="dots"></span>
+    </div>
+    <nav class="modes">
+      <button id="mode-explore" class="mode active" title="마을 구경">🏡</button>
+      <button id="mode-quest" class="mode" title="단어 찾기">🎯</button>
+      <button id="mute" class="mode" title="소리 켜기/끄기">🔊</button>
+    </nav>
+  </header>
+
+  <section id="quest" class="card hidden" aria-live="polite">
+    <div id="quest-emoji" class="emoji">🐶</div>
+    <div id="quest-word" class="word"></div>
+    <button id="replay" class="replay" title="다시 듣기">🔊</button>
+  </section>
+
+  <div id="party" class="party">🎉</div>
+
+  <div id="start" class="start">
+    <h1>Pixel<span>Town</span></h1>
+    <p class="sub">🦄 소리 마을에 놀러 가요!</p>
+    <button id="start-btn" class="start-btn">▶</button>
+    <p class="tip">🏡 집을 눌러 소리를 들어요 · 🎯 그림에 맞는 집을 찾아요</p>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
