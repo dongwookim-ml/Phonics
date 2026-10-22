@@ -39,6 +39,15 @@ Stars, the outfit and the hint setting are saved in the browser.
 Content lives in `js/data.js`: the princess's name, the letters and words,
 the wardrobe options, the villagers and the house positions.
 
+### Voices and lines
+
+Each kind of villager has its own voice (`VOICES` in `js/data.js`). The game
+uses a preferred system voice when the device has one, otherwise any English
+voice of the right gender, and pitch and speed keep people distinct even on
+a device with a single voice. iPads and Macs usually have the most voices.
+What people say comes from `LINES` and `PERSONA`, and a short pause comes
+before each quiz word.
+
 ### Recorded voices
 
 Browser speech voices pronounce isolated sounds unevenly. To use your own

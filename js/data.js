@@ -115,3 +115,63 @@ const TOWN_HOUSES = [
   { letter: 'S', c: 26, r: 23, who: '별님 언니',     look: 'flower' },
   { letter: 'T', c: 33, r: 23, who: '호랑이 기사님', look: 'knight' },
 ];
+
+// ---- Voices and lines ------------------------------------------------------
+
+// How each kind of villager sounds. `voice` lists preferred system voices
+// (the first one installed wins); otherwise a voice of the right `gender` is
+// picked for each person. Pitch and rate keep people distinct even when the
+// device has only one English voice.
+const VOICES = {
+  knight: { gender: 'male',   pitch: 0.75, rate: 0.92, voice: ['Daniel', 'Google UK English Male', 'Microsoft Ryan', 'Arthur'] },
+  flower: { gender: 'female', pitch: 1.35, rate: 1.0,  voice: ['Samantha', 'Microsoft Aria', 'Google US English'] },
+  granny: { gender: 'female', pitch: 1.05, rate: 0.8,  voice: ['Moira', 'Martha', 'Microsoft Hazel', 'Google UK English Female'] },
+  fisher: { gender: 'male',   pitch: 0.85, rate: 0.95, voice: ['Fred', 'Rishi', 'Microsoft Guy', 'Aaron'] },
+  baker:  { gender: 'male',   pitch: 1.0,  rate: 1.0,  voice: ['Alex', 'Tom', 'Microsoft Andrew', 'Google US English'] },
+  kid:    { gender: 'female', pitch: 1.65, rate: 1.08, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  bard:   { gender: 'male',   pitch: 1.2,  rate: 1.05, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
+  farmer: { gender: 'male',   pitch: 0.9,  rate: 0.9,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
+  king:   { gender: 'male',   pitch: 0.65, rate: 0.85, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
+  queen:  { gender: 'female', pitch: 1.1,  rate: 0.88, voice: ['Serena', 'Kate', 'Google UK English Female', 'Microsoft Sonia'] },
+  maid:   { gender: 'female', pitch: 1.25, rate: 0.98, voice: ['Karen', 'Tessa', 'Microsoft Libby', 'Microsoft Jenny'] },
+};
+
+// Things people say. {name} is the princess, {wrong} the word she picked.
+const LINES = {
+  ask: [
+    'Listen carefully.', 'Here is my word.', 'Can you find this one?', 'Which word am I saying?',
+    'Ready? Listen!', 'Ears open, here it comes.', 'Find the word I say.',
+  ],
+  praise: [
+    'Wonderful!', 'You got it!', 'Brilliant, Princess!', 'That is exactly right!',
+    'Wow, great listening!', 'Perfect!', 'Hooray, well done!', 'You are so clever!',
+  ],
+  retry: [
+    "Oops, that one says {wrong}. Let's listen again.", 'Almost! That word is {wrong}. Try once more.',
+    'Hmm, that is {wrong}. Listen carefully.', 'Good try! That says {wrong}. One more time.',
+  ],
+  gift: [
+    'I have a little present for you. Would you like to try it on?', 'This is for you, Princess! Do you want to wear it?',
+    'Ta-da! A present! Shall we try it?', 'You earned a gift! Would you like to put it on?',
+  ],
+  yes: ['You look lovely!', 'So pretty!', 'That suits you perfectly!', 'Beautiful, Princess!', 'Wow, look at you!'],
+  no: ["That's okay! Maybe next time.", 'No problem at all!', 'Alright, you look lovely just as you are.'],
+  castle: ['Welcome home, Princess!', 'Back to the castle!', 'Home sweet home!'],
+  house: ['Knock, knock! The {letter} house!', 'Here is the {letter} house!', "Let's visit the {letter} house!"],
+  start: [`Good morning, Princess {name}! Let's visit the town!`, 'What a sunny day, Princess {name}! Shall we go and say hello to everyone?'],
+};
+
+// Greetings in each person's own style.
+const PERSONA = {
+  knight: ['Good day, Princess {name}! I am guarding the castle gate.', 'Halt! Oh, it is you, Princess {name}. Fancy a word game?', 'At your service, Princess {name}!'],
+  flower: ['Hi, Princess {name}! Smell these roses. Mmm!', 'Hello! I just picked fresh flowers this morning.', 'Oh, Princess {name}! You look like a flower today.'],
+  granny: ['Oh, my dear Princess {name}! How you have grown!', 'Come here, sweetie. Grandma has a word for you.', 'Hello, darling. Would you like a cookie later?'],
+  fisher: ['Ahoy, Princess {name}! The fish are jumping today.', "Shh, the fish might hear us! Let's play quietly.", 'Hello there! I caught a big one this morning.'],
+  baker:  ['Good morning, Princess {name}! My bread just came out of the oven.', 'Hello! Something smells yummy in here, right?', 'Welcome, welcome! Fresh cakes for everyone!'],
+  kid:    ['Hey, Princess {name}! Wanna play a game with me?', 'Yay, you came! I have a super fun word for you.', 'Hi hi hi! Guess what? I have a word!'],
+  bard:   ['La la la! Hello, Princess {name}! Let me sing you a word.', 'Greetings, Princess! Listen to my song.', 'Ding ding! A musical word, coming right up!'],
+  farmer: ['Howdy, Princess {name}! My carrots are growing so big.', 'Hello there! The cows say hi too. Moo!', 'Morning, Princess! Busy day on the farm.'],
+  king:   ['There you are, my little princess! Shall we play a word game?', 'My dear {name}, I have a royal word for you.', 'Ho ho! The king has a puzzle for you.'],
+  queen:  ['Hello, my sweet {name}. Did you have fun in town today?', 'My darling princess, let me hear how well you listen.', 'You look wonderful today, {name}.'],
+  maid:   ['Good afternoon, Princess {name}. Shall I give you a word?', 'Your Highness! I have tidied your room. Now, a word game?', 'Hello, Princess! Would you like some tea after this?'],
+};

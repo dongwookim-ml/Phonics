@@ -168,11 +168,11 @@ function enterDoor(door) {
   Sound.door();
   if (door.target === 'castle') {
     changeScene('castle', null, '🏰 공주님의 성');
-    Sound.say([{ text: 'Welcome home, Princess!', pitch: 1.3 }]);
+    Sound.say([{ text: line('castle'), pitch: 1.3 }]);
   } else {
     const info = door.obj.info;
     changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} 집`);
-    Sound.say([{ text: `The ${info.letter} house!` }, letterSound(info)]);
+    Sound.say([{ text: line('house', { letter: info.letter }) }, { pause: 300 }, letterSound(info)]);
   }
 }
 
@@ -196,6 +196,29 @@ function letterSound(info) {
   return { text: `${info.sound}, ${info.sound}`, file: rec('letters', info.letter), rate: 0.7 };
 }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// A random line from a list, avoiding the one used last time.
+const lastLine = {};
+function line(kind, vars = {}, list = LINES[kind]) {
+  let text = pick(list);
+  if (list.length > 1) while (text === lastLine[kind]) text = pick(list);
+  lastLine[kind] = text;
+  return fill(text, vars);
+}
+function fill(text, vars) {
+  return text.replace(/\{(\w+)\}/g, (m, k) => (k === 'name' ? PLAYER.spoken : vars[k] !== undefined ? vars[k] : m));
+}
+
+function voiceOf(npc) {
+  if (!npc) return null;
+  if (!npc.voice) npc.voice = Sound.profile(VOICES[npc.look], Math.floor(hash(npc.c, npc.r, 8) * 1000));
+  return npc.voice;
+}
+
+// "Listen!" and the word with a breath in between, so the word stands alone.
+function wordParts(q, lead) {
+  return [{ text: lead }, { pause: 750 }, { text: q.word, file: rec('words', q.word), rate: 0.72 }];
+}
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -245,9 +268,9 @@ function openDialog(npc) {
   state.question = q;
   drawPortrait(ui.portrait, villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
-  ui.text.textContent = npc.letter
-    ? `${npc.letter} 소리 집이에요. 잘 듣고 골라 봐요!`
-    : `${PLAYER.shown} 공주님, 잘 듣고 골라 봐요!`;
+  const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
+  const ask = line('ask');
+  ui.text.textContent = `${hello} ${ask}`;
   ui.choices.innerHTML = '';
   q.options.forEach((o, i) => {
     const b = document.createElement('button');
@@ -259,15 +282,14 @@ function openDialog(npc) {
   });
   ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
-  const greet = npc.letter
-    ? [{ text: `Hello, Princess ${PLAYER.spoken}! This is the ${npc.letter} house.` }, letterSound(q.info), { text: 'Listen!' }]
-    : [{ text: `Hello, Princess ${PLAYER.spoken}! Listen!` }];
-  Sound.say(greet.concat([{ text: q.word, file: rec('words', q.word), rate: 0.72 }]));
+  const greet = [{ text: hello }, { pause: 400 }];
+  if (npc.letter) greet.push({ text: `This is the ${npc.letter} house.` }, { pause: 250 }, letterSound(q.info), { pause: 500 });
+  Sound.say(greet.concat(wordParts(q, ask)), voiceOf(npc));
 }
 
 function askAgain() {
   const q = state.question;
-  if (q) Sound.say([{ text: q.word, file: rec('words', q.word), rate: 0.72 }]);
+  if (q) Sound.say([{ text: q.word, file: rec('words', q.word), rate: 0.72 }], voiceOf(state.talking));
 }
 
 function choose(i, btn) {
@@ -278,21 +300,23 @@ function choose(i, btn) {
     q.done = true;
     btn.classList.add('right');
     ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
-    ui.text.textContent = `딩동댕! ${o.emoji} ${o.word}`;
+    const praise = line('praise');
+    ui.text.textContent = `${praise} ${o.emoji} ${o.word}`;
     Sound.correct();
-    Sound.say([{ text: 'Yes!' }, { text: `${o.word}!`, file: rec('words', o.word) }]);
+    Sound.say([{ text: praise }, { pause: 300 }, { text: `${o.word}!`, file: rec('words', o.word) }], voiceOf(state.talking));
     state.stars++;
     save();
     renderStars(true);
     burstAtHero(30);
-    later(1700, () => offerReward(state.talking));
+    later(2400, () => offerReward(state.talking));
   } else {
     q.misses++;
     btn.disabled = true;
     btn.classList.add('wrong');
     Sound.wrong();
-    ui.text.textContent = '앗, 다시 들어 볼까요?';
-    Sound.say([{ text: `That says ${o.word}.` }, { text: 'Listen!' }, { text: q.word, file: rec('words', q.word), rate: 0.72 }]);
+    const retry = line('retry', { wrong: o.word });
+    ui.text.textContent = retry;
+    Sound.say([{ text: retry }, { pause: 750 }, { text: q.word, file: rec('words', q.word), rate: 0.72 }], voiceOf(state.talking));
   }
 }
 
@@ -331,7 +355,8 @@ function offerReward(npc) {
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
   Sound.party();
-  Sound.say([{ text: 'A present for you! Do you want to try it?', pitch: 1.3 }]);
+  state.giver = npc;
+  Sound.say([{ pause: 600 }, { text: line('gift') }], voiceOf(npc));
 }
 
 function acceptReward(yes) {
@@ -340,9 +365,9 @@ function acceptReward(yes) {
     save();
     burstAtHero(50);
     Sound.correct();
-    Sound.say([{ text: 'So pretty!', pitch: 1.4 }]);
+    Sound.say([{ text: line('yes') }], voiceOf(state.giver));
   } else {
-    Sound.say([{ text: 'Okay!' }]);
+    Sound.say([{ text: line('no') }], voiceOf(state.giver));
   }
   state.gift = null;
   closeDialog();
@@ -797,6 +822,6 @@ ui.startBtn.addEventListener('click', () => {
   Sound.unlock();
   ui.start.classList.add('hidden');
   showPlace('🌸 소리 마을');
-  Sound.say([{ text: `Good morning, Princess ${PLAYER.spoken}! Let's visit the town!`, pitch: 1.3 }]);
+  Sound.say([{ text: line('start'), pitch: 1.3 }]);
 });
 requestAnimationFrame(frame);

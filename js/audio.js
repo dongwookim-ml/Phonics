@@ -2,12 +2,20 @@
 
 const Sound = (() => {
   let voice = null;
+  let voices = [];
   let muted = false;
   let audioCtx = null;
 
+  // Name fragments of common system voices, used to guess a voice's gender.
+  const MALE = ['Daniel', 'Alex', 'Fred', 'Aaron', 'Arthur', 'Gordon', 'Oliver', 'Rishi', 'Tom', 'Junior', 'Ralph',
+    'Male', 'Guy', 'David', 'Mark', 'Ryan', 'Christopher', 'Eric', 'Andrew', 'Brian', 'George', 'Roger', 'Steffan'];
+  const FEMALE = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Fiona', 'Victoria', 'Allison', 'Ava', 'Susan', 'Zoe', 'Kate',
+    'Serena', 'Martha', 'Female', 'Aria', 'Jenny', 'Zira', 'Hazel', 'Sonia', 'Libby', 'Emma', 'Michelle', 'Ana', 'Google US English'];
+  const isGender = (v, list) => list.some(n => v.name.includes(n));
+
   function pickVoice() {
     if (!('speechSynthesis' in window)) return;
-    const voices = speechSynthesis.getVoices().filter(v => v.lang && v.lang.startsWith('en'));
+    voices = speechSynthesis.getVoices().filter(v => v.lang && v.lang.startsWith('en'));
     // Prefer natural sounding US voices when the platform has them.
     const prefs = ['Samantha', 'Google US English', 'Microsoft Aria', 'Microsoft Jenny', 'Karen'];
     voice = prefs.map(n => voices.find(v => v.name.includes(n))).find(Boolean)
@@ -18,35 +26,57 @@ const Sound = (() => {
     speechSynthesis.onvoiceschanged = pickVoice;
   }
 
-  // Speak a list of phrases in order. Each item is a string or
-  // { text, rate, pitch, file } where `file` is an optional recording.
-  function say(parts) {
-    if (muted) return;
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
-    const queue = (Array.isArray(parts) ? parts : [parts]).map(p => typeof p === 'string' ? { text: p } : p);
-    playNext(queue);
+  // A speaking style for one person: a system voice plus pitch and rate.
+  // `seed` spreads people of the same kind across the voices available.
+  function profile(style, seed = 0) {
+    if (!style) return { voice: null, pitch: 1.15, rate: 1 };
+    if (!voices.length) pickVoice();
+    let v = (style.voice || []).map(n => voices.find(x => x.name.includes(n))).find(Boolean);
+    if (!v) {
+      const pool = voices.filter(x => isGender(x, style.gender === 'male' ? MALE : FEMALE));
+      if (pool.length) v = pool[Math.abs(seed) % pool.length];
+    }
+    return { voice: v || null, pitch: style.pitch, rate: style.rate };
   }
 
-  function playNext(queue) {
+  // Speak a list of phrases in order. Each item is a string or
+  // { text, rate, pitch, file } where `file` is an optional recording,
+  // or { pause: ms } for a short silence. `who` is a profile() result.
+  function say(parts, who) {
+    if (muted) return;
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    clearTimeout(pauseTimer);
+    const queue = (Array.isArray(parts) ? parts : [parts]).map(p => typeof p === 'string' ? { text: p } : p);
+    playNext(queue, who || {}, ++generation);
+  }
+
+  let generation = 0;
+  let pauseTimer = null;
+
+  function playNext(queue, who, gen) {
+    if (gen !== generation) return; // a newer say() took over
     const item = queue.shift();
     if (!item) return;
-    const next = () => playNext(queue);
-    if (USE_RECORDINGS && item.file) {
+    const next = () => playNext(queue, who, gen);
+    if (item.pause) {
+      pauseTimer = setTimeout(next, item.pause);
+    } else if (USE_RECORDINGS && item.file) {
       const a = new Audio(item.file);
       a.onended = next;
-      a.play().catch(() => speak(item, next));
+      a.play().catch(() => speak(item, who, next));
     } else {
-      speak(item, next);
+      speak(item, who, next);
     }
   }
 
-  function speak(item, done) {
+  function speak(item, who, done) {
     if (!('speechSynthesis' in window)) { done(); return; }
     const u = new SpeechSynthesisUtterance(item.text);
-    if (voice) u.voice = voice;
-    u.lang = 'en-US';
-    u.rate = item.rate || 0.8;
-    u.pitch = item.pitch || 1.15;
+    const v = who.voice || voice;
+    if (v) u.voice = v;
+    u.lang = v ? v.lang : 'en-US';
+    u.rate = Math.max(0.62, Math.min(1.6, (item.rate || 0.9) * (who.rate || 1)));
+    u.pitch = Math.max(0, Math.min(2, item.pitch || who.pitch || 1.15));
     u.onend = done;
     u.onerror = done;
     speechSynthesis.speak(u);
@@ -83,13 +113,14 @@ const Sound = (() => {
 
   return {
     say,
+    profile,
     tap: () => notes([[660, 0, 0.08]]),
     step: () => notes([[220, 0, 0.04]], 'triangle', 0.03),
     correct: () => notes([[523, 0, 0.12], [659, 0.1, 0.12], [784, 0.2, 0.25]]),
     wrong: () => notes([[300, 0, 0.12], [250, 0.12, 0.2]], 'triangle', 0.08),
     door: () => notes([[392, 0, 0.08], [523, 0.08, 0.08], [659, 0.16, 0.14]], 'triangle', 0.07),
     party: () => notes([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.4], [784, 0.5, 0.1], [1047, 0.6, 0.5]]),
-    toggleMute() { muted = !muted; if (muted && 'speechSynthesis' in window) speechSynthesis.cancel(); return muted; },
+    toggleMute() { muted = !muted; if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); } return muted; },
     unlock: ctx,
   };
 })();
