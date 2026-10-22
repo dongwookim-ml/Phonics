@@ -29,7 +29,21 @@ const ui = {
   pvNew: document.getElementById('pv-new'),
   rewardYes: document.getElementById('rw-yes'),
   rewardNo: document.getElementById('rw-no'),
+  wardrobe: document.getElementById('wardrobe'),
+  wdPreview: document.getElementById('wd-preview'),
+  wdSlots: document.getElementById('wd-slots'),
+  wdCount: document.getElementById('wd-count'),
+  wdDone: document.getElementById('wd-done'),
 };
+
+// Everything that can be worn, by slot, in wardrobe order.
+const WARDROBE = [
+  { slot: 'dress', title: '드레스 색', items: DRESS_COLORS },
+  { slot: 'shape', title: '드레스 모양', items: DRESS_SHAPES },
+  { slot: 'head', title: '머리 장식', items: HEADWEAR },
+  { slot: 'hand', title: '손에 드는 것', items: HAND_ITEMS },
+  { slot: 'hair', title: '머리 색', items: HAIR_COLORS },
+];
 
 // ---- Saved progress ------------------------------------------------------
 
@@ -37,17 +51,28 @@ const SAVE_KEY = 'pixeltown-v2';
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
-    return {
-      outfit: Object.assign({}, DEFAULT_OUTFIT, s.outfit),
-      stars: s.stars | 0,
-      pictures: !!s.pictures,
-    };
+    const outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, pictures: !!s.pictures };
   } catch (e) {
-    return { outfit: Object.assign({}, DEFAULT_OUTFIT), stars: 0, pictures: false };
+    return { outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, pictures: false };
   }
 }
+
+// Presents she has collected, by slot. The starting outfit, "none" and
+// whatever she is wearing (from before the wardrobe existed) always count.
+function ownedFrom(saved, outfit) {
+  const owned = {};
+  for (const { slot } of WARDROBE) {
+    const set = new Set((saved && saved[slot]) || []);
+    set.add(DEFAULT_OUTFIT[slot]);
+    set.add(outfit[slot]);
+    if (slot === 'head' || slot === 'hand') set.add('none');
+    owned[slot] = [...set];
+  }
+  return owned;
+}
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, stars: state.stars, pictures: state.pictures })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -55,6 +80,7 @@ function save() {
 const saved = load();
 const state = {
   outfit: saved.outfit,
+  owned: saved.owned,
   stars: saved.stars,
   pictures: saved.pictures,
   scenes: {},
@@ -77,6 +103,7 @@ function sceneFor(target) {
   if (!state.scenes[target]) {
     if (target === 'town') state.scenes[target] = buildTown();
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
+    else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
     else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
@@ -330,15 +357,37 @@ function closeDialog() {
 
 // ---- Rewards -------------------------------------------------------------
 
+function itemLabel(slot, value) {
+  const v = WARDROBE.find(w => w.slot === slot).items[value];
+  return slot === 'dress' ? `${v.icon} ${v.name} 드레스` : `${v.icon} ${v.name}`;
+}
+
+// New presents first; once everything is collected, anything not being worn.
 function rewardChoices() {
   const o = state.outfit;
-  const list = [];
-  for (const [k, v] of Object.entries(DRESS_COLORS)) if (k !== o.dress) list.push({ slot: 'dress', value: k, label: `${v.icon} ${v.name} 드레스` });
-  for (const [k, v] of Object.entries(DRESS_SHAPES)) if (k !== o.shape) list.push({ slot: 'shape', value: k, label: `${v.icon} ${v.name}` });
-  for (const [k, v] of Object.entries(HEADWEAR)) if (k !== 'none' && k !== o.head) list.push({ slot: 'head', value: k, label: `${v.icon} ${v.name}` });
-  for (const [k, v] of Object.entries(HAND_ITEMS)) if (k !== 'none' && k !== o.hand) list.push({ slot: 'hand', value: k, label: `${v.icon} ${v.name}` });
-  for (const [k, v] of Object.entries(HAIR_COLORS)) if (k !== o.hair) list.push({ slot: 'hair', value: k, label: `${v.icon} ${v.name}` });
-  return list;
+  const fresh = [];
+  const worn = [];
+  for (const { slot, items } of WARDROBE) {
+    for (const value of Object.keys(items)) {
+      if (value === 'none' || value === o[slot]) continue;
+      const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
+      (r.isNew ? fresh : worn).push(r);
+    }
+  }
+  return fresh.length ? fresh : worn;
+}
+
+function collected() {
+  let have = 0;
+  let total = 0;
+  for (const { slot, items } of WARDROBE) {
+    for (const value of Object.keys(items)) {
+      if (value === 'none') continue;
+      total++;
+      if (state.owned[slot].includes(value)) have++;
+    }
+  }
+  return { have, total };
 }
 
 function offerReward(npc) {
@@ -347,9 +396,15 @@ function offerReward(npc) {
   const slot = pick([...new Set(all.map(r => r.slot))]);
   const gift = pick(all.filter(r => r.slot === slot));
   state.gift = gift;
+  if (gift.isNew) {
+    state.owned[gift.slot].push(gift.value);
+    save();
+  }
   const next = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
   ui.rewardTitle.textContent = `🎁 ${npc ? npc.name : ''}의 선물!`;
-  ui.rewardName.textContent = gift.label;
+  ui.rewardName.textContent = gift.isNew ? `${gift.label} · 옷장에 쏙!` : gift.label;
+  ui.rewardYes.textContent = '지금 입을래요 💖';
+  ui.rewardNo.textContent = gift.isNew ? '옷장에 넣을래요 🎀' : '그대로 할래요';
   drawPortrait(ui.pvNow, princessSprite(state.outfit, 0));
   drawPortrait(ui.pvNew, princessSprite(next, 0));
   ui.dialog.classList.add('hidden');
@@ -367,7 +422,7 @@ function acceptReward(yes) {
     Sound.correct();
     Sound.say([{ text: line('yes') }], voiceOf(state.giver));
   } else {
-    Sound.say([{ text: line('no') }], voiceOf(state.giver));
+    Sound.say([{ text: line('keep') }], voiceOf(state.giver));
   }
   state.gift = null;
   closeDialog();
@@ -388,6 +443,71 @@ function renderStars(pop) {
     void ui.stars.offsetWidth;
     ui.stars.classList.add('pop');
   }
+}
+
+function followLink(link) {
+  Sound.door();
+  if (link.target === 'yuna') {
+    changeScene('yuna', null, `🎀 ${PLAYER.shown}의 방`);
+    Sound.say([{ text: line('room') }]);
+  } else {
+    changeScene(link.target, link.at, '🏰 공주님의 성');
+  }
+}
+
+// ---- Wardrobe ------------------------------------------------------------
+
+function openWardrobe() {
+  state.busy = true;
+  renderWardrobe();
+  ui.wardrobe.classList.remove('hidden');
+  Sound.say([{ text: line('dressup'), pitch: 1.3 }]);
+}
+
+function renderWardrobe() {
+  drawPortrait(ui.wdPreview, princessSprite(state.outfit, 0));
+  const { have, total } = collected();
+  ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
+  ui.wdSlots.innerHTML = '';
+  for (const { slot, title, items } of WARDROBE) {
+    const row = document.createElement('div');
+    row.className = 'wd-row';
+    const h = document.createElement('div');
+    h.className = 'wd-title';
+    h.textContent = title;
+    const chips = document.createElement('div');
+    chips.className = 'wd-chips';
+    for (const [value, item] of Object.entries(items)) {
+      const owned = state.owned[slot].includes(value);
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.classList.toggle('on', state.outfit[slot] === value);
+      b.disabled = !owned;
+      if (!owned) b.innerHTML = '<span class="ic">❓</span>';
+      else if (item.c && slot === 'dress') b.innerHTML = `<span class="sw" style="background:${item.c[0]}"></span><span class="nm">${item.name}</span>`;
+      else if (item.c) b.innerHTML = `<span class="sw" style="background:${item.c[0]}"></span><span class="nm">${item.name.replace(' 머리', '')}</span>`;
+      else b.innerHTML = `<span class="ic">${item.icon || '✖️'}</span><span class="nm">${item.name}</span>`;
+      b.addEventListener('click', () => {
+        if (state.outfit[slot] === value) return;
+        state.outfit = Object.assign({}, state.outfit, { [slot]: value });
+        save();
+        Sound.tap();
+        burstAtHero(16);
+        renderWardrobe();
+      });
+      chips.append(b);
+    }
+    row.append(h, chips);
+    ui.wdSlots.append(row);
+  }
+}
+
+function closeWardrobe() {
+  ui.wardrobe.classList.add('hidden');
+  state.busy = false;
+  burstAtHero(40);
+  Sound.correct();
+  Sound.say([{ text: line('yes'), pitch: 1.3 }]);
 }
 
 // ---- Effects -------------------------------------------------------------
@@ -663,6 +783,15 @@ function drawOverlay(now) {
     }
   }
 
+  for (const l of sc.links || []) {
+    if (state.busy) break;
+    const w = tileCenter(sc, l.c, l.r);
+    const p = toScreen(w.x, w.y + 4 + Math.sin(now / 250) * 2);
+    ctx.font = `${9 * s}px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(l.icon, p.x, p.y);
+  }
+
   // Exit mats inside rooms get a bobbing arrow.
   if (sc.exit && !state.busy) {
     const w = tileCenter(sc, sc.exit.c + (sc.exitTiles ? 0.5 : 0), sc.exit.r);
@@ -729,8 +858,16 @@ function onPointer(e) {
     }
   }
 
-  // Exit mat in a room.
   const t = worldToTile(sc, wx, wy);
+
+  // Doors between rooms, such as the castle to the princess's room.
+  const link = (sc.links || []).find(l => l.c === t.c && l.r === t.r);
+  if (link) {
+    walkTo((c, r) => c === link.c && r === link.r, () => followLink(link));
+    return;
+  }
+
+  // Exit mat in a room.
   const exits = sc.exitTiles || (sc.exit ? [sc.exit] : []);
   if (exits.some(x => x.c === t.c && x.r === t.r)) {
     walkTo((c, r) => exits.some(x => x.c === c && x.r === r), leaveRoom);
@@ -739,6 +876,12 @@ function onPointer(e) {
 
   // Buildings with doors: walk to the door and go in.
   const hits = sc.objects.filter(o => !o.background && o.canvas && hitObject(o, wx, wy));
+  const robe = hits.find(o => o.kind === 'wardrobe');
+  if (robe) {
+    Sound.tap();
+    walkTo((c, r) => robe.front.some(f => f.c === c && f.r === r), openWardrobe);
+    return;
+  }
   for (let i = hits.length - 1; i >= 0; i--) {
     const doors = sc.doors.filter(d => d.obj === hits[i]);
     if (doors.length) {
@@ -806,6 +949,7 @@ ui.replay.addEventListener('click', () => { Sound.tap(); askAgain(); });
 ui.close.addEventListener('click', () => { Sound.tap(); closeDialog(); });
 ui.rewardYes.addEventListener('click', () => acceptReward(true));
 ui.rewardNo.addEventListener('click', () => acceptReward(false));
+ui.wdDone.addEventListener('click', closeWardrobe);
 ui.pictures.addEventListener('click', () => { Sound.tap(); setPictures(!state.pictures); });
 ui.mute.addEventListener('click', () => {
   const muted = Sound.toggleMute();

@@ -889,3 +889,52 @@ function drawSprite(ctx, sprite, x, y, flip) {
     ctx.drawImage(sprite.canvas, dx, dy);
   }
 }
+
+// ---- Princess room -------------------------------------------------------
+
+// Tall wardrobe standing against the back-right wall.
+function drawWardrobe(ctx, sc, c, r) {
+  const k = boxCorners(sc, c, r, 2, 0.5);
+  const { WL } = drawFurnitureBox(ctx, k, 50, '#ffc4de', '#ffe0ee', '#ffb0d2');
+  const mid = WL.len / 2;
+  for (const [x0, x1] of [[3, mid - 1], [mid + 1, WL.len - 3]]) {
+    wallRect(ctx, WL, x0, x1, 4, 44, '#ff9cc8');
+    wallRect(ctx, WL, x0 + 2, x1 - 2, 6, 42, '#ffd0e6');
+  }
+  wallRect(ctx, WL, mid - 3, mid - 1, 22, 26, CASTLE.gold);
+  wallRect(ctx, WL, mid + 1, mid + 3, 22, 26, CASTLE.gold);
+  // Gold crown on top.
+  const top = wallPt(WL, mid, 50);
+  px(ctx, top.x - 6, top.y - 4, 12, 3, CASTLE.gold);
+  for (const dx of [-6, -1, 4]) px(ctx, top.x + dx, top.y - 7, 2, 3, CASTLE.gold);
+  px(ctx, top.x - 1, top.y - 3, 2, 1, '#ff5fa0');
+}
+
+// Vanity table with a big oval mirror against the back-left wall.
+function drawVanity(ctx, sc, c, r) {
+  const k = boxCorners(sc, c, r, 0.5, 1);
+  const { WR } = drawFurnitureBox(ctx, k, 14, '#ffffff', '#ffe0ee', '#f0d4e4');
+  wallRect(ctx, WR, 2, WR.len - 2, 9, 12, '#ffc4de');
+  const back = boxCorners(sc, c, r, 0.15, 1);
+  const m = drawFurnitureBox(ctx, back, 50, '#fff4fa', '#fff4fa', '#f0d4e4').WR;
+  const mid = m.len / 2;
+  for (let i = 0; i < m.len; i++) {
+    const t = (i + 0.5) / m.len * 2 - 1;
+    const h = Math.sqrt(Math.max(0, 1 - t * t)) * 15;
+    if (h < 2) continue;
+    wallRect(ctx, m, i, i + 1, 32 - h - 1, 32 + h + 1, CASTLE.gold);
+    wallRect(ctx, m, i, i + 1, 32 - h + 1, 32 + h - 1, i < mid - 2 ? '#d8f2ff' : '#bfe6ff');
+  }
+  wallRect(ctx, m, mid - 4, mid - 3, 24, 40, '#ffffff');
+}
+
+function drawToyChest(ctx, sc, c, r) {
+  const k = boxCorners(sc, c + 0.15, r + 0.2, 0.7, 0.6);
+  const { WL, WR } = drawFurnitureBox(ctx, k, 12, '#c8905a', '#e8b07a', '#a8704a');
+  wallRect(ctx, WL, 0, WL.len, 9, 10, CASTLE.gold);
+  wallRect(ctx, WR, 0, WR.len, 9, 10, CASTLE.gold);
+  const m = tileCenter(sc, c, r);
+  px(ctx, m.x - 6, m.y - 20, 5, 5, '#ffffff');
+  px(ctx, m.x - 5, m.y - 22, 1, 2, '#ffd34d');
+  px(ctx, m.x + 1, m.y - 19, 5, 4, '#9fd0ff');
+}

@@ -352,6 +352,63 @@ function buildCastleInterior() {
   sc.exit = exit;
   sc.exitTiles = [{ c: 5, r: sc.D - 1 }, { c: 6, r: sc.D - 1 }];
   sc.start = { c: 5, r: sc.D - 2 };
+  // A door on the right wall leads to the princess's own room.
+  tileAt(sc, 11, 7).mat = '#ff8fc0';
+  sc.links = [{ c: 11, r: 7, target: 'yuna', icon: '🎀' }];
+  const sign = tileCenter(sc, 11, 7);
+  sc.signs.push({ x: sign.x + 6, y: sign.y - 30, text: `🎀 ${PLAYER.shown}의 방`, color: '#ff6fa8' });
+  renderGround(sc);
+  return sc;
+}
+
+// The princess's bedroom with the wardrobe where her presents are kept.
+function buildYunaRoom() {
+  const sc = makeScene('room', 9, 8, 110, 50);
+  for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) {
+    setTile(sc, c, r, 'carpet');
+    const t = tileAt(sc, c, r);
+    const inner = c >= 2 && c <= 6 && r >= 2 && r <= 5;
+    t.color = inner ? '#ffd0e6' : '#ffe8f2';
+    t.edge = inner;
+  }
+  tileAt(sc, 4, sc.D - 1).mat = '#ffd34d';
+
+  addRoomWalls(sc, 66, '#ffe0ee', '#ffb0d2', (ctx, WA, WB) => {
+    // Window with curtains on the left wall, hearts on both walls.
+    const wx = WA.len * 0.62;
+    wallArch(ctx, WA, wx - 13, wx + 13, 22, 54, '#ffffff');
+    wallArch(ctx, WA, wx - 11, wx + 11, 24, 52, '#bfe6ff');
+    wallRect(ctx, WA, wx - 1, wx + 1, 24, 52, '#ffffff');
+    wallRect(ctx, WA, wx - 17, wx - 11, 20, 56, '#ff8fc0');
+    wallRect(ctx, WA, wx + 11, wx + 17, 20, 56, '#ff8fc0');
+    for (const W of [WA, WB]) {
+      for (let x = 10; x < W.len - 6; x += 22) {
+        wallRect(ctx, W, x, x + 2, 58, 60, '#ff8fc0');
+        wallRect(ctx, W, x + 3, x + 5, 58, 60, '#ff8fc0');
+        wallRect(ctx, W, x + 1, x + 4, 56, 58, '#ff8fc0');
+      }
+    }
+  });
+  const k = boxCorners(sc, 0, 0, sc.W, sc.D);
+  const WB = wall(k.T, k.R);
+  ['🦄', '🌈', '⭐'].forEach((emoji, i) => {
+    const p = wallPt(WB, WB.len * (0.62 + i * 0.12), 40 + (i % 2) * 5);
+    sc.decor.push({ x: p.x, y: p.y, emoji, frame: true });
+  });
+
+  const furn = (c, r, w, d, up, draw, extra) => {
+    block(sc, c, r, w, Math.ceil(d));
+    return addObject(sc, { c, r, w, d: Math.ceil(d) }, footBounds(sc, c, r, w, d, up, 8), draw, extra);
+  };
+  furn(1, 0, 2, 0.5, 64, ctx => drawWardrobe(ctx, sc, 1, 0), { kind: 'wardrobe', front: [{ c: 1, r: 1 }, { c: 2, r: 1 }] });
+  furn(0, 3, 0.5, 1, 64, ctx => drawVanity(ctx, sc, 0, 3), { kind: 'wardrobe', front: [{ c: 1, r: 3 }] });
+  furn(7, 0, 1, 2, 30, ctx => drawBed(ctx, sc, 7, 0, '#ff8fc0'));
+  furn(8, 4, 1, 1, 30, ctx => drawToyChest(ctx, sc, 8, 4));
+  furn(0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6));
+  furn(5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0));
+
+  sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 10, r: 7 }, icon: '🚪' }];
+  sc.start = { c: 4, r: sc.D - 2 };
   renderGround(sc);
   return sc;
 }
