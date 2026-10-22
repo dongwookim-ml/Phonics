@@ -243,3 +243,62 @@ LINES.ask2 = [
 ];
 LINES.forest = ['Welcome to the Starlight Forest!', 'Wow, the forest is sparkling!', 'Look at all the fireflies!'];
 LINES.locked = [`Collect ${FOREST_STARS} stars to open the forest gate!`];
+
+// ---- Question variety ------------------------------------------------------
+
+// Which kinds of questions each kind of person asks. A person never asks
+// the same kind twice in a row.
+//   word       hear a word, pick it from written words
+//   start      hear a word (with its picture), pick the letter it starts with
+//   findStart  hear a letter sound, pick the picture that starts with it
+//   rhyme      pick the picture that rhymes with a word
+//   family     hear a word, pick it from four that share the first letter
+//   vowel      fill in the missing middle sound: c ? t
+//   ending     fill in the missing last sound: ca ?
+//   read       read a written word, pick its picture
+const QUIZ_TYPES = {
+  town: ['word', 'start', 'rhyme'],
+  house: ['word', 'findStart', 'rhyme'],
+  forest: ['family', 'vowel', 'ending', 'read', 'rhyme'],
+};
+
+// How many recent answers to keep out of new questions.
+const RECENT_WORDS = 24;
+
+const RHYMES = [
+  [['cat', '🐱'], ['hat', '🎩'], ['bat', '🦇'], ['rat', '🐀']],
+  [['dog', '🐶'], ['log', '🪵'], ['frog', '🐸']],
+  [['sun', '☀️'], ['bun', '🍞'], ['run', '🏃']],
+  [['cake', '🎂'], ['snake', '🐍'], ['lake', '🏞️']],
+  [['star', '⭐'], ['car', '🚗'], ['jar', '🫙']],
+  [['moon', '🌙'], ['spoon', '🥄'], ['balloon', '🎈']],
+  [['bee', '🐝'], ['tree', '🌳'], ['three', '3️⃣']],
+  [['ring', '💍'], ['king', '🤴'], ['sing', '🎤']],
+  [['fox', '🦊'], ['box', '📦'], ['socks', '🧦']],
+  [['hen', '🐔'], ['ten', '🔟'], ['pen', '🖊️']],
+  [['bug', '🐛'], ['mug', '☕'], ['hug', '🤗']],
+  [['goat', '🐐'], ['boat', '⛵'], ['coat', '🧥']],
+  [['mouse', '🐭'], ['house', '🏠']],
+  [['bed', '🛏️'], ['red', '🟥']],
+  [['kite', '🪁'], ['light', '💡'], ['night', '🌃']],
+  [['mop', '🧹'], ['top', '🔝'], ['shop', '🏪']],
+  [['bear', '🐻'], ['pear', '🍐'], ['chair', '🪑']],
+  [['fish', '🐟'], ['dish', '🍽️']],
+];
+
+// Short sounds for single letters inside a word.
+const PART_SOUNDS = {
+  a: 'ah', e: 'eh', i: 'ih', o: 'aw', u: 'uh',
+  b: 'buh', d: 'duh', g: 'guh', m: 'mmm', n: 'nnn', p: 'puh', t: 'tuh', x: 'ks', k: 'kuh', l: 'lll', s: 'sss', f: 'fff',
+};
+
+LINES.firstSound = ['What sound does it start with?', 'Which letter does it start with?', 'Listen to the first sound!'];
+LINES.findStart = ['Which one starts with', 'Find the picture that starts with', 'What begins with'];
+LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
+LINES.vowel = ['What sound is in the middle?', 'Which sound is missing?', 'Listen for the middle sound.'];
+LINES.ending = ['How does it end?', 'What is the last sound?', 'Listen to the very end.'];
+LINES.retrySound = [
+  "Oops, that letter says {wrong}. Let's listen again.", 'Almost! That sound is {wrong}. Try once more.',
+  "Good try! That's {wrong}. Listen carefully.",
+];
+LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'No peeking at my voice! Read it yourself.'];

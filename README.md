@@ -22,9 +22,15 @@ npx http-server -p 8080 .
 - **Houses**: there are twelve letter houses (A B C D F G H M N P S T). Tap a
   house to walk in. Each house's resident asks words that start with that
   house's letter, and the wall shows the letter and its pictures.
-- **Villagers** (♪ bubble): tap one to talk. They say a word out loud and
-  the child picks the matching word from **1, 2, 3**. A wrong pick is
-  greyed out and the word is said again.
+- **Villagers** (♪ bubble): tap one to talk and they ask a question with
+  answers **1, 2, 3**. Town folk mix three kinds: pick the word you hear,
+  pick the letter a word starts with, or find the word that rhymes. House
+  residents ask for the picture that starts with their house's letter
+  instead of the letter question. A wrong pick is greyed out and the
+  question is said again.
+- **No repeats**: a person never asks the same kind of question twice in a
+  row, and the last 24 answers are kept out of new questions (saved with the
+  game). The mix lives in `QUIZ_TYPES` and the builders in `js/quiz.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
   colour. The child sees "now" and "after" side by side and chooses to
@@ -33,14 +39,15 @@ npx http-server -p 8080 .
   the right leads to the princess's own room. Tap the wardrobe or the mirror
   to change clothes freely; presents not yet earned show as ❓.
 - **Starlight Forest (level 2)**: a gate at the south end of the main road
-  opens at 10 stars. The forest folk (★ bubble) ask four words that share the
-  first letter (hug / hut / hat / hen), so she has to listen to the vowel and
-  the ending. Only the forest gives out fairy wings, a starlight cape and a
+  opens at 10 stars. The forest folk (★ bubble) ask harder questions: four
+  words that share the first letter (hug / hut / hat / hen), the missing
+  middle sound (c ? t), the missing last sound (ca ?), reading a word with
+  no voice and picking its picture, and rhymes. Only the forest gives out fairy wings, a starlight cape and a
   night-sky dress. Word families live in `WORD_FAMILIES` in `js/data.js`.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
-Stars, the outfit and the hint setting are saved in the browser.
+Stars, the outfit, recent words and the hint setting are saved in the browser.
 
 ## Customizing
 

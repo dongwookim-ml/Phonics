@@ -19,6 +19,7 @@ const ui = {
   portrait: document.getElementById('dlg-portrait'),
   name: document.getElementById('dlg-name'),
   text: document.getElementById('dlg-text'),
+  clue: document.getElementById('dlg-clue'),
   choices: document.getElementById('dlg-choices'),
   replay: document.getElementById('dlg-replay'),
   close: document.getElementById('dlg-close'),
@@ -53,6 +54,7 @@ function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
     const outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
+    Quiz.recent = s.recent;
     return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, pictures: !!s.pictures };
   } catch (e) {
     return { outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, pictures: false };
@@ -73,7 +75,7 @@ function ownedFrom(saved, outfit) {
   return owned;
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures, recent: Quiz.recent })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -245,48 +247,12 @@ function voiceOf(npc) {
   return npc.voice;
 }
 
-// "Listen!" and the word with a breath in between, so the word stands alone.
-function wordParts(q, lead) {
-  return [{ text: lead }, { pause: 750 }, { text: q.word, file: rec('words', q.word), rate: 0.72 }];
-}
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-}
-
-let lastWord = null;
-// Forest question: four words from one family that share the first letter.
-let lastFamily = null;
-function makeFamilyQuestion() {
-  let fam;
-  do fam = pick(WORD_FAMILIES); while (fam === lastFamily && WORD_FAMILIES.length > 1);
-  lastFamily = fam;
-  const four = shuffle(fam.slice()).slice(0, 4);
-  const target = pick(four);
-  const info = LETTERS.find(l => l.letter === target[0][0].toUpperCase()) || LETTERS[0];
-  const options = four.map(w => ({ word: w[0], emoji: w[1], info, right: w === target }));
-  return { info, word: target[0], emoji: target[1], options, done: false, misses: 0, level: 2 };
-}
-
-function makeQuestion(letter) {
-  const pool = letter ? LETTERS.filter(l => l.letter === letter) : LETTERS;
-  let info;
-  let word;
-  for (let i = 0; i < 10; i++) {
-    info = pick(pool);
-    word = pick(info.words);
-    if (word[0] !== lastWord) break;
-  }
-  lastWord = word[0];
-  const others = shuffle(LETTERS.filter(l => l !== info)).slice(0, 2);
-  const options = shuffle([
-    { word: word[0], emoji: word[1], info, right: true },
-    ...others.map(o => { const w = pick(o.words); return { word: w[0], emoji: w[1], info: o, right: false }; }),
-  ]);
-  return { info, word: word[0], emoji: word[1], options, done: false, misses: 0 };
 }
 
 // ---- Dialog --------------------------------------------------------------
@@ -307,32 +273,37 @@ function openDialog(npc) {
   faceEachOther(npc);
   state.busy = true;
   state.talking = npc;
-  const q = npc.level === 2 ? makeFamilyQuestion() : makeQuestion(npc.letter);
+  const q = Quiz.make(npc);
   state.question = q;
   drawPortrait(ui.portrait, villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
   const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
-  const ask = line(npc.level === 2 ? 'ask2' : 'ask');
-  ui.text.textContent = `${hello} ${ask}`;
+  ui.text.textContent = `${hello} ${q.prompt}`;
+  ui.clue.innerHTML = q.clue;
+  ui.clue.classList.toggle('hidden', !q.clue);
   ui.choices.innerHTML = '';
   q.options.forEach((o, i) => {
     const b = document.createElement('button');
     b.className = 'choice';
-    b.innerHTML = `<span class="num">${i + 1}</span><span class="pic">${o.emoji}</span><span class="w"><span class="first">${o.word[0]}</span>${o.word.slice(1)}</span>`;
-    b.classList.toggle('pictures', state.pictures);
+    b.innerHTML = `<span class="num">${i + 1}</span>${o.html}`;
+    if (o.words) b.dataset.words = '1';
+    b.classList.toggle('pictures', o.alwaysPictures || (o.words && state.pictures));
     b.addEventListener('click', () => choose(i, b));
     ui.choices.append(b);
   });
+  ui.choices.classList.toggle('four', q.options.length > 3);
   ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
   const greet = [{ text: hello }, { pause: 400 }];
-  if (npc.letter) greet.push({ text: `This is the ${npc.letter} house.` }, { pause: 250 }, letterSound(q.info), { pause: 500 });
-  Sound.say(greet.concat(wordParts(q, ask)), voiceOf(npc));
+  const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
+  if (house) greet.push({ text: `This is the ${npc.letter} house.` }, { pause: 250 }, letterSound(house), { pause: 500 });
+  Sound.say(greet.concat(q.ask), voiceOf(npc));
+  save();
 }
 
 function askAgain() {
   const q = state.question;
-  if (q) Sound.say([{ text: q.word, file: rec('words', q.word), rate: 0.72 }], voiceOf(state.talking));
+  if (q) Sound.say(q.replay, voiceOf(state.talking));
 }
 
 function choose(i, btn) {
@@ -343,23 +314,24 @@ function choose(i, btn) {
     q.done = true;
     btn.classList.add('right');
     ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
+    if (q.solved) ui.clue.innerHTML = q.solved;
     const praise = line('praise');
-    ui.text.textContent = `${praise} ${o.emoji} ${o.word}`;
+    ui.text.textContent = praise;
     Sound.correct();
-    Sound.say([{ text: praise }, { pause: 300 }, { text: `${o.word}!`, file: rec('words', o.word) }], voiceOf(state.talking));
+    Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(state.talking));
     state.stars++;
     save();
     renderStars(true);
     burstAtHero(30);
-    later(2400, () => offerReward(state.talking));
+    later(2600, () => offerReward(state.talking));
   } else {
     q.misses++;
     btn.disabled = true;
     btn.classList.add('wrong');
     Sound.wrong();
-    const retry = line('retry', { wrong: o.word });
+    const retry = line(o.sound ? 'retrySound' : 'retry', { wrong: o.wrong });
     ui.text.textContent = retry;
-    Sound.say([{ text: retry }, { pause: 750 }, { text: q.word, file: rec('words', q.word), rate: 0.72 }], voiceOf(state.talking));
+    Sound.say([{ text: retry }, { pause: 750 }].concat(q.replay), voiceOf(state.talking));
   }
 }
 
@@ -985,7 +957,7 @@ function frame(now) {
 function setPictures(on) {
   state.pictures = on;
   ui.pictures.classList.toggle('active', on);
-  ui.choices.querySelectorAll('.choice').forEach(b => b.classList.toggle('pictures', on));
+  ui.choices.querySelectorAll('.choice[data-words]').forEach(b => b.classList.toggle('pictures', on));
   save();
 }
 

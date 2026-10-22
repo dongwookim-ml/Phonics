@@ -189,6 +189,29 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .choice .first { color: var(--accent); }
 .choice.right { background: #fff4b8; border-color: #e0a52a; animation: pop 0.5s ease; }
 .choice.wrong { opacity: 0.4; animation: shake 0.4s ease; }
+.choice .bigpic { font-size: 54px; line-height: 1.05; }
+.choice .letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 46px; line-height: 1.1; color: var(--accent); }
+.choice .w.hide { display: none; }
+.choice.right .w.hide, .choice.wrong .w.hide { display: block; font-size: 24px; }
+.choices.four { gap: 7px; }
+.choices.four .choice .w { font-size: 30px; }
+.clue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 4px 10px;
+  background: #fff7fb;
+  border: 3px dashed #f3a8cc;
+  border-radius: 16px;
+}
+.clue.hidden { display: none; }
+.clue-pic { font-size: 46px; line-height: 1; }
+.clue-word { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 40px; letter-spacing: 3px; line-height: 1.1; }
+.clue-word.big { font-size: 52px; letter-spacing: 5px; }
+.clue-word .first { color: var(--accent); }
+.clue-word .blank { display: inline-block; min-width: 0.8em; color: #e0a52a; border-bottom: 4px solid #e0a52a; text-align: center; }
+.clue-letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 52px; color: var(--accent); line-height: 1.1; }
 .side { display: flex; flex-direction: column; gap: 8px; justify-content: space-between; }
 .round {
   width: 58px;
@@ -295,6 +318,14 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .portrait { width: 64px; }
   .portrait canvas { width: 56px; height: 95px; }
   .choice .w { font-size: 26px; }
+  .choice .bigpic { font-size: 42px; }
+  .clue-pic, .clue-word, .clue-letter { font-size: 34px; }
+  .clue-word.big { font-size: 40px; }
+  .choices.four { display: grid; grid-template-columns: 1fr 1fr; }
+  .choices.four .choice { position: relative; padding: 4px 2px 6px; }
+  .choices.four .choice .w { font-size: 22px; }
+  .choices.four .choice .pic { font-size: 26px; }
+  .choices.four .choice .num { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; line-height: 20px; font-size: 13px; }
   .text { font-size: 18px; }
 }
 
