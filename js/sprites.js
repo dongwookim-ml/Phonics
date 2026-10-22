@@ -241,40 +241,86 @@ function drawBitmap(ctx, rows, palette, x, y, flip = false) {
 // ---- Trees and props -----------------------------------------------------
 
 // Round fluffy trees, pre-rendered once per variant.
-function makeTree(variant) {
-  const W = 34;
-  const H = 46;
+const TREE_PALETTES = {
+  green:   { dark: '#3f9f58', mid: '#5fc46a', light: '#9be88a', spark: '#d8ffb8', line: '#2a6e40', sparks: 0.02 },
+  blossom: { dark: '#e070a8', mid: '#ff9cc8', light: '#ffd0e6', spark: '#ffffff', line: '#a04878', sparks: 0.05 },
+  star:    { dark: '#3a5f9a', mid: '#5a8fd0', light: '#a8d8ff', spark: '#fff6a8', line: '#28406e', sparks: 0.06 },
+  violet:  { dark: '#6a4aa8', mid: '#9070d8', light: '#c8b0ff', spark: '#fff6a8', line: '#45307a', sparks: 0.05 },
+};
+
+// Round fluffy tree. `k` scales it, so the forest can have a giant one.
+function makeTree(variant, k = 1) {
+  const W = Math.round(34 * k);
+  const H = Math.round(46 * k);
   const cv = makeCanvas(W, H);
   const ctx = cv.getContext('2d');
-  const blossom = variant === 'blossom';
-  const pal = blossom
-    ? { dark: '#e070a8', mid: '#ff9cc8', light: '#ffd0e6', spark: '#ffffff', line: '#a04878' }
-    : { dark: '#3f9f58', mid: '#5fc46a', light: '#9be88a', spark: '#d8ffb8', line: '#2a6e40' };
+  const pal = TREE_PALETTES[variant] || TREE_PALETTES.green;
+  const cx = W / 2;
   // Shadow and trunk.
   ctx.fillStyle = 'rgba(40,30,60,0.18)';
   ctx.beginPath();
-  ctx.ellipse(17, 42, 11, 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, 42 * k, 11 * k, 4 * k, 0, 0, Math.PI * 2);
   ctx.fill();
-  px(ctx, 15, 30, 4, 12, '#8a5a3c');
-  px(ctx, 15, 30, 1, 12, '#6b4228');
-  px(ctx, 18, 30, 1, 12, '#a8704a');
-  px(ctx, 13, 40, 8, 2, '#8a5a3c');
-  const blobs = [[17, 15, 12], [10, 21, 8], [24, 21, 8], [17, 8, 8], [17, 24, 8]];
+  const tw = Math.round(4 * k);
+  const tx = Math.round(cx - tw / 2);
+  px(ctx, tx, Math.round(30 * k), tw, Math.round(12 * k), '#8a5a3c');
+  px(ctx, tx, Math.round(30 * k), 1, Math.round(12 * k), '#6b4228');
+  px(ctx, tx + tw - 1, Math.round(30 * k), 1, Math.round(12 * k), '#a8704a');
+  px(ctx, tx - 2, Math.round(40 * k), tw + 4, 2, '#8a5a3c');
+  const blobs = [[17, 15, 12], [10, 21, 8], [24, 21, 8], [17, 8, 8], [17, 24, 8]].map(([x, y, r]) => [x * k, y * k, r * k]);
   const inside = (x, y) => blobs.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br);
-  for (let y = 0; y < 34; y++) {
+  for (let y = 0; y < 34 * k; y++) {
     for (let x = 0; x < W; x++) {
       if (!inside(x + 0.5, y + 0.5)) continue;
       const edge = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5) || !inside(x + 0.5, y + 1.5);
       if (edge) { px(ctx, x, y, 1, 1, pal.line); continue; }
-      const l = (-(x - 17) * 0.6 - (y - 14) * 0.8) / 12 + (hash(x, y, 11) - 0.5) * 0.25;
+      const l = (-(x - 17 * k) * 0.6 - (y - 14 * k) * 0.8) / (12 * k) + (hash(x, y, 11) - 0.5) * 0.25;
       let col = pal.mid;
       if (l > 0.45) col = pal.light;
       else if (l < -0.35) col = pal.dark;
-      if (hash(x, y, 12) < (blossom ? 0.05 : 0.02)) col = pal.spark;
+      if (hash(x, y, 12) < pal.sparks) col = pal.spark;
       px(ctx, x, y, 1, 1, col);
     }
   }
-  return { canvas: cv, ax: 17, ay: 41 };
+  return { canvas: cv, ax: Math.round(cx), ay: Math.round(41 * k) };
+}
+
+function drawMoss(ctx, ox, oy, c, r, flowers) {
+  fillPoly(ctx, diamondPts(ox, oy), (x, y) => {
+    const n = hash(x, y, 1);
+    if (n < 0.05) return '#8fe0b0';
+    if (n < 0.09) return '#3f8f78';
+    return (c + r) % 2 ? '#5fb894' : '#58b08c';
+  });
+  if (flowers) {
+    const colors = ['#c7a4ff', '#9fe8ff', '#ffffff', '#ffb0e8'];
+    for (let i = 0; i < 4; i++) {
+      const fx = ox + 7 + Math.floor(hash(c, r, 10 + i) * 18);
+      const fy = oy + 3 + Math.floor(hash(c, r, 20 + i) * 10);
+      px(ctx, fx, fy + 1, 1, 2, '#3f8f68');
+      px(ctx, fx, fy, 1, 1, colors[Math.floor(hash(c, r, 50 + i) * colors.length)]);
+    }
+  }
+}
+function drawPath(ctx, ox, oy) {
+  fillPoly(ctx, diamondPts(ox, oy), stonePattern('#c8c0e0', '#7f78a8', ['#d8d0f0', '#c4bce4', '#e0daf4', '#bcb4dc'], 7));
+}
+
+// Wooden gate post wrapped in vines, for the forest entrance.
+function makeGatePost() {
+  const cv = makeCanvas(14, 50);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = 'rgba(40,30,60,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(7, 47, 6, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  px(ctx, 4, 8, 6, 39, '#8a5a3c');
+  px(ctx, 4, 8, 2, 39, '#6b4228');
+  for (let y = 10; y < 46; y += 5) { px(ctx, 3, y, 3, 2, '#5fc46a'); px(ctx, 8, y + 2, 3, 2, '#4fa35a'); }
+  px(ctx, 2, 2, 10, 6, '#5a4a6a');
+  px(ctx, 3, 3, 8, 4, '#c8f0ff');
+  px(ctx, 6, 0, 2, 2, '#ffd34d');
+  return { canvas: cv, ax: 7, ay: 47 };
 }
 
 function makeLamp() {
@@ -762,11 +808,23 @@ const HAND_BITMAPS = {
   bouquet: { x: 14, y: 12, rows: ['pwp.', 'wpyp', 'GpwG', '.GG.', '.GG.'] },
 };
 
+const WING = [
+  '.ww..',
+  'wWWw.',
+  'wWsWw',
+  'wWWWw',
+  '.wWWw',
+  '..www',
+  '.wWw.',
+  'wWsw.',
+  '.ww..',
+];
+
 const princessCache = new Map();
 
 // Returns { canvas, ax, ay } for an outfit and walk frame.
 function princessSprite(outfit, frame) {
-  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${frame}`;
+  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.back}|${frame}`;
   if (princessCache.has(key)) return princessCache.get(key);
   const W = 22;
   const H = 34;
@@ -785,6 +843,23 @@ function princessSprite(outfit, frame) {
   if (frame === 1) {
     skirt[9] = PRINCESS_FEET_B;
     if (outfit.shape === 'tutu') { skirt[6] = PRINCESS_TUTU_LEGS_B; skirt[8] = PRINCESS_TUTU_LEGS_B; }
+  }
+  // Wings or a cape go behind everything else.
+  if (outfit.back === 'wings') {
+    const wp = { w: '#6fb4e8', W: '#e8f8ff', s: '#fff6a8' };
+    drawBitmap(ctx, WING, wp, 0, OYp + 10);
+    drawBitmap(ctx, WING, wp, W - WING[0].length, OYp + 10, true);
+  } else if (outfit.back === 'cape') {
+    for (let y = 12; y < 28; y++) {
+      const spread = Math.min(3, Math.floor((y - 12) / 4));
+      const x0 = OXp + 2 - spread;
+      const x1 = OXp + 16 + spread;
+      px(ctx, x0, OYp + y, x1 - x0, 1, y === 27 ? '#2e2466' : '#4a3a9a');
+      px(ctx, x0, OYp + y, 1, 1, '#2e2466');
+      px(ctx, x1 - 1, OYp + y, 1, 1, '#2e2466');
+      if ((y * 7) % 5 === 0) px(ctx, x0 + 1 + (y % 3), OYp + y, 1, 1, '#ffd34d');
+      if ((y * 3) % 7 === 0) px(ctx, x1 - 3, OYp + y, 1, 1, '#ffd34d');
+    }
   }
   // Long hair behind the dress.
   for (let y = 13; y < 20; y++) { px(ctx, OXp + 1, OYp + y, 2, 1, pal.h); px(ctx, OXp + 15, OYp + y, 2, 1, pal.h); }
@@ -839,6 +914,10 @@ const HATS = {
   feather: { x: 3, y: -4, rows: ['........r.', '.......rr.', '..oooooro.', '.oggggggo.', 'oggggggggo'] },
   straw:   { x: 1, y: -1, rows: ['....oooooo....', '...oyyyyyyo...', '.ooyyyyyyyyoo.', 'oyyyyyyyyyyyyo'] },
   crown:   { x: 4, y: -4, rows: ['y.y..y.y', 'yyyyyyyy', 'yrybyryy', 'YYYYYYYY'] },
+  wizard:  { x: 2, y: -10, rows: ['.....oo.....', '....occo....', '....occo....', '...occcco...', '...ocyccco..', '..occcccco..', '..occcccyco.', '.occcccccco.', 'oaaaaaaaaaao', '.oooooooooo.'] },
+  leaf:    { x: 3, y: -3, rows: ['....gg....', '..gggggg..', '.gggGgggg.', 'gggggggggg'] },
+  flowerband: { x: 3, y: -1, rows: ['.r..y..r..', 'rgrgygrgrg'] },
+  mushroom: { x: 2, y: -6, rows: ['...oooooo...', '..orrwrrro..', '.orwrrrrwro.', 'orrrrwrrrrro', 'oooooooooooo'] },
 };
 
 const villagerCache = new Map();
@@ -854,7 +933,7 @@ function villagerSprite(lookKey, frame) {
   const pal = {
     o: '#3f2c48', h: look.hair, s: '#ffe0c8', k: '#3a2340', p: '#ffadbc', m: '#d0606a',
     c: look.shirt, d: look.pants, b: shade(look.pants, -40), f: '#6b4a3a', t: '#ffd34d',
-    w: '#ffffff', a: '#c8d2e4', A: '#ffffff', r: '#ff6fa8', g: '#5fc46a', y: look.hat === 'crown' ? '#ffd34d' : '#f2d27a', Y: '#e0a52a',
+    w: '#ffffff', a: '#c8d2e4', A: '#ffffff', r: '#ff6fa8', g: '#5fc46a', G: '#9be88a', y: look.hat === 'crown' ? '#ffd34d' : '#f2d27a', Y: '#e0a52a',
   };
   let rows = VILLAGER.map(r => r.replace(/ /g, 'h'));
   if (look.gown) rows = rows.slice(0, 18).concat(VILLAGER_GOWN_BOTTOM);
@@ -937,4 +1016,54 @@ function drawToyChest(ctx, sc, c, r) {
   px(ctx, m.x - 6, m.y - 20, 5, 5, '#ffffff');
   px(ctx, m.x - 5, m.y - 22, 1, 2, '#ffd34d');
   px(ctx, m.x + 1, m.y - 19, 5, 4, '#9fd0ff');
+}
+
+// Mushroom cottage for the forest: a fat stem with a spotted dome cap.
+function drawMushroomHouse(ctx, cx, cy, cap) {
+  const R = 30;
+  const H = 30;
+  ctx.fillStyle = 'rgba(30,20,60,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 6, cy + 4, R + 4, R / 2 + 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (let dx = -R + 6; dx < R - 6; dx++) {
+    const t = (dx + 0.5) / (R - 6);
+    const e = Math.sqrt(1 - t * t) * (R - 6) / 2;
+    const col = t < -0.4 ? '#e8d8c0' : t > 0.6 ? '#f4e8d4' : '#fff6e6';
+    px(ctx, cx + dx, Math.round(cy - H + e), 1, Math.round(H), col);
+  }
+  // Round door and window.
+  px(ctx, cx - 6, cy - 14, 12, 16, '#8a5a3c');
+  px(ctx, cx - 4, cy - 16, 8, 2, '#8a5a3c');
+  px(ctx, cx - 5, cy - 12, 10, 14, '#a8704a');
+  px(ctx, cx + 2, cy - 6, 2, 2, '#ffd34d');
+  px(ctx, cx + 12, cy - 20, 7, 7, '#5a4a6a');
+  px(ctx, cx + 13, cy - 19, 5, 5, '#fff2a8');
+  // Cap.
+  const top = cy - H - 30;
+  for (let dx = -R - 6; dx < R + 6; dx++) {
+    const t = (dx + 0.5) / (R + 6);
+    const dome = Math.sqrt(Math.max(0, 1 - t * t));
+    const y0 = Math.round(cy - H - dome * 30 + 6);
+    const y1 = Math.round(cy - H + dome * 10 + 8);
+    for (let y = y0; y < y1; y++) {
+      let col = cap;
+      if (t < -0.45) col = shade(cap, -35);
+      else if (t < -0.1) col = shade(cap, -14);
+      if (y < y0 + 4 && t > -0.3 && t < 0.3) col = shade(cap, 26);
+      const sx = Math.floor((dx + 40) / 9);
+      const sy = Math.floor((y - top) / 8);
+      const dot = hash(sx, sy, 41) < 0.35 && ((dx + 40) % 9) > 2 && ((dx + 40) % 9) < 7 && ((y - top) % 8) > 2 && ((y - top) % 8) < 6;
+      if (dot) col = '#ffffff';
+      if (y === y1 - 1) col = shade(cap, -60);
+      px(ctx, cx + dx, y, 1, 1, col);
+    }
+  }
+}
+
+// Little glowing mushrooms scattered on the forest floor.
+function drawGlowShroom(ctx, x, y, color) {
+  px(ctx, x, y - 3, 1, 3, '#f4e8d4');
+  px(ctx, x - 2, y - 5, 5, 2, color);
+  px(ctx, x - 1, y - 6, 3, 1, shade(color, 30));
 }

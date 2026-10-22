@@ -32,6 +32,11 @@ npx http-server -p 8080 .
 - **Wardrobe**: every present is kept. In the throne room, the 🎀 door on
   the right leads to the princess's own room. Tap the wardrobe or the mirror
   to change clothes freely; presents not yet earned show as ❓.
+- **Starlight Forest (level 2)**: a gate at the south end of the main road
+  opens at 10 stars. The forest folk (★ bubble) ask four words that share the
+  first letter (hug / hut / hat / hen), so she has to listen to the vowel and
+  the ending. Only the forest gives out fairy wings, a starlight cape and a
+  night-sky dress. Word families live in `WORD_FAMILIES` in `js/data.js`.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 

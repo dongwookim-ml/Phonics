@@ -94,6 +94,8 @@ function renderGround(sc) {
         case 'wood': drawWood(g, o.x, o.y, sc.floorTint); break;
         case 'carpet': drawCarpet(g, o.x, o.y, t.color || '#ff8fc0', t.edge); break;
         case 'flowers': drawGrass(g, o.x, o.y, c, r, true); break;
+        case 'moss': drawMoss(g, o.x, o.y, c, r, t.flowers); break;
+        case 'path': drawPath(g, o.x, o.y); break;
         default: drawGrass(g, o.x, o.y, c, r, false);
       }
       if (t.mat) {
@@ -101,7 +103,7 @@ function renderGround(sc) {
         const cy = o.y + 8;
         fillPoly(g, diamondPts(o.x, o.y).map(p => ({ x: cx + (p.x - cx) * 0.7, y: cy + (p.y - cy) * 0.7 })), t.mat);
       }
-      if (sc.kind === 'town') {
+      if (sc.outdoor) {
         if (r === sc.D - 1) drawEdge(g, o.x, o.y, 'left', 14);
         if (c === sc.W - 1) drawEdge(g, o.x, o.y, 'right', 14);
       }
@@ -118,6 +120,7 @@ const CASTLE_AT = { c: 15, r: 3, w: 10, d: 7 };
 
 function buildTown() {
   const sc = makeScene('town', TOWN_N, TOWN_N, 150, 60);
+  sc.outdoor = true;
   const N = TOWN_N;
   const reserved = new Set();
   const key = (c, r) => r * N + c;
@@ -212,6 +215,19 @@ function buildTown() {
 
   for (const n of TOWN_NPCS) sc.npcs.push(makeNpc(n, null));
   sc.start = { c: 20, r: 12 };
+
+  // Gate to the Starlight Forest at the south end of the main road.
+  const post = makeGatePost();
+  for (const c of [18, 21]) {
+    const p = tileCenter(sc, c, 38);
+    block(sc, c, 38, 1, 1);
+    sc.objects.push({ c0: c, r0: 38, c1: c, r1: 38, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
+  }
+  for (const c of [19, 20]) for (const r of [38, 39]) tileAt(sc, c, r).mat = '#b8a0e8';
+  sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', needStars: FOREST_STARS }));
+  const gp = tileCenter(sc, 19.5, 38);
+  sc.signs.push({ x: gp.x, y: gp.y - 44, text: '🌲 별빛 숲 마을', color: '#8f70e0', gate: true });
   renderGround(sc);
   return sc;
 }
@@ -436,4 +452,95 @@ function findPath(sc, from, goal, allowBlockedGoal = false) {
     }
   }
   return null;
+}
+
+// ---- Starlight Forest ------------------------------------------------------
+
+const FOREST_N = 30;
+
+function buildForest() {
+  const sc = makeScene('forest', FOREST_N, FOREST_N, 120, 60);
+  sc.outdoor = true;
+  const N = FOREST_N;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    setTile(sc, c, r, 'moss');
+    tileAt(sc, c, r).flowers = hash(c, r, 61) < 0.12;
+  }
+  const reserved = new Set();
+  const key = (c, r) => r * N + c;
+  const reserve = (c, r) => reserved.add(key(c, r));
+  // Winding stone path from the north entrance through the clearing.
+  const path = [];
+  for (let r = 0; r <= 12; r++) path.push([14 + Math.round(Math.sin(r / 3) * 1.5), r]);
+  for (let r = 12; r <= 27; r++) path.push([14 + Math.round(Math.sin(r / 4) * 2), r]);
+  for (const [c, r] of path) for (const dc of [0, 1]) setTile(sc, c + dc, r, 'path');
+  for (let c = 5; c <= 24; c++) setTile(sc, c, 17, 'path');
+  // Clearing around the giant star tree.
+  for (let r = 9; r <= 13; r++) for (let c = 16; c <= 22; c++) if (tileAt(sc, c, r).type === 'moss') tileAt(sc, c, r).flowers = true;
+  // Pond.
+  for (let r = 19; r <= 27; r++) for (let c = 17; c <= 27; c++) {
+    if (((c - 22.5) / 4.2) ** 2 + ((r - 23) / 3.2) ** 2 <= 1) setTile(sc, c, r, 'water');
+  }
+  // Giant star tree.
+  const giant = makeTree('star', 2.2);
+  block(sc, 18, 10, 2, 2);
+  for (let r = 9; r <= 12; r++) for (let c = 17; c <= 20; c++) reserve(c, r);
+  const gc = tileCenter(sc, 18.5, 10.5);
+  sc.objects.push({ c0: 18, r0: 10, c1: 19, r1: 11, tree: true, canvas: giant.canvas, x: gc.x - giant.ax, y: gc.y - giant.ay, w: giant.canvas.width, h: giant.canvas.height });
+  sc.lamps.push({ x: gc.x, y: gc.y - giant.ay * 0.7, big: true });
+  sc.signs.push({ x: gc.x, y: gc.y - giant.ay - 6, text: '⭐', color: '#ffd34d', plain: true, big: true });
+  // Mushroom cottages.
+  for (const [c, r, cap] of [[5, 4, '#ff6b7f'], [22, 3, '#b98cff'], [3, 20, '#ff8fc0'], [9, 9, '#ffb347']]) {
+    block(sc, c, r, 2, 2);
+    for (let rr = r - 1; rr <= r + 2; rr++) for (let cc = c - 1; cc <= c + 2; cc++) reserve(cc, rr);
+    const m = tileCenter(sc, c + 0.5, r + 0.5);
+    addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 44, y: m.y - 80, w: 90, h: 92 }, ctx => drawMushroomHouse(ctx, Math.round(m.x), Math.round(m.y), cap));
+    sc.lamps.push({ x: m.x + 15, y: m.y - 17 });
+  }
+  for (const n of FOREST_NPCS) reserve(n.c, n.r);
+  for (let r = 0; r <= 2; r++) for (let c = 13; c <= 16; c++) reserve(c, r);
+
+  // Glowing mushrooms on the ground.
+  sc.paintGround = g => {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const t = tileAt(sc, c, r);
+      if (t.type !== 'moss' || hash(c, r, 71) > 0.08) continue;
+      const p = tileCenter(sc, c, r);
+      const col = ['#7fe8ff', '#ff9cf0', '#fff6a8'][Math.floor(hash(c, r, 72) * 3)];
+      drawGlowShroom(g, Math.round(p.x - 4), Math.round(p.y + 2), col);
+      drawGlowShroom(g, Math.round(p.x + 3), Math.round(p.y + 4), col);
+      sc.lamps.push({ x: p.x, y: p.y, small: true });
+    }
+  };
+
+  // Dense trees around the edge, a few inside.
+  const trees = [makeTree('star'), makeTree('violet'), makeTree('green')];
+  const nearPath = (c, r) => {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const t = tileAt(sc, c + dc, r + dr);
+      if (t && (t.type === 'path' || t.type === 'water')) return true;
+    }
+    return false;
+  };
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const t = tileAt(sc, c, r);
+    if (t.blocked || reserved.has(key(c, r)) || t.type !== 'moss' || nearPath(c, r)) continue;
+    const ring = c < 2 || r < 2 || c > N - 3 || r > N - 3;
+    if (hash(c, r, 93) >= (ring ? 0.6 : 0.12)) continue;
+    if (!ring && sc.objects.some(o => o.tree && Math.abs(o.c0 - c) <= 1 && Math.abs(o.r0 - r) <= 1)) continue;
+    const tree = trees[Math.floor(hash(c, r, 94) * trees.length)];
+    block(sc, c, r, 1, 1);
+    const p = tileCenter(sc, c, r);
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, tree: true, canvas: tree.canvas, x: p.x - tree.ax, y: p.y - tree.ay, w: tree.canvas.width, h: tree.canvas.height });
+  }
+
+  for (const n of FOREST_NPCS) {
+    const npc = makeNpc(n, null);
+    npc.level = 2;
+    sc.npcs.push(npc);
+  }
+  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰' }));
+  sc.start = { c: 14, r: 1 };
+  renderGround(sc);
+  return sc;
 }

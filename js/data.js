@@ -41,6 +41,7 @@ const DRESS_COLORS = {
   gold:     { name: '황금',   icon: '💛', c: ['#ffd66b', '#e0a83a', '#fff2b8', '#ffffff'] },
   snow:     { name: '하얀',   icon: '🤍', c: ['#ffffff', '#d4d4f0', '#ffffff', '#9fd4ff'] },
   rose:     { name: '빨간',   icon: '❤️', c: ['#ff6b7f', '#cf3f57', '#ffb4c0', '#ffd34d'] },
+  night:    { name: '밤하늘', icon: '🌌', c: ['#5a5ab8', '#3a3a86', '#9a9ae8', '#ffd34d'], forest: true },
 };
 const DRESS_SHAPES = {
   ballgown: { name: '풍성한 드레스', icon: '👗' },
@@ -59,6 +60,12 @@ const HAND_ITEMS = {
   wand:    { name: '별 요술봉', icon: '🪄' },
   bouquet: { name: '꽃다발',   icon: '💐' },
 };
+// Things worn on the back. These only come from the Starlight Forest.
+const BACK_ITEMS = {
+  none:  { name: '없음',       icon: '' },
+  wings: { name: '요정 날개',   icon: '🧚', forest: true },
+  cape:  { name: '별빛 망토',   icon: '✨', forest: true },
+};
 const HAIR_COLORS = {
   brown: { name: '갈색 머리', icon: '🤎', c: ['#7a4a2e', '#a8703f'] },
   black: { name: '까만 머리', icon: '🖤', c: ['#2e2433', '#5a4663'] },
@@ -66,7 +73,7 @@ const HAIR_COLORS = {
   pink:  { name: '분홍 머리', icon: '🌷', c: ['#ff94c4', '#ffd0e6'] },
 };
 
-const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown' };
+const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', back: 'none' };
 
 // ---- People --------------------------------------------------------------
 
@@ -83,6 +90,11 @@ const LOOKS = {
   king:    { hair: '#8a5a3a', shirt: '#d84a6a', pants: '#7a3a8a', hat: 'crown' },
   queen:   { hair: '#f0bb45', shirt: '#b98cff', pants: '#b98cff', hat: 'crown', gown: true },
   maid:    { hair: '#4a3628', shirt: '#4a4a6a', pants: '#ffffff', hat: 'bonnet' },
+  fairy:   { hair: '#ffb0e0', shirt: '#b8f0ff', pants: '#e0c8ff', hat: 'flowerband', gown: true },
+  elf:     { hair: '#f0d070', shirt: '#4fb36a', pants: '#3a7a4a', hat: 'leaf' },
+  wizard:  { hair: '#e8e4ee', shirt: '#6a4ab8', pants: '#4a3a8a', hat: 'wizard' },
+  gnome:   { hair: '#e8e4ee', shirt: '#ff8f5a', pants: '#5a6f8f', hat: 'mushroom' },
+  ranger:  { hair: '#4a3628', shirt: '#8a6a3a', pants: '#4a5a3a', hat: 'leaf' },
 };
 
 // Outdoor villagers ask about any word.
@@ -177,3 +189,57 @@ const PERSONA = {
   queen:  ['Hello, my sweet {name}. Did you have fun in town today?', 'My darling princess, let me hear how well you listen.', 'You look wonderful today, {name}.'],
   maid:   ['Good afternoon, Princess {name}. Shall I give you a word?', 'Your Highness! I have tidied your room. Now, a word game?', 'Hello, Princess! Would you like some tea after this?'],
 };
+
+// ---- Starlight Forest ----------------------------------------------------
+
+// Stars needed before the forest gate at the south end of town opens.
+const FOREST_STARS = 10;
+
+// Forest questions use four words that all start with the same letter, so
+// she has to listen to the middle and the end of the word.
+const WORD_FAMILIES = [
+  [['cat', '🐱'], ['cap', '🧢'], ['can', '🥫'], ['cup', '🥤'], ['cow', '🐮']],
+  [['bat', '🦇'], ['bag', '👜'], ['bed', '🛏️'], ['bus', '🚌'], ['bug', '🐛'], ['box', '📦']],
+  [['dog', '🐶'], ['dot', '⚫'], ['duck', '🦆'], ['dig', '⛏️'], ['doll', '🪆']],
+  [['hat', '🎩'], ['hen', '🐔'], ['hug', '🤗'], ['hut', '🛖'], ['ham', '🍖']],
+  [['map', '🗺️'], ['mop', '🧹'], ['man', '👨'], ['mug', '☕'], ['moon', '🌙']],
+  [['pig', '🐷'], ['pan', '🍳'], ['pen', '🖊️'], ['pin', '📌'], ['pot', '🍲']],
+  [['sun', '☀️'], ['sad', '😢'], ['six', '6️⃣'], ['sock', '🧦'], ['sit', '🪑']],
+  [['top', '🔝'], ['ten', '🔟'], ['tub', '🛁'], ['tap', '🚰'], ['tent', '⛺']],
+  [['rat', '🐀'], ['red', '🟥'], ['run', '🏃'], ['rock', '🪨'], ['ring', '💍']],
+  [['log', '🪵'], ['leg', '🦵'], ['lip', '👄'], ['lamp', '💡'], ['lock', '🔒']],
+  [['net', '🥅'], ['nut', '🥜'], ['nap', '😴'], ['nose', '👃'], ['nine', '9️⃣']],
+  [['fox', '🦊'], ['fish', '🐟'], ['fork', '🍴'], ['foot', '🦶'], ['fun', '🎉']],
+];
+
+const FOREST_NPCS = [
+  { name: '꽃요정',     look: 'fairy',  c: 12, r: 6 },
+  { name: '숲 엘프',     look: 'elf',    c: 20, r: 9 },
+  { name: '별빛 마법사', look: 'wizard', c: 14, r: 15 },
+  { name: '버섯 할아버지', look: 'gnome', c: 6, r: 14 },
+  { name: '숲지기',     look: 'ranger', c: 22, r: 19 },
+  { name: '작은 요정',   look: 'fairy',  c: 9,  r: 22 },
+];
+
+Object.assign(VOICES, {
+  fairy:  { gender: 'female', pitch: 1.75, rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  elf:    { gender: 'male',   pitch: 1.3,  rate: 1.02, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
+  wizard: { gender: 'male',   pitch: 0.6,  rate: 0.8,  voice: ['Gordon', 'Arthur', 'Daniel', 'Microsoft George'] },
+  gnome:  { gender: 'male',   pitch: 1.1,  rate: 0.85, voice: ['Ralph', 'Fred', 'Aaron'] },
+  ranger: { gender: 'female', pitch: 0.95, rate: 0.95, voice: ['Fiona', 'Tessa', 'Karen', 'Microsoft Hazel'] },
+});
+
+Object.assign(PERSONA, {
+  fairy:  ['Twinkle twinkle! Hello, Princess {name}!', 'Hee hee! I was dancing on a flower. Want to play?', 'Sprinkle, sprinkle! A magic word for you!'],
+  elf:    ['Welcome to the Starlight Forest, Princess {name}!', 'Shh, the trees are listening. Are you ready?', 'Ah, a princess! Elves love word puzzles.'],
+  wizard: ['Hmm, hmm. A young princess. Let us test those clever ears.', 'Abracadabra! These words all look alike. Listen very closely.', 'Welcome, Princess {name}. My puzzles are a little tricky.'],
+  gnome:  ['Oh ho! A visitor! Mind the mushrooms, Princess {name}.', 'Hello, little one. I have lived here a hundred years!', 'Psst! Want to hear a secret word?'],
+  ranger: ['Hello, Princess {name}! I look after the forest animals.', 'Did you see the fireflies? Aren\'t they beautiful?', 'Good evening, Princess. Let\'s see how well you listen.'],
+});
+
+LINES.ask2 = [
+  'They all start the same. Listen to the whole word!', 'Listen to the middle sound.', 'Listen carefully to the end of the word.',
+  'Tricky one! Which word is it?', 'Use your super ears!',
+];
+LINES.forest = ['Welcome to the Starlight Forest!', 'Wow, the forest is sparkling!', 'Look at all the fireflies!'];
+LINES.locked = [`Collect ${FOREST_STARS} stars to open the forest gate!`];

@@ -366,3 +366,13 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .wd-mirror { width: 120px; }
   .wd-mirror canvas { width: 88px; height: 136px; }
 }
+
+/* ---- Starlight Forest: twilight sky and cooler light ---- */
+
+body.forest { background: linear-gradient(#2e2a6a, #6a5ab8 45%, #b8a0e8); }
+body.forest .bloom {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(160, 200, 255, 0.5), transparent 55%),
+    radial-gradient(ellipse at 85% 100%, rgba(200, 140, 255, 0.45), transparent 60%);
+}
+body.forest .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }

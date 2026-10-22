@@ -43,6 +43,7 @@ const WARDROBE = [
   { slot: 'head', title: '머리 장식', items: HEADWEAR },
   { slot: 'hand', title: '손에 드는 것', items: HAND_ITEMS },
   { slot: 'hair', title: '머리 색', items: HAIR_COLORS },
+  { slot: 'back', title: '등에 다는 것 (별빛 숲)', items: BACK_ITEMS },
 ];
 
 // ---- Saved progress ------------------------------------------------------
@@ -66,7 +67,7 @@ function ownedFrom(saved, outfit) {
     const set = new Set((saved && saved[slot]) || []);
     set.add(DEFAULT_OUTFIT[slot]);
     set.add(outfit[slot]);
-    if (slot === 'head' || slot === 'hand') set.add('none');
+    if (slot === 'head' || slot === 'hand' || slot === 'back') set.add('none');
     owned[slot] = [...set];
   }
   return owned;
@@ -104,6 +105,7 @@ function sceneFor(target) {
     if (target === 'town') state.scenes[target] = buildTown();
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
     else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
+    else if (target === 'forest') state.scenes[target] = buildForest();
     else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
@@ -174,6 +176,7 @@ function changeScene(target, at, label) {
   ui.fade.classList.add('on');
   later(320, () => {
     state.scene = sceneFor(target);
+    document.body.classList.toggle('forest', state.scene.kind === 'forest');
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);
     snapCamera();
@@ -255,6 +258,19 @@ function shuffle(arr) {
 }
 
 let lastWord = null;
+// Forest question: four words from one family that share the first letter.
+let lastFamily = null;
+function makeFamilyQuestion() {
+  let fam;
+  do fam = pick(WORD_FAMILIES); while (fam === lastFamily && WORD_FAMILIES.length > 1);
+  lastFamily = fam;
+  const four = shuffle(fam.slice()).slice(0, 4);
+  const target = pick(four);
+  const info = LETTERS.find(l => l.letter === target[0][0].toUpperCase()) || LETTERS[0];
+  const options = four.map(w => ({ word: w[0], emoji: w[1], info, right: w === target }));
+  return { info, word: target[0], emoji: target[1], options, done: false, misses: 0, level: 2 };
+}
+
 function makeQuestion(letter) {
   const pool = letter ? LETTERS.filter(l => l.letter === letter) : LETTERS;
   let info;
@@ -291,12 +307,12 @@ function openDialog(npc) {
   faceEachOther(npc);
   state.busy = true;
   state.talking = npc;
-  const q = makeQuestion(npc.letter);
+  const q = npc.level === 2 ? makeFamilyQuestion() : makeQuestion(npc.letter);
   state.question = q;
   drawPortrait(ui.portrait, villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
   const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
-  const ask = line('ask');
+  const ask = line(npc.level === 2 ? 'ask2' : 'ask');
   ui.text.textContent = `${hello} ${ask}`;
   ui.choices.innerHTML = '';
   q.options.forEach((o, i) => {
@@ -363,17 +379,21 @@ function itemLabel(slot, value) {
 }
 
 // New presents first; once everything is collected, anything not being worn.
-function rewardChoices() {
+function rewardChoices(fromForest) {
   const o = state.outfit;
   const fresh = [];
   const worn = [];
   for (const { slot, items } of WARDROBE) {
     for (const value of Object.keys(items)) {
       if (value === 'none' || value === o[slot]) continue;
+      if (items[value].forest && !fromForest) continue;
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
       (r.isNew ? fresh : worn).push(r);
     }
   }
+  // Forest folk hand out their own treasures before anything else.
+  const special = fresh.filter(r => WARDROBE.find(w => w.slot === r.slot).items[r.value].forest);
+  if (fromForest && special.length) return special;
   return fresh.length ? fresh : worn;
 }
 
@@ -392,7 +412,7 @@ function collected() {
 
 function offerReward(npc) {
   // Pick a slot first so dress colours don't crowd out everything else.
-  const all = rewardChoices();
+  const all = rewardChoices(npc && npc.level === 2);
   const slot = pick([...new Set(all.map(r => r.slot))]);
   const gift = pick(all.filter(r => r.slot === slot));
   state.gift = gift;
@@ -450,6 +470,11 @@ function followLink(link) {
   if (link.target === 'yuna') {
     changeScene('yuna', null, `🎀 ${PLAYER.shown}의 방`);
     Sound.say([{ text: line('room') }]);
+  } else if (link.target === 'forest') {
+    changeScene('forest', link.at, '🌲 별빛 숲 마을');
+    Sound.say([{ text: line('forest'), pitch: 1.3 }]);
+  } else if (link.target === 'town') {
+    changeScene('town', link.at, '🌸 소리 마을');
   } else {
     changeScene(link.target, link.at, '🏰 공주님의 성');
   }
@@ -661,6 +686,13 @@ function drawScene(now) {
     else vctx.drawImage(o.canvas, o.x, o.y);
     vctx.globalAlpha = 1;
   }
+
+  // Evening light in the forest; glows are added on top afterwards.
+  if (sc.kind === 'forest') {
+    vctx.setTransform(1, 0, 0, 1, 0, 0);
+    vctx.fillStyle = 'rgba(50,40,130,0.22)';
+    vctx.fillRect(0, 0, view.width, view.height);
+  }
 }
 
 function drawCharacter(ch, now) {
@@ -701,6 +733,20 @@ function glow() {
   return glowSprite;
 }
 
+let fireflySprite = null;
+function firefly() {
+  if (fireflySprite) return fireflySprite;
+  fireflySprite = makeCanvas(64, 64);
+  const g = fireflySprite.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(240,255,190,1)');
+  grad.addColorStop(0.25, 'rgba(190,255,150,0.6)');
+  grad.addColorStop(1, 'rgba(150,255,200,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return fireflySprite;
+}
+
 function drawOverlay(now) {
   const sc = state.scene;
   const s = state.scale;
@@ -711,8 +757,8 @@ function drawOverlay(now) {
   ctx.globalCompositeOperation = 'lighter';
   for (const l of sc.lamps) {
     const p = toScreen(l.x, l.y);
-    const r = (18 + Math.sin(now / 300 + l.x) * 1.5) * s;
-    ctx.globalAlpha = 0.35;
+    const r = ((l.small ? 7 : l.big ? 46 : 18) + Math.sin(now / 300 + l.x) * 1.5) * s;
+    ctx.globalAlpha = l.small ? 0.3 + 0.15 * Math.sin(now / 600 + l.x * 3) : 0.35;
     ctx.drawImage(glow(), p.x - r, p.y - r, r * 2, r * 2);
   }
   ctx.globalAlpha = 1;
@@ -727,7 +773,8 @@ function drawOverlay(now) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (!sg.plain) {
-      const w = ctx.measureText(sg.text).width + 8 * s;
+      const text = sg.gate && state.stars < FOREST_STARS ? `${sg.text} 🔒 ⭐${state.stars}/${FOREST_STARS}` : sg.text;
+      const w = ctx.measureText(text).width + 8 * s;
       const h = 14 * s;
       ctx.strokeStyle = '#6f4430';
       ctx.lineWidth = s;
@@ -745,7 +792,7 @@ function drawOverlay(now) {
       ctx.stroke();
     }
     ctx.fillStyle = shade(sg.color, -60);
-    ctx.fillText(sg.text, p.x, p.y + 0.5 * s);
+    ctx.fillText(sg.gate && state.stars < FOREST_STARS ? `${sg.text} 🔒 ⭐${state.stars}/${FOREST_STARS}` : sg.text, p.x, p.y + 0.5 * s);
   }
   for (const d of sc.decor) {
     const p = toScreen(d.x, d.y);
@@ -779,7 +826,7 @@ function drawOverlay(now) {
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(n.letter ? n.letter : '♪', p.x, p.y + 0.5 * s);
+      ctx.fillText(n.letter ? n.letter : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
     }
   }
 
@@ -826,10 +873,11 @@ function drawOverlay(now) {
 
   // Light motes.
   ctx.globalCompositeOperation = 'lighter';
+  const forest = sc.kind === 'forest';
   for (const m of state.motes) {
-    const r = (3 + m.s * 5) * s * (0.8 + 0.2 * Math.sin(now / 500 + m.ph));
-    ctx.globalAlpha = 0.18 + 0.12 * Math.sin(now / 700 + m.ph);
-    ctx.drawImage(glow(), m.x * screen.width - r, m.y * screen.height - r, r * 2, r * 2);
+    const r = (3 + m.s * 5) * s * (0.8 + 0.2 * Math.sin(now / 500 + m.ph)) * (forest ? 0.7 : 1);
+    ctx.globalAlpha = (forest ? 0.45 : 0.18) + 0.12 * Math.sin(now / (forest ? 300 : 700) + m.ph);
+    ctx.drawImage(forest ? firefly() : glow(), m.x * screen.width - r, m.y * screen.height - r, r * 2, r * 2);
   }
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
@@ -863,6 +911,12 @@ function onPointer(e) {
   // Doors between rooms, such as the castle to the princess's room.
   const link = (sc.links || []).find(l => l.c === t.c && l.r === t.r);
   if (link) {
+    if (link.needStars && state.stars < link.needStars) {
+      Sound.wrong();
+      showPlace(`🔒 별 ${link.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
+      Sound.say([{ text: line('locked') }]);
+      return;
+    }
     walkTo((c, r) => c === link.c && r === link.r, () => followLink(link));
     return;
   }
@@ -956,7 +1010,7 @@ ui.mute.addEventListener('click', () => {
   ui.mute.textContent = muted ? '🔇' : '🔊';
 });
 addEventListener('keydown', e => {
-  if (!ui.dialog.classList.contains('hidden') && ['1', '2', '3'].includes(e.key)) {
+  if (!ui.dialog.classList.contains('hidden') && ['1', '2', '3', '4'].includes(e.key)) {
     const i = Number(e.key) - 1;
     const b = ui.choices.children[i];
     if (b) choose(i, b);
