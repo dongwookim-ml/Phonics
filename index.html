@@ -6,41 +6,67 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>PixelTown</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Jua&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <canvas id="game"></canvas>
 
+  <!-- HD-2D style finish: tilt-shift blur, warm bloom and a soft vignette. -->
+  <div class="fx tilt top"></div>
+  <div class="fx tilt bottom"></div>
+  <div class="fx bloom"></div>
+  <div class="fx vignette"></div>
+
   <header class="hud">
-    <div id="stars" class="stars" aria-label="stars">
-      <span class="icon">⭐</span><span class="count">0</span><span class="dots"></span>
-    </div>
-    <nav class="modes">
-      <button id="mode-explore" class="mode active" title="마을 구경">🏡</button>
-      <button id="mode-quest" class="mode" title="단어 찾기">🎯</button>
-      <button id="mute" class="mode" title="소리 켜기/끄기">🔊</button>
+    <div id="stars" class="stars"><span>⭐</span><span class="count">0</span></div>
+    <nav class="buttons">
+      <button id="pictures" class="btn" title="그림 힌트 켜기/끄기">🖼️</button>
+      <button id="mute" class="btn" title="소리 켜기/끄기">🔊</button>
     </nav>
   </header>
 
-  <section id="quest" class="card hidden" aria-live="polite">
-    <div id="quest-emoji" class="emoji">🐶</div>
-    <div id="quest-word" class="word"></div>
-    <button id="replay" class="replay" title="다시 듣기">🔊</button>
+  <div id="place" class="place"></div>
+  <div id="fade" class="fade"></div>
+
+  <section id="dialog" class="dialog hidden">
+    <div class="portrait"><canvas id="dlg-portrait"></canvas></div>
+    <div class="body">
+      <div id="dlg-name" class="name"></div>
+      <div id="dlg-text" class="text"></div>
+      <div id="dlg-choices" class="choices"></div>
+    </div>
+    <div class="side">
+      <button id="dlg-replay" class="round" title="다시 듣기">🔊</button>
+      <button id="dlg-close" class="round small" title="닫기">✖</button>
+    </div>
   </section>
 
-  <div id="party" class="party">🎉</div>
+  <section id="reward" class="reward hidden">
+    <div id="rw-title" class="title"></div>
+    <div id="rw-name" class="gift"></div>
+    <div class="previews">
+      <figure><canvas id="pv-now"></canvas><figcaption>지금</figcaption></figure>
+      <div class="arrow">➜</div>
+      <figure class="new"><canvas id="pv-new"></canvas><figcaption>바꾸면</figcaption></figure>
+    </div>
+    <div class="answer">
+      <button id="rw-yes" class="yes">바꿀래요 💖</button>
+      <button id="rw-no" class="no">그대로 할래요</button>
+    </div>
+  </section>
 
   <div id="start" class="start">
-    <h1>Pixel<span>Town</span></h1>
-    <p class="sub">🦄 소리 마을에 놀러 가요!</p>
+    <canvas id="start-preview" class="preview"></canvas>
+    <h1>윤아 공주의<br><span>소리 마을</span></h1>
     <button id="start-btn" class="start-btn">▶</button>
-    <p class="tip">🏡 집을 눌러 소리를 들어요 · 🎯 그림에 맞는 집을 찾아요</p>
+    <p class="tip">마을 사람을 누르면 단어를 들려줘요 · 집을 누르면 안으로 들어가요</p>
   </div>
 
   <script src="js/data.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/sprites.js"></script>
+  <script src="js/world.js"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

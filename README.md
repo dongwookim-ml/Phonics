@@ -1,8 +1,8 @@
-# PixelTown 🦄
+# PixelTown 🏰
 
-A quarter-view (isometric) pixel-art town where a young child practices
-phonics. Every house belongs to a letter; tap it to hear the letter's sound
-and a word that starts with it. A little unicorn walks around town with you.
+윤아 공주의 소리 마을: a quarter-view (isometric) pixel-art town where a
+young child practises English phonics as a princess. The look is inspired by
+HD-2D games such as Octopath Traveler, made brighter and more princess-like.
 
 ## Play
 
@@ -13,27 +13,31 @@ It works best on a tablet in landscape. To serve it on a local network:
 npx http-server -p 8080 .
 ```
 
-## Modes
+## How it works
 
-- 🏡 **Explore**: tap a house. It bounces and says, for example,
-  "B. buh, buh. bus!" with a picture bubble. Tap the grass or road to walk
-  the unicorn around, and tap the unicorn to say hi.
-- 🎯 **Find**: a picture card shows a word with its first letter hidden
-  (`?og`). The child taps the house that starts the word. A right answer
-  fills in the letter and earns a star; every 5 stars there is a party.
-  After two wrong tries the right house glows and the voice gives the
-  starting sound as a hint. 🔊 on the card repeats the word.
+- The town is 40 x 40 tiles and the camera follows the princess. Tap the
+  ground to walk there.
+- **Castle**: the princess's home at the top of town. Tap it to walk to the
+  gate and go inside the throne room, where the king, the queen and a maid live.
+- **Houses**: there are twelve letter houses (A B C D F G H M N P S T). Tap a
+  house to walk in. Each house's resident asks words that start with that
+  house's letter, and the wall shows the letter and its pictures.
+- **Villagers** (♪ bubble): tap one to talk. They say a word out loud and
+  the child picks the matching word from **1, 2, 3**. A wrong pick is
+  greyed out and the word is said again.
+- **Presents**: every right answer offers a present, which can be a dress
+  colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
+  colour. The child sees "now" and "after" side by side and chooses
+  바꿀래요 (change) or 그대로 (keep). There is no inventory.
+- 🖼️ toggles picture hints on the answer cards (easier). With it off, the
+  child has to read the first letter.
 
-Stars are saved in the browser.
+Stars, the outfit and the hint setting are saved in the browser.
 
 ## Customizing
 
-Everything content-related lives in `js/data.js`:
-
-- `LETTERS`: the letter, its spoken sound, roof colour, and example words.
-- `TOWN_MAP`: the 12 x 12 layout. Lowercase letters place houses; the tile
-  under each house (one row down) must be road `=` so the unicorn can reach
-  the door.
+Content lives in `js/data.js`: the princess's name, the letters and words,
+the wardrobe options, the villagers and the house positions.
 
 ### Recorded voices
 
@@ -49,7 +53,8 @@ Any missing file falls back to the speech voice.
 
 ## Files
 
-- `js/data.js`: letters, words, map
-- `js/sprites.js`: pixel-art drawing (tiles, houses, trees, unicorn)
+- `js/data.js`: content and settings
+- `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
+- `js/world.js`: town and room layouts, pathfinding
 - `js/audio.js`: speech and sound effects
-- `js/game.js`: game loop, input, quest logic
+- `js/game.js`: game loop, camera, input, dialogs, presents

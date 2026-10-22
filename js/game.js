@@ -1,308 +1,363 @@
-// PixelTown main loop: town map, unicorn friend, tapping and word quests.
-
-const WORLD_W = 400;
-const WORLD_H = 250;
-const OX = 184; // world x of tile (0, 0)'s bounding box
-const OY = 48;  // world y of tile (0, 0)'s bounding box
-const MAP_N = TOWN_MAP.length;
+// PixelTown main loop: scrolling town, princess movement, doors,
+// villager word questions and outfit rewards.
 
 const screen = document.getElementById('game');
 const sctx = screen.getContext('2d');
-const world = document.createElement('canvas');
-world.width = WORLD_W;
-world.height = WORLD_H;
-const wctx = world.getContext('2d');
-const ground = document.createElement('canvas');
-ground.width = WORLD_W;
-ground.height = WORLD_H;
+const view = document.createElement('canvas');
+const vctx = view.getContext('2d');
 
 const ui = {
   start: document.getElementById('start'),
   startBtn: document.getElementById('start-btn'),
+  startPreview: document.getElementById('start-preview'),
   stars: document.getElementById('stars'),
-  explore: document.getElementById('mode-explore'),
-  quest: document.getElementById('mode-quest'),
+  pictures: document.getElementById('pictures'),
   mute: document.getElementById('mute'),
-  card: document.getElementById('quest'),
-  cardEmoji: document.getElementById('quest-emoji'),
-  cardWord: document.getElementById('quest-word'),
-  replay: document.getElementById('replay'),
-  party: document.getElementById('party'),
+  fade: document.getElementById('fade'),
+  place: document.getElementById('place'),
+  dialog: document.getElementById('dialog'),
+  portrait: document.getElementById('dlg-portrait'),
+  name: document.getElementById('dlg-name'),
+  text: document.getElementById('dlg-text'),
+  choices: document.getElementById('dlg-choices'),
+  replay: document.getElementById('dlg-replay'),
+  close: document.getElementById('dlg-close'),
+  reward: document.getElementById('reward'),
+  rewardTitle: document.getElementById('rw-title'),
+  rewardName: document.getElementById('rw-name'),
+  pvNow: document.getElementById('pv-now'),
+  pvNew: document.getElementById('pv-new'),
+  rewardYes: document.getElementById('rw-yes'),
+  rewardNo: document.getElementById('rw-no'),
 };
 
-// ---- Town setup ---------------------------------------------------------
+// ---- Saved progress ------------------------------------------------------
 
-const tiles = [];
-const houses = [];
-const trees = [];
-for (let r = 0; r < MAP_N; r++) {
-  tiles.push([]);
-  for (let c = 0; c < MAP_N; c++) {
-    const ch = TOWN_MAP[r][c];
-    let type = 'grass';
-    if (ch === '=') type = 'road';
-    else if (ch === '~') type = 'water';
-    tiles[r].push({ type, flowers: ch === ',', blocked: ch !== '=' && ch !== '.' && ch !== ',' });
-    if (ch === 'T') trees.push({ c, r });
-    const info = LETTERS.find(l => l.letter.toLowerCase() === ch);
-    if (info) houses.push({ c, r, info, door: { c, r: r + 1 }, anim: null, wordIndex: 0 });
+const SAVE_KEY = 'pixeltown-v2';
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+    return {
+      outfit: Object.assign({}, DEFAULT_OUTFIT, s.outfit),
+      stars: s.stars | 0,
+      pictures: !!s.pictures,
+    };
+  } catch (e) {
+    return { outfit: Object.assign({}, DEFAULT_OUTFIT), stars: 0, pictures: false };
   }
 }
-
-function tileOrigin(c, r) {
-  return { x: OX + (c - r) * 16, y: OY + (c + r) * 8 };
-}
-function tileCenter(c, r) {
-  return { x: OX + 16 + (c - r) * 16, y: OY + 8 + (c + r) * 8 };
-}
-function worldToTile(wx, wy) {
-  const u = (wx - OX - 16) / 16;
-  const v = (wy - OY - 8) / 8;
-  return { c: Math.round((u + v) / 2), r: Math.round((v - u) / 2) };
-}
-function walkable(c, r) {
-  return c >= 0 && r >= 0 && c < MAP_N && r < MAP_N && !tiles[r][c].blocked;
+function save() {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, stars: state.stars, pictures: state.pictures })); } catch (e) { /* private mode */ }
 }
 
-function buildGround() {
-  const g = ground.getContext('2d');
-  for (let r = 0; r < MAP_N; r++) {
-    for (let c = 0; c < MAP_N; c++) {
-      const t = tiles[r][c];
-      const o = tileOrigin(c, r);
-      if (t.type === 'road') drawRoad(g, o.x, o.y, c, r);
-      else if (t.type === 'grass') drawGrass(g, o.x, o.y, c, r, t.flowers);
-      if (r === MAP_N - 1) drawEdge(g, o.x, o.y, 'left');
-      if (c === MAP_N - 1) drawEdge(g, o.x, o.y, 'right');
-    }
-  }
-}
+// ---- State ---------------------------------------------------------------
 
-// ---- State --------------------------------------------------------------
-
+const saved = load();
 const state = {
-  mode: 'explore',
-  stars: loadStars(),
-  quest: null,
-  uni: { c: START_TILE.c, r: START_TILE.r, path: [], flip: false, frame: 0, hop: 0 },
-  bubbles: [],
+  outfit: saved.outfit,
+  stars: saved.stars,
+  pictures: saved.pictures,
+  scenes: {},
+  scene: null,
+  hero: { c: 0, r: 0, path: [], flip: false, frame: 0, onArrive: null },
+  cam: { x: 0, y: 0 },
+  scale: 4,
+  busy: false,       // a dialog, reward or scene change is showing
+  question: null,
   particles: [],
+  ripples: [],
+  motes: [],
+  lastWater: 0,
   timers: [],
 };
 
-function loadStars() {
-  try { return parseInt(localStorage.getItem('pixeltown-stars') || '0', 10) || 0; } catch (e) { return 0; }
-}
-function saveStars() {
-  try { localStorage.setItem('pixeltown-stars', String(state.stars)); } catch (e) { /* private mode */ }
-}
+function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
 
-function later(ms, fn) {
-  state.timers.push(setTimeout(fn, ms));
-}
-function clearTimers() {
-  state.timers.forEach(clearTimeout);
-  state.timers = [];
-}
-
-// ---- Unicorn walking ----------------------------------------------------
-
-function findPath(from, to) {
-  const key = (c, r) => r * MAP_N + c;
-  const prev = new Map([[key(from.c, from.r), null]]);
-  const queue = [from];
-  while (queue.length) {
-    const cur = queue.shift();
-    if (cur.c === to.c && cur.r === to.r) {
-      const path = [];
-      for (let k = key(cur.c, cur.r); k !== null; k = prev.get(k)) path.unshift({ c: k % MAP_N, r: Math.floor(k / MAP_N) });
-      return path.slice(1);
-    }
-    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const n = { c: cur.c + dc, r: cur.r + dr };
-      if (walkable(n.c, n.r) && !prev.has(key(n.c, n.r))) {
-        prev.set(key(n.c, n.r), key(cur.c, cur.r));
-        queue.push(n);
-      }
-    }
+function sceneFor(target) {
+  if (!state.scenes[target]) {
+    if (target === 'town') state.scenes[target] = buildTown();
+    else if (target === 'castle') state.scenes[target] = buildCastleInterior();
+    else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
+    // Back-to-front order for static objects; room walls go first.
+    state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
   }
-  return [];
+  return state.scenes[target];
 }
 
-function walkTo(target) {
-  const u = state.uni;
-  const from = u.path.length ? u.path[0] : { c: Math.round(u.c), r: Math.round(u.r) };
-  u.path = (u.path.length ? [u.path[0]] : []).concat(findPath(from, target));
+function placeHero(c, r) {
+  Object.assign(state.hero, { c, r, path: [], onArrive: null });
 }
 
-function updateUnicorn(dt) {
-  const u = state.uni;
-  u.hop = Math.max(0, u.hop - dt);
-  if (!u.path.length) { u.frame = 0; return; }
-  const next = u.path[0];
-  const dc = next.c - u.c;
-  const dr = next.r - u.r;
+function snapCamera() {
+  const t = cameraTarget();
+  state.cam.x = t.x;
+  state.cam.y = t.y;
+}
+
+// ---- Movement ------------------------------------------------------------
+
+function heroTile() {
+  const h = state.hero;
+  return h.path.length ? h.path[0] : { c: Math.round(h.c), r: Math.round(h.r) };
+}
+
+// Walks to the nearest tile that satisfies goal(c, r), then calls onArrive.
+function walkTo(goal, onArrive, allowBlockedGoal = false) {
+  const h = state.hero;
+  const from = heroTile();
+  const path = findPath(state.scene, from, goal, allowBlockedGoal);
+  if (!path) return false;
+  // If she is between tiles, finish the current step before the new path.
+  h.path = (h.path.length ? [h.path[0]] : []).concat(path);
+  h.onArrive = onArrive || null;
+  if (!h.path.length && onArrive) { h.onArrive = null; onArrive(); }
+  return true;
+}
+
+function updateHero(dt) {
+  const h = state.hero;
+  if (!h.path.length) { h.frame = 0; return; }
+  const next = h.path[0];
+  const dc = next.c - h.c;
+  const dr = next.r - h.r;
   const dist = Math.hypot(dc, dr);
-  const step = 4 * dt;
-  if (Math.abs(dc - dr) > 0.01) u.flip = dc - dr < 0;
+  const step = 4.2 * dt;
+  if (Math.abs(dc - dr) > 0.01) h.flip = dc - dr < 0;
   if (dist <= step) {
-    u.c = next.c;
-    u.r = next.r;
-    u.path.shift();
+    h.c = next.c;
+    h.r = next.r;
+    h.path.shift();
+    Sound.step();
+    if (!h.path.length && h.onArrive) {
+      const cb = h.onArrive;
+      h.onArrive = null;
+      cb();
+    }
   } else {
-    u.c += (dc / dist) * step;
-    u.r += (dr / dist) * step;
+    h.c += (dc / dist) * step;
+    h.r += (dr / dist) * step;
   }
-  u.frame = Math.floor(performance.now() / 140) % 2;
+  h.frame = Math.floor(performance.now() / 160) % 2;
 }
 
-// ---- Effects ------------------------------------------------------------
+// ---- Scenes and doors ----------------------------------------------------
 
-function animateHouse(h, type) {
-  h.anim = { type, t0: performance.now() };
+function changeScene(target, at, label) {
+  state.busy = true;
+  ui.fade.classList.add('on');
+  later(320, () => {
+    state.scene = sceneFor(target);
+    const spot = at || state.scene.start;
+    placeHero(spot.c, spot.r);
+    snapCamera();
+    ui.fade.classList.remove('on');
+    state.busy = false;
+    showPlace(label);
+  });
 }
 
-function houseOffset(h, now) {
-  if (!h.anim) return { lift: 0, dx: 0 };
-  const t = (now - h.anim.t0) / 1000;
-  if (h.anim.type === 'bounce') {
-    if (t > 0.9) { h.anim = null; return { lift: 0, dx: 0 }; }
-    return { lift: Math.round(Math.abs(Math.sin(t * Math.PI * 3.3)) * 6 * (1 - t / 0.9)), dx: 0 };
+function showPlace(text) {
+  if (!text) return;
+  ui.place.textContent = text;
+  ui.place.classList.remove('show');
+  void ui.place.offsetWidth;
+  ui.place.classList.add('show');
+}
+
+function enterDoor(door) {
+  Sound.door();
+  if (door.target === 'castle') {
+    changeScene('castle', null, '🏰 공주님의 성');
+    Sound.say([{ text: 'Welcome home, Princess!', pitch: 1.3 }]);
+  } else {
+    const info = door.obj.info;
+    changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} 집`);
+    Sound.say([{ text: `The ${info.letter} house!` }, letterSound(info)]);
   }
-  if (t > 0.45) { h.anim = null; return { lift: 0, dx: 0 }; }
-  return { lift: 0, dx: Math.round(Math.sin(t * 45) * 2) };
 }
 
-function burst(wx, wy, count, spread = 1) {
-  const colors = ['#ff6fa8', '#ffd84a', '#7fd3ff', '#9be07f', '#c86fe8', '#ffffff'];
-  for (let i = 0; i < count; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const s = (30 + Math.random() * 70) * spread;
-    state.particles.push({
-      x: wx, y: wy, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 60 * spread,
-      life: 1 + Math.random() * 0.6, color: colors[i % colors.length], star: Math.random() < 0.3,
-    });
+function leaveRoom() {
+  const sc = state.scene;
+  Sound.door();
+  if (sc.house) {
+    const h = sc.house;
+    changeScene('town', { c: h.c + 1, r: h.r + 3 }, '🌸 소리 마을');
+  } else {
+    changeScene('town', { c: 19, r: 10 }, '🌸 소리 마을');
   }
 }
 
-function updateParticles(dt) {
-  for (const p of state.particles) {
-    p.vy += 140 * dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.life -= dt;
-  }
-  state.particles = state.particles.filter(p => p.life > 0);
-  state.bubbles = state.bubbles.filter(b => performance.now() < b.until);
-}
-
-function showBubble(h, text) {
-  state.bubbles = state.bubbles.filter(b => b.house !== h);
-  state.bubbles.push({ house: h, text, until: performance.now() + 2600 });
-}
-
-// ---- Phonics ------------------------------------------------------------
+// ---- Words ---------------------------------------------------------------
 
 function rec(kind, name) {
   return `audio/${kind}/${name.toLowerCase()}.mp3`;
 }
-
 function letterSound(info) {
   return { text: `${info.sound}, ${info.sound}`, file: rec('letters', info.letter), rate: 0.7 };
 }
-
-function tapHouseExplore(h) {
-  const [word, emoji] = h.info.words[h.wordIndex % h.info.words.length];
-  h.wordIndex++;
-  animateHouse(h, 'bounce');
-  showBubble(h, `${emoji} ${word}`);
-  Sound.tap();
-  Sound.say([{ text: h.info.letter, rate: 0.8 }, letterSound(h.info), { text: `${word}!`, file: rec('words', word) }]);
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
-function newQuest() {
-  const last = state.quest && state.quest.info;
-  const choices = LETTERS.filter(l => l !== last);
-  const info = choices[Math.floor(Math.random() * choices.length)];
-  const [word, emoji] = info.words[Math.floor(Math.random() * info.words.length)];
-  state.quest = { info, word, emoji, tries: 0, solved: false };
-  ui.cardEmoji.textContent = emoji;
-  setCardWord(false);
-  ui.card.classList.remove('solved', 'hint');
-  askQuest();
+let lastWord = null;
+function makeQuestion(letter) {
+  const pool = letter ? LETTERS.filter(l => l.letter === letter) : LETTERS;
+  let info;
+  let word;
+  for (let i = 0; i < 10; i++) {
+    info = pick(pool);
+    word = pick(info.words);
+    if (word[0] !== lastWord) break;
+  }
+  lastWord = word[0];
+  const others = shuffle(LETTERS.filter(l => l !== info)).slice(0, 2);
+  const options = shuffle([
+    { word: word[0], emoji: word[1], info, right: true },
+    ...others.map(o => { const w = pick(o.words); return { word: w[0], emoji: w[1], info: o, right: false }; }),
+  ]);
+  return { info, word: word[0], emoji: word[1], options, done: false, misses: 0 };
 }
 
-function askQuest() {
-  const q = state.quest;
-  if (!q) return;
-  Sound.say([{ text: 'Find the house for' }, { text: `${q.word}.`, file: rec('words', q.word) }]);
+// ---- Dialog --------------------------------------------------------------
+
+function talkTo(npc) {
+  const isNext = (c, r) => Math.abs(c - npc.c) + Math.abs(r - npc.r) === 1;
+  const ok = walkTo(isNext, () => openDialog(npc));
+  if (!ok) openDialog(npc);
 }
 
-function setCardWord(revealed) {
-  const q = state.quest;
-  const first = q.word[0];
-  ui.cardWord.innerHTML = '';
-  const head = document.createElement('span');
-  head.className = revealed ? 'first' : 'blank';
-  head.textContent = revealed ? first : '?';
-  ui.cardWord.append(head, document.createTextNode(q.word.slice(1)));
+function faceEachOther(npc) {
+  const h = state.hero;
+  const dx = (npc.c - npc.r) - (h.c - h.r);
+  if (dx !== 0) { h.flip = dx < 0; npc.flip = dx > 0; }
 }
 
-function tapHouseQuest(h) {
-  const q = state.quest;
-  if (!q || q.solved) return;
-  if (h.info === q.info) {
-    q.solved = true;
-    state.stars++;
-    saveStars();
-    renderStars(true);
-    setCardWord(true);
-    ui.card.classList.add('solved');
-    ui.card.classList.remove('hint');
-    animateHouse(h, 'bounce');
-    showBubble(h, `${q.emoji} ${q.word}`);
-    const top = tileCenter(h.c, h.r);
-    burst(top.x, top.y - 30, 26);
+function openDialog(npc) {
+  faceEachOther(npc);
+  state.busy = true;
+  state.talking = npc;
+  const q = makeQuestion(npc.letter);
+  state.question = q;
+  drawPortrait(ui.portrait, villagerSprite(npc.look, 0));
+  ui.name.textContent = npc.name;
+  ui.text.textContent = npc.letter
+    ? `${npc.letter} 소리 집이에요. 잘 듣고 골라 봐요!`
+    : `${PLAYER.shown} 공주님, 잘 듣고 골라 봐요!`;
+  ui.choices.innerHTML = '';
+  q.options.forEach((o, i) => {
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.innerHTML = `<span class="num">${i + 1}</span><span class="pic">${o.emoji}</span><span class="w"><span class="first">${o.word[0]}</span>${o.word.slice(1)}</span>`;
+    b.classList.toggle('pictures', state.pictures);
+    b.addEventListener('click', () => choose(i, b));
+    ui.choices.append(b);
+  });
+  ui.dialog.classList.remove('hidden');
+  ui.reward.classList.add('hidden');
+  const greet = npc.letter
+    ? [{ text: `Hello, Princess ${PLAYER.spoken}! This is the ${npc.letter} house.` }, letterSound(q.info), { text: 'Listen!' }]
+    : [{ text: `Hello, Princess ${PLAYER.spoken}! Listen!` }];
+  Sound.say(greet.concat([{ text: q.word, file: rec('words', q.word), rate: 0.72 }]));
+}
+
+function askAgain() {
+  const q = state.question;
+  if (q) Sound.say([{ text: q.word, file: rec('words', q.word), rate: 0.72 }]);
+}
+
+function choose(i, btn) {
+  const q = state.question;
+  if (!q || q.done || btn.disabled) return;
+  const o = q.options[i];
+  if (o.right) {
+    q.done = true;
+    btn.classList.add('right');
+    ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
+    ui.text.textContent = `딩동댕! ${o.emoji} ${o.word}`;
     Sound.correct();
-    Sound.say([{ text: 'Yes!' }, { text: h.info.letter }, letterSound(h.info), { text: `${q.word}!`, file: rec('words', q.word) }]);
-    const party = state.stars % STARS_PER_PARTY === 0;
-    later(3200, () => {
-      if (party) celebrate();
-      later(party ? 3500 : 0, () => { if (state.mode === 'quest') newQuest(); });
-    });
+    Sound.say([{ text: 'Yes!' }, { text: `${o.word}!`, file: rec('words', o.word) }]);
+    state.stars++;
+    save();
+    renderStars(true);
+    burstAtHero(30);
+    later(1700, () => offerReward(state.talking));
   } else {
-    q.tries++;
-    animateHouse(h, 'wiggle');
+    q.misses++;
+    btn.disabled = true;
+    btn.classList.add('wrong');
     Sound.wrong();
-    const parts = [{ text: `This is ${h.info.letter},` }, letterSound(h.info)];
-    if (q.tries >= 2) {
-      ui.card.classList.add('hint');
-      parts.push({ text: `${q.word} starts with` }, letterSound(q.info));
-    } else {
-      parts.push({ text: 'Try again!' });
-    }
-    Sound.say(parts);
+    ui.text.textContent = '앗, 다시 들어 볼까요?';
+    Sound.say([{ text: `That says ${o.word}.` }, { text: 'Listen!' }, { text: q.word, file: rec('words', q.word), rate: 0.72 }]);
   }
 }
 
-function celebrate() {
+function closeDialog() {
+  ui.dialog.classList.add('hidden');
+  ui.reward.classList.add('hidden');
+  state.busy = false;
+  state.question = null;
+  state.talking = null;
+}
+
+// ---- Rewards -------------------------------------------------------------
+
+function rewardChoices() {
+  const o = state.outfit;
+  const list = [];
+  for (const [k, v] of Object.entries(DRESS_COLORS)) if (k !== o.dress) list.push({ slot: 'dress', value: k, label: `${v.icon} ${v.name} 드레스` });
+  for (const [k, v] of Object.entries(DRESS_SHAPES)) if (k !== o.shape) list.push({ slot: 'shape', value: k, label: `${v.icon} ${v.name}` });
+  for (const [k, v] of Object.entries(HEADWEAR)) if (k !== 'none' && k !== o.head) list.push({ slot: 'head', value: k, label: `${v.icon} ${v.name}` });
+  for (const [k, v] of Object.entries(HAND_ITEMS)) if (k !== 'none' && k !== o.hand) list.push({ slot: 'hand', value: k, label: `${v.icon} ${v.name}` });
+  for (const [k, v] of Object.entries(HAIR_COLORS)) if (k !== o.hair) list.push({ slot: 'hair', value: k, label: `${v.icon} ${v.name}` });
+  return list;
+}
+
+function offerReward(npc) {
+  // Pick a slot first so dress colours don't crowd out everything else.
+  const all = rewardChoices();
+  const slot = pick([...new Set(all.map(r => r.slot))]);
+  const gift = pick(all.filter(r => r.slot === slot));
+  state.gift = gift;
+  const next = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
+  ui.rewardTitle.textContent = `🎁 ${npc ? npc.name : ''}의 선물!`;
+  ui.rewardName.textContent = gift.label;
+  drawPortrait(ui.pvNow, princessSprite(state.outfit, 0));
+  drawPortrait(ui.pvNew, princessSprite(next, 0));
+  ui.dialog.classList.add('hidden');
+  ui.reward.classList.remove('hidden');
   Sound.party();
-  Sound.say([{ text: `Hooray! ${STARS_PER_PARTY} more stars!`, pitch: 1.3 }]);
-  ui.party.classList.add('show');
-  for (let i = 0; i < 6; i++) later(i * 250, () => burst(60 + Math.random() * 280, 40 + Math.random() * 80, 30, 1.3));
-  later(3000, () => ui.party.classList.remove('show'));
+  Sound.say([{ text: 'A present for you! Do you want to try it?', pitch: 1.3 }]);
+}
+
+function acceptReward(yes) {
+  if (yes && state.gift) {
+    state.outfit = Object.assign({}, state.outfit, { [state.gift.slot]: state.gift.value });
+    save();
+    burstAtHero(50);
+    Sound.correct();
+    Sound.say([{ text: 'So pretty!', pitch: 1.4 }]);
+  } else {
+    Sound.say([{ text: 'Okay!' }]);
+  }
+  state.gift = null;
+  closeDialog();
+}
+
+function drawPortrait(cv, sprite) {
+  const ctx = cv.getContext('2d');
+  cv.width = sprite.canvas.width;
+  cv.height = sprite.canvas.height;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(sprite.canvas, 0, 0);
 }
 
 function renderStars(pop) {
   ui.stars.querySelector('.count').textContent = state.stars;
-  const dots = ui.stars.querySelector('.dots');
-  dots.innerHTML = '';
-  const filled = state.stars % STARS_PER_PARTY;
-  for (let i = 0; i < STARS_PER_PARTY; i++) {
-    const d = document.createElement('span');
-    d.className = i < filled ? 'on' : '';
-    dots.append(d);
-  }
   if (pop) {
     ui.stars.classList.remove('pop');
     void ui.stars.offsetWidth;
@@ -310,125 +365,171 @@ function renderStars(pop) {
   }
 }
 
-function setMode(mode) {
-  clearTimers();
-  state.bubbles = [];
-  state.mode = mode;
-  ui.explore.classList.toggle('active', mode === 'explore');
-  ui.quest.classList.toggle('active', mode === 'quest');
-  ui.card.classList.toggle('hidden', mode !== 'quest');
-  document.body.classList.toggle('questing', mode === 'quest');
-  resize();
-  if (mode === 'quest') newQuest();
-  else {
-    state.quest = null;
-    Sound.say([{ text: 'Tap a house to hear its sound!' }]);
+// ---- Effects -------------------------------------------------------------
+
+function heroWorld() {
+  return tileCenter(state.scene, state.hero.c, state.hero.r);
+}
+
+function burstAtHero(count) {
+  const p = heroWorld();
+  const colors = ['#ff6fa8', '#ffd34d', '#9fd0ff', '#c7a4ff', '#ffffff', '#9be88a'];
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 20 + Math.random() * 60;
+    state.particles.push({ x: p.x, y: p.y - 16, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, life: 1 + Math.random() * 0.7, color: colors[i % colors.length], star: i % 3 === 0 });
   }
 }
 
-// ---- Input --------------------------------------------------------------
-
-let view = { scale: 1, x: 0, y: 0, dpr: 1 };
-
-function houseBox(h) {
-  const o = tileOrigin(h.c, h.r);
-  return { x0: o.x, x1: o.x + 32, y0: o.y - 46, y1: o.y + 16 };
-}
-
-function onPointer(e) {
-  Sound.unlock();
-  const wx = (e.clientX * view.dpr - view.x) / view.scale;
-  const wy = (e.clientY * view.dpr - view.y) / view.scale;
-
-  // Houses nearer the viewer are drawn on top, so test them first.
-  const sorted = houses.slice().sort((a, b) => (b.c + b.r) - (a.c + a.r));
-  for (const h of sorted) {
-    const b = houseBox(h);
-    if (wx >= b.x0 && wx <= b.x1 && wy >= b.y0 && wy <= b.y1) {
-      walkTo(h.door);
-      if (state.mode === 'quest') tapHouseQuest(h);
-      else tapHouseExplore(h);
-      return;
-    }
+function updateEffects(dt, now) {
+  for (const p of state.particles) {
+    p.vy += 90 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
   }
-
-  const u = state.uni;
-  const uc = tileCenter(u.c, u.r);
-  if (Math.abs(wx - uc.x) < 10 && wy > uc.y - 18 && wy < uc.y + 3) {
-    u.hop = 0.5;
-    Sound.tap();
-    Sound.say([{ text: 'Hi! I love letters!', pitch: 1.4 }]);
-    return;
+  state.particles = state.particles.filter(p => p.life > 0);
+  state.ripples = state.ripples.filter(r => now - r.t0 < 500);
+  // Floating light motes, the soft dust of light that fills the air.
+  while (state.motes.length < 46) {
+    state.motes.push({ x: Math.random(), y: Math.random(), s: 0.4 + Math.random() * 0.9, ph: Math.random() * 6, sp: 0.01 + Math.random() * 0.02 });
   }
-
-  const t = worldToTile(wx, wy);
-  if (walkable(t.c, t.r)) {
-    Sound.step();
-    walkTo(t);
+  for (const m of state.motes) {
+    m.y -= m.sp * dt;
+    m.x += Math.sin(now / 1800 + m.ph) * 0.004 * dt;
+    if (m.y < -0.05) { m.y = 1.05; m.x = Math.random(); }
   }
 }
 
-// ---- Rendering ----------------------------------------------------------
+// ---- Camera and view -----------------------------------------------------
+
+function cameraTarget() {
+  const sc = state.scene;
+  const p = heroWorld();
+  const vw = view.width;
+  const vh = view.height;
+  let x = p.x - vw / 2;
+  let y = p.y - vh * 0.55;
+  x = sc.width <= vw ? (sc.width - vw) / 2 : Math.max(0, Math.min(sc.width - vw, x));
+  y = sc.height <= vh ? (sc.height - vh) / 2 : Math.max(0, Math.min(sc.height - vh, y));
+  return { x, y };
+}
 
 function resize() {
   const dpr = window.devicePixelRatio || 1;
   screen.width = Math.round(innerWidth * dpr);
   screen.height = Math.round(innerHeight * dpr);
-  const top = 70 * dpr;
-  const bottom = (state.mode === 'quest' ? ui.card.offsetHeight + 24 : 12) * dpr;
-  const availH = screen.height - top - bottom;
-  const scale = Math.max(0.5, Math.min(screen.width / WORLD_W, availH / WORLD_H));
-  view = {
-    dpr,
-    scale,
-    x: Math.round((screen.width - WORLD_W * scale) / 2),
-    y: Math.round(top + (availH - WORLD_H * scale) / 2),
-  };
-}
-
-function renderWorld(now) {
-  const t = now / 1000;
-  wctx.clearRect(0, 0, WORLD_W, WORLD_H);
-  wctx.drawImage(ground, 0, 0);
-  for (let r = 0; r < MAP_N; r++) {
-    for (let c = 0; c < MAP_N; c++) {
-      if (tiles[r][c].type !== 'water') continue;
-      const o = tileOrigin(c, r);
-      drawWater(wctx, o.x, o.y, c, r, t);
-    }
-  }
-
-  // Door mats glow softly under the house that answers the current quest
-  // once the child has had a couple of tries.
-  const q = state.quest;
-  const hintHouse = q && !q.solved && q.tries >= 2 ? houses.find(h => h.info === q.info) : null;
-  if (hintHouse) {
-    const o = tileOrigin(hintHouse.door.c, hintHouse.door.r);
-    if (Math.floor(t * 3) % 2) drawDiamond(wctx, o.x, o.y, 'rgba(255,240,120,0.55)');
-  }
-
-  const objects = [];
-  for (const h of houses) objects.push({ depth: h.c + h.r, draw: () => {
-    const off = houseOffset(h, now);
-    h.apex = drawHouse(wctx, tileOrigin(h.c, h.r).x, tileOrigin(h.c, h.r).y, h.info, off.lift, off.dx, h === hintHouse);
-  } });
-  for (const tr of trees) objects.push({ depth: tr.c + tr.r, draw: () => {
-    const o = tileOrigin(tr.c, tr.r);
-    drawTree(wctx, o.x, o.y, 0);
-  } });
-  const u = state.uni;
-  objects.push({ depth: u.c + u.r + 0.1, draw: () => {
-    const p = tileCenter(u.c, u.r);
-    const bob = !u.path.length && Math.sin(t * 3) > 0 ? -1 : 0;
-    const hop = u.hop > 0 ? Math.round(Math.sin((0.5 - u.hop) / 0.5 * Math.PI) * 6) : 0;
-    drawUnicorn(wctx, Math.round(p.x), Math.round(p.y + 2 + bob - hop), u.frame, u.flip);
-  } });
-  objects.sort((a, b) => a.depth - b.depth);
-  objects.forEach(o => o.draw());
+  // Integer zoom keeps the pixels square; aim for ~270 world pixels tall.
+  state.scale = Math.max(2, Math.round(Math.min(screen.height / 270, screen.width / 300)));
+  view.width = Math.ceil(screen.width / state.scale);
+  view.height = Math.ceil(screen.height / state.scale);
+  if (state.scene) snapCamera();
 }
 
 function toScreen(wx, wy) {
-  return { x: view.x + wx * view.scale, y: view.y + wy * view.scale };
+  return { x: (wx - Math.round(state.cam.x)) * state.scale, y: (wy - Math.round(state.cam.y)) * state.scale };
+}
+
+// ---- Drawing -------------------------------------------------------------
+
+const heroBox = { w: 22, h: 34 };
+
+function overlaps(o, x, y, w, h) {
+  return o.x < x + w && o.x + o.w > x && o.y < y + h && o.y + o.h > y;
+}
+
+function drawScene(now) {
+  const sc = state.scene;
+  const t = now / 1000;
+  const cx = Math.round(state.cam.x);
+  const cy = Math.round(state.cam.y);
+  vctx.setTransform(1, 0, 0, 1, 0, 0);
+  vctx.clearRect(0, 0, view.width, view.height);
+  vctx.setTransform(1, 0, 0, 1, -cx, -cy);
+  vctx.drawImage(sc.ground, 0, 0);
+
+  if (sc.water.length) {
+    if (now - state.lastWater > 120 || state.lastWaterScene !== sc) {
+      const w = sc.waterLayer.getContext('2d');
+      w.clearRect(0, 0, sc.waterLayer.width, sc.waterLayer.height);
+      for (const { c, r } of sc.water) {
+        const o = tileOrigin(sc, c, r);
+        drawWaterTile(w, o.x, o.y, c, r, t);
+      }
+      state.lastWater = now;
+      state.lastWaterScene = sc;
+    }
+    vctx.drawImage(sc.waterLayer, 0, 0);
+  }
+
+  // Drifting cloud shadows outdoors.
+  if (sc.kind === 'town') {
+    vctx.fillStyle = 'rgba(70,60,120,0.07)';
+    for (let i = 0; i < 4; i++) {
+      const x = ((t * 6 + i * 420) % (sc.width + 400)) - 200;
+      const y = 200 + i * 160 + Math.sin(t * 0.1 + i) * 30;
+      vctx.beginPath();
+      vctx.ellipse(x, y, 120, 46, 0, 0, Math.PI * 2);
+      vctx.fill();
+    }
+  }
+
+  // Depth-sorted objects and characters.
+  const vx = cx - 40;
+  const vy = cy - 40;
+  const vw = view.width + 80;
+  const vh = view.height + 80;
+  const list = sc.objects.filter(o => overlaps(o, vx, vy, vw, vh));
+  const chars = sc.npcs.map(n => ({ isChar: true, npc: n, c: n.c, r: n.r }));
+  chars.push({ isChar: true, hero: true, c: state.hero.c, r: state.hero.r });
+  chars.sort((a, b) => (a.c + a.r) - (b.c + b.r));
+  for (const ch of chars) {
+    const p = tileCenter(sc, ch.c, ch.r);
+    const bx = p.x - heroBox.w / 2;
+    const by = p.y - heroBox.h;
+    let idx = 0;
+    for (let i = 0; i < list.length; i++) {
+      const o = list[i];
+      if (o.isChar) { if (o.c + o.r <= ch.c + ch.r) idx = i + 1; continue; }
+      if (o.background) { idx = Math.max(idx, i + 1); continue; }
+      if (!overlaps(o, bx, by, heroBox.w, heroBox.h + 4)) continue;
+      if (ch.c > o.c1 + 0.5 || ch.r > o.r1 + 0.5) idx = i + 1;
+    }
+    list.splice(idx, 0, ch);
+  }
+
+  // Anything drawn over the princess fades so she never gets lost behind a house.
+  const hp = heroWorld();
+  const hx = hp.x - heroBox.w / 2;
+  const hy = hp.y - heroBox.h;
+  let heroDrawn = false;
+  for (const o of list) {
+    if (o.isChar) {
+      drawCharacter(o, now);
+      if (o.hero) heroDrawn = true;
+      continue;
+    }
+    const over = heroDrawn && !o.background && overlaps(o, hx, hy, heroBox.w, heroBox.h) && (!o.canvas || hitObject(o, hp.x, hp.y - 14) || hitObject(o, hp.x, hp.y - 4));
+    o.fade = Math.max(0.45, Math.min(1, (o.fade || 1) + (over ? -0.08 : 0.08)));
+    vctx.globalAlpha = o.fade;
+    if (o.animated) o.animated(vctx, t);
+    else vctx.drawImage(o.canvas, o.x, o.y);
+    vctx.globalAlpha = 1;
+  }
+}
+
+function drawCharacter(ch, now) {
+  const sc = state.scene;
+  const p = tileCenter(sc, ch.c, ch.r);
+  if (ch.hero) {
+    const h = state.hero;
+    const bob = h.path.length ? (h.frame ? -1 : 0) : 0;
+    drawSprite(vctx, princessSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
+  } else {
+    const n = ch.npc;
+    const idle = Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0;
+    drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
+  }
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -441,104 +542,261 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function renderOverlay(now) {
-  const s = view.scale;
-  const q = state.quest;
-  // Letter badges above each roof.
-  for (const h of houses) {
-    if (!h.apex) continue;
-    const p = toScreen(h.apex.x, h.apex.y - 8);
-    const hint = q && !q.solved && q.tries >= 2 && h.info === q.info;
-    const rad = 8.5 * s * (hint ? 1 + 0.12 * Math.sin(now / 120) : 1);
-    sctx.fillStyle = 'rgba(0,0,0,0.18)';
-    sctx.beginPath();
-    sctx.arc(p.x, p.y + s, rad, 0, Math.PI * 2);
-    sctx.fill();
-    sctx.fillStyle = hint ? '#fff6a8' : '#ffffff';
-    sctx.strokeStyle = h.info.roof;
-    sctx.lineWidth = 1.6 * s;
-    sctx.beginPath();
-    sctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
-    sctx.fill();
-    sctx.stroke();
-    sctx.fillStyle = shade(h.info.roof, -50);
-    sctx.font = `800 ${Math.round(9 * s)}px "Baloo 2", "Trebuchet MS", sans-serif`;
-    sctx.textAlign = 'center';
-    sctx.textBaseline = 'middle';
-    sctx.fillText(h.info.letter + h.info.letter.toLowerCase(), p.x, p.y + 0.6 * s);
-  }
-
-  // Word bubbles.
-  for (const b of state.bubbles) {
-    const h = b.house;
-    if (!h.apex) continue;
-    const p = toScreen(h.apex.x, h.apex.y - 30);
-    sctx.font = `700 ${Math.round(9 * s)}px "Baloo 2", "Trebuchet MS", sans-serif`;
-    const w = sctx.measureText(b.text).width + 12 * s;
-    const hgt = 16 * s;
-    const fade = Math.min(1, (b.until - now) / 300);
-    sctx.globalAlpha = fade;
-    sctx.fillStyle = '#ffffff';
-    sctx.strokeStyle = '#3a2f5b';
-    sctx.lineWidth = 1 * s;
-    roundRect(sctx, p.x - w / 2, p.y - hgt / 2, w, hgt, 5 * s);
-    sctx.fill();
-    sctx.stroke();
-    sctx.beginPath();
-    sctx.moveTo(p.x - 3 * s, p.y + hgt / 2 - 0.5);
-    sctx.lineTo(p.x, p.y + hgt / 2 + 4 * s);
-    sctx.lineTo(p.x + 3 * s, p.y + hgt / 2 - 0.5);
-    sctx.fill();
-    sctx.fillStyle = '#3a2f5b';
-    sctx.textAlign = 'center';
-    sctx.textBaseline = 'middle';
-    sctx.fillText(b.text, p.x, p.y + 0.5 * s);
-    sctx.globalAlpha = 1;
-  }
-
-  // Confetti.
-  for (const p of state.particles) {
-    const sp = toScreen(p.x, p.y);
-    sctx.globalAlpha = Math.min(1, p.life * 2);
-    sctx.fillStyle = p.color;
-    const size = (p.star ? 3 : 2) * s;
-    sctx.fillRect(Math.round(sp.x), Math.round(sp.y), size, size);
-  }
-  sctx.globalAlpha = 1;
+let glowSprite = null;
+function glow() {
+  if (glowSprite) return glowSprite;
+  glowSprite = makeCanvas(64, 64);
+  const g = glowSprite.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,250,220,1)');
+  grad.addColorStop(0.3, 'rgba(255,230,200,0.5)');
+  grad.addColorStop(1, 'rgba(255,220,200,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return glowSprite;
 }
+
+function drawOverlay(now) {
+  const sc = state.scene;
+  const s = state.scale;
+  const ctx = sctx;
+  const font = '"Baloo 2", "Trebuchet MS", sans-serif';
+
+  // Lamp and window glows.
+  ctx.globalCompositeOperation = 'lighter';
+  for (const l of sc.lamps) {
+    const p = toScreen(l.x, l.y);
+    const r = (18 + Math.sin(now / 300 + l.x) * 1.5) * s;
+    ctx.globalAlpha = 0.35;
+    ctx.drawImage(glow(), p.x - r, p.y - r, r * 2, r * 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  // House signs and room posters.
+  for (const sg of sc.signs) {
+    const p = toScreen(sg.x, sg.y);
+    if (p.x < -200 || p.y < -200 || p.x > screen.width + 200 || p.y > screen.height + 200) continue;
+    const fs = (sg.big ? 22 : 11) * s;
+    ctx.font = `800 ${fs}px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (!sg.plain) {
+      const w = ctx.measureText(sg.text).width + 8 * s;
+      const h = 14 * s;
+      ctx.strokeStyle = '#6f4430';
+      ctx.lineWidth = s;
+      ctx.beginPath();
+      ctx.moveTo(p.x - w / 3, p.y - h / 2);
+      ctx.lineTo(p.x - w / 3, p.y - h / 2 - 4 * s);
+      ctx.moveTo(p.x + w / 3, p.y - h / 2);
+      ctx.lineTo(p.x + w / 3, p.y - h / 2 - 4 * s);
+      ctx.stroke();
+      ctx.fillStyle = '#fff4e0';
+      ctx.strokeStyle = sg.color;
+      ctx.lineWidth = 1.5 * s;
+      roundRect(ctx, p.x - w / 2, p.y - h / 2, w, h, 3 * s);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.fillStyle = shade(sg.color, -60);
+    ctx.fillText(sg.text, p.x, p.y + 0.5 * s);
+  }
+  for (const d of sc.decor) {
+    const p = toScreen(d.x, d.y);
+    ctx.fillStyle = '#b07a50';
+    ctx.fillRect(p.x - 9 * s, p.y - 9 * s, 18 * s, 18 * s);
+    ctx.fillStyle = '#fffaf0';
+    ctx.fillRect(p.x - 7.5 * s, p.y - 7.5 * s, 15 * s, 15 * s);
+    ctx.font = `${10 * s}px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(d.emoji, p.x, p.y + s);
+  }
+
+  // Speech bubbles over villagers so she knows who to visit.
+  if (!state.busy) {
+    for (const n of sc.npcs) {
+      const w = tileCenter(sc, n.c, n.r);
+      const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#4a2c4f';
+      ctx.lineWidth = s * 0.8;
+      roundRect(ctx, p.x - 7 * s, p.y - 5 * s, 14 * s, 10 * s, 4 * s);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(p.x - 2 * s, p.y + 5 * s - 1);
+      ctx.lineTo(p.x, p.y + 8 * s);
+      ctx.lineTo(p.x + 2 * s, p.y + 5 * s - 1);
+      ctx.fill();
+      ctx.fillStyle = '#ff6fa8';
+      ctx.font = `800 ${7 * s}px ${font}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.letter ? n.letter : '♪', p.x, p.y + 0.5 * s);
+    }
+  }
+
+  // Exit mats inside rooms get a bobbing arrow.
+  if (sc.exit && !state.busy) {
+    const w = tileCenter(sc, sc.exit.c + (sc.exitTiles ? 0.5 : 0), sc.exit.r);
+    const p = toScreen(w.x, w.y + 10 + Math.sin(now / 250) * 2);
+    ctx.font = `${9 * s}px ${font}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🚪', p.x, p.y);
+  }
+
+  // Tap ripples.
+  for (const r of state.ripples) {
+    const k = (now - r.t0) / 500;
+    ctx.strokeStyle = `rgba(255,255,255,${1 - k})`;
+    ctx.lineWidth = 2 * s * (1 - k) + 1;
+    ctx.beginPath();
+    ctx.ellipse(r.x, r.y, (4 + k * 10) * s, (2 + k * 5) * s, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Sparkles.
+  for (const p of state.particles) {
+    const q = toScreen(p.x, p.y);
+    ctx.globalAlpha = Math.min(1, p.life * 1.5);
+    ctx.fillStyle = p.color;
+    const z = (p.star ? 2 : 1.5) * s;
+    if (p.star) {
+      ctx.fillRect(q.x - z / 2, q.y - z * 1.5, z, z * 3);
+      ctx.fillRect(q.x - z * 1.5, q.y - z / 2, z * 3, z);
+    } else ctx.fillRect(q.x, q.y, z, z);
+  }
+  ctx.globalAlpha = 1;
+
+  // Light motes.
+  ctx.globalCompositeOperation = 'lighter';
+  for (const m of state.motes) {
+    const r = (3 + m.s * 5) * s * (0.8 + 0.2 * Math.sin(now / 500 + m.ph));
+    ctx.globalAlpha = 0.18 + 0.12 * Math.sin(now / 700 + m.ph);
+    ctx.drawImage(glow(), m.x * screen.width - r, m.y * screen.height - r, r * 2, r * 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// ---- Input ---------------------------------------------------------------
+
+function onPointer(e) {
+  Sound.unlock();
+  if (state.busy) return;
+  const sc = state.scene;
+  const dpr = window.devicePixelRatio || 1;
+  const sx = e.clientX * dpr;
+  const sy = e.clientY * dpr;
+  const wx = sx / state.scale + Math.round(state.cam.x);
+  const wy = sy / state.scale + Math.round(state.cam.y);
+  state.ripples.push({ x: sx, y: sy, t0: performance.now() });
+
+  // Villagers first: they are small and stand in front of things.
+  for (const n of sc.npcs) {
+    const p = tileCenter(sc, n.c, n.r);
+    if (Math.abs(wx - p.x) < 10 && wy > p.y - 44 && wy < p.y + 4) {
+      Sound.tap();
+      talkTo(n);
+      return;
+    }
+  }
+
+  // Exit mat in a room.
+  const t = worldToTile(sc, wx, wy);
+  const exits = sc.exitTiles || (sc.exit ? [sc.exit] : []);
+  if (exits.some(x => x.c === t.c && x.r === t.r)) {
+    walkTo((c, r) => exits.some(x => x.c === c && x.r === r), leaveRoom);
+    return;
+  }
+
+  // Buildings with doors: walk to the door and go in.
+  const hits = sc.objects.filter(o => !o.background && o.canvas && hitObject(o, wx, wy));
+  for (let i = hits.length - 1; i >= 0; i--) {
+    const doors = sc.doors.filter(d => d.obj === hits[i]);
+    if (doors.length) {
+      Sound.tap();
+      walkTo((c, r) => doors.some(d => d.c === c && d.r === r), () => {
+        const here = heroTile();
+        enterDoor(doors.find(d => d.c === here.c && d.r === here.r) || doors[0]);
+      });
+      return;
+    }
+  }
+
+  if (walkable(sc, t.c, t.r)) walkTo((c, r) => c === t.c && r === t.r);
+}
+
+function worldToTile(sc, wx, wy) {
+  const u = (wx - sc.ox - 16) / 16;
+  const v = (wy - sc.oy - 8) / 8;
+  return { c: Math.round((u + v) / 2), r: Math.round((v - u) / 2) };
+}
+
+// ---- Loop ----------------------------------------------------------------
 
 let lastTime = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
-  updateUnicorn(dt);
-  updateParticles(dt);
-  renderWorld(now);
-  sctx.setTransform(1, 0, 0, 1, 0, 0);
-  sctx.clearRect(0, 0, screen.width, screen.height);
-  sctx.imageSmoothingEnabled = false;
-  sctx.drawImage(world, view.x, view.y, WORLD_W * view.scale, WORLD_H * view.scale);
-  renderOverlay(now);
+  if (state.scene) {
+    updateHero(dt);
+    updateEffects(dt, now);
+    const target = cameraTarget();
+    const k = Math.min(1, dt * 6);
+    state.cam.x += (target.x - state.cam.x) * k;
+    state.cam.y += (target.y - state.cam.y) * k;
+    drawScene(now);
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.clearRect(0, 0, screen.width, screen.height);
+    sctx.imageSmoothingEnabled = false;
+    sctx.drawImage(view, 0, 0, view.width * state.scale, view.height * state.scale);
+    drawOverlay(now);
+  }
   requestAnimationFrame(frame);
 }
 
-// ---- Boot ---------------------------------------------------------------
+// ---- Boot ----------------------------------------------------------------
 
-buildGround();
-renderStars(false);
+function setPictures(on) {
+  state.pictures = on;
+  ui.pictures.classList.toggle('active', on);
+  ui.choices.querySelectorAll('.choice').forEach(b => b.classList.toggle('pictures', on));
+  save();
+}
+
 resize();
 addEventListener('resize', resize);
+state.scene = sceneFor('town');
+placeHero(state.scene.start.c, state.scene.start.r);
+snapCamera();
+renderStars(false);
+setPictures(state.pictures);
+drawPortrait(ui.startPreview, princessSprite(state.outfit, 0));
+
 screen.addEventListener('pointerdown', onPointer);
-ui.explore.addEventListener('click', () => { Sound.tap(); setMode('explore'); });
-ui.quest.addEventListener('click', () => { Sound.tap(); setMode('quest'); });
-ui.replay.addEventListener('click', () => { Sound.tap(); askQuest(); });
+ui.replay.addEventListener('click', () => { Sound.tap(); askAgain(); });
+ui.close.addEventListener('click', () => { Sound.tap(); closeDialog(); });
+ui.rewardYes.addEventListener('click', () => acceptReward(true));
+ui.rewardNo.addEventListener('click', () => acceptReward(false));
+ui.pictures.addEventListener('click', () => { Sound.tap(); setPictures(!state.pictures); });
 ui.mute.addEventListener('click', () => {
   const muted = Sound.toggleMute();
   ui.mute.textContent = muted ? '🔇' : '🔊';
 });
+addEventListener('keydown', e => {
+  if (!ui.dialog.classList.contains('hidden') && ['1', '2', '3'].includes(e.key)) {
+    const i = Number(e.key) - 1;
+    const b = ui.choices.children[i];
+    if (b) choose(i, b);
+  }
+});
 ui.startBtn.addEventListener('click', () => {
   Sound.unlock();
   ui.start.classList.add('hidden');
-  Sound.say([{ text: 'Welcome to Pixel Town! Tap a house to hear its sound!', pitch: 1.3 }]);
+  showPlace('🌸 소리 마을');
+  Sound.say([{ text: `Good morning, Princess ${PLAYER.spoken}! Let's visit the town!`, pitch: 1.3 }]);
 });
 requestAnimationFrame(frame);
