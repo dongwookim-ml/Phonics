@@ -50,6 +50,15 @@ npx http-server -p 8080 .
   middle sound (c ? t), the missing last sound (ca ?), reading a word with
   no voice and picking its picture, and rhymes. Only the forest gives out fairy wings, a starlight cape and a
   night-sky dress. Word families live in `WORD_FAMILIES` in `js/data.js`.
+- **Unicorn Village (level 3)**: a gate at the south end of the forest path
+  opens at 25 stars. The unicorns and their friends (♥ bubble) ask sentence
+  questions: hear "The cow says moo." and pick *cow* from words that sound
+  alike, or hear "I eat a red, hmm hmm." and pick the word that makes sense.
+  Sentences live in `SENTENCES` in `js/data.js`.
+- **Unicorns**: right answers in the Unicorn Village give one of eight
+  unicorns. Tap 🦄 (top right) or the waiting unicorn to ride, which is
+  faster than walking. She gets off at the door of a house or the castle and
+  the unicorn waits outside. Pick which unicorn to ride in the wardrobe.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 

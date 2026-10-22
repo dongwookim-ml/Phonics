@@ -169,9 +169,52 @@ const Quiz = (() => {
     },
   };
 
+  // Sentences: "The {} is hot." with the blank shown as a line.
+  function sentenceParts(x) {
+    const [before, after] = x.s.split('{}');
+    return { before, after, full: before + x.w[0] + after };
+  }
+  const blankHtml = x => { const p = sentenceParts(x); return `<span class="clue-sentence">${p.before}<span class="blank wide">?</span>${p.after}</span>`; };
+  const filledHtml = x => { const p = sentenceParts(x); return `<span class="clue-sentence">${p.before}<span class="first">${x.w[0]}</span>${p.after}</span>`; };
+  const plainCard = w => `<span class="w">${w}</span>`;
+  Object.assign(builders, {
+    // She hears the whole sentence and picks the word she heard from
+    // words that sound alike.
+    sentence() {
+      const x = pick(fresh(SENTENCES, x => x.w[0]));
+      const full = { text: sentenceParts(x).full, rate: 0.8 };
+      const opts = shuffle([x.w[0], ...x.alike]);
+      return {
+        target: x.w[0], clue: blankHtml(x),
+        ask: [{ text: line('sentence') }, { pause: 700 }, full],
+        replay: [full],
+        options: opts.map(w => ({ html: plainCard(w), right: w === x.w[0], wrong: w })),
+        answer: [full],
+        solved: filledHtml(x),
+      };
+    },
+    // The blank is hummed, so she has to pick the word that makes sense.
+    meaning() {
+      const x = pick(fresh(SENTENCES, x => x.w[0]));
+      const p = sentenceParts(x);
+      const hum = [{ text: p.before, rate: 0.8 }, { pause: 250 }, { text: 'hmm, hmm', rate: 0.8 }, { pause: 250 }];
+      if (p.after.replace(/[.!?\s]/g, '')) hum.push({ text: p.after, rate: 0.8 });
+      const opts = shuffle([x.w, ...x.other]);
+      const lead = line('meaning');
+      return {
+        target: x.w[0], clue: blankHtml(x),
+        ask: [{ text: lead }, { pause: 600 }].concat(hum),
+        replay: hum,
+        options: opts.map(([w, e]) => ({ html: wordCard(w, e), right: w === x.w[0], wrong: w, alwaysPictures: true })),
+        answer: [{ text: p.full, rate: 0.8 }],
+        solved: filledHtml(x),
+      };
+    },
+  });
+
   // Picks a kind of question this person didn't ask last time.
   function make(npc) {
-    const kinds = QUIZ_TYPES[npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
+    const kinds = QUIZ_TYPES[npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
     const choices = kinds.filter(k => k !== npc.lastQuiz);
     const kind = pick(choices.length ? choices : kinds);
     npc.lastQuiz = kind;

@@ -97,6 +97,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   box-shadow: 0 4px 0 rgba(74, 44, 79, 0.25);
 }
 .btn.active { background: #ffe27a; }
+.btn.hidden { display: none; }
 .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(74, 44, 79, 0.25); }
 
 .place {
@@ -155,7 +156,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   border: 3px solid var(--ink);
   border-radius: 16px;
 }
-.portrait canvas { width: 80px; height: 136px; image-rendering: pixelated; }
+.portrait canvas { width: 80px; height: 136px; image-rendering: pixelated; object-fit: contain; }
 .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .name { font-size: 20px; color: var(--accent); }
 .text { font-size: 20px; line-height: 1.25; }
@@ -211,6 +212,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .clue-word.big { font-size: 52px; letter-spacing: 5px; }
 .clue-word .first { color: var(--accent); }
 .clue-word .blank { display: inline-block; min-width: 0.8em; color: #e0a52a; border-bottom: 4px solid #e0a52a; text-align: center; }
+.clue-sentence { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 30px; line-height: 1.25; text-align: center; }
+.clue-sentence .first { color: var(--accent); }
+.clue-sentence .blank.wide { display: inline-block; min-width: 2.6em; margin: 0 0.15em; color: #e0a52a; border-bottom: 4px solid #e0a52a; text-align: center; }
 .clue-letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 52px; color: var(--accent); line-height: 1.1; }
 .side { display: flex; flex-direction: column; gap: 8px; justify-content: space-between; }
 .round {
@@ -250,7 +254,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   border-radius: 18px;
 }
 .previews figure.new { background: #fff4b8; border-color: #e0a52a; animation: glow 1.4s ease-in-out infinite; }
-.previews canvas { width: 110px; height: 170px; image-rendering: pixelated; }
+.previews canvas { width: 110px; height: 170px; image-rendering: pixelated; object-fit: contain; }
 .previews figcaption { font-size: 18px; }
 .previews .arrow { font-size: 34px; }
 .answer { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
@@ -343,10 +347,11 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .dialog { flex-wrap: wrap; }
   .portrait { width: 64px; }
   .portrait canvas { width: 56px; height: 95px; }
-  .choice .w { font-size: 26px; }
+  .choice .w { font-size: 22px; letter-spacing: 0; overflow-wrap: anywhere; }
   .choice .bigpic { font-size: 42px; }
   .clue-pic, .clue-word, .clue-letter { font-size: 34px; }
   .clue-word.big { font-size: 40px; }
+  .clue-sentence { font-size: 21px; }
   .start { gap: 6px; justify-content: flex-start; overflow-y: auto; }
   .start .preview { width: 80px; height: 124px; }
   .start-btn { width: 88px; height: 88px; font-size: 40px; margin: 4px 0; }
@@ -393,7 +398,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   border-radius: 90px 90px 24px 24px;
   background: linear-gradient(#e6f7ff, #fff);
 }
-.wd-mirror canvas { width: 132px; height: 204px; image-rendering: pixelated; }
+.wd-mirror canvas { width: 132px; height: 204px; image-rendering: pixelated; object-fit: contain; }
 .wd-slots { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .wd-title { font-size: 17px; margin-bottom: 3px; }
 .wd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -431,6 +436,8 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 /* ---- Starlight Forest: twilight sky and cooler light ---- */
 
+body.unicorn { background: linear-gradient(#ffd6ec, #e4d8ff 50%, #c8f0ff); }
+body.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 150, 200, 0.35)); }
 body.forest { background: linear-gradient(#2e2a6a, #6a5ab8 45%, #b8a0e8); }
 body.forest .bloom {
   background:

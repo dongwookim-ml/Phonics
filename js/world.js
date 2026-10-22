@@ -96,6 +96,8 @@ function renderGround(sc) {
         case 'flowers': drawGrass(g, o.x, o.y, c, r, true); break;
         case 'moss': drawMoss(g, o.x, o.y, c, r, t.flowers); break;
         case 'path': drawPath(g, o.x, o.y); break;
+        case 'meadow': drawMeadow(g, o.x, o.y, c, r, t.flowers); break;
+        case 'rainbow': drawRainbowPath(g, o.x, o.y, Math.floor(t.band / 2)); break;
         default: drawGrass(g, o.x, o.y, c, r, false);
       }
       if (t.mat) {
@@ -217,19 +219,24 @@ function buildTown() {
   sc.start = { c: 20, r: 12 };
 
   // Gate to the Starlight Forest at the south end of the main road.
-  const post = makeGatePost();
-  for (const c of [18, 21]) {
-    const p = tileCenter(sc, c, 38);
-    block(sc, c, 38, 1, 1);
-    sc.objects.push({ c0: c, r0: 38, c1: c, r1: 38, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
-    sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
-  }
-  for (const c of [19, 20]) for (const r of [38, 39]) tileAt(sc, c, r).mat = '#b8a0e8';
+  addGate(sc, [18, 21], 38, '#b8a0e8');
   sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', needStars: FOREST_STARS }));
   const gp = tileCenter(sc, 19.5, 38);
-  sc.signs.push({ x: gp.x, y: gp.y - 44, text: '🌲 별빛 숲 마을', color: '#8f70e0', gate: true });
+  sc.signs.push({ x: gp.x, y: gp.y - 44, text: '🌲 별빛 숲 마을', color: '#8f70e0', needStars: FOREST_STARS });
   renderGround(sc);
   return sc;
+}
+
+// Two gate posts at columns `cols` on row r, with a coloured mat between.
+function addGate(sc, cols, r, mat) {
+  const post = makeGatePost();
+  for (const c of cols) {
+    const p = tileCenter(sc, c, r);
+    block(sc, c, r, 1, 1);
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
+  }
+  for (let c = cols[0] + 1; c < cols[1]; c++) for (const rr of [r, r + 1]) if (tileAt(sc, c, rr)) tileAt(sc, c, rr).mat = mat;
 }
 
 function makeNpc(def, letter) {
@@ -472,7 +479,7 @@ function buildForest() {
   // Winding stone path from the north entrance through the clearing.
   const path = [];
   for (let r = 0; r <= 12; r++) path.push([14 + Math.round(Math.sin(r / 3) * 1.5), r]);
-  for (let r = 12; r <= 27; r++) path.push([14 + Math.round(Math.sin(r / 4) * 2), r]);
+  for (let r = 12; r <= 29; r++) path.push([r >= 26 ? 15 : 14 + Math.round(Math.sin(r / 4) * 2), r]);
   for (const [c, r] of path) for (const dc of [0, 1]) setTile(sc, c + dc, r, 'path');
   for (let c = 5; c <= 24; c++) setTile(sc, c, 17, 'path');
   // Clearing around the giant star tree.
@@ -499,6 +506,7 @@ function buildForest() {
   }
   for (const n of FOREST_NPCS) reserve(n.c, n.r);
   for (let r = 0; r <= 2; r++) for (let c = 13; c <= 16; c++) reserve(c, r);
+  for (let r = 26; r <= 29; r++) for (let c = 13; c <= 18; c++) reserve(c, r);
 
   // Glowing mushrooms on the ground.
   sc.paintGround = g => {
@@ -540,6 +548,96 @@ function buildForest() {
     sc.npcs.push(npc);
   }
   sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰' }));
+  // Gate to the Unicorn Village at the south end of the path.
+  addGate(sc, [14, 17], 28, '#ff9ec4');
+  for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', needStars: UNICORN_STARS });
+  const ug = tileCenter(sc, 15.5, 28);
+  sc.signs.push({ x: ug.x, y: ug.y - 44, text: '🦄 유니콘 마을', color: '#ff6fa8', needStars: UNICORN_STARS });
+  sc.start = { c: 14, r: 1 };
+  renderGround(sc);
+  return sc;
+}
+
+// ---- Unicorn Village ---------------------------------------------------------
+
+const UNICORN_N = 30;
+
+function buildUnicornVillage() {
+  const sc = makeScene('unicorn', UNICORN_N, UNICORN_N, 130, 60);
+  sc.outdoor = true;
+  const N = UNICORN_N;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    setTile(sc, c, r, 'meadow');
+    tileAt(sc, c, r).flowers = hash(c, r, 81) < 0.16;
+  }
+  const reserved = new Set();
+  const key = (c, r) => r * N + c;
+  const reserve = (c, r) => reserved.add(key(c, r));
+  // A rainbow road from the forest gate in the north, looping round the meadow.
+  let step = 0;
+  const lay = (c, r) => { const t = tileAt(sc, c, r); if (t && t.type !== 'rainbow') { t.type = 'rainbow'; t.band = step++; } };
+  for (let r = 0; r <= 16; r++) for (const dc of [0, 1]) lay(14 + dc + Math.round(Math.sin(r / 3.5) * 1.2), r);
+  for (let c = 5; c <= 25; c++) lay(c, 16);
+  for (let r = 16; r <= 26; r++) { lay(5, r); lay(25, r); }
+  for (let c = 5; c <= 25; c++) lay(c, 26);
+  // Crystal lake.
+  for (let r = 18; r <= 24; r++) for (let c = 13; c <= 22; c++) {
+    if (((c - 17.5) / 4) ** 2 + ((r - 21) / 2.6) ** 2 <= 1) setTile(sc, c, r, 'water');
+  }
+  // Rainbow arch over the road near the entrance. Its feet sit on one screen row.
+  block(sc, 13, 7, 1, 1);
+  block(sc, 17, 3, 1, 1);
+  for (const [c, r] of [[13, 7], [17, 3], [12, 7], [13, 8], [17, 2], [18, 3]]) reserve(c, r);
+  const ac = tileCenter(sc, 15, 5);
+  addObject(sc, { c: 13, r: 3, w: 5, d: 5 }, { x: ac.x - 74, y: ac.y - 84, w: 148, h: 100 }, ctx => drawRainbowArch(ctx, Math.round(ac.x), Math.round(ac.y), 64));
+  // Unicorn stables: pastel cottages.
+  for (const [c, r, roof] of [[4, 6, '#ff9ec4'], [21, 7, '#b9a0ff'], [8, 11, '#8fd3ff'], [20, 11, '#ffe066']]) {
+    block(sc, c, r, 3, 3);
+    for (let rr = r - 1; rr <= r + 3; rr++) for (let cc = c - 1; cc <= c + 3; cc++) reserve(cc, rr);
+    addObject(sc, { c, r, w: 3, d: 3 }, footBounds(sc, c, r, 3, 3, 110, 12),
+      ctx => drawCottage(ctx, boxCorners(sc, c, r, 3, 3), { roof, wall: '#fffaf4', door: 'left' }));
+    const k = boxCorners(sc, c, r, 3, 3);
+    const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 30);
+    sc.signs.push({ x: sign.x, y: sign.y, text: '🦄', color: roof, plain: true });
+  }
+  // Clouds resting on the meadow.
+  for (const [c, r] of [[3, 2], [25, 3], [2, 14], [27, 17], [9, 28], [22, 28], [27, 24]]) {
+    block(sc, c, r, 1, 1);
+    reserve(c, r);
+    const p = tileCenter(sc, c, r);
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 20, y: p.y - 18, w: 40, h: 32 }, ctx => drawCloudPuff(ctx, Math.round(p.x), Math.round(p.y - 4), 1));
+  }
+  for (const n of UNICORN_NPCS) reserve(n.c, n.r);
+  for (let r = 0; r <= 2; r++) for (let c = 13; c <= 17; c++) reserve(c, r);
+
+  // Cotton candy trees.
+  const trees = [makeTree('cotton'), makeTree('candy'), makeTree('blossom')];
+  const nearRoad = (c, r) => {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const t = tileAt(sc, c + dc, r + dr);
+      if (t && (t.type === 'rainbow' || t.type === 'water')) return true;
+    }
+    return false;
+  };
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const t = tileAt(sc, c, r);
+    if (t.blocked || reserved.has(key(c, r)) || t.type !== 'meadow' || nearRoad(c, r)) continue;
+    const ring = c < 2 || r < 2 || c > N - 3 || r > N - 3;
+    if (hash(c, r, 95) >= (ring ? 0.5 : 0.08)) continue;
+    if (!ring && sc.objects.some(o => o.tree && Math.abs(o.c0 - c) <= 1 && Math.abs(o.r0 - r) <= 1)) continue;
+    const tree = trees[Math.floor(hash(c, r, 96) * trees.length)];
+    block(sc, c, r, 1, 1);
+    const p = tileCenter(sc, c, r);
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, tree: true, canvas: tree.canvas, x: p.x - tree.ax, y: p.y - tree.ay, w: tree.canvas.width, h: tree.canvas.height });
+  }
+
+  for (const n of UNICORN_NPCS) {
+    const npc = makeNpc(n, null);
+    npc.level = 3;
+    if (n.unicorn) npc.unicorn = n.unicorn;
+    sc.npcs.push(npc);
+  }
+  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'forest', at: { c: c + 1, r: 27 }, icon: '🌲' }));
   sc.start = { c: 14, r: 1 };
   renderGround(sc);
   return sc;

@@ -86,7 +86,21 @@ const HAIR_COLORS = {
   pink:  { name: '분홍 머리', icon: '🌷', c: ['#ff94c4', '#ffd0e6'] },
 };
 
-const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', back: 'none' };
+// Unicorns to ride. These only come from the Unicorn Village.
+//   body, shade, mane colours (top to bottom), horn
+const UNICORNS = {
+  none:     { name: '안 타요',       icon: '' },
+  snow:     { name: '구름 유니콘',   icon: '🤍', unicorn: true, body: '#ffffff', shade: '#d8d4f0', mane: ['#ff9ec4', '#b9a0ff', '#8fd3ff'], horn: '#ffd34d' },
+  pink:     { name: '솜사탕 유니콘', icon: '💗', unicorn: true, body: '#ffd0e6', shade: '#f0a0c8', mane: ['#ff6fa8', '#ffffff', '#ff6fa8'], horn: '#ffe08a' },
+  lavender: { name: '라벤더 유니콘', icon: '💜', unicorn: true, body: '#e4d8ff', shade: '#b9a0f0', mane: ['#8f70e0', '#ff9ec4', '#8f70e0'], horn: '#ffffff' },
+  sky:      { name: '하늘 유니콘',   icon: '🩵', unicorn: true, body: '#d4f0ff', shade: '#9ccce8', mane: ['#5aa6e0', '#ffffff', '#5aa6e0'], horn: '#ffd34d' },
+  mint:     { name: '민트 유니콘',   icon: '💚', unicorn: true, body: '#d8fff0', shade: '#98dcc0', mane: ['#4fbf90', '#ffe066', '#4fbf90'], horn: '#ff9ec4' },
+  gold:     { name: '황금 유니콘',   icon: '💛', unicorn: true, body: '#fff2b8', shade: '#e8c870', mane: ['#ff9a6b', '#ffffff', '#ff9a6b'], horn: '#ffffff' },
+  rainbow:  { name: '무지개 유니콘', icon: '🌈', unicorn: true, body: '#ffffff', shade: '#dcd8f4', mane: ['#ff6b7f', '#ffb347', '#ffe066', '#5fd08a', '#6fb7ff', '#b98cff'], horn: '#ffd34d' },
+  night:    { name: '달빛 유니콘',   icon: '🌙', unicorn: true, body: '#6a6ac8', shade: '#48489a', mane: ['#ffe066', '#ffffff', '#ffe066'], horn: '#ffe066' },
+};
+
+const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', back: 'none', ride: 'none' };
 
 // ---- People --------------------------------------------------------------
 
@@ -255,7 +269,7 @@ LINES.ask2 = [
   'Tricky one! Which word is it?', 'Use your super ears!',
 ];
 LINES.forest = ['Welcome to the Starlight Forest!', 'Wow, the forest is sparkling!', 'Look at all the fireflies!'];
-LINES.locked = [`Collect ${FOREST_STARS} stars to open the forest gate!`];
+LINES.locked = ['Collect {stars} stars to open this gate!', 'This gate opens with {stars} stars. Keep going!'];
 
 // ---- Question variety ------------------------------------------------------
 
@@ -315,3 +329,64 @@ LINES.retrySound = [
   "Good try! That's {wrong}. Listen carefully.",
 ];
 LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'No peeking at my voice! Read it yourself.'];
+
+// ---- Unicorn Village (level 3) ----------------------------------------------
+
+// The Unicorn Village lies past the Starlight Forest and opens with more stars.
+const UNICORN_STARS = 25;
+
+// Sentence questions. {} is the blank. `alike` are words that sound close to
+// the answer (she has to listen to the sentence); `other` are pictures that
+// don't make sense in the sentence (she has to think about the meaning).
+const SENTENCES = [
+  { s: 'The {} is hot and bright.',       w: ['sun', '☀️'],     alike: ['run', 'bun'],      other: [['fish', '🐟'], ['sock', '🧦']] },
+  { s: 'I sleep in my {}.',               w: ['bed', '🛏️'],     alike: ['red', 'bad'],      other: [['cake', '🎂'], ['frog', '🐸']] },
+  { s: 'The {} says moo.',                w: ['cow', '🐄'],     alike: ['cat', 'cup'],      other: [['duck', '🦆'], ['pig', '🐷']] },
+  { s: 'A {} can swim in the pond.',      w: ['fish', '🐟'],    alike: ['dish', 'fig'],     other: [['car', '🚗'], ['bed', '🛏️']] },
+  { s: 'I wear a {} on my head.',         w: ['hat', '🎩'],     alike: ['hot', 'cat'],      other: [['shoe', '👟'], ['cake', '🎂']] },
+  { s: 'The {} says woof woof.',          w: ['dog', '🐶'],     alike: ['dot', 'log'],      other: [['cat', '🐱'], ['bee', '🐝']] },
+  { s: 'I drink {} in the morning.',      w: ['milk', '🥛'],    alike: ['mix', 'silk'],     other: [['rock', '🪨'], ['sock', '🧦']] },
+  { s: 'The {} sings in the tree.',       w: ['bird', '🐦'],    alike: ['bed', 'bun'],      other: [['fish', '🐟'], ['car', '🚗']] },
+  { s: 'I eat a red {}.',                 w: ['apple', '🍎'],   alike: ['ant', 'ax'],       other: [['chair', '🪑'], ['shoe', '👟']] },
+  { s: 'The {} hops and says ribbit.',    w: ['frog', '🐸'],    alike: ['fog', 'fox'],      other: [['cow', '🐄'], ['fish', '🐟']] },
+  { s: 'Please open the {}.',             w: ['door', '🚪'],    alike: ['dog', 'duck'],     other: [['sun', '☀️'], ['moon', '🌙']] },
+  { s: 'My birthday {} is sweet.',        w: ['cake', '🎂'],    alike: ['cape', 'lake'],    other: [['rock', '🪨'], ['frog', '🐸']] },
+  { s: 'I ride the {} to school.',        w: ['bus', '🚌'],     alike: ['bun', 'bug'],      other: [['bed', '🛏️'], ['apple', '🍎']] },
+  { s: 'A unicorn has a shiny {}.',       w: ['horn', '🦄'],    alike: ['corn', 'horse'],   other: [['bus', '🚌'], ['fish', '🐟']] },
+  { s: 'I brush my {} at night.',         w: ['teeth', '🦷'],   alike: ['tea', 'tent'],     other: [['car', '🚗'], ['tree', '🌳']] },
+  { s: 'I hug my teddy {}.',              w: ['bear', '🧸'],    alike: ['pear', 'bed'],     other: [['bus', '🚌'], ['rock', '🪨']] },
+  { s: 'I put on my {} and my shoes.',    w: ['socks', '🧦'],   alike: ['box', 'rocks'],    other: [['cake', '🎂'], ['moon', '🌙']] },
+  { s: 'The {} shines at night.',         w: ['moon', '🌙'],    alike: ['spoon', 'man'],    other: [['pig', '🐷'], ['shoe', '👟']] },
+  { s: 'The {} is big and green.',        w: ['tree', '🌳'],    alike: ['three', 'tea'],    other: [['milk', '🥛'], ['sun', '☀️']] },
+  { s: 'I see a {} after the rain.',      w: ['rainbow', '🌈'], alike: ['rabbit', 'robot'], other: [['sock', '🧦'], ['bed', '🛏️']] },
+];
+
+QUIZ_TYPES.unicorn = ['sentence', 'meaning'];
+
+LINES.sentence = ['Listen to my sentence. Which word is missing?', 'Here is a sentence. Find the missing word!', 'Listen closely to the whole sentence.'];
+LINES.meaning = ['Which word makes sense?', 'Fill in the blank! What fits best?', 'Hmm, what word goes here?'];
+LINES.unicorn = ['Welcome to the Unicorn Village!', 'Look, rainbows everywhere!', 'Neigh! The unicorns are happy to see you!'];
+LINES.mount = ['Giddy up!', "Let's go, unicorn!", 'Wheee! Off we go!'];
+LINES.dismount = ['Wait here, unicorn. I will be right back!', 'Stay here, unicorn!', 'Unicorns wait outside. See you soon!'];
+LINES.newUnicorn = ['I want to be your friend! Will you ride me?', 'A unicorn for you! Do you want to ride now?', 'Neigh! Shall we go for a ride?'];
+
+LOOKS.keeper = { hair: '#c04a4a', shirt: '#ff9ec4', pants: '#8fd3ff', hat: 'straw' };
+
+// Unicorns that talk have `unicorn` (their colour) instead of a villager look.
+const UNICORN_NPCS = [
+  { name: '무지개 유니콘', look: 'unicorn', unicorn: 'rainbow', c: 17, r: 8 },
+  { name: '목장 언니',     look: 'keeper', c: 9, r: 10 },
+  { name: '솜사탕 유니콘', look: 'unicorn', unicorn: 'pink', c: 21, r: 14 },
+  { name: '무지개 요정',   look: 'fairy', c: 8, r: 19 },
+  { name: '구름 유니콘',   look: 'unicorn', unicorn: 'snow', c: 23, r: 21 },
+  { name: '달빛 유니콘',   look: 'unicorn', unicorn: 'night', c: 12, r: 24 },
+];
+
+Object.assign(VOICES, {
+  unicorn: { gender: 'female', pitch: 1.55, rate: 0.95, voice: ['Samantha', 'Karen', 'Google US English', 'Microsoft Jenny'] },
+  keeper:  { gender: 'female', pitch: 1.2,  rate: 1.0,  voice: ['Tessa', 'Karen', 'Microsoft Aria'] },
+});
+Object.assign(PERSONA, {
+  unicorn: ['Neigh! Hello, {title} {name}!', 'Sparkle, sparkle! Do you like my mane?', 'Hello! I love sentences. Want to play?', 'Neigh! My horn is glowing today!'],
+  keeper:  ['Hi, {title} {name}! I take care of the unicorns.', 'Welcome to the unicorn farm!', 'The unicorns love clever friends like you!'],
+});

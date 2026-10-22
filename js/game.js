@@ -18,6 +18,7 @@ const ui = {
   wdTitle: document.getElementById('wd-title'),
   stars: document.getElementById('stars'),
   pictures: document.getElementById('pictures'),
+  ride: document.getElementById('ride'),
   mute: document.getElementById('mute'),
   fade: document.getElementById('fade'),
   place: document.getElementById('place'),
@@ -51,6 +52,7 @@ const WARDROBE = [
   { slot: 'hand', title: '손에 드는 것', items: HAND_ITEMS },
   { slot: 'hair', title: '머리 색', items: HAIR_COLORS },
   { slot: 'back', title: '등에 다는 것 (별빛 숲)', items: BACK_ITEMS },
+  { slot: 'ride', title: '유니콘 (유니콘 마을)', items: UNICORNS },
 ];
 
 // ---- Saved progress ------------------------------------------------------
@@ -99,7 +101,7 @@ function ownedFrom(saved, outfit) {
     const set = new Set((saved && saved[slot]) || []);
     set.add(DEFAULT_OUTFIT[slot]);
     set.add(outfit[slot]);
-    if (slot === 'head' || slot === 'hand' || slot === 'back') set.add('none');
+    if (slot === 'head' || slot === 'hand' || slot === 'back' || slot === 'ride') set.add('none');
     owned[slot] = [...set];
   }
   return owned;
@@ -128,6 +130,8 @@ const state = {
   motes: [],
   lastWater: 0,
   timers: [],
+  mounted: false,    // riding her unicorn right now
+  parked: null,      // { sc, npc } where the unicorn waits when she is off it
 };
 
 function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
@@ -138,6 +142,7 @@ function sceneFor(target) {
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
     else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
     else if (target === 'forest') state.scenes[target] = buildForest();
+    else if (target === 'unicorn') state.scenes[target] = buildUnicornVillage();
     else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
@@ -182,7 +187,7 @@ function updateHero(dt) {
   const dc = next.c - h.c;
   const dr = next.r - h.r;
   const dist = Math.hypot(dc, dr);
-  const step = 4.2 * dt;
+  const step = (state.mounted ? 6.8 : 4.2) * dt;
   if (Math.abs(dc - dr) > 0.01) h.flip = dc - dr < 0;
   if (dist <= step) {
     h.c = next.c;
@@ -209,8 +214,12 @@ function changeScene(target, at, label) {
   later(320, () => {
     state.scene = sceneFor(target);
     document.body.classList.toggle('forest', state.scene.kind === 'forest');
+    document.body.classList.toggle('unicorn', state.scene.kind === 'unicorn');
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);
+    // Her unicorn waits next to her whenever she steps outside on foot.
+    if (!state.scene.outdoor) state.mounted = false;
+    else if (!state.mounted) parkUnicorn();
     snapCamera();
     ui.fade.classList.remove('on');
     state.busy = false;
@@ -227,6 +236,7 @@ function showPlace(text) {
 }
 
 function enterDoor(door) {
+  getOff();
   Sound.door();
   if (door.target === 'castle') {
     changeScene('castle', null, `🏰 ${titleKo()}님의 성`);
@@ -247,6 +257,75 @@ function leaveRoom() {
   } else {
     changeScene('town', { c: 19, r: 10 }, '🌸 소리 마을');
   }
+}
+
+// ---- Riding --------------------------------------------------------------
+
+const hasUnicorn = () => state.outfit.ride !== 'none';
+
+function removeParked() {
+  const p = state.parked;
+  if (p) p.sc.npcs = p.sc.npcs.filter(n => n !== p.npc);
+  state.parked = null;
+}
+
+// Leaves the unicorn on a free tile next to her, away from doors and gates.
+function parkUnicorn() {
+  removeParked();
+  const sc = state.scene;
+  if (!hasUnicorn() || !sc.outdoor) return;
+  const h = heroTile();
+  const busy = (c, r) => sc.doors.some(d => d.c === c && d.r === r) || (sc.links || []).some(l => l.c === c && l.r === r);
+  const path = findPath(sc, h, (c, r) => (c !== h.c || r !== h.r) && !busy(c, r));
+  if (!path || !path.length) return;
+  const spot = path[path.length - 1];
+  const npc = { mount: true, name: '유니콘', c: spot.c, r: spot.r, flip: state.hero.flip, phase: 0 };
+  sc.npcs.push(npc);
+  state.parked = { sc, npc };
+}
+
+function getOn() {
+  if (!hasUnicorn() || !state.scene.outdoor) return;
+  removeParked();
+  state.mounted = true;
+  burstAtHero(24);
+  Sound.correct();
+  Sound.say([{ text: line('mount'), pitch: 1.3 }]);
+  renderRide();
+}
+
+// Before going indoors, or when she taps the 🦄 button.
+function getOff() {
+  if (!state.mounted) return;
+  state.mounted = false;
+  parkUnicorn();
+  showPlace('🦄 유니콘은 밖에서 기다려요');
+  Sound.say([{ text: line('dismount'), pitch: 1.3 }]);
+  renderRide();
+}
+
+function toggleRide() {
+  Sound.tap();
+  if (!hasUnicorn()) {
+    const first = state.owned.ride.find(v => v !== 'none');
+    if (!first) { showPlace('🦄 유니콘 마을에서 유니콘을 만나요'); return; }
+    state.outfit = Object.assign({}, state.outfit, { ride: first });
+    save();
+  }
+  if (!state.scene.outdoor) { showPlace('🏠 집 안에서는 유니콘을 탈 수 없어요'); return; }
+  if (state.mounted) { getOff(); return; }
+  const p = state.parked;
+  if (p && p.sc === state.scene) {
+    const isNext = (c, r) => Math.abs(c - p.npc.c) + Math.abs(r - p.npc.r) === 1;
+    if (walkTo(isNext, getOn)) return;
+  }
+  getOn();
+}
+
+function renderRide() {
+  const any = state.owned.ride.some(v => v !== 'none');
+  ui.ride.classList.toggle('hidden', !any);
+  ui.ride.classList.toggle('active', state.mounted);
 }
 
 // ---- Words ---------------------------------------------------------------
@@ -307,7 +386,7 @@ function openDialog(npc) {
   state.talking = npc;
   const q = Quiz.make(npc);
   state.question = q;
-  drawPortrait(ui.portrait, villagerSprite(npc.look, 0));
+  drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
   const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
   ui.text.textContent = `${hello} ${q.prompt}`;
@@ -383,21 +462,23 @@ function itemLabel(slot, value) {
 }
 
 // New presents first; once everything is collected, anything not being worn.
-function rewardChoices(fromForest) {
+function rewardChoices(level) {
   const o = state.outfit;
   const fresh = [];
   const worn = [];
   for (const { slot, items } of WARDROBE) {
     for (const value of Object.keys(items)) {
       if (value === 'none' || value === o[slot]) continue;
-      if (items[value].forest && !fromForest) continue;
+      if (items[value].forest && level < 2) continue;
+      if (items[value].unicorn && level < 3) continue;
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
       (r.isNew ? fresh : worn).push(r);
     }
   }
-  // Forest folk hand out their own treasures before anything else.
-  const special = fresh.filter(r => WARDROBE.find(w => w.slot === r.slot).items[r.value].forest);
-  if (fromForest && special.length) return special;
+  // Forest folk and unicorns hand out their own treasures before anything else.
+  const mark = level === 3 ? 'unicorn' : 'forest';
+  const special = fresh.filter(r => WARDROBE.find(w => w.slot === r.slot).items[r.value][mark]);
+  if (level >= 2 && special.length) return special;
   return fresh.length ? fresh : worn;
 }
 
@@ -416,9 +497,11 @@ function collected() {
 
 function offerReward(npc) {
   // Pick a slot first so dress colours don't crowd out everything else.
-  const all = rewardChoices(npc && npc.level === 2);
+  const all = rewardChoices((npc && npc.level) || 1);
   const slot = pick([...new Set(all.map(r => r.slot))]);
-  const gift = pick(all.filter(r => r.slot === slot));
+  // A unicorn that isn't hers yet would love to come along itself.
+  const self = npc && npc.unicorn && all.find(r => r.slot === 'ride' && r.value === npc.unicorn && r.isNew);
+  const gift = self || pick(all.filter(r => r.slot === slot));
   state.gift = gift;
   if (gift.isNew) {
     state.owned[gift.slot].push(gift.value);
@@ -426,22 +509,25 @@ function offerReward(npc) {
   }
   const next = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
   ui.rewardTitle.textContent = `🎁 ${npc ? npc.name : ''}의 선물!`;
-  ui.rewardName.textContent = gift.isNew ? `${gift.label} · 옷장에 쏙!` : gift.label;
-  ui.rewardYes.textContent = '지금 입을래요 💖';
-  ui.rewardNo.textContent = gift.isNew ? '옷장에 넣을래요 🎀' : '그대로 할래요';
-  drawPortrait(ui.pvNow, princessSprite(state.outfit, 0));
-  drawPortrait(ui.pvNew, princessSprite(next, 0));
+  const ride = gift.slot === 'ride';
+  ui.rewardName.textContent = !gift.isNew ? gift.label : ride ? `${gift.label} · 새 친구가 생겼어요!` : `${gift.label} · 옷장에 쏙!`;
+  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : '지금 입을래요 💖';
+  ui.rewardNo.textContent = !gift.isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : '옷장에 넣을래요 🎀';
+  drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
+  drawPortrait(ui.pvNew, heroPortrait(next, ride || state.mounted));
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
   Sound.party();
   state.giver = npc;
-  Sound.say([{ pause: 600 }, { text: line('gift') }], voiceOf(npc));
+  Sound.say([{ pause: 600 }, { text: line(ride ? 'newUnicorn' : 'gift') }], voiceOf(npc));
 }
 
 function acceptReward(yes) {
   if (yes && state.gift) {
     state.outfit = Object.assign({}, state.outfit, { [state.gift.slot]: state.gift.value });
     save();
+    if (state.gift.slot === 'ride' && state.scene.outdoor) { removeParked(); state.mounted = true; }
+    renderRide();
     burstAtHero(50);
     Sound.correct();
     Sound.say([{ text: line('yes') }], voiceOf(state.giver));
@@ -450,6 +536,10 @@ function acceptReward(yes) {
   }
   state.gift = null;
   closeDialog();
+}
+
+function heroPortrait(outfit, riding) {
+  return riding && outfit.ride !== 'none' ? riderSprite(outfit, 0) : princessSprite(outfit, 0);
 }
 
 function drawPortrait(cv, sprite) {
@@ -477,6 +567,9 @@ function followLink(link) {
   } else if (link.target === 'forest') {
     changeScene('forest', link.at, '🌲 별빛 숲 마을');
     Sound.say([{ text: line('forest'), pitch: 1.3 }]);
+  } else if (link.target === 'unicorn') {
+    changeScene('unicorn', link.at, '🦄 유니콘 마을');
+    Sound.say([{ text: line('unicorn'), pitch: 1.3 }]);
   } else if (link.target === 'town') {
     changeScene('town', link.at, '🌸 소리 마을');
   } else {
@@ -494,7 +587,7 @@ function openWardrobe() {
 }
 
 function renderWardrobe() {
-  drawPortrait(ui.wdPreview, princessSprite(state.outfit, 0));
+  drawPortrait(ui.wdPreview, heroPortrait(state.outfit, true));
   const { have, total } = collected();
   ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
   ui.wdSlots.innerHTML = '';
@@ -520,6 +613,7 @@ function renderWardrobe() {
         if (state.outfit[slot] === value) return;
         state.outfit = Object.assign({}, state.outfit, { [slot]: value });
         save();
+        if (slot === 'ride' && value === 'none') { removeParked(); state.mounted = false; }
         Sound.tap();
         burstAtHero(16);
         renderWardrobe();
@@ -705,11 +799,14 @@ function drawCharacter(ch, now) {
   if (ch.hero) {
     const h = state.hero;
     const bob = h.path.length ? (h.frame ? -1 : 0) : 0;
-    drawSprite(vctx, princessSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
+    const riding = state.mounted && hasUnicorn();
+    drawSprite(vctx, riding ? riderSprite(state.outfit, h.frame) : princessSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
   } else {
     const n = ch.npc;
     const idle = Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0;
-    drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
+    const uni = n.mount ? state.outfit.ride : n.unicorn;
+    if (uni && uni !== 'none') drawSprite(vctx, unicornSprite(uni, 0), p.x, p.y + 1 + idle, n.flip);
+    else if (!n.mount) drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
   }
 }
 
@@ -777,7 +874,7 @@ function drawOverlay(now) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (!sg.plain) {
-      const text = sg.gate && state.stars < FOREST_STARS ? `${sg.text} 🔒 ⭐${state.stars}/${FOREST_STARS}` : sg.text;
+      const text = sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text;
       const w = ctx.measureText(text).width + 8 * s;
       const h = 14 * s;
       ctx.strokeStyle = '#6f4430';
@@ -796,7 +893,7 @@ function drawOverlay(now) {
       ctx.stroke();
     }
     ctx.fillStyle = shade(sg.color, -60);
-    ctx.fillText(sg.gate && state.stars < FOREST_STARS ? `${sg.text} 🔒 ⭐${state.stars}/${FOREST_STARS}` : sg.text, p.x, p.y + 0.5 * s);
+    ctx.fillText(sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text, p.x, p.y + 0.5 * s);
   }
   for (const d of sc.decor) {
     const p = toScreen(d.x, d.y);
@@ -813,6 +910,7 @@ function drawOverlay(now) {
   // Speech bubbles over villagers so she knows who to visit.
   if (!state.busy) {
     for (const n of sc.npcs) {
+      if (n.mount) continue;
       const w = tileCenter(sc, n.c, n.r);
       const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
       ctx.fillStyle = '#ffffff';
@@ -830,7 +928,7 @@ function drawOverlay(now) {
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(n.letter ? n.letter : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
+      ctx.fillText(n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
     }
   }
 
@@ -903,9 +1001,12 @@ function onPointer(e) {
   // Villagers first: they are small and stand in front of things.
   for (const n of sc.npcs) {
     const p = tileCenter(sc, n.c, n.r);
-    if (Math.abs(wx - p.x) < 10 && wy > p.y - 44 && wy < p.y + 4) {
+    if (Math.abs(wx - p.x) < (n.mount || n.unicorn ? 14 : 10) && wy > p.y - 44 && wy < p.y + 4) {
       Sound.tap();
-      talkTo(n);
+      if (n.mount) {
+        const isNext = (c, r) => Math.abs(c - n.c) + Math.abs(r - n.r) === 1;
+        if (!walkTo(isNext, getOn)) getOn();
+      } else talkTo(n);
       return;
     }
   }
@@ -918,7 +1019,7 @@ function onPointer(e) {
     if (link.needStars && state.stars < link.needStars) {
       Sound.wrong();
       showPlace(`🔒 별 ${link.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
-      Sound.say([{ text: line('locked') }]);
+      Sound.say([{ text: line('locked', { stars: link.needStars }) }]);
       return;
     }
     walkTo((c, r) => c === link.c && r === link.r, () => followLink(link));
@@ -997,6 +1098,8 @@ resize();
 addEventListener('resize', resize);
 state.scene = sceneFor('town');
 placeHero(state.scene.start.c, state.scene.start.r);
+parkUnicorn();
+renderRide();
 snapCamera();
 renderStars(false);
 setPictures(state.pictures);
@@ -1009,6 +1112,7 @@ ui.rewardYes.addEventListener('click', () => acceptReward(true));
 ui.rewardNo.addEventListener('click', () => acceptReward(false));
 ui.wdDone.addEventListener('click', closeWardrobe);
 ui.pictures.addEventListener('click', () => { Sound.tap(); setPictures(!state.pictures); });
+ui.ride.addEventListener('click', toggleRide);
 ui.mute.addEventListener('click', () => {
   const muted = Sound.toggleMute();
   ui.mute.textContent = muted ? '🔇' : '🔊';

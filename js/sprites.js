@@ -1067,3 +1067,186 @@ function drawGlowShroom(ctx, x, y, color) {
   px(ctx, x - 2, y - 5, 5, 2, color);
   px(ctx, x - 1, y - 6, 3, 1, shade(color, 30));
 }
+
+// ---- Unicorns --------------------------------------------------------------
+
+// A side-view unicorn facing right, drawn on a pixel grid and then outlined.
+const unicornCache = new Map();
+function unicornSprite(key, frame) {
+  const ck = `${key}|${frame}`;
+  if (unicornCache.has(ck)) return unicornCache.get(ck);
+  const u = UNICORNS[key] || UNICORNS.snow;
+  const W = 32;
+  const H = 30;
+  const grid = [];
+  for (let y = 0; y < H; y++) grid.push(new Array(W).fill(null));
+  const set = (x, y, col) => { if (x >= 0 && y >= 0 && x < W && y < H) grid[y][x] = col; };
+  const rect = (x, y, w, h, col) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) set(x + i, y + j, col); };
+  const Y = 3;
+  const hoof = shade(u.shade, -30);
+  // Legs: the far pair is darker. Frame 1 lifts one front and one back leg.
+  const legs = [[8, true], [19, true], [11, false], [22, false]];
+  legs.forEach(([x, far], i) => {
+    const lift = frame === 1 && (i === 1 || i === 2) ? 2 : 0;
+    rect(x, Y + 17, 2, 7 - lift, far ? u.shade : u.body);
+    rect(x, Y + 23 - lift, 2, 1, hoof);
+  });
+  // Body with a rounded back and belly.
+  rect(7, Y + 11, 18, 7, u.body);
+  rect(8, Y + 10, 16, 1, u.body);
+  rect(8, Y + 18, 16, 1, u.shade);
+  rect(7, Y + 16, 18, 2, u.shade);
+  rect(10, Y + 11, 10, 1, mix(u.body, '#ffffff', 0.5));
+  // Neck and head.
+  rect(20, Y + 6, 5, 6, u.body);
+  rect(21, Y + 3, 6, 5, u.body);
+  rect(25, Y + 5, 4, 4, u.body);
+  rect(26, Y + 8, 3, 1, u.shade);
+  set(28, Y + 7, shade(u.shade, -40));
+  // Ear.
+  rect(22, Y + 1, 2, 2, u.body);
+  set(23, Y + 2, '#ffadbc');
+  // Horn.
+  const horn = [[25, Y + 2], [25, Y + 1], [26, Y], [26, Y - 1], [27, Y - 2], [27, Y - 3]];
+  horn.forEach(([x, y], i) => set(x, y, i % 2 ? shade(u.horn, -40) : u.horn));
+  // Eye with a sparkle, and a pink cheek.
+  set(25, Y + 4, '#3a2340');
+  set(25, Y + 5, '#3a2340');
+  set(24, Y + 4, '#ffffff');
+  set(26, Y + 6, '#ffadbc');
+  // Mane down the back of the neck, in stripes.
+  const mane = u.mane;
+  for (let y = 0; y < 10; y++) {
+    const col = mane[Math.floor(y / 10 * mane.length)];
+    const x0 = 19 - Math.floor(y / 4);
+    rect(x0, Y + 2 + y, 3, 1, col);
+  }
+  rect(22, Y + 2, 3, 1, mane[0]);
+  // Tail.
+  for (let y = 0; y < 11; y++) {
+    const col = mane[Math.floor(y / 11 * mane.length)];
+    const x0 = 3 + Math.round(Math.sin(y / 2.2) * 1.5);
+    rect(x0, Y + 10 + y, 4 - (y > 8 ? 1 : 0), 1, col);
+  }
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  // Outline: ink wherever an empty pixel touches the unicorn.
+  const ink = '#4a2c4f';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (grid[y][x]) { px(ctx, x, y, 1, 1, grid[y][x]); continue; }
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => grid[y + dy] && grid[y + dy][x + dx]);
+    if (near) px(ctx, x, y, 1, 1, ink);
+  }
+  if (u.mane.length > 4 || key === 'night') {
+    // Little sparkles on the special ones.
+    for (const [x, y] of [[12, Y + 13], [17, Y + 14], [14, Y + 12]]) px(ctx, x, y, 1, 1, key === 'night' ? '#ffe066' : '#ff9ec4');
+  }
+  const sprite = { canvas: cv, ax: 16, ay: Y + 24 };
+  unicornCache.set(ck, sprite);
+  return sprite;
+}
+
+// The princess sitting on her unicorn: her top half above the saddle and
+// the skirt draped over the unicorn's side.
+const riderCache = new Map();
+function riderSprite(outfit, frame) {
+  const key = `${Object.values(outfit).join('|')}|${frame}`;
+  if (riderCache.has(key)) return riderCache.get(key);
+  const uni = unicornSprite(outfit.ride, frame);
+  const hero = princessSprite(outfit, 0);
+  const W = 36;
+  const H = 46;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  const ux = 2;
+  const uy = H - uni.canvas.height;
+  const dress = DRESS_COLORS[outfit.dress].c;
+  // Wings or a cape behind her stay with the full sprite's top.
+  ctx.drawImage(uni.canvas, ux, uy);
+  const cut = 24;
+  const hx = ux + 12 - 11;
+  const hy = uy + 13 - cut + 1;
+  ctx.drawImage(hero.canvas, 0, 0, hero.canvas.width, cut, hx, hy, hero.canvas.width, cut);
+  // Skirt over the unicorn's side.
+  const sx = ux + 7;
+  const sy = uy + 13;
+  for (let y = 0; y < 5; y++) {
+    const w = 10 + Math.min(y, 2) * 2;
+    const x0 = sx - Math.min(y, 2);
+    px(ctx, x0, sy + y, w, 1, y === 4 ? dress[3] : y > 2 ? dress[1] : dress[0]);
+    px(ctx, x0 - 1, sy + y, 1, 1, '#4a2c4f');
+    px(ctx, x0 + w, sy + y, 1, 1, '#4a2c4f');
+  }
+  px(ctx, sx - 2, sy + 5, 14, 1, '#4a2c4f');
+  px(ctx, sx + 2, sy + 1, 2, 1, dress[2]);
+  // A little foot peeking out under the skirt.
+  px(ctx, sx + 6, sy + 6, 2, 2, '#c0507a');
+  px(ctx, sx + 5, sy + 6, 1, 2, '#4a2c4f');
+  px(ctx, sx + 8, sy + 6, 1, 2, '#4a2c4f');
+  px(ctx, sx + 6, sy + 8, 2, 1, '#4a2c4f');
+  const sprite = { canvas: cv, ax: ux + uni.ax, ay: uy + uni.ay };
+  riderCache.set(key, sprite);
+  return sprite;
+}
+
+// ---- Unicorn Village props ---------------------------------------------------
+
+TREE_PALETTES.cotton = { dark: '#e890c0', mid: '#ffc0e0', light: '#fff0f8', spark: '#9fe0ff', line: '#b06090', sparks: 0.08 };
+TREE_PALETTES.candy = { dark: '#70a8e8', mid: '#a8d8ff', light: '#e8f6ff', spark: '#ffd0f0', line: '#4878b0', sparks: 0.08 };
+
+function drawMeadow(ctx, ox, oy, c, r, flowers) {
+  fillPoly(ctx, diamondPts(ox, oy), (x, y) => {
+    const n = hash(x, y, 1);
+    if (n < 0.05) return '#e8fff0';
+    if (n < 0.08) return '#a8e8c0';
+    return (c * 3 + r) % 4 === 0 ? '#c4f4d0' : '#c0f0cc';
+  });
+  if (flowers) {
+    const colors = ['#ff9ec4', '#b9a0ff', '#8fd3ff', '#ffe066', '#ffffff'];
+    for (let i = 0; i < 4; i++) {
+      const fx = ox + 7 + Math.floor(hash(c, r, 10 + i) * 18);
+      const fy = oy + 3 + Math.floor(hash(c, r, 20 + i) * 10);
+      const col = colors[Math.floor(hash(c, r, 50 + i) * colors.length)];
+      px(ctx, fx, fy + 1, 1, 2, '#7fc89a');
+      px(ctx, fx - 1, fy, 3, 1, col);
+      px(ctx, fx, fy - 1, 1, 3, col);
+    }
+  }
+}
+
+const RAINBOW = ['#ff8a9a', '#ffbe7a', '#ffe680', '#8fe0a8', '#8fc8ff', '#c4a8ff'];
+function drawRainbowPath(ctx, ox, oy, i) {
+  const col = RAINBOW[((i % 6) + 6) % 6];
+  fillPoly(ctx, diamondPts(ox, oy), col);
+  const cx = ox + 16;
+  const cy = oy + 8;
+  fillPoly(ctx, diamondPts(ox, oy).map(p => ({ x: cx + (p.x - cx) * 0.6, y: cy + (p.y - cy) * 0.6 })), mix(col, '#ffffff', 0.45));
+  px(ctx, cx - 1, cy - 1, 2, 1, '#ffffff');
+}
+
+// A big rainbow arch with clouds at its feet. (cx, cy) is the ground centre.
+function drawRainbowArch(ctx, cx, cy, R) {
+  for (let i = 0; i < RAINBOW.length; i++) {
+    const r0 = R - i * 4;
+    for (let y = -r0; y <= 0; y++) for (let x = -r0; x <= r0; x++) {
+      const d = Math.hypot(x, y * 1.05);
+      if (d <= r0 && d > r0 - 4) px(ctx, cx + x, cy - 8 + y, 1, 1, RAINBOW[i]);
+    }
+  }
+  for (const s of [-1, 1]) drawCloudPuff(ctx, cx + s * (R - 10), cy - 4, 1.1);
+}
+
+function drawCloudPuff(ctx, cx, cy, k = 1) {
+  const blobs = [[0, 0, 9], [-9, 3, 6], [9, 3, 6], [-4, -5, 6], [5, -4, 6]].map(([x, y, r]) => [x * k, y * k, r * k]);
+  const inside = (x, y) => blobs.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br);
+  const R = Math.ceil(16 * k);
+  ctx.fillStyle = 'rgba(80,60,140,0.12)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 8 * k, 14 * k, 4 * k, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
+    if (!inside(x + 0.5, y + 0.5)) continue;
+    const edge = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5) || !inside(x + 0.5, y + 1.5);
+    px(ctx, cx + x, cy + y, 1, 1, edge ? '#b8b0e0' : y > 3 * k ? '#e8e8fa' : '#ffffff');
+  }
+}
