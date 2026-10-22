@@ -59,7 +59,7 @@
 
   <section id="wardrobe" class="wardrobe hidden">
     <div class="wd-head">
-      <div class="wd-name">🎀 공주님의 옷장</div>
+      <div id="wd-title" class="wd-name">🎀 공주님의 옷장</div>
       <div id="wd-count" class="wd-count"></div>
     </div>
     <div class="wd-main">
@@ -71,7 +71,19 @@
 
   <div id="start" class="start">
     <canvas id="start-preview" class="preview"></canvas>
-    <h1>윤아 공주의<br><span>소리 마을</span></h1>
+    <h1><span id="start-title">윤아 공주의</span><br><span class="gold">소리 마을</span></h1>
+    <div class="profile">
+      <label class="field">
+        <span>이름</span>
+        <input id="name-input" maxlength="10" autocomplete="off" placeholder="윤아">
+      </label>
+      <label class="field">
+        <span>영어로 부를 때</span>
+        <input id="spoken-input" maxlength="20" autocomplete="off" placeholder="Yuna" lang="en">
+        <button id="hear-name" class="round small" type="button" title="들어보기">🔊</button>
+      </label>
+      <div id="title-chips" class="title-chips"></div>
+    </div>
     <button id="start-btn" class="start-btn">▶</button>
     <p class="tip">마을 사람을 누르면 단어를 들려줘요 · 집을 누르면 안으로 들어가요</p>
   </div>

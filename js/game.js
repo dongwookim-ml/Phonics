@@ -10,6 +10,12 @@ const ui = {
   start: document.getElementById('start'),
   startBtn: document.getElementById('start-btn'),
   startPreview: document.getElementById('start-preview'),
+  startTitle: document.getElementById('start-title'),
+  nameInput: document.getElementById('name-input'),
+  spokenInput: document.getElementById('spoken-input'),
+  hearName: document.getElementById('hear-name'),
+  titleChips: document.getElementById('title-chips'),
+  wdTitle: document.getElementById('wd-title'),
   stars: document.getElementById('stars'),
   pictures: document.getElementById('pictures'),
   mute: document.getElementById('mute'),
@@ -50,11 +56,35 @@ const WARDROBE = [
 // ---- Saved progress ------------------------------------------------------
 
 const SAVE_KEY = 'pixeltown-v2';
+
+function setPlayer(p) {
+  if (typeof p.shown === 'string' && p.shown.trim()) PLAYER.shown = p.shown.trim().slice(0, 10);
+  if (typeof p.spoken === 'string' && p.spoken.trim()) PLAYER.spoken = p.spoken.trim().slice(0, 20);
+  if (TITLES[p.title]) PLAYER.title = p.title;
+}
+// "윤아님" style title on screen, such as 공주님.
+const titleKo = () => TITLES[PLAYER.title].ko;
+
+// Hangul to Latin letters (Revised Romanization, syllable by syllable) so
+// the English voice can say a Korean name. Parents can fix it by hand.
+const RR_INITIAL = ['g', 'kk', 'n', 'd', 'tt', 'r', 'm', 'b', 'pp', 's', 'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h'];
+const RR_VOWEL = ['a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i'];
+const RR_FINAL = ['', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't', 't', 'k', 't', 'p', 't'];
+function romanize(text) {
+  let out = '';
+  for (const ch of text) {
+    const code = ch.charCodeAt(0) - 0xac00;
+    if (code < 0 || code > 11171) { out += ch; continue; }
+    out += RR_INITIAL[Math.floor(code / 588)] + RR_VOWEL[Math.floor((code % 588) / 28)] + RR_FINAL[code % 28];
+  }
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
     const outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
+    if (s.player) setPlayer(s.player);
     return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, pictures: !!s.pictures };
   } catch (e) {
     return { outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, pictures: false };
@@ -75,7 +105,7 @@ function ownedFrom(saved, outfit) {
   return owned;
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures, recent: Quiz.recent })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -199,7 +229,7 @@ function showPlace(text) {
 function enterDoor(door) {
   Sound.door();
   if (door.target === 'castle') {
-    changeScene('castle', null, '🏰 공주님의 성');
+    changeScene('castle', null, `🏰 ${titleKo()}님의 성`);
     Sound.say([{ text: line('castle'), pitch: 1.3 }]);
   } else {
     const info = door.obj.info;
@@ -238,7 +268,9 @@ function line(kind, vars = {}, list = LINES[kind]) {
   return fill(text, vars);
 }
 function fill(text, vars) {
-  return text.replace(/\{(\w+)\}/g, (m, k) => (k === 'name' ? PLAYER.spoken : vars[k] !== undefined ? vars[k] : m));
+  const title = TITLES[PLAYER.title].en;
+  const own = { name: PLAYER.spoken, title, little: title.toLowerCase() };
+  return text.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : own[k] !== undefined ? own[k] : m));
 }
 
 function voiceOf(npc) {
@@ -448,7 +480,7 @@ function followLink(link) {
   } else if (link.target === 'town') {
     changeScene('town', link.at, '🌸 소리 마을');
   } else {
-    changeScene(link.target, link.at, '🏰 공주님의 성');
+    changeScene(link.target, link.at, `🏰 ${titleKo()}님의 성`);
   }
 }
 
@@ -988,8 +1020,54 @@ addEventListener('keydown', e => {
     if (b) choose(i, b);
   }
 });
+// The start screen: pick a name and a title, then press play.
+let spokenEdited = false;
+function renderStart() {
+  ui.startTitle.textContent = `${PLAYER.shown} ${titleKo()}의`;
+  ui.wdTitle.textContent = `🎀 ${titleKo()}님의 옷장`;
+  document.title = `${PLAYER.shown} ${titleKo()}의 소리 마을`;
+  ui.titleChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.title === PLAYER.title));
+}
+ui.nameInput.value = PLAYER.shown;
+ui.spokenInput.value = PLAYER.spoken;
+spokenEdited = PLAYER.spoken !== romanize(PLAYER.shown);
+for (const [key, t] of Object.entries(TITLES)) {
+  const b = document.createElement('button');
+  b.className = 'chip';
+  b.dataset.title = key;
+  b.innerHTML = `<span class="ic">${t.icon}</span>${t.ko}`;
+  b.addEventListener('click', () => {
+    Sound.unlock();
+    Sound.tap();
+    setPlayer({ title: key });
+    renderStart();
+    Sound.say([{ text: `${t.en} ${PLAYER.spoken}!`, pitch: 1.3 }]);
+  });
+  ui.titleChips.append(b);
+}
+ui.nameInput.addEventListener('input', () => {
+  setPlayer({ shown: ui.nameInput.value });
+  if (!spokenEdited) {
+    ui.spokenInput.value = romanize(ui.nameInput.value.trim());
+    setPlayer({ spoken: ui.spokenInput.value });
+  }
+  renderStart();
+});
+ui.spokenInput.addEventListener('input', () => {
+  spokenEdited = ui.spokenInput.value.trim() !== '';
+  setPlayer({ spoken: ui.spokenInput.value || romanize(PLAYER.shown) });
+});
+ui.hearName.addEventListener('click', () => {
+  Sound.unlock();
+  Sound.say([{ text: `${TITLES[PLAYER.title].en} ${PLAYER.spoken}!`, pitch: 1.3 }]);
+});
+renderStart();
+
 ui.startBtn.addEventListener('click', () => {
   Sound.unlock();
+  ui.nameInput.blur();
+  ui.spokenInput.blur();
+  save();
   ui.start.classList.add('hidden');
   showPlace('🌸 소리 마을');
   Sound.say([{ text: line('start'), pitch: 1.3 }]);

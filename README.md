@@ -15,6 +15,12 @@ npx http-server -p 8080 .
 
 ## How it works
 
+- **Start screen**: type the hero's name and pick a title (공주 princess,
+  왕자 prince, 여왕 queen, 기사 knight, 요정 fairy, 마법사 wizard, 탐험가
+  explorer, 선장 captain). A Korean name is turned into Latin letters for the
+  English voice (윤아 → Yuna); fix the spelling by hand if it sounds wrong and
+  tap 🔊 to hear it. Villagers then greet her as "Prince Seoyeon" and so on.
+
 - The town is 40 x 40 tiles and the camera follows the princess. Tap the
   ground to walk there.
 - **Castle**: the princess's home at the top of town. Tap it to walk to the
@@ -47,11 +53,11 @@ npx http-server -p 8080 .
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
-Stars, the outfit, recent words and the hint setting are saved in the browser.
+The name and title, stars, the outfit, recent words and the hint setting are saved in the browser.
 
 ## Customizing
 
-Content lives in `js/data.js`: the princess's name, the letters and words,
+Content lives in `js/data.js`: the default name and the titles (`TITLES`), the letters and words,
 the wardrobe options, the villagers and the house positions.
 
 ### Voices and lines

@@ -1,8 +1,21 @@
 // Phonics content, rewards and characters for PixelTown.
 // Everything a parent might want to tweak lives in this file.
 
-// The princess's name: `spoken` is read by the English voice, `shown` is on screen.
-const PLAYER = { spoken: 'Yuna', shown: '윤아' };
+// The hero's name and title, chosen on the start screen and saved.
+// `spoken` is read by the English voice, `shown` is on screen.
+const PLAYER = { spoken: 'Yuna', shown: '윤아', title: 'princess' };
+
+// Titles the hero can pick. `en` is what villagers call her, `ko` is shown.
+const TITLES = {
+  princess: { ko: '공주',   en: 'Princess', icon: '👸' },
+  prince:   { ko: '왕자',   en: 'Prince',   icon: '🤴' },
+  queen:    { ko: '여왕',   en: 'Queen',    icon: '👑' },
+  knight:   { ko: '기사',   en: 'Knight',   icon: '🛡️' },
+  fairy:    { ko: '요정',   en: 'Fairy',    icon: '🧚' },
+  wizard:   { ko: '마법사', en: 'Wizard',   icon: '🧙' },
+  explorer: { ko: '탐험가', en: 'Explorer', icon: '🧭' },
+  captain:  { ko: '선장',   en: 'Captain',  icon: '⚓' },
+};
 
 // Letters and words. `sound` is what the speech engine says for the
 // letter sound; short spellings like "buh" work better than IPA.
@@ -148,14 +161,14 @@ const VOICES = {
   maid:   { gender: 'female', pitch: 1.25, rate: 0.98, voice: ['Karen', 'Tessa', 'Microsoft Libby', 'Microsoft Jenny'] },
 };
 
-// Things people say. {name} is the princess, {wrong} the word she picked.
+// Things people say. {title} {name} is the hero ("Princess Yuna"), {little} the title in lower case, {wrong} the word she picked.
 const LINES = {
   ask: [
     'Listen carefully.', 'Here is my word.', 'Can you find this one?', 'Which word am I saying?',
     'Ready? Listen!', 'Ears open, here it comes.', 'Find the word I say.',
   ],
   praise: [
-    'Wonderful!', 'You got it!', 'Brilliant, Princess!', 'That is exactly right!',
+    'Wonderful!', 'You got it!', 'Brilliant, {title}!', 'That is exactly right!',
     'Wow, great listening!', 'Perfect!', 'Hooray, well done!', 'You are so clever!',
   ],
   retry: [
@@ -163,31 +176,31 @@ const LINES = {
     'Hmm, that is {wrong}. Listen carefully.', 'Good try! That says {wrong}. One more time.',
   ],
   gift: [
-    'I have a little present for you. Would you like to try it on?', 'This is for you, Princess! Do you want to wear it?',
+    'I have a little present for you. Would you like to try it on?', 'This is for you, {title}! Do you want to wear it?',
     'Ta-da! A present! Shall we try it?', 'You earned a gift! Would you like to put it on?',
   ],
-  yes: ['You look lovely!', 'So pretty!', 'That suits you perfectly!', 'Beautiful, Princess!', 'Wow, look at you!'],
+  yes: ['You look lovely!', 'So pretty!', 'That suits you perfectly!', 'Beautiful, {title}!', 'Wow, look at you!'],
   keep: ["Okay! I'll put it in your wardrobe.", 'Into the wardrobe it goes!', 'Lovely! You can try it on in your room later.'],
-  room: ['Here is your room, Princess!', 'Welcome to your own room!', 'Your wardrobe is waiting for you!'],
+  room: ['Here is your room, {title}!', 'Welcome to your own room!', 'Your wardrobe is waiting for you!'],
   dressup: ["Let's dress up!", 'What shall we wear today?', 'Pick your favourite!'],
-  castle: ['Welcome home, Princess!', 'Back to the castle!', 'Home sweet home!'],
+  castle: ['Welcome home, {title}!', 'Back to the castle!', 'Home sweet home!'],
   house: ['Knock, knock! The {letter} house!', 'Here is the {letter} house!', "Let's visit the {letter} house!"],
-  start: [`Good morning, Princess {name}! Let's visit the town!`, 'What a sunny day, Princess {name}! Shall we go and say hello to everyone?'],
+  start: [`Good morning, {title} {name}! Let's visit the town!`, 'What a sunny day, {title} {name}! Shall we go and say hello to everyone?'],
 };
 
 // Greetings in each person's own style.
 const PERSONA = {
-  knight: ['Good day, Princess {name}! I am guarding the castle gate.', 'Halt! Oh, it is you, Princess {name}. Fancy a word game?', 'At your service, Princess {name}!'],
-  flower: ['Hi, Princess {name}! Smell these roses. Mmm!', 'Hello! I just picked fresh flowers this morning.', 'Oh, Princess {name}! You look like a flower today.'],
-  granny: ['Oh, my dear Princess {name}! How you have grown!', 'Come here, sweetie. Grandma has a word for you.', 'Hello, darling. Would you like a cookie later?'],
-  fisher: ['Ahoy, Princess {name}! The fish are jumping today.', "Shh, the fish might hear us! Let's play quietly.", 'Hello there! I caught a big one this morning.'],
-  baker:  ['Good morning, Princess {name}! My bread just came out of the oven.', 'Hello! Something smells yummy in here, right?', 'Welcome, welcome! Fresh cakes for everyone!'],
-  kid:    ['Hey, Princess {name}! Wanna play a game with me?', 'Yay, you came! I have a super fun word for you.', 'Hi hi hi! Guess what? I have a word!'],
-  bard:   ['La la la! Hello, Princess {name}! Let me sing you a word.', 'Greetings, Princess! Listen to my song.', 'Ding ding! A musical word, coming right up!'],
-  farmer: ['Howdy, Princess {name}! My carrots are growing so big.', 'Hello there! The cows say hi too. Moo!', 'Morning, Princess! Busy day on the farm.'],
-  king:   ['There you are, my little princess! Shall we play a word game?', 'My dear {name}, I have a royal word for you.', 'Ho ho! The king has a puzzle for you.'],
-  queen:  ['Hello, my sweet {name}. Did you have fun in town today?', 'My darling princess, let me hear how well you listen.', 'You look wonderful today, {name}.'],
-  maid:   ['Good afternoon, Princess {name}. Shall I give you a word?', 'Your Highness! I have tidied your room. Now, a word game?', 'Hello, Princess! Would you like some tea after this?'],
+  knight: ['Good day, {title} {name}! I am guarding the castle gate.', 'Halt! Oh, it is you, {title} {name}. Fancy a word game?', 'At your service, {title} {name}!'],
+  flower: ['Hi, {title} {name}! Smell these roses. Mmm!', 'Hello! I just picked fresh flowers this morning.', 'Oh, {title} {name}! You look like a flower today.'],
+  granny: ['Oh, my dear {title} {name}! How you have grown!', 'Come here, sweetie. Grandma has a word for you.', 'Hello, darling. Would you like a cookie later?'],
+  fisher: ['Ahoy, {title} {name}! The fish are jumping today.', "Shh, the fish might hear us! Let's play quietly.", 'Hello there! I caught a big one this morning.'],
+  baker:  ['Good morning, {title} {name}! My bread just came out of the oven.', 'Hello! Something smells yummy in here, right?', 'Welcome, welcome! Fresh cakes for everyone!'],
+  kid:    ['Hey, {title} {name}! Wanna play a game with me?', 'Yay, you came! I have a super fun word for you.', 'Hi hi hi! Guess what? I have a word!'],
+  bard:   ['La la la! Hello, {title} {name}! Let me sing you a word.', 'Greetings, {title}! Listen to my song.', 'Ding ding! A musical word, coming right up!'],
+  farmer: ['Howdy, {title} {name}! My carrots are growing so big.', 'Hello there! The cows say hi too. Moo!', 'Morning, {title}! Busy day on the farm.'],
+  king:   ['There you are, my little {little}! Shall we play a word game?', 'My dear {name}, I have a royal word for you.', 'Ho ho! The king has a puzzle for you.'],
+  queen:  ['Hello, my sweet {name}. Did you have fun in town today?', 'My darling {little}, let me hear how well you listen.', 'You look wonderful today, {name}.'],
+  maid:   ['Good afternoon, {title} {name}. Shall I give you a word?', 'Hello, {title}! I have tidied your room. Now, a word game?', 'Hello, {title}! Would you like some tea after this?'],
 };
 
 // ---- Starlight Forest ----------------------------------------------------
@@ -230,11 +243,11 @@ Object.assign(VOICES, {
 });
 
 Object.assign(PERSONA, {
-  fairy:  ['Twinkle twinkle! Hello, Princess {name}!', 'Hee hee! I was dancing on a flower. Want to play?', 'Sprinkle, sprinkle! A magic word for you!'],
-  elf:    ['Welcome to the Starlight Forest, Princess {name}!', 'Shh, the trees are listening. Are you ready?', 'Ah, a princess! Elves love word puzzles.'],
-  wizard: ['Hmm, hmm. A young princess. Let us test those clever ears.', 'Abracadabra! These words all look alike. Listen very closely.', 'Welcome, Princess {name}. My puzzles are a little tricky.'],
-  gnome:  ['Oh ho! A visitor! Mind the mushrooms, Princess {name}.', 'Hello, little one. I have lived here a hundred years!', 'Psst! Want to hear a secret word?'],
-  ranger: ['Hello, Princess {name}! I look after the forest animals.', 'Did you see the fireflies? Aren\'t they beautiful?', 'Good evening, Princess. Let\'s see how well you listen.'],
+  fairy:  ['Twinkle twinkle! Hello, {title} {name}!', 'Hee hee! I was dancing on a flower. Want to play?', 'Sprinkle, sprinkle! A magic word for you!'],
+  elf:    ['Welcome to the Starlight Forest, {title} {name}!', 'Shh, the trees are listening. Are you ready?', 'Ah, a visitor! Elves love word puzzles.'],
+  wizard: ['Hmm, hmm. A new visitor. Let us test those clever ears.', 'Abracadabra! These words all look alike. Listen very closely.', 'Welcome, {title} {name}. My puzzles are a little tricky.'],
+  gnome:  ['Oh ho! A visitor! Mind the mushrooms, {title} {name}.', 'Hello, little one. I have lived here a hundred years!', 'Psst! Want to hear a secret word?'],
+  ranger: ['Hello, {title} {name}! I look after the forest animals.', 'Did you see the fireflies? Aren\'t they beautiful?', 'Good evening, {title}. Let\'s see how well you listen.'],
 });
 
 LINES.ask2 = [
