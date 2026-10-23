@@ -1248,7 +1248,7 @@ function drawRainbowStable(ctx, k, style) {
 
 // One gem crystal: a prism with two lit faces and a pointed top.
 // (x, y) is the bottom of its front edge; w is the half width.
-function drawCrystal(ctx, x, y, w, h, color) {
+function drawHutCrystal(ctx, x, y, w, h, color) {
   const tip = { x, y: y - h - w };
   const fl = { x, y: y + w / 2 };
   fillPoly(ctx, [{ x: x - w, y }, fl, { x, y: fl.y - h }, { x: x - w, y: y - h }], shade(color, -18));
@@ -1278,7 +1278,7 @@ function drawCrystalHut(ctx, k, style) {
     [cx + 12, cy + 14, 8, 16, tint],
     [cx - 38, cy + 8, 7, 16, tint],
   ];
-  for (const [x, y, w, h, c] of set) drawCrystal(ctx, x, y, w, h, c);
+  for (const [x, y, w, h, c] of set) drawHutCrystal(ctx, x, y, w, h, c);
   // Door on the front crystal's left face.
   const W = wall({ x: cx - 33, y: cy + 7 }, { x: cx - 13, y: cy + 17 });
   const mid = W.len / 2;

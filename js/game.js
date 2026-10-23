@@ -823,7 +823,7 @@ function renderShop() {
     b.classList.toggle('on', !!pick && pick.slot === it.slot && pick.value === it.value);
     b.classList.toggle('dear', it.price > state.coins);
     const look = it.item.c ? `<span class="sw" style="background:${it.item.c[0]}"></span>` : `<span class="ic">${it.item.icon}</span>`;
-    b.innerHTML = `${look}<span class="nm">${it.label.replace(/^\S+ /, '')}</span><span class="price">🪙${it.price}</span>`;
+    b.innerHTML = `${look}<span class="nm">${it.label.replace(/^\S+ /, '')}</span><span class="price"><span class="coin">🪙</span>${it.price}</span>`;
     b.addEventListener('click', () => {
       Sound.tap();
       state.shopPick = it;

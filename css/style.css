@@ -467,12 +467,18 @@ body.dungeon .vignette { background: radial-gradient(ellipse at center, transpar
 .shop { background: radial-gradient(circle at 30% 20%, #fffdf2, #fff0c8); }
 .shop .wd-count { font-size: 24px; color: #b07a10; }
 .shop-msg { padding: 0 6px; font-size: 18px; color: var(--accent); }
-.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
-.shop-item .price { margin-left: 2px; padding: 0 6px; border-radius: 10px; background: #fff4b8; color: #8a5a10; font-size: 15px; }
+.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); align-content: start; gap: 6px; padding: 3px; }
+.shop-item { display: flex; align-items: center; gap: 6px; text-align: left; }
+.shop-item .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shop-item .price { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 2px 8px 2px 4px; border-radius: 12px; background: #fff4b8; color: #8a5a10; font-size: 15px; line-height: 1; }
+.shop-item .price .coin { font-size: 13px; line-height: 1; }
 .shop-item.dear .price { background: #f2e8ee; color: #9a8aa3; }
 .shop .answer { margin-top: 2px; }
 .shop .answer button.hidden { display: none; }
 @media (max-width: 560px) {
+  .shop-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shop-item { padding: 6px 6px; font-size: 14px; gap: 4px; }
+  .shop-item .price { font-size: 13px; padding: 2px 6px 2px 3px; }
   .counters { gap: 4px; }
   .counters .stars { padding: 4px 10px; font-size: 22px; }
   .shop .answer button { font-size: 20px; padding: 10px 12px; }

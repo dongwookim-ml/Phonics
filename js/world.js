@@ -815,8 +815,8 @@ function addForestShop(sc) {
   const obj = addObject(sc, { c: S.c, r: S.r, w: 3, d: 3 }, footBounds(sc, S.c, S.r, 3, 3, 110, 12),
     ctx => drawCottage(ctx, boxCorners(sc, S.c, S.r, 3, 3), { roof: '#ffc94d', wall: '#fff4e0', door: 'left' }), { kind: 'shop' });
   const k = boxCorners(sc, S.c, S.r, 3, 3);
-  const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 30);
-  sc.signs.push({ x: sign.x, y: sign.y, text: '🛍️ 별빛 상점', color: '#e0a52a' });
+  const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 48);
+  sc.signs.push({ x: sign.x, y: sign.y, text: '🎁 별빛 상점', color: '#e0a52a' });
   const keeper = makeNpc({ who: '상점 아저씨', look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
   keeper.shop = true;
   keeper.badge = '🪙';
