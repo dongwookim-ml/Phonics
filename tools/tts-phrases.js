@@ -13,6 +13,9 @@ const D = vm.runInNewContext(`${src}
    UNICORN_NPCS, CASTLE_UP_NPCS, WORD_FAMILIES, RHYMES, PART_SOUNDS, SENTENCES, FOREST_STARS, UNICORN_STARS,
    DUNGEON_NPCS, DUNGEON_STARS })`);
 
+const B = vm.runInNewContext(`${fs.readFileSync(path.join(root, 'js/books.js'), 'utf8')}
+({ BOOKS, BOOK_LINES, bookSpoken, bookSentences })`);
+
 const out = new Map();
 const add = (voice, text, speed = 0.95) => {
   const t = String(text).trim().replace(/\s+/g, ' ');
@@ -80,6 +83,19 @@ lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dun
 for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
 for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS]) lines(N, ['locked'], { stars });
 for (const t of Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
+
+// The royal library: the librarian's welcome, then the narrator reads each
+// book a sentence at a time and asks its questions (js/library.js).
+for (const l of B.BOOK_LINES.welcome) for (const t of fills(l)) add(D.VOICES.librarian.tts, t);
+for (const k of ['quiz', 'right', 'tryAgain', 'reveal', 'done', 'theEnd']) for (const l of B.BOOK_LINES[k]) for (const t of fills(l)) add(N, t);
+for (const b of B.BOOKS) {
+  add(N, `${b.title}.`, 0.85);
+  for (const p of b.pages) for (const s of B.bookSentences(p.text)) add(N, s, 0.85);
+  for (const q of b.quiz) {
+    add(N, q.q);
+    for (const o of q.options) add(N, B.bookSpoken(o), 0.85);
+  }
+}
 
 const list = [...out.values()];
 fs.writeFileSync(path.join(__dirname, 'tts-phrases.json'), JSON.stringify(list, null, 0));

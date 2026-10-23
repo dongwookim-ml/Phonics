@@ -114,9 +114,9 @@ function load() {
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
     outfit = fitOutfit(outfit);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, pictures: !!s.pictures, looks: s.looks || {} };
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, pictures: !!s.pictures, looks: s.looks || {}, books: s.books || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, pictures: false };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, pictures: false, books: {} };
   }
 }
 
@@ -137,7 +137,7 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, pictures: state.pictures, recent: Quiz.recent, player: PLAYER, books: state.books })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -151,6 +151,7 @@ const state = {
   owned: saved.owned,
   stars: saved.stars,
   coins: saved.coins,
+  books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
   pictures: saved.pictures,
   scenes: {},
   scene: null,
@@ -427,6 +428,7 @@ function openDialog(npc) {
   if (npc.shop) { openShop(npc); return; }
   state.busy = true;
   state.talking = npc;
+  libraryDialog(npc);
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
   if (waiting(npc)) {
@@ -1394,6 +1396,13 @@ function onPointer(e) {
   if (shop) {
     Sound.tap();
     talkTo(shop.keeper);
+    return;
+  }
+  // The library's bookcases open the book list.
+  const shelf = hits.find(o => o.kind === 'bookcase');
+  if (shelf) {
+    Sound.tap();
+    walkTo((c, r) => shelf.front.some(f => f.c === c && f.r === r), openLibrary);
     return;
   }
   const robe = hits.find(o => o.kind === 'wardrobe');
