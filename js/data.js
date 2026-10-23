@@ -592,3 +592,67 @@ Object.assign(HEADWEAR, {
 Object.assign(HAND_ITEMS, {
   lantern: { name: '반딧불 랜턴', icon: '🏮', shop: true, price: 8 },
 });
+
+// ---- Fairy Village (level 5) ------------------------------------------------
+
+// The Fairy Village opens from the east end of town's lower road.
+const FAIRY_STARS = 15;
+
+// Little fairies that fly along above the hero's head. These only come from
+// the Fairy Village (or the shop). `dress`, `wing`, `hair` and `glow` colour the sprite.
+const FAIRIES = {
+  none:     { name: '없음',       icon: '' },
+  pink:     { name: '꽃잎 요정',   icon: '🌸', fairy: true, price: 10, dress: '#ff8fc0', wing: '#ffd8ec', hair: '#ffe08a', glow: '#ffb0d8' },
+  lavender: { name: '라벤더 요정', icon: '💜', fairy: true, price: 10, dress: '#b9a0ff', wing: '#e8dcff', hair: '#7a4a2e', glow: '#d0b8ff' },
+  sky:      { name: '이슬 요정',   icon: '💧', fairy: true, price: 10, dress: '#8fd3ff', wing: '#e0f6ff', hair: '#ffffff', glow: '#a8e4ff' },
+  mint:     { name: '새싹 요정',   icon: '🌱', fairy: true, price: 10, dress: '#8fe8b0', wing: '#e0fff0', hair: '#a8703f', glow: '#b0ffd0' },
+  sun:      { name: '햇살 요정',   icon: '🌼', fairy: true, price: 10, dress: '#ffd66b', wing: '#fff6c8', hair: '#ff9a6b', glow: '#fff0a0' },
+  star:     { name: '별빛 요정',   icon: '⭐', fairy: true, price: 10, dress: '#6a6ac8', wing: '#d8d8ff', hair: '#ffe066', glow: '#fff6a8' },
+};
+DEFAULT_OUTFIT.fairy = 'none';
+DEFAULT_BOY_OUTFIT.fairy = 'none';
+
+// Spelling questions use short words whose letters each say their own sound
+// (c-a-t, f-r-o-g), taken from the word lists above so their recordings
+// exist. She picks from at least this many letter tiles.
+const SPELL_TILES = 6;
+
+// Fairy dust: every right answer in the Fairy Village gives between these
+// two amounts. What it buys is still to be decided; for now it is saved.
+const FAIRY_DUST = [2, 4];
+
+// Fairy folk have wings. `gives` is the little fairy each one offers first.
+LOOKS.fairyqueen = { hair: '#fff2b8', shirt: '#e4d8ff', pants: '#c8b0ff', hat: 'crown', gown: true, wings: '#d8c8ff' };
+LOOKS.pixie      = { hair: '#ff94c4', shirt: '#ffd0e6', pants: '#ff9ec4', hat: 'flowerband', gown: true, wings: '#ffd8ec' };
+LOOKS.dewfairy   = { hair: '#8fd3ff', shirt: '#d4f0ff', pants: '#9ccce8', hat: 'dewdrop', gown: true, wings: '#d4f4ff' };
+LOOKS.sprout     = { hair: '#a8703f', shirt: '#b0f0c8', pants: '#5fc48a', hat: 'leaf', wings: '#d8ffe8' };
+LOOKS.sunny      = { hair: '#ff9a6b', shirt: '#fff2b8', pants: '#ffd66b', hat: 'petalcap', gown: true, wings: '#fff6c8' };
+
+const FAIRY_NPCS = [
+  { name: '요정 여왕', look: 'fairyqueen', gives: 'star', c: 14, r: 3 },
+  { name: '꽃잎 요정', look: 'pixie',      gives: 'pink', c: 6,  r: 9 },
+  { name: '햇살 요정', look: 'sunny',      gives: 'sun',  c: 19, r: 9 },
+  { name: '이슬 요정', look: 'dewfairy',   gives: 'sky',  c: 15, r: 18 },
+  { name: '새싹 요정', look: 'sprout',     gives: 'mint', c: 6,  r: 18 },
+];
+
+Object.assign(VOICES, {
+  fairyqueen: { gender: 'female', tts: 'bf_emma',  pitch: 1.2,  rate: 0.9,  voice: ['Serena', 'Kate', 'Google UK English Female', 'Microsoft Sonia'] },
+  pixie:      { gender: 'female', tts: 'af_kore',  pitch: 1.7,  rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  dewfairy:   { gender: 'female', tts: 'af_aoede', pitch: 1.5,  rate: 0.95, voice: ['Samantha', 'Karen', 'Microsoft Aria'] },
+  sprout:     { gender: 'female', tts: 'af_sarah', pitch: 1.6,  rate: 1.05, voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
+  sunny:      { gender: 'female', tts: 'af_bella', pitch: 1.55, rate: 1.0,  voice: ['Samantha', 'Google US English', 'Microsoft Aria'] },
+});
+Object.assign(PERSONA, {
+  fairyqueen: ['Welcome to the Fairy Village, {title} {name}!', 'Hello, dear {name}. My fairies love clever spellers.', 'Ah, {title} {name}! Shall we make some word magic?'],
+  pixie:      ['Hee hee! Hello, {title} {name}! I live in a tulip.', 'Flutter flutter! I have a word for you to spell!', 'Hi! I just woke up in my flower. Want to play?'],
+  dewfairy:   ['Hello, {title} {name}! I sprinkle the morning dew.', 'Splish! I was sitting on a lily pad. Ready to spell?', 'Hi there! Every dewdrop has a letter inside.'],
+  sprout:     ['Hi, {title} {name}! I help the little seeds grow.', 'Pop! A new leaf! And a new word for you!', "Hello! Let's grow a word, one letter at a time."],
+  sunny:      ['Good morning, {title} {name}! I bring the sunshine.', 'Hello, sunshine! I have a sparkly word for you.', "Yay, a visitor! Let's spell together!"],
+});
+
+QUIZ_TYPES.fairy = ['spell'];
+
+LINES.spell = ['Can you spell it?', 'Spell the word you hear!', 'Tap the letters in order.', 'Which letters make this word?', "Let's spell it together!"];
+LINES.fairyland = ['Welcome to the Fairy Village!', 'Look, the flowers are giant here!', 'Sparkle, sparkle! The fairies are waiting for you.'];
+LINES.newFairy = ['A little fairy wants to fly with you! Shall she come along?', 'This fairy would love to be your friend! Shall she fly with you?', 'Flutter flutter! A fairy friend for you! Shall she come now?'];

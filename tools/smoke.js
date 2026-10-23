@@ -33,7 +33,7 @@ for (const s of scripts) {
       document.querySelector(`[data-title="${look === 'boy' ? 'prince' : 'princess'}"]`).click();
       document.querySelector('.start').classList.add('hidden');
       state.stars = 99;
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
       const bad = [];
       for (const n of names) {
         try { changeScene(n); } catch (e) { bad.push(`${n}: ${e.message}`); }

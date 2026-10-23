@@ -99,6 +99,8 @@ function renderGround(sc) {
         case 'meadow': drawMeadow(g, o.x, o.y, c, r, t.flowers); break;
         case 'rainbow': drawRainbowPath(g, o.x, o.y, Math.floor(t.band / 2)); break;
         case 'cave': drawCaveFloor(g, o.x, o.y); break;
+        case 'fairygrass': drawFairyGrass(g, o.x, o.y, c, r, t.flowers); break;
+        case 'petals': drawPetalPath(g, o.x, o.y); break;
         default: drawGrass(g, o.x, o.y, c, r, false);
       }
       if (t.rug) drawDoormat(g, o.x, o.y, t.rug);
@@ -238,8 +240,42 @@ function buildTown() {
   sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', style: 'gate', needStars: FOREST_STARS }));
   const gp = tileCenter(sc, 19.5, 38);
   sc.signs.push({ x: gp.x, y: gp.y - 64, text: '🌲 별빛 숲 마을', color: '#8f70e0', needStars: FOREST_STARS });
+  addTownFairyGate(sc);
   renderGround(sc);
   return sc;
+}
+
+// Gate to the Fairy Village at the east end of the lower road. The road
+// runs on through the ring of trees, which are cleared out of its way.
+function addTownFairyGate(sc) {
+  for (const [c, r] of [[37, 27], [38, 26], [38, 27], [39, 26], [39, 27]]) setTile(sc, c, r, 'road');
+  // Trees on the road or right in front of the gate make way.
+  sc.objects = sc.objects.filter(o => !(o.tree && o.c0 >= 37 && o.r0 >= 26 && o.r0 <= 29));
+  for (let r = 26; r <= 29; r++) for (let c = 37; c <= 39; c++) tileAt(sc, c, r).blocked = false;
+  addSideGate(sc, 38, [25, 28], '#ffb0d8', [38, 39]);
+  for (const r of [26, 27]) sc.links.push({ c: 39, r, target: 'fairy', at: { c: 2, r: r - 14 }, icon: '🧚', style: 'gate', needStars: FAIRY_STARS });
+  // The sign hangs a little toward the far post so it clears the T house sign.
+  const gp = tileCenter(sc, 39, 25.5);
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: '🧚 요정 마을', color: '#e070a8', needStars: FAIRY_STARS });
+}
+
+// Like addGate, for a gate on the left or right edge: the posts stand at
+// rows `rows` of column c, with a mat on columns `mats` between them.
+function addSideGate(sc, c, rows, mat, mats) {
+  const post = makeGatePost();
+  for (const r of rows) {
+    const p = tileCenter(sc, c, r);
+    sc.objects = sc.objects.filter(o => !(o.tree && o.c0 === c && o.r0 === r));
+    block(sc, c, r, 1, 1);
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
+  }
+  for (let r = rows[0] + 1; r < rows[1]; r++) for (const cc of mats) if (tileAt(sc, cc, r)) tileAt(sc, cc, r).mat = mat;
+  // The post further down the column is the one on the left on screen.
+  const A = tileCenter(sc, c, rows[1]);
+  const B = tileCenter(sc, c, rows[0]);
+  const bounds = { x: A.x - 2, y: B.y - 60, w: B.x - A.x + 4, h: A.y - B.y + 34 };
+  addObject(sc, { c, r: rows[0], w: 1, d: rows[1] - rows[0] + 1 }, bounds, ctx => drawGateArch(ctx, A, B, shade(mat, -20)));
 }
 
 // Two gate posts at columns `cols` on row r, joined by a garland arch, with
@@ -914,6 +950,136 @@ function buildDungeon() {
   for (const c of [7, 8]) tileAt(sc, c, sc.D - 1).mat = '#bfefff';
   sc.links = [7, 8].map(c => ({ c, r: sc.D - 1, target: 'forest', at: { c: 3, r: 16 + (c - 7) }, icon: '🌲' }));
   sc.start = { c: 7, r: sc.D - 2 };
+  renderGround(sc);
+  return sc;
+}
+
+// ---- Fairy Village -----------------------------------------------------------
+
+const FAIRY_N = 26;
+
+// Giant flowers and toadstools, teacup and tulip cottages, a lily pond and
+// petal paths. The gate back to town is on the west edge.
+function buildFairyVillage() {
+  const sc = makeScene('fairy', FAIRY_N, FAIRY_N, 130, 60);
+  sc.outdoor = true;
+  const N = FAIRY_N;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    setTile(sc, c, r, 'fairygrass');
+    tileAt(sc, c, r).flowers = hash(c, r, 83) < 0.2;
+  }
+  const reserved = new Set();
+  const key = (c, r) => r * N + c;
+  const reserve = (c, r) => reserved.add(key(c, r));
+  // Petal paths: one from the gate, one north to the queen, round a plaza.
+  for (let c = 0; c <= 22; c++) for (const r of [12, 13]) setTile(sc, c, r, 'petals');
+  for (let r = 2; r <= 22; r++) for (const c of [12, 13]) setTile(sc, c, r, 'petals');
+  for (let r = 8; r <= 17; r++) for (let c = 8; c <= 17; c++) if ((c - 12.5) ** 2 + (r - 12.5) ** 2 <= 10) setTile(sc, c, r, 'petals');
+  // Lily pond.
+  for (let r = 16; r <= 23; r++) for (let c = 15; c <= 23; c++) {
+    if (((c - 19) / 3.6) ** 2 + ((r - 20) / 2.8) ** 2 <= 1) setTile(sc, c, r, 'water');
+  }
+
+  // Props on single tiles: giant flowers, toadstools and lily pads.
+  const prop = (c, r, up, draw, w = 32) => {
+    block(sc, c, r, 1, 1);
+    reserve(c, r);
+    const p = tileCenter(sc, c, r);
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - w / 2, y: p.y - up, w, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    return p;
+  };
+  // A giant flower in the middle of the plaza.
+  block(sc, 12, 12, 2, 2);
+  for (let r = 11; r <= 14; r++) for (let c = 11; c <= 14; c++) reserve(c, r);
+  const mid = tileCenter(sc, 12.5, 12.5);
+  addObject(sc, { c: 12, r: 12, w: 2, d: 2 }, { x: mid.x - 34, y: mid.y - 84, w: 68, h: 92 }, ctx => {
+    drawGiantFlower(ctx, Math.round(mid.x) - 12, Math.round(mid.y) + 2, '#c8a8ff', 36);
+    drawGiantFlower(ctx, Math.round(mid.x) + 12, Math.round(mid.y) + 2, '#8fd3ff', 32);
+    drawGiantFlower(ctx, Math.round(mid.x), Math.round(mid.y) + 6, '#ff9ec4', 60);
+  });
+  sc.lamps.push({ x: mid.x, y: mid.y - 66, big: true });
+  const petals = ['#ff9ec4', '#c8a8ff', '#ffd66b', '#8fd3ff', '#ffb0b0', '#ffffff'];
+  [[3, 9], [10, 3], [16, 6], [22, 10], [10, 16], [2, 21], [15, 23], [23, 15], [7, 11], [16, 9]].forEach(([c, r], i) => {
+    const p = prop(c, r, 56, (ctx, x, y) => drawGiantFlower(ctx, x, y, petals[i % petals.length], 38 + (i % 3) * 5));
+    sc.lamps.push({ x: p.x, y: p.y - 44 - (i % 3) * 5, small: true });
+  });
+  [[10, 6], [2, 6], [21, 4], [9, 22], [23, 18], [15, 10]].forEach(([c, r], i) => {
+    prop(c, r, 46, (ctx, x, y) => drawTallShroom(ctx, x, y, ['#ff8fb8', '#b9a0ff', '#ffb347', '#8fd3ff'][i % 4]), 34);
+  });
+  for (const [c, r, fl] of [[17, 19, '#ff9ec4'], [20, 18, null], [21, 21, '#ffffff'], [18, 21, null], [19, 19, '#ffd0ec'], [16, 20, null], [22, 20, null]]) {
+    if (tileAt(sc, c, r).type !== 'water') continue;
+    const p = tileCenter(sc, c, r);
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 10, y: p.y - 10, w: 20, h: 16 }, ctx => drawLilyPad(ctx, Math.round(p.x), Math.round(p.y + 1), fl));
+  }
+
+  // Fairy cottages: teacups and tulips, each on a 2 x 2 footprint.
+  for (const [c, r, kind, col] of [[5, 5, 'cup', '#ff9ec4'], [15, 1, 'tulip', '#c8a8ff'], [20, 7, 'cup', '#8fc8ff'], [4, 17, 'tulip', '#ff9ec4'], [7, 1, 'tulip', '#ffd66b'], [18, 14, 'cup', '#8fdcc0']]) {
+    block(sc, c, r, 2, 2);
+    for (let rr = r - 1; rr <= r + 2; rr++) for (let cc = c - 1; cc <= c + 2; cc++) reserve(cc, rr);
+    const m = tileCenter(sc, c + 0.5, r + 0.5);
+    addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 46, y: m.y - 86, w: 92, h: 100 },
+      ctx => (kind === 'cup' ? drawTeacupHouse : drawFlowerHouse)(ctx, Math.round(m.x), Math.round(m.y), col));
+    sc.lamps.push({ x: m.x + 15, y: m.y - 24 });
+  }
+
+  // Flower arches over the paths: only their feet block the way.
+  for (const [a, b] of [[[4, 11], [4, 14]], [[11, 5], [14, 5]], [[11, 19], [14, 19]]]) {
+    for (const [c, r] of [a, b]) { block(sc, c, r, 1, 1); reserve(c, r); }
+    const pa = tileCenter(sc, a[0], a[1]);
+    const pb = tileCenter(sc, b[0], b[1]);
+    const foot = { c: Math.min(a[0], b[0]), r: Math.min(a[1], b[1]), w: Math.abs(a[0] - b[0]) + 1, d: Math.abs(a[1] - b[1]) + 1 };
+    const x0 = Math.min(pa.x, pb.x) - 10;
+    const y0 = Math.min(pa.y, pb.y) - 70;
+    addObject(sc, foot, { x: x0, y: y0, w: Math.abs(pa.x - pb.x) + 20, h: Math.abs(pa.y - pb.y) + 80 }, ctx => drawFlowerArch(ctx, pa.x < pb.x ? pa : pb, pa.x < pb.x ? pb : pa));
+  }
+  for (const n of FAIRY_NPCS) reserve(n.c, n.r);
+  for (let r = 10; r <= 15; r++) for (let c = 0; c <= 3; c++) reserve(c, r);
+
+  // Fairy rings of tiny glowing mushrooms on the lawn.
+  sc.paintGround = g => {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const t = tileAt(sc, c, r);
+      if (t.type !== 'fairygrass' || t.blocked || hash(c, r, 75) > 0.07) continue;
+      const p = tileCenter(sc, c, r);
+      const col = ['#ffb0d8', '#d8c0ff', '#a8e4ff'][Math.floor(hash(c, r, 76) * 3)];
+      for (let i = 0; i < 5; i++) drawGlowShroom(g, Math.round(p.x + Math.cos(i * 1.26) * 8), Math.round(p.y + 2 + Math.sin(i * 1.26) * 4), col);
+    }
+  };
+
+  // Blossom trees around the edge, little flower bushes inside.
+  const ring = [makeTree('lilac'), makeTree('blossom'), makeTree('cotton'), makeTree('lilac'), makePlant('mintPine'), makeTree('candy')];
+  const inner = [makePlant('tulips'), makePlant('bluebells'), makePlant('heartBush'), makePlant('tulips'), makeTree('lilac')];
+  const nearPath = (c, r) => {
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const t = tileAt(sc, c + dc, r + dr);
+      if (t && (t.type === 'petals' || t.type === 'water')) return true;
+    }
+    return false;
+  };
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const t = tileAt(sc, c, r);
+    if (t.blocked || reserved.has(key(c, r)) || t.type !== 'fairygrass' || nearPath(c, r)) continue;
+    const edge = c < 2 || r < 2 || c > N - 3 || r > N - 3;
+    if (hash(c, r, 97) >= (edge ? 0.55 : 0.1)) continue;
+    if (!edge && sc.objects.some(o => o.tree && Math.abs(o.c0 - c) <= 1 && Math.abs(o.r0 - r) <= 1)) continue;
+    const list = edge ? ring : inner;
+    const tree = list[Math.floor(hash(c, r, 98) * list.length)];
+    block(sc, c, r, 1, 1);
+    const p = tileCenter(sc, c, r);
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, tree: true, canvas: tree.canvas, x: p.x - tree.ax, y: p.y - tree.ay, w: tree.canvas.width, h: tree.canvas.height });
+  }
+
+  for (const n of FAIRY_NPCS) {
+    const npc = makeNpc(n, null);
+    Object.assign(npc, { level: 5, gives: n.gives, badge: '✨' });
+    sc.npcs.push(npc);
+  }
+  // Gate back to town on the west edge.
+  addSideGate(sc, 1, [11, 14], '#ffd0ec', [0, 1]);
+  sc.links = [12, 13].map(r => ({ c: 0, r, target: 'town', at: { c: 37, r: r + 14 }, icon: '🌸', style: 'gate' }));
+  const tg = tileCenter(sc, 1, 12.5);
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: '🌸 소리 마을', color: '#ff8fc0' });
+  sc.start = { c: 2, r: 12 };
   renderGround(sc);
   return sc;
 }

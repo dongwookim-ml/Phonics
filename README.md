@@ -83,10 +83,22 @@ npx http-server -p 8080 .
   coins, including a few shop-only treasures (crystal dress, silver hair,
   gem headband, firefly lantern). Prices are in `shopPrice()` in
   `js/game.js`, or `price` on an item.
+- **Fairy Village (level 5)**: a gate at the east end of town's lower road
+  opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
+  and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
+  questions: hear "cat", see 🐱 and three blanks, and tap the letter tiles
+  c, a, t in order (each tap says the letter's sound; 지움 takes back the
+  last letter; a keyboard works too). The words are the game's own short
+  words where every letter says its sound (`spell` in `js/quiz.js`).
+- **Fairy friends**: right answers in the Fairy Village give one of six
+  little fairies (each fairy villager offers her own first). Her fairy
+  flies above her head and trails after her, also while riding; pick one
+  in the wardrobe. Every right answer there also gives 2–4 ✨ fairy dust,
+  shown next to the stars. What dust is for is not decided yet; it is saved.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
-The name, title and look (girl or boy), stars, coins, the outfit, recent words and the hint setting are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words and the hint setting are saved in the browser.
 
 ## Customizing
 

@@ -44,6 +44,7 @@ const ui = {
   wdCount: document.getElementById('wd-count'),
   wdDone: document.getElementById('wd-done'),
   coins: document.getElementById('coins'),
+  dust: document.getElementById('dust'),
   shop: document.getElementById('shop'),
   shopCoins: document.getElementById('shop-coins'),
   shopMsg: document.getElementById('shop-msg'),
@@ -62,6 +63,7 @@ const WARDROBE = [
   { slot: 'hair', title: '머리 색', items: HAIR_COLORS },
   { slot: 'back', title: '등에 다는 것 (별빛 숲)', items: BACK_ITEMS },
   { slot: 'ride', title: '유니콘 (유니콘 마을)', items: UNICORNS },
+  { slot: 'fairy', title: '요정 친구 (요정 마을)', items: FAIRIES },
 ];
 
 // ---- Saved progress ------------------------------------------------------
@@ -114,9 +116,9 @@ function load() {
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
     outfit = fitOutfit(outfit);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, pictures: !!s.pictures, looks: s.looks || {} };
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures: !!s.pictures, looks: s.looks || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, pictures: false };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: false };
   }
 }
 
@@ -137,7 +139,7 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -151,6 +153,7 @@ const state = {
   owned: saved.owned,
   stars: saved.stars,
   coins: saved.coins,
+  dust: saved.dust,  // fairy dust from the Fairy Village
   pictures: saved.pictures,
   scenes: {},
   scene: null,
@@ -166,6 +169,7 @@ const state = {
   timers: [],
   mounted: false,    // riding her unicorn right now
   parked: null,      // { sc, npc } where the unicorn waits when she is off it
+  fairyAt: null,     // where her fairy friend is flying, in world pixels
 };
 
 function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
@@ -179,6 +183,7 @@ function sceneFor(target) {
     else if (target === 'forest') state.scenes[target] = buildForest();
     else if (target === 'unicorn') state.scenes[target] = buildUnicornVillage();
     else if (target === 'dungeon') state.scenes[target] = buildDungeon();
+    else if (target === 'fairy') state.scenes[target] = buildFairyVillage();
     else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
@@ -252,6 +257,8 @@ function changeScene(target, at, label) {
     document.body.classList.toggle('forest', state.scene.kind === 'forest');
     document.body.classList.toggle('unicorn', state.scene.kind === 'unicorn');
     document.body.classList.toggle('dungeon', state.scene.kind === 'dungeon');
+    document.body.classList.toggle('fairy', state.scene.kind === 'fairy');
+    state.fairyAt = null;
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);
     // Her unicorn waits next to her whenever she steps outside on foot.
@@ -460,6 +467,8 @@ function openDialog(npc) {
     ui.choices.append(b);
   });
   ui.choices.classList.toggle('four', q.options.length > 3);
+  ui.choices.classList.toggle('spell', !!q.tiles);
+  if (q.tiles) renderSpell(q);
   ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
   const greet = [{ text: hello }, { pause: 400 }];
@@ -489,6 +498,7 @@ function choose(i, btn) {
     Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(state.talking));
     // Cave monsters pay in coins instead of a star and a present.
     if (state.talking.monster) { catchMonster(state.talking); return; }
+    if (state.talking.level === 5) addDust();
     state.stars++;
     state.answered++;
     save();
@@ -506,8 +516,10 @@ function choose(i, btn) {
     npc.missed = q;
     npc.waitUntil = state.answered + 1;
     const retry = line('retry');
-    ui.text.textContent = `${o.wrong}… ${retry}`;
-    Sound.say([{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }, { text: retry }], voiceOf(npc));
+    // A misspelled word that isn't a real word has nothing to say back.
+    const back = o.wrong ? [{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }] : [];
+    ui.text.textContent = o.wrong ? `${o.wrong}… ${retry}` : retry;
+    Sound.say(back.concat({ text: retry }), voiceOf(npc));
     later(5200, () => { if (state.talking === npc) closeDialog(); });
   }
 }
@@ -536,15 +548,17 @@ function rewardChoices(level) {
     for (const value of Object.keys(items)) {
       if (value === 'none' || value === o[slot]) continue;
       if (!suits(items[value])) continue;
-      if (items[value].forest && level < 2) continue;
-      if (items[value].unicorn && level < 3) continue;
+      // The Fairy Village gives its fairies, then everyday presents.
+      if (items[value].fairy && level !== 5) continue;
+      if (items[value].forest && (level < 2 || level === 5)) continue;
+      if (items[value].unicorn && (level < 3 || level === 5)) continue;
       if (items[value].shop) continue;
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
       (r.isNew ? fresh : worn).push(r);
     }
   }
-  // Forest folk and unicorns hand out their own treasures before anything else.
-  const mark = level === 3 ? 'unicorn' : 'forest';
+  // Forest folk, unicorns and fairies hand out their own treasures before anything else.
+  const mark = level === 5 ? 'fairy' : level === 3 ? 'unicorn' : 'forest';
   const special = fresh.filter(r => WARDROBE.find(w => w.slot === r.slot).items[r.value][mark]);
   if (level >= 2 && special.length) return special;
   return fresh.length ? fresh : worn;
@@ -569,7 +583,9 @@ function offerReward(npc) {
   const slot = pick([...new Set(all.map(r => r.slot))]);
   // A unicorn that isn't hers yet would love to come along itself.
   const self = npc && npc.unicorn && all.find(r => r.slot === 'ride' && r.value === npc.unicorn && r.isNew);
-  const gift = self || pick(all.filter(r => r.slot === slot));
+  // Each fairy villager has a favourite little fairy to give first.
+  const own = npc && npc.gives && all.find(r => r.slot === 'fairy' && r.value === npc.gives && r.isNew);
+  const gift = self || own || pick(all.filter(r => r.slot === slot));
   state.gift = gift;
   if (gift.isNew) {
     state.owned[gift.slot].push(gift.value);
@@ -578,16 +594,17 @@ function offerReward(npc) {
   const next = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
   ui.rewardTitle.textContent = `🎁 ${npc ? npc.name : ''}의 선물!`;
   const ride = gift.slot === 'ride';
-  ui.rewardName.textContent = !gift.isNew ? gift.label : ride ? `${gift.label} · 새 친구가 생겼어요!` : `${gift.label} · 옷장에 쏙!`;
-  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : '지금 입을래요 💖';
-  ui.rewardNo.textContent = !gift.isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : '옷장에 넣을래요 🎀';
+  const fairy = gift.slot === 'fairy';
+  ui.rewardName.textContent = !gift.isNew ? gift.label : ride || fairy ? `${gift.label} · 새 친구가 생겼어요!` : `${gift.label} · 옷장에 쏙!`;
+  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
+  ui.rewardNo.textContent = !gift.isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
   drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
   drawPortrait(ui.pvNew, heroPortrait(next, ride || state.mounted));
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
   Sound.party();
   state.giver = npc;
-  Sound.say([{ pause: 600 }, { text: line(ride ? 'newUnicorn' : 'gift') }], voiceOf(npc));
+  Sound.say([{ pause: 600 }, { text: line(ride ? 'newUnicorn' : fairy ? 'newFairy' : 'gift') }], voiceOf(npc));
 }
 
 function acceptReward(yes) {
@@ -607,7 +624,8 @@ function acceptReward(yes) {
 }
 
 function heroPortrait(outfit, riding) {
-  return riding && outfit.ride !== 'none' ? riderSprite(outfit, 0, isBoy()) : heroSprite(outfit, 0);
+  const sprite = riding && outfit.ride !== 'none' ? riderSprite(outfit, 0, isBoy()) : heroSprite(outfit, 0);
+  return withFairy(sprite, outfit, riding && outfit.ride !== 'none');
 }
 
 function drawPortrait(cv, sprite) {
@@ -626,6 +644,7 @@ function renderStars(pop) {
     ui.stars.classList.add('pop');
   }
   renderCoins(false);
+  renderDust(false);
 }
 
 function followLink(link) {
@@ -644,6 +663,9 @@ function followLink(link) {
     respawnMonsters(sceneFor('dungeon'));
     changeScene('dungeon', link.at, '💎 반짝 동굴');
     Sound.say([{ text: line('dungeon'), pitch: 1.3 }]);
+  } else if (link.target === 'fairy') {
+    changeScene('fairy', link.at, '🧚 요정 마을');
+    Sound.say([{ text: line('fairyland'), pitch: 1.3 }]);
   } else if (link.target === 'town') {
     changeScene('town', link.at, '🌸 소리 마을');
   } else if (link.target === 'castle2') {
@@ -853,12 +875,13 @@ function buyPick() {
   ui.shop.classList.add('hidden');
   // The same "wear it now?" card as a present.
   const ride = pick.slot === 'ride';
+  const fairy = pick.slot === 'fairy';
   state.gift = { slot: pick.slot, value: pick.value, label: pick.label, isNew: true };
   state.giver = npc;
   ui.rewardTitle.textContent = '🛍️ 샀어요!';
-  ui.rewardName.textContent = ride ? `${pick.label} · 새 친구가 생겼어요!` : `${pick.label} · 옷장에 쏙!`;
-  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : '지금 입을래요 💖';
-  ui.rewardNo.textContent = ride ? '마구간에 둘래요 🏡' : '옷장에 넣을래요 🎀';
+  ui.rewardName.textContent = ride || fairy ? `${pick.label} · 새 친구가 생겼어요!` : `${pick.label} · 옷장에 쏙!`;
+  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
+  ui.rewardNo.textContent = ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
   drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
   drawPortrait(ui.pvNew, heroPortrait(Object.assign({}, state.outfit, { [pick.slot]: pick.value }), ride || state.mounted));
   ui.reward.classList.remove('hidden');
@@ -871,6 +894,171 @@ function closeShop() {
   ui.shop.classList.add('hidden');
   state.busy = false;
   state.shopkeeper = null;
+}
+
+// ---- Fairy Village -------------------------------------------------------
+
+// Spelling questions: letter tiles under the blanks, and an erase key.
+// Each tap fills the next blank and says the letter's sound; when every
+// blank is full the word is checked like any other answer (see choose).
+function renderSpell(q) {
+  q.picked = [];
+  q.checking = false;
+  q.options = [];
+  ui.choices.innerHTML = '';
+  q.tiles.forEach((t, i) => {
+    const b = document.createElement('button');
+    b.className = 'choice tile';
+    b.innerHTML = `<span class="letter">${t.l}</span>`;
+    b.addEventListener('click', () => spellTap(i));
+    ui.choices.append(b);
+  });
+  const erase = document.createElement('button');
+  erase.className = 'erase';
+  erase.title = '지움';
+  erase.innerHTML = '<span class="ic">⌫</span><span>지움</span>';
+  erase.addEventListener('click', spellErase);
+  ui.choices.append(erase);
+  showSpelled(q);
+}
+
+function showSpelled(q) {
+  ui.clue.querySelectorAll('.spell-word .slot').forEach((s, i) => {
+    const t = q.tiles[q.picked[i]];
+    s.textContent = t ? t.l : '';
+    s.classList.toggle('full', !!t);
+    s.classList.toggle('next', !q.done && i === q.picked.length);
+  });
+  ui.choices.querySelectorAll('.tile').forEach((b, i) => { b.disabled = q.done || q.picked.includes(i); });
+  const erase = ui.choices.querySelector('.erase');
+  if (erase) erase.disabled = q.done || q.checking || !q.picked.length;
+}
+
+function spellTap(i) {
+  const q = state.question;
+  if (!q || !q.tiles || q.done || q.checking || q.picked.includes(i)) return;
+  q.picked.push(i);
+  Sound.tap();
+  Sound.say([{ text: q.tiles[i].sound, narrator: true, rate: 0.8 }]);
+  if (q.picked.length === q.word.length) {
+    // A moment to see the last letter before the answer.
+    q.checking = true;
+    later(700, () => checkSpell(q));
+  }
+  showSpelled(q);
+}
+
+function spellErase() {
+  const q = state.question;
+  if (!q || !q.tiles || q.done || q.checking || !q.picked.length) return;
+  q.picked.pop();
+  Sound.tap();
+  showSpelled(q);
+}
+
+function checkSpell(q) {
+  if (state.question !== q || q.done) return;
+  q.checking = false;
+  const spelled = q.picked.map(i => q.tiles[i].l).join('');
+  q.options = [{ right: true }, { right: false, wrong: q.isWord(spelled) ? spelled : '' }];
+  choose(spelled === q.word ? 0 : 1, ui.clue.querySelector('.spell-word'));
+  q.options = [];
+  showSpelled(q);
+}
+
+// Typing works too: a letter key taps its tile, Backspace erases.
+function spellKey(key) {
+  const q = state.question;
+  if (key === 'Backspace') { spellErase(); return; }
+  if (!/^[a-z]$/i.test(key)) return;
+  const i = q.tiles.findIndex((t, j) => t.l === key.toLowerCase() && !q.picked.includes(j));
+  if (i >= 0) spellTap(i);
+}
+
+// Fairy dust: a little for every right answer here. What it is for is not
+// decided yet; it is counted, shown and saved.
+function addDust() {
+  const [lo, hi] = FAIRY_DUST;
+  const n = lo + Math.floor(Math.random() * (hi - lo + 1));
+  state.dust += n;
+  renderDust(true);
+  showPlace(`✨ 요정의 가루 ${n}개!`);
+}
+
+function renderDust(pop) {
+  ui.dust.querySelector('.count').textContent = state.dust;
+  // The dust jar shows up once the Fairy Village is open or she has some.
+  ui.dust.classList.toggle('hidden', !state.dust && state.stars < FAIRY_STARS);
+  if (pop) {
+    ui.dust.classList.remove('pop');
+    void ui.dust.offsetWidth;
+    ui.dust.classList.add('pop');
+  }
+}
+
+// Portraits get room above the head for a fairy friend once she has one,
+// so "now" and "after" previews stay the same size.
+const FAIRY_ROOM = 13;
+function withFairy(sprite, outfit, riding) {
+  if (!state.owned.fairy.some(v => v !== 'none')) return sprite;
+  const cv = makeCanvas(sprite.canvas.width, sprite.canvas.height + FAIRY_ROOM);
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(sprite.canvas, 0, FAIRY_ROOM);
+  if (FAIRIES[outfit.fairy] && outfit.fairy !== 'none') {
+    const f = fairySprite(outfit.fairy, 0);
+    ctx.drawImage(f.canvas, (riding ? 15 : 13) - f.ax, riding ? 7 : 1);
+  }
+  return { canvas: cv, ax: sprite.ax, ay: sprite.ay + FAIRY_ROOM };
+}
+
+// Her fairy floats above her head, a little behind her, bobbing and
+// trailing after her when she moves. `p` is the hero's ground point.
+function drawFairyFriend(p, riding, now) {
+  const key = state.outfit.fairy;
+  if (!FAIRIES[key] || key === 'none') return;
+  const h = state.hero;
+  const goal = { x: p.x + (h.flip ? 7 : -7), y: p.y - (riding ? 41 : 39) + Math.sin(now / 320) * 2 };
+  const f = state.fairyAt || (state.fairyAt = { x: goal.x, y: goal.y, t: now });
+  const k = Math.min(1, Math.max(0, now - f.t) / 1000 * 4);
+  f.t = now;
+  f.x += (goal.x - f.x) * k;
+  f.y += (goal.y - f.y) * k;
+  const sprite = fairySprite(key, Math.floor(now / 110) % 2);
+  drawFlying(vctx, sprite, f.x, f.y, h.flip);
+  // A trail of sparkles while she is catching up.
+  if (Math.hypot(goal.x - f.x, goal.y - f.y) > 2 && Math.random() < 0.35) {
+    state.particles.push({ x: f.x + (Math.random() - 0.5) * 4, y: f.y + 3, vx: (Math.random() - 0.5) * 10, vy: -10, life: 0.6, color: FAIRIES[key].glow, star: Math.random() < 0.3 });
+  }
+}
+
+// Soft light around her fairy, and twinkles in the air of the Fairy Village.
+function drawFairyGlows(now) {
+  const s = state.scale;
+  const ctx = sctx;
+  ctx.globalCompositeOperation = 'lighter';
+  const f = state.fairyAt;
+  if (f && FAIRIES[state.outfit.fairy] && state.outfit.fairy !== 'none') {
+    const p = toScreen(f.x, f.y);
+    const r = (11 + Math.sin(now / 250) * 1.5) * s;
+    ctx.globalAlpha = 0.2;
+    ctx.drawImage(glow(), p.x - r, p.y - r, r * 2, r * 2);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  if (state.scene.kind === 'fairy') {
+    const cols = ['#ffffff', '#ffd0ec', '#fff2a8', '#d8c8ff', '#c8f4ff'];
+    state.motes.forEach((m, i) => {
+      const tw = Math.sin(now / 380 + m.ph * 3);
+      if (tw < 0.2) return;
+      const x = ((m.x * 1.7 + 0.31) % 1) * screen.width;
+      const y = ((m.y * 1.3 + 0.17) % 1) * screen.height;
+      const z = Math.round(s * (1 + tw * (m.s > 0.9 ? 2 : 1)));
+      ctx.globalAlpha = tw;
+      ctx.fillStyle = cols[i % cols.length];
+      ctx.fillRect(x - z / 2, y - z * 1.5, z, z * 3);
+      ctx.fillRect(x - z * 1.5, y - z / 2, z * 3, z);
+    });
+  }
+  ctx.globalAlpha = 1;
 }
 
 // ---- Effects -------------------------------------------------------------
@@ -1045,6 +1233,7 @@ function drawCharacter(ch, now) {
     const bob = h.path.length ? (h.frame ? -1 : 0) : 0;
     const riding = state.mounted && hasUnicorn();
     drawSprite(vctx, riding ? riderSprite(state.outfit, h.frame, isBoy()) : heroSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
+    drawFairyFriend(p, riding, now);
   } else {
     const n = ch.npc;
     const idle = Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0;
@@ -1179,6 +1368,7 @@ function drawOverlay(now) {
 
   // Ways out of the scene glow softly, with arrows or a lock.
   if (!state.busy) drawExitHints(now);
+  drawFairyGlows(now);
 
   // Tap ripples.
   for (const r of state.ripples) {
@@ -1481,6 +1671,7 @@ ui.mute.addEventListener('click', () => {
   ui.mute.textContent = muted ? '🔇' : '🔊';
 });
 addEventListener('keydown', e => {
+  if (!ui.dialog.classList.contains('hidden') && state.question && state.question.tiles) { spellKey(e.key); return; }
   if (!ui.dialog.classList.contains('hidden') && ['1', '2', '3', '4'].includes(e.key)) {
     const i = Number(e.key) - 1;
     const b = ui.choices.children[i];
@@ -1493,8 +1684,8 @@ let spokenEdited = false;
 function wearLook() {
   if (state.worn !== PLAYER.look) {
     state.looks[state.worn] = state.outfit;
-    const ride = state.outfit.ride;
-    state.outfit = Object.assign({}, state.looks[PLAYER.look] || defaultOutfit(), { ride });
+    const { ride, fairy } = state.outfit;
+    state.outfit = Object.assign({}, state.looks[PLAYER.look] || defaultOutfit(), { ride, fairy });
     state.worn = PLAYER.look;
   }
   state.outfit = fitOutfit(state.outfit);
