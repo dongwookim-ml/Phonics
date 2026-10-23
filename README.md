@@ -114,6 +114,12 @@ Lines that are not recorded, such as a name typed on the start screen, come
 from the live speech server when `TTS_SERVER` is set, otherwise from the
 device's own voice.
 
+## Before deploying
+
+`node tools/smoke.js` (needs the `playwright` package) checks that no two
+scripts define the same global and that every scene builds without errors,
+for both a girl and a boy hero.
+
 ### Live speech server (optional)
 
 `server/` is a small web service that speaks any line with Kokoro (or
