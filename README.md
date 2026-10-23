@@ -16,10 +16,17 @@ npx http-server -p 8080 .
 ## How it works
 
 - **Start screen**: type the hero's name and pick a title (공주 princess,
-  왕자 prince, 여왕 queen, 기사 knight, 요정 fairy, 마법사 wizard, 탐험가
+  왕자 prince, 여왕 queen, 왕 king, 기사 knight, 요정 fairy, 마법사 wizard, 탐험가
   explorer, 선장 captain). A Korean name is turned into Latin letters for the
   English voice (윤아 → Yuna); fix the spelling by hand if it sounds wrong and
   tap 🔊 to hear it. Villagers then greet her as "Prince Seoyeon" and so on.
+  Princes and kings are boys; princesses, queens and fairies are girls; for
+  a knight, wizard, explorer or captain pick 👧 여자 or 👦 남자.
+- **Boy hero**: a boy has short hair and wears a tunic, prince coat or king's
+  robe (in the same colours as the dresses), a prince circlet, king crown or
+  feather hat, and carries a sword, golden sceptre or the forest's star
+  sword. Presents only offer things that suit the hero; capes, crowns, hair
+  colours and unicorns suit both. Each look remembers its own outfit.
 
 - The town is 40 x 40 tiles and the camera follows the princess. Tap the
   ground to walk there.
@@ -62,7 +69,7 @@ npx http-server -p 8080 .
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
-The name and title, stars, the outfit, recent words and the hint setting are saved in the browser.
+The name, title and look (girl or boy), stars, the outfit, recent words and the hint setting are saved in the browser.
 
 ## Customizing
 

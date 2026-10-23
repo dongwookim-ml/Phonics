@@ -874,6 +874,133 @@ function princessSprite(outfit, frame) {
   return sprite;
 }
 
+// ---- Boy hero ------------------------------------------------------------
+
+// Same grid as the princess (18 wide, head on the same rows) so the rider
+// and every portrait line up. Short hair, a tunic top and a belt.
+const BOY_TOP = [
+  '......oooooo......',
+  '....oohhhhhhoo....',
+  '...ohhhHHhhhhho...',
+  '..ohhHHhhhhhhhho..',
+  '..ohHhhhhhhhhhho..',
+  '..ohhsshhhhsshho..',
+  '...ohsssssssssho..',
+  '...ohsskssskssho..',
+  '...ohsskssskssho..',
+  '....ospssssspso...',
+  '....ossssmsssso...',
+  '.....ossssssso....',
+  '......oossoo......',
+  '...oLdddttdddDo...',
+  '..oLLdddttdddDDo..',
+  '..oLodddddddDoDo..',
+  '..osodddddddDoso..',
+  '...oobbbyybbboo...',
+];
+// Below the belt, by shape: n trousers, f boots, w and k ermine trim.
+const BOY_BOTTOMS = {
+  tunic: [
+    '....oddddddddo....',
+    '...oLddddddddDo...',
+    '...oLdddddddDDo...',
+    '...otttttttttto...',
+    '.....onnoonno.....',
+    '.....onnoonno.....',
+    '.....onnoonno.....',
+    '.....offooffo.....',
+    '.....offooffo.....',
+    '.....oooooooo.....',
+  ],
+  coat: [
+    '....odddttdddo....',
+    '...oLdddttddDDo...',
+    '..oLddddttdddDDo..',
+    '..oLddddttdddDDo..',
+    '..otttttootttttto.',
+    '.....onnoonno.....',
+    '.....onnoonno.....',
+    '.....offooffo.....',
+    '.....offooffo.....',
+    '.....oooooooo.....',
+  ],
+  robe: [
+    '....odddttdddo....',
+    '...oLdddttdddDo...',
+    '...oLdddttdddDo...',
+    '..oLddddttddddDo..',
+    '..oLddddttdddDDo..',
+    '..oLddddttdddDDo..',
+    '.oLdddddttddddDDo.',
+    'owwkwwwwwwwwkwwkwo',
+    '.oooooooooooooooo.',
+    '......ff..ff......',
+  ],
+};
+// Second walking frame: legs apart.
+const BOY_LEGS_B = ['....offo..offo....', '....offo..offo....', '....oooo..oooo....'];
+const BOY_FEET_B = '.....ff....ff.....';
+
+const BOY_HEAD_ITEMS = {
+  crown:     HEAD_ITEMS.crown,
+  circlet:   { x: 5, y: -2, rows: ['y..yy..y', 'Yyybbyyy'] },
+  kingcrown: { x: 4, y: -6, rows: ['....yy....', '.y..yy..y.', '.yyvvvvyy.', 'yyvvvvvvyy', 'ybyyryybyy', 'YYYYYYYYYY'] },
+  feather:   { x: 3, y: -4, rows: ['..........ww', '.oooooooowWo', 'oDDDDDDDDDwo', 'oDDDDDDDDDDo', 'oyyyyyyyyyyo'] },
+};
+const BOY_HAND_BITMAPS = {
+  sword:     { x: 13, y: 4, rows: ['..o..', '.oao.', '.oao.', '.oao.', '.oao.', '.oao.', '.oao.', '.oao.', 'oyYyo', '.ofo.', '.ofo.', '..y..'] },
+  sceptre:   { x: 13, y: 5, rows: ['.oyo.', 'oyryo', 'oyyyo', '.oYo.', '.oyo.', '.oYo.', '.oyo.', '.oYo.', '.oyo.', '.oYo.', '..y..'] },
+  starsword: { x: 13, y: 2, rows: ['..y..', '.yyy.', 'yyyyy', '.yyy.', '.ycy.', '.oco.', '.oco.', '.oco.', '.oco.', '.oco.', 'oyYyo', '.ofo.', '.ofo.', '..y..'] },
+};
+
+const boyCache = new Map();
+
+// The boy hero, on the princess's canvas size and anchor. Wings never
+// reach a boy (see suits() in game.js); a cape does.
+function boySprite(outfit, frame) {
+  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.back}|${frame}`;
+  if (boyCache.has(key)) return boyCache.get(key);
+  const W = 22;
+  const H = 34;
+  const OXp = 2;
+  const OYp = 5;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  const dress = DRESS_COLORS[outfit.dress].c;
+  const hair = HAIR_COLORS[outfit.hair].c;
+  const pal = {
+    o: '#4a2c4f', h: hair[0], H: hair[1], s: '#ffe3d0', k: '#3a2340', p: '#ffadbc', m: '#e0707a',
+    d: dress[0], D: dress[1], L: dress[2], t: dress[3], b: '#6b4a3a', n: '#4a4a7a', f: '#7a4a2e',
+    y: '#ffd34d', Y: '#e0a52a', r: '#ff6f8a', v: '#c8303f', w: '#ffffff', a: '#c8d2e4', c: '#9fe8ff',
+  };
+  const bottom = (BOY_BOTTOMS[outfit.shape] || BOY_BOTTOMS.tunic).slice();
+  if (frame === 1) {
+    if (outfit.shape === 'robe') bottom[9] = BOY_FEET_B;
+    else bottom.splice(7, 3, ...BOY_LEGS_B);
+  }
+  if (outfit.back === 'cape') {
+    for (let y = 12; y < 28; y++) {
+      const spread = Math.min(3, Math.floor((y - 12) / 4));
+      const x0 = OXp + 2 - spread;
+      const x1 = OXp + 16 + spread;
+      px(ctx, x0, OYp + y, x1 - x0, 1, y === 27 ? '#2e2466' : '#4a3a9a');
+      px(ctx, x0, OYp + y, 1, 1, '#2e2466');
+      px(ctx, x1 - 1, OYp + y, 1, 1, '#2e2466');
+      if ((y * 7) % 5 === 0) px(ctx, x0 + 1 + (y % 3), OYp + y, 1, 1, '#ffd34d');
+      if ((y * 3) % 7 === 0) px(ctx, x1 - 3, OYp + y, 1, 1, '#ffd34d');
+    }
+  }
+  drawBitmap(ctx, BOY_TOP, pal, OXp, OYp);
+  drawBitmap(ctx, bottom, pal, OXp, OYp + BOY_TOP.length);
+  const head = BOY_HEAD_ITEMS[outfit.head];
+  if (head) drawBitmap(ctx, head.rows, pal, OXp + head.x, OYp + head.y);
+  const hand = BOY_HAND_BITMAPS[outfit.hand];
+  if (hand) drawBitmap(ctx, hand.rows, pal, OXp + hand.x, OYp + hand.y);
+  const sprite = { canvas: cv, ax: OXp + 9, ay: OYp + 28 };
+  boyCache.set(key, sprite);
+  return sprite;
+}
+
 const VILLAGER = [
   '.....oooooo.....',
   '....ohhhhhho....',
@@ -1147,13 +1274,13 @@ function unicornSprite(key, frame) {
 }
 
 // The princess sitting on her unicorn: her top half above the saddle and
-// the skirt draped over the unicorn's side.
+// the skirt draped over the unicorn's side. A boy shows a leg and a boot.
 const riderCache = new Map();
-function riderSprite(outfit, frame) {
-  const key = `${Object.values(outfit).join('|')}|${frame}`;
+function riderSprite(outfit, frame, boy) {
+  const key = `${Object.values(outfit).join('|')}|${frame}|${!!boy}`;
   if (riderCache.has(key)) return riderCache.get(key);
   const uni = unicornSprite(outfit.ride, frame);
-  const hero = princessSprite(outfit, 0);
+  const hero = boy ? boySprite(outfit, 0) : princessSprite(outfit, 0);
   const W = 36;
   const H = 46;
   const cv = makeCanvas(W, H);
@@ -1170,6 +1297,12 @@ function riderSprite(outfit, frame) {
   // Skirt over the unicorn's side.
   const sx = ux + 7;
   const sy = uy + 13;
+  if (boy) {
+    drawBoyLeg(ctx, sx, sy, outfit, dress);
+    const sprite = { canvas: cv, ax: ux + uni.ax, ay: uy + uni.ay };
+    riderCache.set(key, sprite);
+    return sprite;
+  }
   for (let y = 0; y < 5; y++) {
     const w = 10 + Math.min(y, 2) * 2;
     const x0 = sx - Math.min(y, 2);
@@ -1187,6 +1320,30 @@ function riderSprite(outfit, frame) {
   const sprite = { canvas: cv, ax: ux + uni.ax, ay: uy + uni.ay };
   riderCache.set(key, sprite);
   return sprite;
+}
+
+// A boy's tunic or coat over the unicorn's side, with his leg and boot below.
+function drawBoyLeg(ctx, sx, sy, outfit, dress) {
+  const flap = outfit.shape === 'tunic' ? 3 : 5;
+  for (let y = 0; y < flap; y++) {
+    const w = 10 + Math.min(y, 1) * 2;
+    const x0 = sx - Math.min(y, 1);
+    px(ctx, x0, sy + y, w, 1, y === flap - 1 ? (outfit.shape === 'robe' ? '#ffffff' : dress[3]) : y > flap - 3 ? dress[1] : dress[0]);
+    px(ctx, x0 - 1, sy + y, 1, 1, '#4a2c4f');
+    px(ctx, x0 + w, sy + y, 1, 1, '#4a2c4f');
+  }
+  px(ctx, sx - 1, sy + flap, 12, 1, '#4a2c4f');
+  px(ctx, sx + 2, sy + 1, 2, 1, dress[2]);
+  // Trousers down to a brown boot.
+  for (let y = sy + flap + 1; y < sy + 9; y++) {
+    const boot = y >= sy + 6;
+    px(ctx, sx + 5, y, 3, 1, boot ? '#7a4a2e' : '#4a4a7a');
+    px(ctx, sx + 4, y, 1, 1, '#4a2c4f');
+    px(ctx, sx + 8, y, 1, 1, '#4a2c4f');
+  }
+  px(ctx, sx + 4, sy + 9, 6, 1, '#4a2c4f');
+  px(ctx, sx + 8, sy + 8, 1, 1, '#7a4a2e');
+  px(ctx, sx + 9, sy + 8, 1, 1, '#4a2c4f');
 }
 
 // ---- Unicorn Village props ---------------------------------------------------

@@ -3,15 +3,18 @@
 
 // The hero's name and title, chosen on the start screen and saved.
 // `spoken` is read by the English voice, `shown` is on screen.
-const PLAYER = { spoken: 'Yuna', shown: '윤아', title: 'princess' };
+// `look` is 'girl' or 'boy': which hero sprite and wardrobe she or he gets.
+const PLAYER = { spoken: 'Yuna', shown: '윤아', title: 'princess', look: 'girl' };
 
 // Titles the hero can pick. `en` is what villagers call her, `ko` is shown.
+// A title with a `look` decides the hero's look; the others let you choose.
 const TITLES = {
-  princess: { ko: '공주',   en: 'Princess', icon: '👸' },
-  prince:   { ko: '왕자',   en: 'Prince',   icon: '🤴' },
-  queen:    { ko: '여왕',   en: 'Queen',    icon: '👑' },
+  princess: { ko: '공주',   en: 'Princess', icon: '👸', look: 'girl' },
+  prince:   { ko: '왕자',   en: 'Prince',   icon: '🤴', look: 'boy' },
+  queen:    { ko: '여왕',   en: 'Queen',    icon: '👑', look: 'girl' },
+  king:     { ko: '왕',     en: 'King',     icon: '🫅', look: 'boy' },
   knight:   { ko: '기사',   en: 'Knight',   icon: '🛡️' },
-  fairy:    { ko: '요정',   en: 'Fairy',    icon: '🧚' },
+  fairy:    { ko: '요정',   en: 'Fairy',    icon: '🧚', look: 'girl' },
   wizard:   { ko: '마법사', en: 'Wizard',   icon: '🧙' },
   explorer: { ko: '탐험가', en: 'Explorer', icon: '🧭' },
   captain:  { ko: '선장',   en: 'Captain',  icon: '⚓' },
@@ -44,6 +47,7 @@ const LETTERS = [
 const USE_RECORDINGS = false;
 
 // ---- Princess wardrobe ---------------------------------------------------
+// Items marked `girl` or `boy` only suit that look; the rest suit both.
 
 // [main, shade, light, trim]
 const DRESS_COLORS = {
@@ -57,26 +61,35 @@ const DRESS_COLORS = {
   night:    { name: '밤하늘', icon: '🌌', c: ['#5a5ab8', '#3a3a86', '#9a9ae8', '#ffd34d'], forest: true },
 };
 const DRESS_SHAPES = {
-  ballgown: { name: '풍성한 드레스', icon: '👗' },
-  long:     { name: '긴 드레스',     icon: '👘' },
-  tutu:     { name: '발레 드레스',   icon: '🩰' },
+  ballgown: { name: '풍성한 드레스', icon: '👗', girl: true },
+  long:     { name: '긴 드레스',     icon: '👘', girl: true },
+  tutu:     { name: '발레 드레스',   icon: '🩰', girl: true },
+  tunic:    { name: '기사 튜닉',     icon: '👕', boy: true },
+  coat:     { name: '왕자 코트',     icon: '🧥', boy: true },
+  robe:     { name: '임금님 옷',     icon: '🥻', boy: true },
 };
 const HEADWEAR = {
   none:    { name: '없음',       icon: '' },
-  tiara:   { name: '반짝 티아라', icon: '💎' },
+  tiara:   { name: '반짝 티아라', icon: '💎', girl: true },
   crown:   { name: '황금 왕관',   icon: '👑' },
-  flowers: { name: '꽃 화관',     icon: '🌸' },
-  bow:     { name: '큰 리본',     icon: '🎀' },
+  flowers: { name: '꽃 화관',     icon: '🌸', girl: true },
+  bow:     { name: '큰 리본',     icon: '🎀', girl: true },
+  circlet: { name: '왕자 관',     icon: '💫', boy: true },
+  kingcrown: { name: '임금님 왕관', icon: '🫅', boy: true },
+  feather: { name: '깃털 모자',   icon: '🪶', boy: true },
 };
 const HAND_ITEMS = {
   none:    { name: '없음',     icon: '' },
-  wand:    { name: '별 요술봉', icon: '🪄' },
-  bouquet: { name: '꽃다발',   icon: '💐' },
+  wand:    { name: '별 요술봉', icon: '🪄', girl: true },
+  bouquet: { name: '꽃다발',   icon: '💐', girl: true },
+  sword:   { name: '용감한 칼', icon: '🗡️', boy: true },
+  sceptre: { name: '황금 홀',   icon: '🔱', boy: true },
+  starsword: { name: '별빛 검', icon: '🌟', boy: true, forest: true },
 };
 // Things worn on the back. These only come from the Starlight Forest.
 const BACK_ITEMS = {
   none:  { name: '없음',       icon: '' },
-  wings: { name: '요정 날개',   icon: '🧚', forest: true },
+  wings: { name: '요정 날개',   icon: '🧚', forest: true, girl: true },
   cape:  { name: '별빛 망토',   icon: '✨', forest: true },
 };
 const HAIR_COLORS = {
@@ -101,6 +114,8 @@ const UNICORNS = {
 };
 
 const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', back: 'none', ride: 'none' };
+// What a boy hero starts in, and what replaces anything that only suits girls.
+const DEFAULT_BOY_OUTFIT = { dress: 'sky', shape: 'tunic', head: 'circlet', hand: 'none', hair: 'brown', back: 'none', ride: 'none' };
 
 // ---- People --------------------------------------------------------------
 

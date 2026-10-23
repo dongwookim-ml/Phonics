@@ -321,6 +321,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 #hear-name { width: 58px; height: 58px; font-size: 26px; }
 .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px #ffc8e0; }
 .title-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.title-chips.hidden { display: none; }
 .start .tip { margin: 0; font-size: 17px; opacity: 0.85; }
 .start-btn {
   width: 112px;
