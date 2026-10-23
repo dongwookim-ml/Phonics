@@ -42,6 +42,14 @@ const ui = {
   wdSlots: document.getElementById('wd-slots'),
   wdCount: document.getElementById('wd-count'),
   wdDone: document.getElementById('wd-done'),
+  coins: document.getElementById('coins'),
+  shop: document.getElementById('shop'),
+  shopCoins: document.getElementById('shop-coins'),
+  shopMsg: document.getElementById('shop-msg'),
+  shopPreview: document.getElementById('shop-preview'),
+  shopItems: document.getElementById('shop-items'),
+  shopBuy: document.getElementById('shop-buy'),
+  shopDone: document.getElementById('shop-done'),
 };
 
 // Everything that can be worn, by slot, in wardrobe order.
@@ -87,9 +95,9 @@ function load() {
     const outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, pictures: !!s.pictures };
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, pictures: !!s.pictures };
   } catch (e) {
-    return { outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, pictures: false };
+    return { outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, pictures: false };
   }
 }
 
@@ -107,7 +115,7 @@ function ownedFrom(saved, outfit) {
   return owned;
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, coins: state.coins, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -118,6 +126,7 @@ const state = {
   outfit: saved.outfit,
   owned: saved.owned,
   stars: saved.stars,
+  coins: saved.coins,
   pictures: saved.pictures,
   scenes: {},
   scene: null,
@@ -144,6 +153,7 @@ function sceneFor(target) {
     else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
     else if (target === 'forest') state.scenes[target] = buildForest();
     else if (target === 'unicorn') state.scenes[target] = buildUnicornVillage();
+    else if (target === 'dungeon') state.scenes[target] = buildDungeon();
     else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
@@ -216,6 +226,7 @@ function changeScene(target, at, label) {
     state.scene = sceneFor(target);
     document.body.classList.toggle('forest', state.scene.kind === 'forest');
     document.body.classList.toggle('unicorn', state.scene.kind === 'unicorn');
+    document.body.classList.toggle('dungeon', state.scene.kind === 'dungeon');
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);
     // Her unicorn waits next to her whenever she steps outside on foot.
@@ -386,7 +397,9 @@ function faceEachOther(npc) {
 const waiting = npc => npc.waitUntil > state.answered;
 
 function openDialog(npc) {
+  if (npc.caught) return;
   faceEachOther(npc);
+  if (npc.shop) { openShop(npc); return; }
   state.busy = true;
   state.talking = npc;
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
@@ -449,6 +462,8 @@ function choose(i, btn) {
     ui.text.textContent = praise;
     Sound.correct();
     Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(state.talking));
+    // Cave monsters pay in coins instead of a star and a present.
+    if (state.talking.monster) { catchMonster(state.talking); return; }
     state.stars++;
     state.answered++;
     save();
@@ -497,6 +512,7 @@ function rewardChoices(level) {
       if (value === 'none' || value === o[slot]) continue;
       if (items[value].forest && level < 2) continue;
       if (items[value].unicorn && level < 3) continue;
+      if (items[value].shop) continue;
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
       (r.isNew ? fresh : worn).push(r);
     }
@@ -583,6 +599,7 @@ function renderStars(pop) {
     void ui.stars.offsetWidth;
     ui.stars.classList.add('pop');
   }
+  renderCoins(false);
 }
 
 function followLink(link) {
@@ -596,6 +613,11 @@ function followLink(link) {
   } else if (link.target === 'unicorn') {
     changeScene('unicorn', link.at, '🦄 유니콘 마을');
     Sound.say([{ text: line('unicorn'), pitch: 1.3 }]);
+  } else if (link.target === 'dungeon') {
+    getOff();
+    respawnMonsters(sceneFor('dungeon'));
+    changeScene('dungeon', link.at, '💎 반짝 동굴');
+    Sound.say([{ text: line('dungeon'), pitch: 1.3 }]);
   } else if (link.target === 'town') {
     changeScene('town', link.at, '🌸 소리 마을');
   } else {
@@ -657,6 +679,167 @@ function closeWardrobe() {
   burstAtHero(40);
   Sound.correct();
   Sound.say([{ text: line('yes'), pitch: 1.3 }]);
+}
+
+// ---- Crystal Cave monsters -------------------------------------------------
+
+function renderCoins(pop) {
+  ui.coins.querySelector('.count').textContent = state.coins;
+  // The coin purse shows up once the cave is open or she has coins.
+  ui.coins.classList.toggle('hidden', !state.coins && state.stars < DUNGEON_STARS);
+  if (pop) {
+    ui.coins.classList.remove('pop');
+    void ui.coins.offsetWidth;
+    ui.coins.classList.add('pop');
+  }
+}
+
+// A right answer catches the monster: after the praise it goes poof,
+// leaves coins and comes back a while later.
+function catchMonster(npc) {
+  state.answered++;
+  npc.caught = true;
+  const coins = 1 + Math.floor(Math.random() * npc.coins);
+  later(2400, () => {
+    const sc = sceneFor('dungeon');
+    if (state.talking === npc) closeDialog();
+    if (state.scene === sc) poofAt(tileCenter(sc, npc.c, npc.r));
+    sc.npcs = sc.npcs.filter(n => n !== npc);
+    sc.caught.push(npc);
+    later(MONSTER_RESPAWN_MS, () => respawnMonster(sc, npc));
+    state.coins += coins;
+    save();
+    renderCoins(true);
+    Sound.party();
+    showPlace(`🪙 코인 ${coins}개!`);
+    Sound.say([{ text: line('caught') }], voiceOf(npc));
+  });
+}
+
+// A puff of cloud with coins bouncing out of it.
+function poofAt(p) {
+  const colors = ['#ffffff', '#e4d8ff', '#ffd34d', '#ffe680', '#bfefff'];
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = 15 + Math.random() * 55;
+    state.particles.push({ x: p.x, y: p.y - 10, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 50, life: 0.8 + Math.random() * 0.8, color: colors[i % colors.length], star: i % 2 === 0 });
+  }
+}
+
+// Puts a caught monster back at home, unless someone is standing there.
+function respawnMonster(sc, npc) {
+  if (!sc.caught.includes(npc)) return;
+  const here = state.scene === sc && heroTile();
+  if ((here && here.c === npc.home.c && here.r === npc.home.r) || sc.npcs.some(n => n.c === npc.home.c && n.r === npc.home.r)) {
+    later(5000, () => respawnMonster(sc, npc));
+    return;
+  }
+  sc.caught = sc.caught.filter(n => n !== npc);
+  Object.assign(npc, npc.home, { caught: false, missed: null });
+  sc.npcs.push(npc);
+  if (state.scene === sc) poofAt(tileCenter(sc, npc.c, npc.r));
+}
+
+// Every monster is back whenever she walks into the cave.
+function respawnMonsters(sc) {
+  for (const npc of sc.caught.slice()) respawnMonster(sc, npc);
+}
+
+// ---- Shop ----------------------------------------------------------------
+
+// Prices in coins. Shop treasures carry their own price.
+function shopPrice(slot, item) {
+  if (item.price) return item.price;
+  if (item.unicorn) return 12;
+  if (item.forest) return 8;
+  return slot === 'head' || slot === 'hand' ? 6 : 4;
+}
+
+// Everything she doesn't own yet, shop treasures first.
+function shopItems() {
+  const list = [];
+  for (const { slot, items } of WARDROBE) {
+    for (const [value, item] of Object.entries(items)) {
+      if (value === 'none' || state.owned[slot].includes(value)) continue;
+      list.push({ slot, value, item, label: itemLabel(slot, value), price: shopPrice(slot, item) });
+    }
+  }
+  return list.sort((a, b) => (b.item.shop ? 1 : 0) - (a.item.shop ? 1 : 0));
+}
+
+function openShop(npc) {
+  state.busy = true;
+  state.shopkeeper = npc;
+  const items = shopItems();
+  state.shopPick = items[0] || null;
+  ui.shopMsg.textContent = items.length ? '갖고 싶은 걸 골라 보세요!' : '와! 벌써 다 모았어요 ✨';
+  renderShop();
+  ui.shop.classList.remove('hidden');
+  const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
+  Sound.say([{ text: hello }, { pause: 300 }, { text: line(items.length ? 'shop' : 'soldOut') }], voiceOf(npc));
+}
+
+function renderShop() {
+  const pick = state.shopPick;
+  ui.shopCoins.textContent = `🪙 ${state.coins}`;
+  const next = pick ? Object.assign({}, state.outfit, { [pick.slot]: pick.value }) : state.outfit;
+  drawPortrait(ui.shopPreview, heroPortrait(next, true));
+  ui.shopItems.innerHTML = '';
+  for (const it of shopItems()) {
+    const b = document.createElement('button');
+    b.className = 'chip shop-item';
+    b.classList.toggle('on', !!pick && pick.slot === it.slot && pick.value === it.value);
+    b.classList.toggle('dear', it.price > state.coins);
+    const look = it.item.c ? `<span class="sw" style="background:${it.item.c[0]}"></span>` : `<span class="ic">${it.item.icon}</span>`;
+    const name = it.slot === 'dress' ? `${it.item.name} 드레스` : it.item.name;
+    b.innerHTML = `${look}<span class="nm">${name}</span><span class="price">🪙${it.price}</span>`;
+    b.addEventListener('click', () => {
+      Sound.tap();
+      state.shopPick = it;
+      ui.shopMsg.textContent = it.item.shop ? '✨ 상점에만 있는 보물이에요!' : '갖고 싶은 걸 골라 보세요!';
+      renderShop();
+    });
+    ui.shopItems.append(b);
+  }
+  ui.shopBuy.classList.toggle('hidden', !pick);
+  if (pick) ui.shopBuy.textContent = `🪙 ${pick.price}개로 살래요`;
+}
+
+function buyPick() {
+  const pick = state.shopPick;
+  const npc = state.shopkeeper;
+  if (!pick) return;
+  if (state.coins < pick.price) {
+    Sound.wrong();
+    ui.shopMsg.textContent = `코인이 ${pick.price - state.coins}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎`;
+    Sound.say([{ text: line('poor') }], voiceOf(npc));
+    return;
+  }
+  state.coins -= pick.price;
+  state.owned[pick.slot].push(pick.value);
+  save();
+  renderCoins(true);
+  ui.shop.classList.add('hidden');
+  // The same "wear it now?" card as a present.
+  const ride = pick.slot === 'ride';
+  state.gift = { slot: pick.slot, value: pick.value, label: pick.label, isNew: true };
+  state.giver = npc;
+  ui.rewardTitle.textContent = '🛍️ 샀어요!';
+  ui.rewardName.textContent = ride ? `${pick.label} · 새 친구가 생겼어요!` : `${pick.label} · 옷장에 쏙!`;
+  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : '지금 입을래요 💖';
+  ui.rewardNo.textContent = ride ? '마구간에 둘래요 🏡' : '옷장에 넣을래요 🎀';
+  drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
+  drawPortrait(ui.pvNew, heroPortrait(Object.assign({}, state.outfit, { [pick.slot]: pick.value }), ride || state.mounted));
+  ui.reward.classList.remove('hidden');
+  Sound.party();
+  burstAtHero(30);
+  Sound.say([{ pause: 400 }, { text: line('bought') }], voiceOf(npc));
+}
+
+function closeShop() {
+  ui.shop.classList.add('hidden');
+  state.busy = false;
+  state.shopkeeper = null;
 }
 
 // ---- Effects -------------------------------------------------------------
@@ -816,9 +999,9 @@ function drawScene(now) {
   }
 
   // Evening light in the forest; glows are added on top afterwards.
-  if (sc.kind === 'forest') {
+  if (sc.kind === 'forest' || sc.kind === 'dungeon') {
     vctx.setTransform(1, 0, 0, 1, 0, 0);
-    vctx.fillStyle = 'rgba(50,40,130,0.22)';
+    vctx.fillStyle = sc.kind === 'dungeon' ? 'rgba(40,30,120,0.16)' : 'rgba(50,40,130,0.22)';
     vctx.fillRect(0, 0, view.width, view.height);
   }
 }
@@ -959,7 +1142,7 @@ function drawOverlay(now) {
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(wait ? '…' : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
+      ctx.fillText(wait ? '…' : n.badge ? n.badge : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
     }
   }
 
@@ -1006,7 +1189,7 @@ function drawOverlay(now) {
 
   // Light motes.
   ctx.globalCompositeOperation = 'lighter';
-  const forest = sc.kind === 'forest';
+  const forest = sc.kind === 'forest' || sc.kind === 'dungeon';
   for (const m of state.motes) {
     const r = (3 + m.s * 5) * s * (0.8 + 0.2 * Math.sin(now / 500 + m.ph)) * (forest ? 0.7 : 1);
     ctx.globalAlpha = (forest ? 0.45 : 0.18) + 0.12 * Math.sin(now / (forest ? 300 : 700) + m.ph);
@@ -1067,6 +1250,12 @@ function onPointer(e) {
 
   // Buildings with doors: walk to the door and go in.
   const hits = sc.objects.filter(o => !o.background && o.canvas && hitObject(o, wx, wy));
+  const shop = hits.find(o => o.kind === 'shop');
+  if (shop) {
+    Sound.tap();
+    talkTo(shop.keeper);
+    return;
+  }
   const robe = hits.find(o => o.kind === 'wardrobe');
   if (robe) {
     Sound.tap();
@@ -1144,6 +1333,8 @@ ui.close.addEventListener('click', () => { Sound.tap(); closeDialog(); });
 ui.rewardYes.addEventListener('click', () => acceptReward(true));
 ui.rewardNo.addEventListener('click', () => acceptReward(false));
 ui.wdDone.addEventListener('click', closeWardrobe);
+ui.shopBuy.addEventListener('click', buyPick);
+ui.shopDone.addEventListener('click', () => { Sound.tap(); closeShop(); });
 ui.pictures.addEventListener('click', () => { Sound.tap(); setPictures(!state.pictures); });
 ui.ride.addEventListener('click', toggleRide);
 ui.mute.addEventListener('click', () => {

@@ -448,3 +448,31 @@ body.forest .bloom {
     radial-gradient(ellipse at 85% 100%, rgba(200, 140, 255, 0.45), transparent 60%);
 }
 body.forest .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
+
+/* ---- Crystal Cave and the shop ---- */
+
+body.dungeon { background: linear-gradient(#2a2050, #4f4288 50%, #7a6cb0); }
+body.dungeon .bloom {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(140, 230, 255, 0.45), transparent 55%),
+    radial-gradient(ellipse at 85% 100%, rgba(255, 150, 240, 0.4), transparent 60%);
+}
+body.dungeon .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
+
+.counters { display: flex; gap: 8px; }
+.stars.hidden { display: none; }
+.coins.pop { animation: pop 0.5s ease; }
+
+.shop { background: radial-gradient(circle at 30% 20%, #fffdf2, #fff0c8); }
+.shop .wd-count { font-size: 24px; color: #b07a10; }
+.shop-msg { padding: 0 6px; font-size: 18px; color: var(--accent); }
+.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+.shop-item .price { margin-left: 2px; padding: 0 6px; border-radius: 10px; background: #fff4b8; color: #8a5a10; font-size: 15px; }
+.shop-item.dear .price { background: #f2e8ee; color: #9a8aa3; }
+.shop .answer { margin-top: 2px; }
+.shop .answer button.hidden { display: none; }
+@media (max-width: 560px) {
+  .counters { gap: 4px; }
+  .counters .stars { padding: 4px 10px; font-size: 22px; }
+  .shop .answer button { font-size: 20px; padding: 10px 12px; }
+}
