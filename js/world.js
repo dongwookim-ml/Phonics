@@ -100,7 +100,8 @@ function renderGround(sc) {
         case 'rainbow': drawRainbowPath(g, o.x, o.y, Math.floor(t.band / 2)); break;
         default: drawGrass(g, o.x, o.y, c, r, false);
       }
-      if (t.mat) {
+      if (t.rug) drawDoormat(g, o.x, o.y, t.rug);
+      else if (t.mat) {
         const cx = o.x + 16;
         const cy = o.y + 8;
         fillPoly(g, diamondPts(o.x, o.y).map(p => ({ x: cx + (p.x - cx) * 0.7, y: cy + (p.y - cy) * 0.7 })), t.mat);
@@ -220,23 +221,29 @@ function buildTown() {
 
   // Gate to the Starlight Forest at the south end of the main road.
   addGate(sc, [18, 21], 38, '#b8a0e8');
-  sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', needStars: FOREST_STARS }));
+  sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', style: 'gate', needStars: FOREST_STARS }));
   const gp = tileCenter(sc, 19.5, 38);
-  sc.signs.push({ x: gp.x, y: gp.y - 44, text: '🌲 별빛 숲 마을', color: '#8f70e0', needStars: FOREST_STARS });
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: '🌲 별빛 숲 마을', color: '#8f70e0', needStars: FOREST_STARS });
   renderGround(sc);
   return sc;
 }
 
-// Two gate posts at columns `cols` on row r, with a coloured mat between.
+// Two gate posts at columns `cols` on row r, joined by a garland arch, with
+// a coloured mat between. The caller hangs a destination sign under the arch.
 function addGate(sc, cols, r, mat) {
   const post = makeGatePost();
   for (const c of cols) {
     const p = tileCenter(sc, c, r);
+    sc.objects = sc.objects.filter(o => !(o.tree && o.c0 === c && o.r0 === r));
     block(sc, c, r, 1, 1);
     sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
     sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
   }
   for (let c = cols[0] + 1; c < cols[1]; c++) for (const rr of [r, r + 1]) if (tileAt(sc, c, rr)) tileAt(sc, c, rr).mat = mat;
+  const A = tileCenter(sc, cols[0], r);
+  const B = tileCenter(sc, cols[1], r);
+  const bounds = { x: A.x - 2, y: A.y - 60, w: B.x - A.x + 4, h: B.y - A.y + 34 };
+  addObject(sc, { c: cols[0], r, w: cols[1] - cols[0] + 1, d: 1 }, bounds, ctx => drawGateArch(ctx, A, B, shade(mat, -20)));
 }
 
 function makeNpc(def, letter) {
@@ -281,7 +288,7 @@ function buildHouseInterior(h) {
     t.edge = r === 2 || r === 4 || c === 2 || c === 5;
   }
   const exit = { c: 3, r: sc.D - 1 };
-  tileAt(sc, exit.c, exit.r).mat = '#c06a8a';
+  tileAt(sc, exit.c, exit.r).rug = '#c06a8a';
 
   addRoomWalls(sc, 64, mix(info.color, '#ffffff', 0.72), '#d8a070', (ctx, WA, WB) => {
     // Window on the left wall and a big letter poster on the right wall.
@@ -326,6 +333,9 @@ function buildHouseInterior(h) {
   return sc;
 }
 
+// Where the door to the princess's room sits along the throne room's right wall.
+const YUNA_DOOR_X = 168;
+
 function buildCastleInterior() {
   const sc = makeScene('room', 12, 10, 120, 50);
   sc.floorTint = '#f2dce8';
@@ -336,8 +346,8 @@ function buildCastleInterior() {
     t.color = '#e8507a';
   }
   const exit = { c: 5, r: sc.D - 1 };
-  tileAt(sc, 5, sc.D - 1).mat = '#ffd34d';
-  tileAt(sc, 6, sc.D - 1).mat = '#ffd34d';
+  tileAt(sc, 5, sc.D - 1).rug = '#ffc83d';
+  tileAt(sc, 6, sc.D - 1).rug = '#ffc83d';
 
   addRoomWalls(sc, 92, '#fbe8f2', '#e8c8dc', (ctx, WA, WB) => {
     for (const W of [WA, WB]) {
@@ -348,13 +358,15 @@ function buildCastleInterior() {
         for (let v = 36; v < 72; v += 8) for (let i = -8; i < 9; i += 8) wallRect(ctx, W, x + i - 2, x + i + 2, v, v + 4, ['#ff8fc0', '#ffd34d', '#c7a4ff'][((v + i) / 8 + 99) % 3 | 0]);
         wallRect(ctx, W, x - 1, x + 1, 32, 78, '#d8b0c8');
       }
-      // Banners.
+      // Banners, leaving room for the door to the princess's room.
       for (let x = 52; x < W.len - 20; x += 56) {
+        if (W === WB && Math.abs(x - YUNA_DOOR_X) < 24) continue;
         wallRect(ctx, W, x - 6, x + 6, 40, 84, '#ff6fa8');
         wallRect(ctx, W, x - 4, x + 4, 44, 82, '#ff8fc0');
         wallRect(ctx, W, x - 2, x + 2, 60, 66, '#ffd34d');
       }
     }
+    drawWallDoor(ctx, WB, YUNA_DOOR_X, '#ff8fc0');
   });
 
   const furn = (c, r, w, d, up, draw) => {
@@ -375,11 +387,12 @@ function buildCastleInterior() {
   sc.exit = exit;
   sc.exitTiles = [{ c: 5, r: sc.D - 1 }, { c: 6, r: sc.D - 1 }];
   sc.start = { c: 5, r: sc.D - 2 };
-  // A door on the right wall leads to the princess's own room.
-  tileAt(sc, 11, 7).mat = '#ff8fc0';
-  sc.links = [{ c: 11, r: 7, target: 'yuna', icon: '🎀' }];
-  const sign = tileCenter(sc, 11, 7);
-  sc.signs.push({ x: sign.x + 6, y: sign.y - 30, text: `🎀 ${PLAYER.shown}의 방`, color: '#ff6fa8' });
+  // A door in the right wall leads to the princess's own room.
+  const k = boxCorners(sc, 0, 0, sc.W, sc.D);
+  const door = wallPt(wall(k.T, k.R), YUNA_DOOR_X, 28);
+  tileAt(sc, 10, 0).rug = '#ff8fc0';
+  sc.links = [{ c: 10, r: 0, target: 'yuna', icon: '🎀', style: 'door', door }];
+  sc.signs.push({ x: door.x, y: door.y - 46, text: `🎀 ${PLAYER.shown}의 방`, color: '#ff6fa8' });
   renderGround(sc);
   return sc;
 }
@@ -394,7 +407,7 @@ function buildYunaRoom() {
     t.color = inner ? '#ffd0e6' : '#ffe8f2';
     t.edge = inner;
   }
-  tileAt(sc, 4, sc.D - 1).mat = '#ffd34d';
+  tileAt(sc, 4, sc.D - 1).rug = '#ffc83d';
 
   addRoomWalls(sc, 66, '#ffe0ee', '#ffb0d2', (ctx, WA, WB) => {
     // Window with curtains on the left wall, hearts on both walls.
@@ -430,7 +443,7 @@ function buildYunaRoom() {
   furn(0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6));
   furn(5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0));
 
-  sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 10, r: 7 }, icon: '🚪' }];
+  sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 10, r: 1 }, icon: '🚪', style: 'mat' }];
   sc.start = { c: 4, r: sc.D - 2 };
   renderGround(sc);
   return sc;
@@ -547,12 +560,15 @@ function buildForest() {
     npc.level = 2;
     sc.npcs.push(npc);
   }
-  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰' }));
-  // Gate to the Unicorn Village at the south end of the path.
+  // Gate back to the town at the north end, and to the Unicorn Village at the south end.
+  addGate(sc, [13, 16], 1, '#c8b0f0');
+  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰', style: 'gate' }));
+  const tg = tileCenter(sc, 14.5, 1);
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: '🌸 소리 마을', color: '#ff8fc0' });
   addGate(sc, [14, 17], 28, '#ff9ec4');
-  for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', needStars: UNICORN_STARS });
+  for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', style: 'gate', needStars: UNICORN_STARS });
   const ug = tileCenter(sc, 15.5, 28);
-  sc.signs.push({ x: ug.x, y: ug.y - 44, text: '🦄 유니콘 마을', color: '#ff6fa8', needStars: UNICORN_STARS });
+  sc.signs.push({ x: ug.x, y: ug.y - 64, text: '🦄 유니콘 마을', color: '#ff6fa8', needStars: UNICORN_STARS });
   sc.start = { c: 14, r: 1 };
   renderGround(sc);
   return sc;
@@ -637,7 +653,10 @@ function buildUnicornVillage() {
     if (n.unicorn) npc.unicorn = n.unicorn;
     sc.npcs.push(npc);
   }
-  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'forest', at: { c: c + 1, r: 27 }, icon: '🌲' }));
+  addGate(sc, [13, 16], 1, '#b8a0e8');
+  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'forest', at: { c: c + 1, r: 27 }, icon: '🌲', style: 'gate' }));
+  const fg = tileCenter(sc, 14.5, 1);
+  sc.signs.push({ x: fg.x, y: fg.y - 64, text: '🌲 별빛 숲 마을', color: '#8f70e0' });
   sc.start = { c: 14, r: 1 };
   renderGround(sc);
   return sc;

@@ -936,23 +936,8 @@ function drawOverlay(now) {
     }
   }
 
-  for (const l of sc.links || []) {
-    if (state.busy) break;
-    const w = tileCenter(sc, l.c, l.r);
-    const p = toScreen(w.x, w.y + 4 + Math.sin(now / 250) * 2);
-    ctx.font = `${9 * s}px ${font}`;
-    ctx.textAlign = 'center';
-    ctx.fillText(l.icon, p.x, p.y);
-  }
-
-  // Exit mats inside rooms get a bobbing arrow.
-  if (sc.exit && !state.busy) {
-    const w = tileCenter(sc, sc.exit.c + (sc.exitTiles ? 0.5 : 0), sc.exit.r);
-    const p = toScreen(w.x, w.y + 10 + Math.sin(now / 250) * 2);
-    ctx.font = `${9 * s}px ${font}`;
-    ctx.textAlign = 'center';
-    ctx.fillText('🚪', p.x, p.y);
-  }
+  // Ways out of the scene glow softly, with arrows or a lock.
+  if (!state.busy) drawExitHints(now);
 
   // Tap ripples.
   for (const r of state.ripples) {
@@ -989,6 +974,118 @@ function drawOverlay(now) {
   ctx.globalCompositeOperation = 'source-over';
 }
 
+// Each way out of a scene: links to other scenes plus a room's exit mat.
+// Neighbouring link tiles with the same target share one hint. A link may
+// set `style` ('gate', 'door' or 'mat'; outdoors defaults to 'gate') and
+// `dir` ({ dc, dr }, the way the arrows point; defaults to off the map edge).
+function exitSpots(sc) {
+  if (sc.exitSpots) return sc.exitSpots;
+  const spots = [];
+  for (const l of sc.links || []) {
+    const style = l.style || (sc.outdoor ? 'gate' : 'mat');
+    const near = s => s.link && s.link.target === l.target && s.style === style && s.tiles.some(t => Math.abs(t.c - l.c) + Math.abs(t.r - l.r) === 1);
+    const spot = spots.find(near);
+    if (spot) spot.tiles.push(l);
+    else spots.push({ link: l, style, tiles: [l] });
+  }
+  const exits = sc.exitTiles || (sc.exit ? [sc.exit] : []);
+  if (exits.length) spots.push({ link: null, style: 'mat', tiles: exits });
+  for (const sp of spots) {
+    sp.c = sp.tiles.reduce((a, t) => a + t.c, 0) / sp.tiles.length;
+    sp.r = sp.tiles.reduce((a, t) => a + t.r, 0) / sp.tiles.length;
+    const t = sp.tiles[0];
+    sp.dir = (sp.link && sp.link.dir) ||
+      (t.r === sc.D - 1 ? { dc: 0, dr: 1 } : t.c === sc.W - 1 ? { dc: 1, dr: 0 } :
+        t.r === 0 ? { dc: 0, dr: -1 } : t.c === 0 ? { dc: -1, dr: 0 } : null);
+  }
+  sc.exitSpots = spots;
+  return spots;
+}
+
+function drawExitHints(now) {
+  const sc = state.scene;
+  const s = state.scale;
+  const ctx = sctx;
+  for (const sp of exitSpots(sc)) {
+    const w = tileCenter(sc, sp.c, sp.r);
+    const p = toScreen(w.x, w.y);
+    if (p.x < -100 || p.y < -100 || p.x > screen.width + 100 || p.y > screen.height + 100) continue;
+    const locked = sp.link && sp.link.needStars && state.stars < sp.link.needStars;
+    const pulse = 0.5 + 0.5 * Math.sin(now / 450);
+
+    // Soft glow on the ground, and on the door itself for wall doors.
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = locked ? 0.12 : 0.22 + 0.18 * pulse;
+    const rx = (sp.tiles.length > 1 ? 30 : 20) * s;
+    ctx.drawImage(glow(), p.x - rx, p.y - rx / 2, rx * 2, rx);
+    if (sp.link && sp.link.door) {
+      const d = toScreen(sp.link.door.x, sp.link.door.y);
+      ctx.globalAlpha = 0.2 + 0.2 * pulse;
+      ctx.drawImage(glow(), d.x - 22 * s, d.y - 34 * s, 44 * s, 68 * s);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    if (locked) drawPadlock(ctx, p.x, p.y - (sp.style === 'gate' ? 14 : 10) * s + Math.sin(now / 400) * 1.5 * s, s);
+    else if (sp.dir) drawChevrons(ctx, sp, w, now, s);
+    else drawDownArrow(ctx, p.x, p.y - (14 + Math.abs(Math.sin(now / 300)) * 4) * s, s);
+  }
+}
+
+// A row of three chevrons on the ground that light up in turn toward the way out.
+function drawChevrons(ctx, sp, w, now, s) {
+  const { dc, dr } = sp.dir;
+  const len = Math.hypot((dc - dr) * 16, (dc + dr) * 8);
+  const ux = (dc - dr) * 16 / len;
+  const uy = (dc + dr) * 8 / len;
+  const shape = [[2, 0], [-3, -5], [-6, -5], [-1, 0], [-6, 5], [-3, 5]];
+  ctx.lineJoin = 'round';
+  for (let i = 0; i < 3; i++) {
+    const k = (i - 1) * 6 + 1;
+    const ph = ((now / 700 - i / 3) % 1 + 1) % 1;
+    const c = toScreen(w.x + ux * k, w.y + uy * k);
+    // Squash across the arrow a little so it lies on the floor.
+    const pts = shape.map(([a, b]) => ({ x: c.x + (ux * a - uy * b * 0.8) * s, y: c.y + (uy * a + ux * b * 0.8) * s }));
+    ctx.globalAlpha = 0.45 + 0.55 * Math.max(0, Math.sin(Math.PI * ph));
+    ctx.beginPath();
+    pts.forEach((p, j) => (j ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+    ctx.closePath();
+    ctx.strokeStyle = '#7a3e6a';
+    ctx.lineWidth = 1.5 * s;
+    ctx.stroke();
+    ctx.fillStyle = '#fff4c0';
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Small pixel padlock for ways that open after collecting more stars.
+function drawPadlock(ctx, x, y, s) {
+  const P = (dx, dy, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x + dx * s), Math.round(y + dy * s), w * s, h * s); };
+  P(-4, -10, 8, 2, '#5a4a6a');
+  P(-4, -9, 2, 6, '#5a4a6a');
+  P(2, -9, 2, 6, '#5a4a6a');
+  P(-3, -9, 6, 1, '#c8c0d8');
+  P(-6, -4, 12, 10, '#8a5a1c');
+  P(-5, -3, 10, 8, '#ffc83d');
+  P(-5, -3, 10, 2, '#ffe28a');
+  P(-1, -1, 2, 2, '#6b4228');
+  P(-0.5, 1, 1, 2, '#6b4228');
+}
+
+// Bouncing arrow over a way out that is not on the scene's edge.
+function drawDownArrow(ctx, x, y, s) {
+  const P = (dx, dy, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x + dx * s), Math.round(y + dy * s), w * s, h * s); };
+  P(-3, -7, 6, 6, '#7a3e6a');
+  P(-6, -2, 12, 2, '#7a3e6a');
+  P(-4, 0, 8, 2, '#7a3e6a');
+  P(-2, 2, 4, 2, '#7a3e6a');
+  P(-2, -6, 4, 6, '#fff4c0');
+  P(-4, -1, 8, 1, '#fff4c0');
+  P(-3, 0, 6, 1, '#fff4c0');
+  P(-1, 1, 2, 2, '#fff4c0');
+}
+
 // ---- Input ---------------------------------------------------------------
 
 function onPointer(e) {
@@ -1019,7 +1116,9 @@ function onPointer(e) {
   const t = worldToTile(sc, wx, wy);
 
   // Doors between rooms, such as the castle to the princess's room.
-  const link = (sc.links || []).find(l => l.c === t.c && l.r === t.r);
+  // Wall doors can also be tapped on the door itself.
+  const link = (sc.links || []).find(l => l.c === t.c && l.r === t.r) ||
+    (sc.links || []).find(l => l.door && Math.abs(wx - l.door.x) < 14 && wy > l.door.y - 32 && wy < l.door.y + 30);
   if (link) {
     if (link.needStars && state.stars < link.needStars) {
       Sound.wrong();
