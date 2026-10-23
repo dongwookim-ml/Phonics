@@ -518,7 +518,8 @@ const UNICORN_NPCS = [
 ];
 
 Object.assign(VOICES, {
-  unicorn: { gender: 'female', tts: 'af_nicole', pitch: 1.55, rate: 0.95, voice: ['Samantha', 'Karen', 'Google US English', 'Microsoft Jenny'] },
+  // `lift` plays her recordings a little faster and higher: bright and bouncy.
+  unicorn: { gender: 'female', tts: 'af_bella', lift: 1.12, pitch: 1.55, rate: 1.0, voice: ['Samantha', 'Karen', 'Google US English', 'Microsoft Jenny'] },
   keeper:  { gender: 'female', tts: 'af_jessica', pitch: 1.2,  rate: 1.0,  voice: ['Tessa', 'Karen', 'Microsoft Aria'] },
 });
 Object.assign(PERSONA, {

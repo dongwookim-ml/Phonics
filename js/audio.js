@@ -36,7 +36,7 @@ const Sound = (() => {
       const pool = voices.filter(x => isGender(x, style.gender === 'male' ? MALE : FEMALE));
       if (pool.length) v = pool[Math.abs(seed) % pool.length];
     }
-    return { voice: v || null, pitch: style.pitch, rate: style.rate, tts: style.tts };
+    return { voice: v || null, pitch: style.pitch, rate: style.rate, tts: style.tts, lift: style.lift };
   }
 
   // Pre-recorded lines (audio/tts, made with the Kokoro voice model). The
@@ -64,12 +64,15 @@ const Sound = (() => {
   }
   // A live clip that hasn't started after a few seconds gives way to the
   // device voice so nobody waits on a slow server.
-  function playFile(url, done, fail, live) {
+  function playFile(url, done, fail, live, lift) {
     const timer = live ? setTimeout(fail, 4000) : null;
     player.onplaying = () => clearTimeout(timer);
     player.onended = () => { clearTimeout(timer); done(); };
     player.onerror = () => { clearTimeout(timer); fail(); };
     player.src = url;
+    // A lifted voice plays faster without keeping its pitch, so it sounds higher.
+    player.preservesPitch = player.webkitPreservesPitch = !lift;
+    player.playbackRate = lift || 1;
     player.play().catch(() => { clearTimeout(timer); fail(); });
   }
 
@@ -110,7 +113,7 @@ const Sound = (() => {
         player.onended = null;
         player.pause();
         speak(item, who, next);
-      }, file.live);
+      }, file.live, item.narrator ? 0 : who.lift);
     } else {
       speak(item, who, next);
     }
