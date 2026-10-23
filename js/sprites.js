@@ -341,6 +341,191 @@ function makeLamp() {
   return { canvas: cv, ax: 6, ay: 31, glow: { x: 6, y: 6 } };
 }
 
+// ---- More trees and plants -------------------------------------------------
+
+TREE_PALETTES.apple = { dark: '#3a9050', mid: '#58b860', light: '#8fdc80', spark: '#ff5a6a', line: '#286838', sparks: 0.035 };
+TREE_PALETTES.pine = { dark: '#2f7f5a', mid: '#46a06a', light: '#7fd08a', spark: '#d8ffb8', line: '#1f5a40' };
+TREE_PALETTES.starPine = { dark: '#2f4f8a', mid: '#4a72b8', light: '#8fc0f0', spark: '#fff6a8', line: '#203868' };
+TREE_PALETTES.mintPine = { dark: '#5fb8a8', mid: '#8fe0c8', light: '#d0fff0', spark: '#ffd0f0', line: '#3f8878' };
+
+const plantCache = new Map();
+// Pre-rendered plants by name, shared like the trees: { canvas, ax, ay }.
+function makePlant(kind) {
+  if (plantCache.has(kind)) return plantCache.get(kind);
+  const f = {
+    pine: () => makePine('pine'),
+    starPine: () => makePine('starPine'),
+    mintPine: () => makePine('mintPine'),
+    oak: () => makeTree('apple', 1.15),
+    birch: makeBirch,
+    palm: makePalm,
+    bush: () => makeBush(['#5fc46a', '#3f9f58', '#9be88a', '#2a6e40'], ['#ff7fb4', '#ffffff']),
+    berryBush: () => makeBush(['#4a8fb0', '#2f6a90', '#8fd0e8', '#204a68'], ['#c7a4ff', '#fff6a8']),
+    heartBush: () => makeBush(['#ffb0d8', '#e880b8', '#ffe0f0', '#b06090'], ['#ffffff', '#ff6f8a'], true),
+    tulips: () => makeFlowerClump(['#ff6f8a', '#ffe066', '#ff9ec4']),
+    bluebells: () => makeFlowerClump(['#8fd3ff', '#c7a4ff', '#ffffff']),
+    lollipop: makeLollipopTree,
+  }[kind];
+  const p = f ? f() : makeTree('green');
+  plantCache.set(kind, p);
+  return p;
+}
+
+function plantShadow(ctx, cx, cy, rx) {
+  ctx.fillStyle = 'rgba(40,30,60,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, rx * 0.36, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// Shades a filled shape: `inside(x, y)` decides the pixels, light from top-left.
+function shadeBlob(ctx, W, H, inside, pal, cx, cy, R, salt) {
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!inside(x + 0.5, y + 0.5)) continue;
+    const edge = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5) || !inside(x + 0.5, y + 1.5);
+    if (edge) { px(ctx, x, y, 1, 1, pal.line); continue; }
+    const l = (-(x - cx) * 0.6 - (y - cy) * 0.8) / R + (hash(x, y, salt) - 0.5) * 0.25;
+    let col = pal.mid;
+    if (l > 0.45) col = pal.light;
+    else if (l < -0.35) col = pal.dark;
+    if (pal.sparks && hash(x, y, salt + 1) < pal.sparks) col = pal.spark;
+    px(ctx, x, y, 1, 1, col);
+  }
+}
+
+// Tall pine made of three stacked tiers.
+function makePine(variant) {
+  const W = 30;
+  const H = 54;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  const pal = TREE_PALETTES[variant];
+  const cx = W / 2;
+  plantShadow(ctx, cx, 49, 10);
+  px(ctx, cx - 2, 40, 4, 10, '#8a5a3c');
+  px(ctx, cx - 2, 40, 1, 10, '#6b4228');
+  const tiers = [[42, 13, 16], [31, 11, 15], [20, 8, 14]];
+  const inside = (x, y) => tiers.some(([base, hw, h]) => {
+    const d = base - y;
+    if (d < 0 || d > h) return false;
+    const w = hw * (1 - d / h) + 1;
+    // Soft scalloped lower edge on each tier.
+    return Math.abs(x - cx) <= w && !(d < 1.5 && Math.abs(x - cx) % 5 < 1);
+  });
+  shadeBlob(ctx, W, H, inside, pal, cx, 24, 16, 13);
+  if (variant !== 'pine') for (const [x, y] of [[cx - 4, 34], [cx + 5, 26], [cx - 2, 16], [cx + 3, 38]]) px(ctx, Math.round(x), y, 1, 1, pal.spark);
+  return { canvas: cv, ax: Math.round(cx), ay: 48 };
+}
+
+// Slim birch with a white spotted trunk and a light airy crown.
+function makeBirch() {
+  const W = 28;
+  const H = 52;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  const cx = W / 2;
+  plantShadow(ctx, cx, 48, 8);
+  px(ctx, cx - 2, 22, 3, 26, '#f6f2ea');
+  px(ctx, cx + 1, 22, 1, 26, '#d8d0c4');
+  for (let y = 24; y < 46; y += 4) px(ctx, cx - 2 + (y % 8 ? 0 : 1), y, 2, 1, '#4a4040');
+  const pal = { dark: '#6fb850', mid: '#9cd870', light: '#d0f4a0', line: '#4a8a38', spark: '#ffe066', sparks: 0.015 };
+  const blobs = [[cx, 16, 9], [cx - 6, 22, 6], [cx + 6, 21, 6], [cx, 8, 6], [cx + 1, 26, 5]];
+  const inside = (x, y) => blobs.some(([bx, by, br]) => (x - bx) ** 2 + ((y - by) * 0.85) ** 2 <= br * br);
+  shadeBlob(ctx, W, 34, inside, pal, cx, 14, 10, 15);
+  return { canvas: cv, ax: Math.round(cx), ay: 47 };
+}
+
+// Little palm with a curved trunk, for beside the water.
+function makePalm() {
+  const W = 40;
+  const H = 52;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  plantShadow(ctx, 20, 48, 9);
+  for (let i = 0; i < 32; i++) {
+    const x = Math.round(20 + Math.sin(i / 32 * 1.6) * 6);
+    px(ctx, x - 2, 47 - i, 4, 1, i % 4 === 0 ? '#a8704a' : '#c8905a');
+    px(ctx, x - 2, 47 - i, 1, 1, '#8a5a3c');
+  }
+  const top = { x: 26, y: 15 };
+  for (const [ang, len] of [[-2.7, 15], [-0.4, 15], [-2.1, 12], [-1.0, 12], [2.6, 13], [0.5, 13]]) {
+    for (let s = 0; s < len; s++) {
+      const x = Math.round(top.x + Math.cos(ang) * s);
+      const y = Math.round(top.y + Math.sin(ang) * s + (s * s) / 30);
+      px(ctx, x - 1, y - 1, 3, 3, '#2f8f50');
+      px(ctx, x - 1, y - 1, 2, 2, s < len - 3 ? '#5fc46a' : '#9be88a');
+    }
+  }
+  px(ctx, top.x - 3, top.y, 3, 3, '#8a5a3c');
+  px(ctx, top.x + 1, top.y + 1, 3, 3, '#a8704a');
+  return { canvas: cv, ax: 20, ay: 47 };
+}
+
+// Round low bush. `cols` = dark, mid, light, line; `dots` are its flowers.
+function makeBush(cols, dots, hearts) {
+  const W = 26;
+  const H = 24;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  plantShadow(ctx, 13, 20, 11);
+  const pal = { dark: cols[1], mid: cols[0], light: cols[2], line: cols[3] };
+  const blobs = [[13, 13, 8], [7, 15, 6], [19, 15, 6], [12, 9, 6]];
+  const inside = (x, y) => blobs.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br) && y < 21;
+  shadeBlob(ctx, W, H, inside, pal, 13, 12, 9, 17);
+  for (let i = 0; i < 6; i++) {
+    const x = 6 + Math.floor(hash(i, 3, 19) * 14);
+    const y = 7 + Math.floor(hash(i, 4, 19) * 10);
+    const c = dots[i % dots.length];
+    if (hearts) { px(ctx, x - 1, y, 1, 1, c); px(ctx, x + 1, y, 1, 1, c); px(ctx, x - 1, y + 1, 3, 1, c); px(ctx, x, y + 2, 1, 1, c); }
+    else { px(ctx, x, y, 2, 2, c); px(ctx, x, y, 1, 1, '#ffffff'); }
+  }
+  return { canvas: cv, ax: 13, ay: 19 };
+}
+
+// Clump of tall flowers.
+function makeFlowerClump(cols) {
+  const W = 26;
+  const H = 26;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  plantShadow(ctx, 13, 21, 9);
+  const stems = [[6, 13], [10, 9], [13, 14], [16, 8], [20, 12], [9, 15], [18, 15]];
+  stems.forEach(([x, top], i) => {
+    px(ctx, x, top + 4, 1, 21 - top - 4, '#4fa35a');
+    px(ctx, x + (i % 2 ? 1 : -2), top + 9, 2, 2, '#7fd07a');
+    const c = cols[i % cols.length];
+    px(ctx, x - 1, top, 3, 4, c);
+    px(ctx, x - 2, top, 1, 2, c);
+    px(ctx, x + 2, top, 1, 2, c);
+    px(ctx, x, top + 1, 1, 1, mix(c, '#ffffff', 0.5));
+  });
+  return { canvas: cv, ax: 13, ay: 20 };
+}
+
+// Lollipop tree for the Unicorn Village: a swirl on a striped stick.
+function makeLollipopTree() {
+  const W = 30;
+  const H = 46;
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  plantShadow(ctx, 15, 42, 8);
+  for (let y = 22; y < 42; y++) px(ctx, 14, y, 3, 1, (y >> 1) % 2 ? '#ff6f8a' : '#ffffff');
+  const cx = 15;
+  const cy = 13;
+  for (let y = 0; y < 27; y++) for (let x = 0; x < W; x++) {
+    const dx = x + 0.5 - cx;
+    const dy = y + 0.5 - cy;
+    const d = Math.hypot(dx, dy);
+    if (d > 12) continue;
+    if (d > 11) { px(ctx, x, y, 1, 1, '#b06090'); continue; }
+    const a = Math.atan2(dy, dx);
+    const band = Math.floor(((a / (Math.PI * 2) + 1) * 3 + d / 4)) % 3;
+    px(ctx, x, y, 1, 1, ['#ff9ec4', '#ffffff', '#8fd3ff'][band]);
+  }
+  px(ctx, 9, 7, 3, 2, '#ffffff');
+  return { canvas: cv, ax: 15, ay: 41 };
+}
+
 // ---- Houses --------------------------------------------------------------
 
 // Half-timbered cottage with a gable roof. `door` is 'left' or 'right'.
@@ -464,6 +649,728 @@ function drawWindow(ctx, W, x, v, style, small) {
     // Flower box.
     wallRect(ctx, W, x - 2, x + w + 2, v - 4, v - 1, '#a0603c');
     for (let i = 0; i < w + 2; i += 2) wallRect(ctx, W, x - 1 + i, x + i, v - 1, v + 1, i % 4 ? '#ff7fb4' : '#ffe066');
+  }
+}
+
+// ---- More house shapes ---------------------------------------------------
+
+// Every shape stands on a 3 x 3 footprint with its door in the middle of the
+// front-left wall, so doors, signs and taps work the same as for the cottage.
+// `style.shape` picks the drawing; `style.roof` is the house colour.
+const HOUSE_DRAW = {
+  cottage: (ctx, k, style) => drawCottage(ctx, k, style),
+  thatch: drawThatchHouse,
+  bakery: drawBakery,
+  tower: drawRoundHouse,
+  windmill: drawWindmill,
+  mushroom: drawMushroomCottage,
+  manor: drawManor,
+  cloud: drawCloudHouse,
+  stable: drawRainbowStable,
+  crystal: drawCrystalHut,
+  candy: drawCandyCottage,
+  star: drawStarTower,
+};
+// How far above the footprint each shape reaches, for its object bounds.
+const HOUSE_UP = { windmill: 150, tower: 136, star: 150, manor: 124, crystal: 124 };
+
+function drawHouse(ctx, k, style) {
+  (HOUSE_DRAW[style.shape] || HOUSE_DRAW.cottage)(ctx, k, style);
+}
+function houseUp(shape) {
+  return HOUSE_UP[shape] || 110;
+}
+
+function houseShadow(ctx, k) {
+  const { T, R, B, L } = k;
+  fillPoly(ctx, [{ x: T.x + 8, y: T.y + 4 }, { x: R.x + 8, y: R.y + 4 }, { x: B.x + 8, y: B.y + 4 }, { x: L.x + 8, y: L.y + 4 }], 'rgba(40,30,70,0.16)');
+}
+function houseMid(k) {
+  return { x: (k.L.x + k.R.x) / 2, y: (k.L.y + k.R.y) / 2 };
+}
+
+// Arched wooden door in the middle of wall W, with a gold knob.
+function houseDoor(ctx, W, color = '#8b5a3c', frame = '#d8c8c0') {
+  const mid = W.len / 2;
+  wallArch(ctx, W, mid - 9, mid + 9, 0, 24, frame);
+  wallArch(ctx, W, mid - 7, mid + 7, 0, 22, color);
+  for (let x = mid - 4; x < mid + 7; x += 4) wallRect(ctx, W, x, x + 1, 0, 20, shade(color, -30));
+  wallRect(ctx, W, mid + 3, mid + 5, 9, 11, '#ffd34d');
+}
+
+// A short flat strip on a round body, facing front-left, for its door.
+// (cx, cy) is the ground centre and R the radius at the ground.
+function roundDoorWall(cx, cy, R) {
+  const p = { x: cx - R * 0.7071, y: cy + R * 0.3536 };
+  return wall({ x: p.x - 12, y: p.y - 6 }, { x: p.x + 12, y: p.y + 6 });
+}
+// Point on the front of a round body: `t` runs -1 (left edge) to 1 (right).
+function roundPt(cx, cy, r, t, h) {
+  return { x: Math.round(cx + t * r), y: Math.round(cy - h + Math.sqrt(Math.max(0, 1 - t * t)) * r / 2) };
+}
+
+// Upright round body tapering from radius R0 at the ground to R1 at height H.
+// `colorAt(t, h)` colours it, with t across the front from -1 to 1.
+function roundBody(ctx, cx, cy, R0, R1, H, colorAt) {
+  for (let dx = -R0; dx < R0; dx++) {
+    let prev = null;
+    for (let h = 0; h <= H; h++) {
+      const r = R0 + (R1 - R0) * h / H;
+      const t = (dx + 0.5) / r;
+      if (Math.abs(t) >= 1) break;
+      const y = Math.round(cy - h + Math.sqrt(1 - t * t) * r / 2);
+      if (prev === null) px(ctx, cx + dx, y, 1, 2, colorAt(t, h));
+      else if (y < prev) px(ctx, cx + dx, y, 1, prev - y, colorAt(t, h));
+      prev = prev === null ? y : Math.min(prev, y);
+    }
+  }
+}
+// Soft round shading shared by the round bodies.
+function roundShade(base, t) {
+  if (t < -0.55) return shade(base, -30);
+  if (t < -0.15) return shade(base, -14);
+  if (t > 0.7) return shade(base, -8);
+  return base;
+}
+
+// Cone roof sitting on a circle of radius R at height `base` (a y value).
+// `colorAt(t, d)` gets d, the pixels up from the eave.
+function coneRoof(ctx, cx, base, R, roofH, colorAt) {
+  const apex = base - roofH;
+  for (let dx = -R; dx < R; dx++) {
+    const t = (dx + 0.5) / R;
+    const e = Math.sqrt(Math.max(0, 1 - t * t)) * R / 2;
+    const bottom = Math.round(base + e + 2);
+    const top = Math.round(apex + (base - apex) * Math.abs(t));
+    for (let y = top; y < bottom; y++) px(ctx, cx + dx, y, 1, 1, colorAt(t, bottom - y, cx + dx, y));
+  }
+  return apex;
+}
+function shingle(roof, t, d) {
+  let col = roof;
+  if (t < -0.35) col = shade(roof, -34);
+  else if (t < 0) col = shade(roof, -14);
+  else if (t > 0.6) col = shade(roof, -8);
+  if (d % 6 === 0) col = shade(roof, -46);
+  if (d < 2) col = shade(roof, -60);
+  return col;
+}
+
+// Four-sided roof over a box of height H. `o` widens the eaves; `paint`
+// gets (x, y, side, d) with side 'left' or 'right' and d the pixels above the eave.
+function hipRoof(ctx, k, H, roofH, o, paint) {
+  const c = houseMid(k);
+  const e = p => ({ x: c.x + (p.x - c.x) * (1 + o), y: c.y + (p.y - c.y) * (1 + o) - H + 3 });
+  const L = e(k.L);
+  const T = e(k.T);
+  const R = e(k.R);
+  const B = e(k.B);
+  const A = { x: c.x, y: c.y - H - roofH };
+  for (const [P, Q, side] of [[L, T, 'back'], [T, R, 'back'], [L, B, 'left'], [B, R, 'right']]) {
+    const slope = (Q.y - P.y) / (Q.x - P.x);
+    fillPoly(ctx, [P, Q, A], (x, y) => paint(x, y, side === 'back' ? 'right' : side, P.y + (x - P.x) * slope - y));
+  }
+  return { L, T, R, B, A };
+}
+
+// Plain box walls of height H; `paint(W, left)` decorates each one.
+function boxWalls(ctx, k, H, base, paint) {
+  const WL = wall(k.L, k.B);
+  const WR = wall(k.B, k.R);
+  wallRect(ctx, WL, 0, WL.len, 0, H, shade(base, -22));
+  wallRect(ctx, WR, 0, WR.len, 0, H, base);
+  if (paint) { paint(WL, true); paint(WR, false); }
+  return { WL, WR };
+}
+
+// Cosy cottage under a fat straw roof.
+function drawThatchHouse(ctx, k, style) {
+  const H = 32;
+  const accent = style.roof;
+  houseShadow(ctx, k);
+  boxWalls(ctx, k, H, '#fff1d8', (W, left) => {
+    const stone = left ? '#cbbcae' : '#e2d6c8';
+    wallRect(ctx, W, 0, W.len, 0, 7, stone);
+    for (let x = 2; x < W.len; x += 7) wallRect(ctx, W, x, x + 4, 2 + (x % 3), 4 + (x % 3), shade(stone, 16));
+    wallRect(ctx, W, 0, 3, 0, H, left ? '#6f4634' : '#8a5a44');
+    wallRect(ctx, W, W.len - 3, W.len, 0, H, left ? '#6f4634' : '#8a5a44');
+    if (left) houseDoor(ctx, W, accent);
+    const wins = left ? [6, W.len - 15] : [10, W.len - 20];
+    for (const x of wins) drawWindow(ctx, W, x, 11, style, true);
+  });
+  // Straw roof with layered rows and a soft rounded eave.
+  const straw = '#f2c86a';
+  const r = hipRoof(ctx, k, H, 42, 0.2, (x, y, side, d) => {
+    const row = Math.floor((d + 2) / 7);
+    const md = ((d + 2) % 7 + 7) % 7;
+    if (d < 2) return '#b07f30';
+    let col = side === 'left' ? shade(straw, -18) : straw;
+    if (md === 0) col = shade(col, -26);
+    else if (md < 3) col = shade(col, 12);
+    if ((x + row * 3 + Math.floor(hash(x, row, 31) * 3)) % 4 === 0) col = shade(col, -16);
+    return col;
+  });
+  // Flowers tucked along the eaves and a ribbon at the top.
+  for (const [P, Q] of [[r.L, r.B], [r.B, r.R]]) {
+    for (let i = 1; i < 8; i++) {
+      const x = Math.round(P.x + (Q.x - P.x) * i / 8);
+      const y = Math.round(P.y + (Q.y - P.y) * i / 8) - 3;
+      px(ctx, x - 1, y, 3, 1, i % 2 ? accent : '#ffffff');
+      px(ctx, x, y - 1, 1, 3, i % 2 ? accent : '#ffffff');
+      px(ctx, x, y, 1, 1, '#ffe066');
+    }
+  }
+  px(ctx, r.A.x - 4, r.A.y + 2, 8, 4, accent);
+  px(ctx, r.A.x - 4, r.A.y + 5, 8, 1, shade(accent, -40));
+  px(ctx, r.A.x - 1, r.A.y - 3, 2, 5, '#b07f30');
+}
+
+// Bakery with a striped awning and a giant cupcake on the roof.
+function drawBakery(ctx, k, style) {
+  const H = 42;
+  const accent = style.roof;
+  const soft = mix(accent, '#ffffff', 0.55);
+  houseShadow(ctx, k);
+  const { WL } = boxWalls(ctx, k, H, '#fff4e4', (W, left) => {
+    wallRect(ctx, W, 0, W.len, 0, 6, shade(accent, left ? -50 : -30));
+    for (let x = 0; x < W.len; x += 6) wallRect(ctx, W, x, x + 1, 6, 24, left ? shade('#fff4e4', -36) : shade('#fff4e4', -14));
+    wallRect(ctx, W, 0, W.len, H - 6, H, left ? shade(accent, -20) : accent);
+    for (let x = 2; x < W.len; x += 6) wallRect(ctx, W, x, x + 3, H - 5, H - 3, '#ffffff');
+    if (left) {
+      houseDoor(ctx, W, shade(accent, -30));
+      // Shop window full of bread.
+      wallRect(ctx, W, 3, 14, 5, 21, '#f8f2ff');
+      wallRect(ctx, W, 4, 13, 6, 20, '#bfe6ff');
+      for (const [x, v, c] of [[5, 7, '#d08a4a'], [9, 7, '#e8a860'], [6, 13, '#ff9ec4'], [10, 13, '#d08a4a']]) {
+        wallRect(ctx, W, x, x + 3, v, v + 3, c);
+        wallRect(ctx, W, x, x + 3, v + 2, v + 3, '#ffffff');
+      }
+      drawWindow(ctx, W, W.len - 14, 10, style, true);
+    } else {
+      drawWindow(ctx, W, 8, 10, style);
+      drawWindow(ctx, W, W.len - 18, 10, style);
+    }
+  });
+  // Striped awning sloping out over the shop front.
+  const out = { x: -6, y: 9 };
+  for (let x = 0; x < WL.len; x += 4) {
+    const a = wallPt(WL, x, 33);
+    const b = wallPt(WL, x + 4, 33);
+    const col = (x / 4) % 2 ? '#ffffff' : accent;
+    fillPoly(ctx, [a, b, { x: b.x + out.x, y: b.y + out.y }, { x: a.x + out.x, y: a.y + out.y }], col);
+    px(ctx, Math.round(a.x + out.x), Math.round(a.y + out.y), 4, 2, col);
+    px(ctx, Math.round(a.x + out.x + 1), Math.round(a.y + out.y + 2), 2, 1, col);
+  }
+  // Flat roof with a rim.
+  const up = p => ({ x: p.x, y: p.y - H });
+  fillPoly(ctx, [up(k.T), up(k.R), up(k.B), up(k.L)], soft);
+  fillPoly(ctx, [up(k.L), up(k.B), { x: k.B.x, y: k.B.y - H - 2 }, { x: k.L.x, y: k.L.y - H - 2 }], shade(accent, -10));
+  fillPoly(ctx, [up(k.B), up(k.R), { x: k.R.x, y: k.R.y - H - 2 }, { x: k.B.x, y: k.B.y - H - 2 }], accent);
+  // Cupcake.
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const base = Math.round(m.y - H + 2);
+  for (let i = 0; i < 18; i++) {
+    const w = 10 + Math.floor(i / 3);
+    const col = i % 4 < 2 ? '#ffffff' : soft;
+    px(ctx, cx - w, base - i, w * 2, 1, col);
+    px(ctx, cx - w, base - i, 2, 1, shade(soft, -30));
+  }
+  for (let x = -16; x < 16; x += 4) px(ctx, cx + x + 1, base - 17, 2, 16, shade(soft, -16));
+  const frost = [[0, -24, 13], [-8, -20, 9], [8, -20, 9], [0, -32, 9], [0, -38, 5]];
+  for (let y = -46; y < -14; y++) for (let x = -18; x < 18; x++) {
+    const inside = frost.some(([bx, by, br]) => (x - bx) ** 2 + ((y - by) * 1.2) ** 2 <= br * br);
+    if (!inside) continue;
+    const l = -x * 0.5 - (y + 28) * 0.8;
+    px(ctx, cx + x, base + y, 1, 1, l > 6 ? '#ffffff' : l < -8 ? '#ffb0d0' : '#ffd0e6');
+  }
+  for (const [x, y, c] of [[-6, -26, '#7fd4ff'], [5, -24, '#ffe066'], [-2, -33, '#9be88a'], [8, -30, '#c7a4ff'], [-9, -21, '#ffe066']]) px(ctx, cx + x, base + y, 2, 1, c);
+  px(ctx, cx - 3, base - 50, 6, 6, '#ff4f6a');
+  px(ctx, cx - 2, base - 49, 2, 2, '#ffb0b8');
+  px(ctx, cx, base - 54, 1, 4, '#5fb35a');
+}
+
+// Round stone house with a tall pointed roof and a pennant.
+function drawRoundHouse(ctx, k, style) {
+  const R = 34;
+  const H = 60;
+  const accent = style.roof;
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const cy = Math.round(m.y);
+  houseShadow(ctx, k);
+  roundBody(ctx, cx, cy, R, R - 4, H, (t, h) => {
+    let col = roundShade('#fbefe6', t);
+    if (h < 8) col = roundShade('#dccdc6', t);
+    if (h % 8 === 0 && h > 0) col = shade(col, -14);
+    if (h % 8 > 0 && Math.floor((t + 1) * 9 + (h >> 3)) % 2 === 0 && h % 8 === 4) col = shade(col, -10);
+    if (h >= 34 && h < 38) col = roundShade(accent, t);
+    return col;
+  });
+  houseDoor(ctx, roundDoorWall(cx, cy, R), shade(accent, -20));
+  for (const [t, h] of [[0.25, 14], [0.4, 46], [-0.3, 46]]) {
+    const p = roundPt(cx, cy, R - (R * h / H) * (4 / R), t, h);
+    px(ctx, p.x - 5, p.y - 11, 10, 12, '#f8f2ff');
+    px(ctx, p.x - 4, p.y - 10, 8, 10, '#8fd0ff');
+    px(ctx, p.x - 3, p.y - 12, 6, 1, '#f8f2ff');
+    px(ctx, p.x - 1, p.y - 10, 1, 10, '#f8f2ff');
+    px(ctx, p.x - 3, p.y - 5, 2, 3, '#e6f7ff');
+    px(ctx, p.x - 6, p.y + 1, 12, 2, '#a0603c');
+    px(ctx, p.x - 5, p.y, 2, 1, '#ff7fb4');
+    px(ctx, p.x + 2, p.y, 2, 1, '#ffe066');
+  }
+  const apex = coneRoof(ctx, cx, cy - H, R, 52, (t, d) => shingle(accent, t, d));
+  // Little round dormer window on the roof.
+  px(ctx, cx + 6, cy - H - 24, 9, 9, shade(accent, -50));
+  px(ctx, cx + 7, cy - H - 23, 7, 7, '#fff2a8');
+  px(ctx, cx + 10, cy - H - 23, 1, 7, shade(accent, -50));
+  // Finial and pennant.
+  px(ctx, cx - 1, apex - 4, 2, 5, '#ffd34d');
+  px(ctx, cx, apex - 14, 1, 10, '#8a7a9a');
+  for (let i = 0; i < 10; i++) px(ctx, cx + 1 + i, apex - 14 + Math.floor(i / 4), 1, 5 - Math.floor(i / 2.5), i % 3 === 2 ? '#ffffff' : mix(accent, '#ffffff', 0.4));
+}
+
+// White windmill with a coloured cap and four lattice sails.
+function drawWindmill(ctx, k, style) {
+  const R = 34;
+  const H = 76;
+  const accent = style.roof;
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const cy = Math.round(m.y);
+  houseShadow(ctx, k);
+  roundBody(ctx, cx, cy, R, 21, H, (t, h) => {
+    let col = roundShade('#fffaf2', t);
+    if (h < 9) col = roundShade('#d8cabc', t);
+    if (h < 9 && h % 3 === 0) col = shade(col, -18);
+    if (h === 9 || h === H - 2) col = roundShade(accent, t);
+    return col;
+  });
+  houseDoor(ctx, roundDoorWall(cx, cy, R), '#8b5a3c');
+  for (const [t, h] of [[0.3, 22], [-0.1, 48]]) {
+    const r = R + (21 - R) * h / H;
+    const p = roundPt(cx, cy, r, t, h);
+    px(ctx, p.x - 4, p.y - 9, 8, 10, '#8a5a44');
+    px(ctx, p.x - 3, p.y - 8, 6, 8, '#8fd0ff');
+    px(ctx, p.x - 3, p.y - 4, 6, 1, '#8a5a44');
+  }
+  const apex = coneRoof(ctx, cx, cy - H, 25, 24, (t, d) => shingle(accent, t, d));
+  px(ctx, cx - 1, apex - 4, 2, 5, '#ffd34d');
+  // Sails, turned a little so they read as a windmill and not a cross.
+  const hub = { x: cx - 9, y: cy - H + 8 };
+  for (let i = 0; i < 4; i++) {
+    const a = 0.35 + i * Math.PI / 2;
+    const d = { x: Math.cos(a), y: Math.sin(a) };
+    const n = { x: -d.y, y: d.x };
+    const pt = (s, w) => ({ x: hub.x + d.x * s + n.x * w, y: hub.y + d.y * s + n.y * w });
+    fillPoly(ctx, [pt(14, 0), pt(46, 0), pt(46, 10), pt(14, 10)], '#fffaf2');
+    for (let s = 14; s <= 46; s += 8) fillPoly(ctx, [pt(s, 0), pt(s + 1.2, 0), pt(s + 1.2, 10), pt(s, 10)], '#c8a080');
+    fillPoly(ctx, [pt(14, 4.5), pt(46, 4.5), pt(46, 5.7), pt(14, 5.7)], '#c8a080');
+    fillPoly(ctx, [pt(0, -1.5), pt(48, -1.5), pt(48, 1.5), pt(0, 1.5)], '#8a5a3c');
+  }
+  px(ctx, hub.x - 3, hub.y - 3, 6, 6, '#6f4634');
+  px(ctx, hub.x - 1, hub.y - 1, 2, 2, '#ffd34d');
+}
+
+// A big spotted mushroom with a round door in its stem.
+function drawMushroomCottage(ctx, k, style) {
+  const R = 34;
+  const H = 34;
+  const cap = style.roof;
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const cy = Math.round(m.y);
+  houseShadow(ctx, k);
+  roundBody(ctx, cx, cy, R, R - 3, H, (t, h) => {
+    const col = roundShade('#fff6e6', t);
+    return Math.floor((t + 1) * 12) % 3 === 0 ? shade(col, -8) : col;
+  });
+  houseDoor(ctx, roundDoorWall(cx, cy, R), '#a8704a', '#e8d8c0');
+  const win = roundPt(cx, cy, R, 0.35, 16);
+  px(ctx, win.x - 4, win.y - 10, 9, 9, '#8a5a3c');
+  px(ctx, win.x - 3, win.y - 9, 7, 7, '#fff2a8');
+  px(ctx, win.x, win.y - 9, 1, 7, '#8a5a3c');
+  // Domed cap with white spots.
+  const CR = 56;
+  const top = cy - H - 44;
+  for (let dx = -CR; dx < CR; dx++) {
+    const t = (dx + 0.5) / CR;
+    const dome = Math.sqrt(Math.max(0, 1 - t * t));
+    const y0 = Math.round(cy - H - dome * 42 + 4);
+    const y1 = Math.round(cy - H + dome * 12 + 6);
+    for (let y = y0; y < y1; y++) {
+      let col = cap;
+      if (t < -0.45) col = shade(cap, -35);
+      else if (t < -0.1) col = shade(cap, -14);
+      if (y < y0 + 5 && t > -0.3 && t < 0.35) col = shade(cap, 30);
+      const sx = Math.floor((dx + 60) / 11);
+      const sy = Math.floor((y - top) / 10);
+      const mx = (dx + 60) % 11;
+      const my = (y - top) % 10;
+      if (hash(sx, sy, 43) < 0.4 && mx > 2 && mx < 9 && my > 2 && my < 8 && !((mx === 3 || mx === 8) && (my === 3 || my === 7))) col = '#ffffff';
+      if (y >= y1 - 2) col = shade(cap, -60);
+      px(ctx, cx + dx, y, 1, 1, col);
+    }
+  }
+  // Tiny chimney poking through the cap.
+  px(ctx, cx + 20, cy - H - 40, 6, 10, '#c07a5a');
+  px(ctx, cx + 19, cy - H - 42, 8, 3, '#8a4f3c');
+}
+
+// Two-storey town house: brick below, siding above, a balcony over the door.
+function drawManor(ctx, k, style) {
+  const H = 64;
+  const accent = style.roof;
+  const brick = mix(accent, '#fff4ee', 0.72);
+  houseShadow(ctx, k);
+  const { WL } = boxWalls(ctx, k, H, '#fffaf2', (W, left) => {
+    const b = left ? shade(brick, -22) : brick;
+    wallRect(ctx, W, 0, W.len, 0, 30, b);
+    for (let v = 4; v < 30; v += 4) {
+      wallRect(ctx, W, 0, W.len, v, v + 1, shade(b, -18));
+      for (let x = (v / 4 % 2) * 4; x < W.len; x += 8) wallRect(ctx, W, x, x + 1, v - 3, v, shade(b, -18));
+    }
+    for (let v = 36; v < H; v += 4) wallRect(ctx, W, 0, W.len, v, v + 1, left ? '#d8ccc4' : '#ece2da');
+    wallRect(ctx, W, 0, W.len, 30, 33, '#ffffff');
+    wallRect(ctx, W, 0, W.len, 33, 34, '#d8ccc4');
+    wallRect(ctx, W, 0, 3, 0, H, '#ffffff');
+    wallRect(ctx, W, W.len - 3, W.len, 0, H, '#ffffff');
+    if (left) {
+      houseDoor(ctx, W, shade(accent, -20), '#ffffff');
+      drawWindow(ctx, W, 6, 9, style, true);
+      drawWindow(ctx, W, W.len - 14, 9, style, true);
+      // Balcony door and railing above the front door.
+      const mid = W.len / 2;
+      wallArch(ctx, W, mid - 6, mid + 6, 34, 54, '#ffffff');
+      wallArch(ctx, W, mid - 5, mid + 5, 34, 53, '#8fd0ff');
+      wallRect(ctx, W, mid - 1, mid, 34, 52, '#ffffff');
+      drawWindow(ctx, W, 6, 41, style);
+      drawWindow(ctx, W, W.len - 15, 41, style);
+    } else {
+      drawWindow(ctx, W, 8, 9, style);
+      drawWindow(ctx, W, W.len - 18, 9, style);
+      drawWindow(ctx, W, 8, 41, style);
+      drawWindow(ctx, W, W.len - 18, 41, style);
+    }
+  });
+  // Balcony floor sticking out of the left wall.
+  const mid = WL.len / 2;
+  const o = { x: -5, y: 2.5 };
+  const a = wallPt(WL, mid - 11, 33);
+  const b = wallPt(WL, mid + 11, 33);
+  fillPoly(ctx, [a, b, { x: b.x + o.x, y: b.y + o.y }, { x: a.x + o.x, y: a.y + o.y }], '#e8dcd4');
+  fillPoly(ctx, [{ x: a.x + o.x, y: a.y + o.y }, { x: b.x + o.x, y: b.y + o.y }, { x: b.x + o.x, y: b.y + o.y + 2 }, { x: a.x + o.x, y: a.y + o.y + 2 }], '#c8b8b0');
+  for (let x = mid - 11; x <= mid + 11; x += 3) {
+    const p = wallPt(WL, x, 33);
+    px(ctx, Math.round(p.x + o.x), Math.round(p.y + o.y - 7), 1, 7, '#ffffff');
+  }
+  fillPoly(ctx, [{ x: a.x + o.x, y: a.y + o.y - 8 }, { x: b.x + o.x, y: b.y + o.y - 8 }, { x: b.x + o.x, y: b.y + o.y - 6 }, { x: a.x + o.x, y: a.y + o.y - 6 }], '#ffffff');
+  const r = hipRoof(ctx, k, H, 34, 0.1, (x, y, side, d) => {
+    const row = Math.floor(d / 5);
+    let col = side === 'left' ? shade(accent, -26) : accent;
+    if (d < 2) return shade(accent, -60);
+    if (((d % 5) + 5) % 5 < 1) col = shade(col, -24);
+    if (((x + row * 3) % 6 + 6) % 6 === 0) col = shade(col, -16);
+    return col;
+  });
+  for (const f of [0.3, 0.72]) {
+    const cx = Math.round(r.L.x + (r.R.x - r.L.x) * f);
+    const cy = Math.round(r.A.y + 26);
+    px(ctx, cx, cy - 12, 7, 14, '#c07a5a');
+    px(ctx, cx + 4, cy - 12, 3, 14, '#a0604a');
+    px(ctx, cx - 1, cy - 14, 9, 3, '#8a4f3c');
+  }
+}
+
+// ---- Unicorn homes -------------------------------------------------------
+
+// A fluffy cloud you can live in, with a rainbow doorway and a turret.
+function drawCloudHouse(ctx, k, style) {
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const cy = Math.round(m.y);
+  ctx.fillStyle = 'rgba(80,60,140,0.14)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 4, cy + 4, 46, 22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const blobs = [[0, -18, 28], [-24, -6, 20], [24, -8, 20], [-14, -34, 20], [14, -36, 19], [0, -48, 16], [-34, 2, 13], [34, 0, 13], [-18, 8, 14], [12, 8, 15]];
+  const inside = (x, y) => blobs.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br);
+  for (let y = -66; y < 26; y++) for (let x = -50; x < 50; x++) {
+    if (!inside(x + 0.5, y + 0.5)) continue;
+    const edge = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5) || !inside(x + 0.5, y + 1.5);
+    const l = -x * 0.4 - y * 0.6;
+    let col = l > 22 ? '#ffffff' : l > -6 ? '#f6f4ff' : '#e4e0fa';
+    if (edge) col = '#b8b0e0';
+    else if (hash(x, y, 51) < 0.015) col = '#ffd0f0';
+    px(ctx, cx + x, cy + y, 1, 1, col);
+  }
+  // Rainbow doorway.
+  const W = roundDoorWall(cx, cy, 34);
+  const mid = W.len / 2;
+  RAINBOW.forEach((c, i) => wallArch(ctx, W, mid - 11 + i, mid + 11 - i, 0, 27 - i, c));
+  wallArch(ctx, W, mid - 5, mid + 5, 0, 20, '#fff6fb');
+  wallArch(ctx, W, mid - 4, mid + 4, 0, 18, '#ffc0dc');
+  wallRect(ctx, W, mid + 1, mid + 3, 8, 10, '#ffd34d');
+  // Round windows.
+  for (const [x, y] of [[12, -22], [-6, -40], [26, -12]]) {
+    ctx.fillStyle = '#c8b8f0';
+    ctx.beginPath(); ctx.arc(cx + x, cy + y, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#bfe6ff';
+    ctx.beginPath(); ctx.arc(cx + x, cy + y, 4, 0, Math.PI * 2); ctx.fill();
+    px(ctx, cx + x - 2, cy + y - 2, 2, 2, '#ffffff');
+  }
+  // Turret on top.
+  const tx = cx + 8;
+  const ty = cy - 52;
+  roundBody(ctx, tx, ty, 9, 8, 16, t => roundShade('#fff0f8', t));
+  px(ctx, tx - 2, ty - 10, 4, 6, '#fff2a8');
+  const apex = coneRoof(ctx, tx, ty - 16, 11, 20, (t, d) => shingle(style.roof, t, d));
+  px(ctx, tx, apex - 9, 1, 9, '#8a7a9a');
+  for (let i = 0; i < 6; i++) px(ctx, tx + 1 + i, apex - 9 + (i >> 1), 1, 4 - (i >> 1), '#ff6fa8');
+}
+
+// Barn for the unicorns with a rainbow roof and a big X door.
+function drawRainbowStable(ctx, k, style) {
+  const H = 36;
+  const accent = style.roof;
+  houseShadow(ctx, k);
+  boxWalls(ctx, k, H, '#fff6ee', (W, left) => {
+    for (let x = 4; x < W.len; x += 5) wallRect(ctx, W, x, x + 1, 0, H, left ? '#d8c8c0' : '#ecdcd4');
+    wallRect(ctx, W, 0, W.len, 0, 4, left ? '#b8a8a0' : '#d0c0b8');
+    wallRect(ctx, W, 0, 3, 0, H, shade(accent, left ? -30 : 0));
+    wallRect(ctx, W, W.len - 3, W.len, 0, H, shade(accent, left ? -30 : 0));
+    wallRect(ctx, W, 0, W.len, H - 3, H, shade(accent, left ? -30 : 0));
+    const mid = W.len / 2;
+    if (left) {
+      wallRect(ctx, W, mid - 12, mid + 12, 0, 26, '#ffffff');
+      wallRect(ctx, W, mid - 10, mid + 10, 0, 24, shade(accent, -10));
+      for (let i = 0; i < 20; i++) {
+        wallRect(ctx, W, mid - 10 + i, mid - 9 + i, i * 1.2, i * 1.2 + 2, '#ffffff');
+        wallRect(ctx, W, mid - 10 + i, mid - 9 + i, 22 - i * 1.2, 24 - i * 1.2, '#ffffff');
+      }
+      wallRect(ctx, W, mid - 1, mid + 1, 0, 24, '#ffffff');
+      // Horseshoe for luck.
+      wallRect(ctx, W, mid - 3, mid + 3, 29, 30, '#ffd34d');
+      wallRect(ctx, W, mid - 3, mid - 2, 29, 33, '#ffd34d');
+      wallRect(ctx, W, mid + 2, mid + 3, 29, 33, '#ffd34d');
+    } else {
+      // Hay loft window with hay peeking out.
+      wallRect(ctx, W, mid - 8, mid + 8, 12, 28, '#ffffff');
+      wallRect(ctx, W, mid - 6, mid + 6, 14, 26, '#8a5a44');
+      wallRect(ctx, W, mid - 6, mid + 6, 14, 19, '#ffe066');
+      for (let x = mid - 6; x < mid + 6; x += 2) wallRect(ctx, W, x, x + 1, 17, 21, '#f2c86a');
+    }
+  });
+  hipRoof(ctx, k, H, 34, 0.14, (x, y, side, d) => {
+    if (d < 2) return '#9a88c8';
+    const col = RAINBOW[Math.floor(d / 6) % RAINBOW.length];
+    const c2 = side === 'left' ? shade(col, -22) : col;
+    return d % 6 === 0 ? shade(c2, -20) : c2;
+  });
+  // Hay bales beside the door.
+  const W = wall(k.L, k.B);
+  for (const [x, v] of [[6, 0], [10, 0], [8, 6]]) {
+    const p = wallPt(W, x, v);
+    const q = { x: Math.round(p.x - 6), y: Math.round(p.y + 2) };
+    px(ctx, q.x - 5, q.y - 6, 10, 7, '#f2c86a');
+    px(ctx, q.x - 5, q.y - 6, 10, 1, '#ffe39a');
+    px(ctx, q.x - 5, q.y - 3, 10, 1, '#c89a40');
+    px(ctx, q.x - 5, q.y - 6, 1, 7, '#c89a40');
+  }
+}
+
+// One gem crystal: a prism with two lit faces and a pointed top.
+// (x, y) is the bottom of its front edge; w is the half width.
+function drawCrystal(ctx, x, y, w, h, color) {
+  const tip = { x, y: y - h - w };
+  const fl = { x, y: y + w / 2 };
+  fillPoly(ctx, [{ x: x - w, y }, fl, { x, y: fl.y - h }, { x: x - w, y: y - h }], shade(color, -18));
+  fillPoly(ctx, [fl, { x: x + w, y }, { x: x + w, y: y - h }, { x, y: fl.y - h }], mix(color, '#ffffff', 0.25));
+  fillPoly(ctx, [{ x: x - w, y: y - h }, { x, y: fl.y - h }, tip], mix(color, '#ffffff', 0.15));
+  fillPoly(ctx, [{ x, y: fl.y - h }, { x: x + w, y: y - h }, tip], mix(color, '#ffffff', 0.55));
+  // Edge highlights.
+  px(ctx, x, Math.round(fl.y - h), 1, Math.round(h), '#ffffff');
+  px(ctx, Math.round(x + w * 0.5), Math.round(y - h * 0.8), 1, Math.round(h * 0.5), mix(color, '#ffffff', 0.7));
+}
+// A hut grown from big pastel crystals.
+function drawCrystalHut(ctx, k, style) {
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const cy = Math.round(m.y);
+  ctx.fillStyle = 'rgba(80,60,140,0.16)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 4, cy + 4, 44, 20, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const tint = style.roof;
+  const set = [
+    [cx + 2, cy - 14, 13, 64, '#c8a8ff'],
+    [cx - 22, cy - 6, 11, 40, '#ffb0e0'],
+    [cx + 22, cy - 6, 14, 54, tint],
+    [cx - 13, cy + 7, 20, 34, '#c8a8ff'],
+    [cx + 30, cy + 10, 9, 22, '#ffb0e0'],
+    [cx + 12, cy + 14, 8, 16, tint],
+    [cx - 38, cy + 8, 7, 16, tint],
+  ];
+  for (const [x, y, w, h, c] of set) drawCrystal(ctx, x, y, w, h, c);
+  // Door on the front crystal's left face.
+  const W = wall({ x: cx - 33, y: cy + 7 }, { x: cx - 13, y: cy + 17 });
+  const mid = W.len / 2;
+  wallArch(ctx, W, mid - 7, mid + 7, 0, 22, '#ffffff');
+  wallArch(ctx, W, mid - 5, mid + 5, 0, 20, '#8a6ad8');
+  wallRect(ctx, W, mid + 1, mid + 3, 8, 10, '#ffd34d');
+  // Sparkles.
+  for (const [x, y] of [[-6, -70], [24, -60], [-26, -34], [36, -16]]) {
+    px(ctx, cx + x - 2, cy + y, 5, 1, '#ffffff');
+    px(ctx, cx + x, cy + y - 2, 1, 5, '#ffffff');
+  }
+}
+
+// Gingerbread cottage with pink frosting dripping off the roof.
+function drawCandyCottage(ctx, k, style) {
+  const H = 34;
+  const accent = style.roof;
+  houseShadow(ctx, k);
+  const { WL } = boxWalls(ctx, k, H, '#d89a64', (W, left) => {
+    for (let x = 0; x < W.len; x += 3) for (let v = 1; v < H; v += 5) if (hash(x, v, left ? 61 : 62) < 0.12) wallRect(ctx, W, x, x + 1, v, v + 1, shade('#d89a64', -40));
+    // Icing bands with candy buttons.
+    for (const v of [0, H - 5]) {
+      wallRect(ctx, W, 0, W.len, v, v + 4, '#ffffff');
+      for (let x = 0; x < W.len; x += 4) wallRect(ctx, W, x + 1, x + 3, v - 1, v, '#ffffff');
+    }
+    for (let x = 5; x < W.len; x += 8) wallRect(ctx, W, x, x + 2, H - 4, H - 2, ['#ff6f8a', '#7fd4ff', '#9be88a', '#ffe066'][(x >> 3) % 4]);
+    wallRect(ctx, W, 0, 3, 0, H, '#ff9ec4');
+    wallRect(ctx, W, W.len - 3, W.len, 0, H, '#ff9ec4');
+    for (let v = 0; v < H; v += 4) {
+      wallRect(ctx, W, 0, 3, v, v + 2, '#ffffff');
+      wallRect(ctx, W, W.len - 3, W.len, v, v + 2, '#ffffff');
+    }
+    // Peppermint windows.
+    const mints = left ? [8, W.len - 12] : [12, W.len - 16];
+    for (const x of mints) {
+      wallRect(ctx, W, x - 5, x + 5, 10, 20, '#ffffff');
+      wallRect(ctx, W, x - 4, x + 4, 11, 19, '#bfe6ff');
+      wallRect(ctx, W, x - 4, x + 4, 14, 16, '#ff6f8a');
+      wallRect(ctx, W, x - 1, x + 1, 11, 19, '#ff6f8a');
+    }
+    if (left) houseDoor(ctx, W, '#ff8fc0', '#ffffff');
+  });
+  const frost = mix(accent, '#ffb0d0', 0.5);
+  const r = hipRoof(ctx, k, H, 34, 0.16, (x, y, side, d) => {
+    if (hash(x, y, 63) < 0.05) return ['#ffffff', '#7fd4ff', '#ffe066', '#9be88a'][Math.floor(hash(x, y, 64) * 4)];
+    const col = side === 'left' ? shade(frost, -20) : frost;
+    return d % 7 < 1 ? shade(col, -10) : col;
+  });
+  // Drips along the eaves.
+  for (const [P, Q] of [[r.L, r.B], [r.B, r.R]]) {
+    for (let x = Math.ceil(P.x); x < Q.x; x++) {
+      const y = Math.round(P.y + (Q.y - P.y) * (x - P.x) / (Q.x - P.x));
+      const len = 2 + Math.floor(hash(x, 7, 65) * 3) + (x % 7 === 0 ? 4 : 0);
+      px(ctx, x, y - 1, 1, len, '#ffffff');
+    }
+  }
+  // Cherry on top and lollipops by the door.
+  px(ctx, r.A.x - 3, r.A.y - 4, 6, 6, '#ff4f6a');
+  px(ctx, r.A.x - 2, r.A.y - 3, 2, 2, '#ffb0b8');
+  px(ctx, r.A.x, r.A.y - 8, 1, 4, '#5fb35a');
+  for (const x of [WL.len / 2 - 15, WL.len / 2 + 14]) {
+    const p = wallPt(WL, x, 0);
+    const q = { x: Math.round(p.x - 4), y: Math.round(p.y + 3) };
+    px(ctx, q.x, q.y - 18, 1, 18, '#ffffff');
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(q.x + 0.5, q.y - 21, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = x < WL.len / 2 ? '#ff6f8a' : '#7fd4ff';
+    ctx.beginPath(); ctx.arc(q.x + 0.5, q.y - 21, 4, 0, Math.PI * 2); ctx.fill();
+    px(ctx, q.x - 1, q.y - 23, 2, 2, '#ffffff');
+  }
+}
+
+// Five-pointed star filled pixel by pixel. (cx, cy) is its centre.
+function drawStar(ctx, cx, cy, R, color, edge) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5;
+    const rr = i % 2 ? R * 0.45 : R;
+    pts.push({ x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr });
+  }
+  const inside = (x, y) => {
+    let c = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const a = pts[i];
+      const b = pts[j];
+      if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) c = !c;
+    }
+    return c;
+  };
+  for (let y = Math.floor(cy - R); y <= cy + R; y++) for (let x = Math.floor(cx - R); x <= cx + R; x++) {
+    if (!inside(x + 0.5, y + 0.5)) continue;
+    const e = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5) || !inside(x + 0.5, y + 1.5);
+    px(ctx, x, y, 1, 1, e ? edge : (x - cx) + (y - cy) < -2 ? mix(color, '#ffffff', 0.5) : color);
+  }
+}
+// Tall lavender tower for stargazing, with a night-blue roof and a gold star.
+function drawStarTower(ctx, k, style) {
+  const R = 30;
+  const H = 72;
+  const m = houseMid(k);
+  const cx = Math.round(m.x);
+  const cy = Math.round(m.y);
+  houseShadow(ctx, k);
+  const wallC = mix(style.roof, '#ffffff', 0.55);
+  roundBody(ctx, cx, cy, R, 26, H, (t, h) => {
+    let col = roundShade(wallC, t);
+    if (h < 6) col = roundShade('#b8a8d8', t);
+    if (h === 30 || h === 31 || h === H - 3 || h === H - 2) col = roundShade('#ffd34d', t);
+    if (hash(Math.floor((t + 1) * 10), h >> 2, 71) < 0.05 && h > 6) col = '#ffffff';
+    return col;
+  });
+  const W = roundDoorWall(cx, cy, R);
+  houseDoor(ctx, W, '#6a5ac8', '#ffffff');
+  for (const [t, h] of [[0.3, 20], [-0.1, 50], [0.45, 52]]) {
+    const p = roundPt(cx, cy, R - 4 * h / H, t, h);
+    px(ctx, p.x - 4, p.y - 11, 8, 12, '#ffffff');
+    px(ctx, p.x - 3, p.y - 10, 6, 10, '#fff2a8');
+    px(ctx, p.x - 2, p.y - 12, 4, 1, '#ffffff');
+  }
+  const night = '#5a62c8';
+  const apex = coneRoof(ctx, cx, cy - H, R + 2, 56, (t, d, x, y) => {
+    if (hash(x, y, 72) < 0.04) return '#ffe680';
+    return shingle(night, t, d);
+  });
+  px(ctx, cx, apex - 6, 1, 7, '#ffd34d');
+  drawStar(ctx, cx, apex - 12, 9, '#ffd34d', '#d89a20');
+}
+
+// Arch of flowers over a path. (a) and (b) are the ground centres of its feet.
+function drawFlowerArch(ctx, a, b, H = 46) {
+  const cols = ['#ff9ec4', '#ffffff', '#ffe066', '#c7a4ff', '#8fd3ff'];
+  for (const p of [a, b]) {
+    ctx.fillStyle = 'rgba(40,30,70,0.16)';
+    ctx.beginPath();
+    ctx.ellipse(p.x + 2, p.y + 1, 6, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    px(ctx, Math.round(p.x) - 2, Math.round(p.y) - H, 4, H, '#ffffff');
+    px(ctx, Math.round(p.x) + 1, Math.round(p.y) - H, 1, H, '#e0d0e8');
+  }
+  const steps = 60;
+  for (let i = 0; i <= steps; i++) {
+    const s = i / steps;
+    const x = a.x + (b.x - a.x) * s;
+    const y = a.y + (b.y - a.y) * s - H - Math.sin(s * Math.PI) * 14;
+    px(ctx, Math.round(x) - 1, Math.round(y) - 1, 3, 3, i % 3 ? '#5fc46a' : '#3f9f58');
+  }
+  // Vines up the posts and flowers along the arch.
+  for (const p of [a, b]) for (let v = 4; v < H; v += 5) {
+    px(ctx, Math.round(p.x) + (v % 10 ? -3 : 1), Math.round(p.y) - v, 3, 2, '#5fc46a');
+    if (v % 15 === 4) px(ctx, Math.round(p.x) - 1, Math.round(p.y) - v - 1, 2, 2, cols[v % cols.length]);
+  }
+  for (let i = 0; i <= 14; i++) {
+    const s = i / 14;
+    const x = Math.round(a.x + (b.x - a.x) * s + (hash(i, 1, 73) - 0.5) * 3);
+    const y = Math.round(a.y + (b.y - a.y) * s - H - Math.sin(s * Math.PI) * 14 + (hash(i, 2, 73) - 0.5) * 4);
+    const c = cols[i % cols.length];
+    px(ctx, x - 1, y, 3, 1, c);
+    px(ctx, x, y - 1, 1, 3, c);
+    px(ctx, x, y, 1, 1, '#ffd34d');
   }
 }
 
