@@ -800,6 +800,175 @@ function drawPillar(ctx, cx, cy) {
   px(ctx, cx - 8, cy - 66, 16, 1, '#e0a83a');
 }
 
+// ---- Castle stairs and the floor upstairs --------------------------------
+
+// A box between heights v0 and v1 above the ground (negative goes below).
+function drawSlab(ctx, k, v0, v1, side, top, front) {
+  const WL = wall(k.L, k.B);
+  const WR = wall(k.B, k.R);
+  wallRect(ctx, WL, 0, WL.len, v0, v1, front);
+  wallRect(ctx, WR, 0, WR.len, v0, v1, side);
+  const up = p => ({ x: p.x, y: p.y - v1 });
+  fillPoly(ctx, [up(k.T), up(k.R), up(k.B), up(k.L)], top);
+  return { WL, WR };
+}
+
+// One-pixel line, for rails.
+function pxLine(ctx, a, b, color, thick = 1) {
+  const n = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y), 1);
+  for (let i = 0; i <= n; i++) px(ctx, Math.round(a.x + (b.x - a.x) * i / n), Math.round(a.y + (b.y - a.y) * i / n), 1, thick, color);
+}
+
+// Gold banister post on a stair corner, standing `v` above the ground.
+function stairPost(ctx, p, v) {
+  px(ctx, Math.round(p.x) - 1, Math.round(p.y - v) - 12, 2, 12, '#e0a83a');
+  px(ctx, Math.round(p.x) - 2, Math.round(p.y - v) - 14, 4, 3, CASTLE.gold);
+}
+
+// A carpeted stone staircase in a w x d footprint rising towards the back
+// wall (r0), with gold banisters and an arched doorway at the top.
+function drawCastleStairs(ctx, sc, c0, r0, w, d, n = 6) {
+  const rise = 8;
+  const k = boxCorners(sc, c0, r0, w, d);
+  const back = wall(k.T, k.R);
+  const top = n * rise;
+  wallArch(ctx, back, 3, back.len - 3, top - 2, top + 42, CASTLE.gold);
+  wallArch(ctx, back, 5, back.len - 5, top, top + 40, '#6a4a7a');
+  wallArch(ctx, back, 9, back.len - 9, top, top + 34, '#8a68a0');
+  // Steps from the top one down, so each lower step covers the foot of the
+  // one behind it.
+  const s = d / n;
+  const posts = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const H = (i + 1) * rise;
+    const ks = boxCorners(sc, c0, r0 + d - (i + 1) * s, w, s);
+    const { WL } = drawSlab(ctx, ks, 0, H, '#e8d4e4', '#fbf0f6', '#d8c0d4');
+    wallRect(ctx, WL, 0, WL.len, H - 1, H, '#c8a8c0');
+    // Red runner up the middle of the tread and the riser.
+    const kr = boxCorners(sc, c0 + w * 0.22, r0 + d - (i + 1) * s, w * 0.56, s);
+    const up = p => ({ x: p.x, y: p.y - H });
+    fillPoly(ctx, [up(kr.T), up(kr.R), up(kr.B), up(kr.L)], '#e8507a');
+    const RL = wall(kr.L, kr.B);
+    wallRect(ctx, RL, 0, RL.len, H - rise, H, '#c83a64');
+    wallRect(ctx, RL, 0, 1, H - rise, H, CASTLE.gold);
+    wallRect(ctx, RL, RL.len - 1, RL.len, H - rise, H, CASTLE.gold);
+    posts.push({ L: ks.L, B: ks.B, H });
+  }
+  // Banisters on both sides.
+  for (const side of ['L', 'B']) {
+    for (const p of posts) stairPost(ctx, p[side], p.H);
+    const lo = posts[posts.length - 1];
+    const hi = posts[0];
+    const a = { x: lo[side].x, y: lo[side].y - lo.H - 13 };
+    const b = { x: hi[side].x, y: hi[side].y - hi.H - 13 };
+    pxLine(ctx, a, b, CASTLE.gold, 2);
+  }
+}
+
+// The top of the stairs on the floor above: a hole in the floor with steps
+// going down towards the front (+r), and gold rails along its sides.
+function drawStairwell(ctx, sc, c0, r0, w, d, n = 6) {
+  const rise = 5;
+  const deep = n * rise + 12;
+  const k = boxCorners(sc, c0, r0, w, d);
+  ctx.save();
+  ctx.beginPath();
+  for (const p of [k.T, k.R, k.B, k.L]) ctx.lineTo(p.x, p.y);
+  ctx.closePath();
+  ctx.clip();
+  fillPoly(ctx, [k.T, k.R, k.B, k.L], '#3a2a48');
+  wallRect(ctx, wall(k.T, k.R), 0, k.R.x - k.T.x, -deep, 0, '#d8c0d4');
+  wallRect(ctx, wall(k.L, k.T), 0, k.T.x - k.L.x, -deep, 0, '#b89cb4');
+  const s = d / n;
+  for (let i = 0; i < n; i++) {
+    const H = -(i + 1) * rise;
+    const ks = boxCorners(sc, c0, r0 + i * s, w, s);
+    const { WL } = drawSlab(ctx, ks, -deep, H, '#e8d4e4', mix('#fbf0f6', '#3a2a48', i / n * 0.6), mix('#d8c0d4', '#3a2a48', i / n * 0.6));
+    const kr = boxCorners(sc, c0 + w * 0.22, r0 + i * s, w * 0.56, s);
+    const up = p => ({ x: p.x, y: p.y - H });
+    fillPoly(ctx, [up(kr.T), up(kr.R), up(kr.B), up(kr.L)], mix('#e8507a', '#3a2a48', i / n * 0.6));
+    wallRect(ctx, WL, 0, WL.len, H - 1, H, '#a888a0');
+  }
+  ctx.restore();
+  // Stone rim and gold rails along the two sides; the back stays open.
+  pxLine(ctx, k.T, k.R, '#c8a8c0');
+  for (const [a, b] of [[k.T, k.L], [k.R, k.B]]) {
+    pxLine(ctx, a, b, '#c8a8c0', 2);
+    for (let i = 0; i <= 3; i++) {
+      const p = { x: a.x + (b.x - a.x) * i / 3, y: a.y + (b.y - a.y) * i / 3 };
+      stairPost(ctx, p, 0);
+    }
+    pxLine(ctx, { x: a.x, y: a.y - 13 }, { x: b.x, y: b.y - 13 }, CASTLE.gold, 2);
+  }
+}
+
+// Tall bookcase against the back-left wall (faces +c), d tiles long.
+function drawBookcase(ctx, sc, c, r, d) {
+  const k = boxCorners(sc, c, r, 0.45, d);
+  const { WR } = drawFurnitureBox(ctx, k, 60, '#9a6440', '#c8905a', '#7a4a30');
+  wallRect(ctx, WR, 0, WR.len, 0, 3, '#6f4430');
+  for (let v = 5; v < 56; v += 12) {
+    wallRect(ctx, WR, 1, WR.len - 1, v, v + 1, '#6f4430');
+    for (let x = 2; x < WR.len - 2; x += 2) {
+      const h = 7 + Math.floor(hash(x, v, c * 7 + r) * 4);
+      wallRect(ctx, WR, x, x + 2, v + 1, v + 1 + h, ['#ff7fb4', '#6fa8ff', '#ffd34d', '#5fc46a', '#b98cff', '#ff8f5a'][Math.floor(hash(x, v, 11) * 6)]);
+      if (hash(x, v, 12) < 0.3) x += 1;
+    }
+  }
+}
+
+// Golden harp: a column, a curved neck, a slanted soundbox and strings.
+function drawHarp(ctx, sc, c, r) {
+  const m = tileCenter(sc, c, r);
+  const x = Math.round(m.x);
+  const y = Math.round(m.y);
+  px(ctx, x - 7, y - 3, 14, 4, '#e0a83a');
+  px(ctx, x - 7, y - 4, 14, 1, CASTLE.gold);
+  const neck = xx => y - 32 + Math.round((xx + 6) * 0.55 - Math.sin((xx + 6) / 12 * Math.PI) * 3);
+  const box = xx => y - 4 - Math.round((xx + 4) * 2.1);
+  for (let xx = -3; xx <= 5; xx += 2) pxLine(ctx, { x: x + xx, y: neck(xx) + 1 }, { x: x + xx, y: box(xx) - 1 }, '#fff4fa');
+  for (let xx = -6; xx <= 6; xx++) px(ctx, x + xx, neck(xx) - 1, 1, 3, CASTLE.gold);
+  for (let xx = -4; xx <= 6; xx++) px(ctx, x + xx, box(xx) - 1, 2, 3, '#ff8fc0');
+  px(ctx, x - 7, y - 32, 3, 29, CASTLE.gold);
+  px(ctx, x - 7, y - 32, 1, 29, '#e0a83a');
+  px(ctx, x - 8, y - 35, 5, 3, '#ff6fa8');
+}
+
+// Treasure chest with its lid open, spilling gold and jewels.
+function drawTreasureChest(ctx, sc, c, r) {
+  // The open lid stands up behind the box.
+  const lid = boxCorners(sc, c + 0.12, r + 0.12, 0.76, 0.13);
+  const L = drawSlab(ctx, lid, 12, 22, '#8a5a3c', '#a8704a', '#a8704a');
+  wallRect(ctx, L.WL, 0, L.WL.len, 20, 22, CASTLE.gold);
+  const k = boxCorners(sc, c + 0.12, r + 0.25, 0.76, 0.55);
+  const { WL, WR } = drawFurnitureBox(ctx, k, 12, '#a8704a', '#ffd34d', '#8a5a3c');
+  for (const W of [WL, WR]) {
+    wallRect(ctx, W, 0, W.len, 0, 2, CASTLE.gold);
+    wallRect(ctx, W, 0, W.len, 10, 12, CASTLE.gold);
+    wallRect(ctx, W, 1, 3, 0, 12, CASTLE.gold);
+    wallRect(ctx, W, W.len - 3, W.len - 1, 0, 12, CASTLE.gold);
+  }
+  wallRect(ctx, WL, WL.len / 2 - 2, WL.len / 2 + 2, 5, 9, '#e0a83a');
+  const m = tileCenter(sc, c + 0.1, r + 0.1);
+  for (const [dx, dy, col] of [[-5, -14, '#ffd34d'], [-1, -16, '#fff07a'], [3, -14, '#ffd34d'], [0, -13, '#ff6fa8'], [-4, -12, '#6fd0ff'], [5, -12, '#ffd34d']]) {
+    px(ctx, m.x + dx, m.y + dy, 3, 2, col);
+  }
+}
+
+// A little heap of gold coins on the floor.
+function drawCoinPile(ctx, sc, c, r) {
+  const m = tileCenter(sc, c, r);
+  for (let i = 0; i < 26; i++) {
+    const a = hash(i, c, r) * Math.PI * 2;
+    const d = Math.sqrt(hash(i, r, c + 3)) * 9;
+    const x = Math.round(m.x + Math.cos(a) * d);
+    const y = Math.round(m.y + 1 + Math.sin(a) * d * 0.5 - (9 - d) * 0.6);
+    px(ctx, x - 2, y, 4, 2, '#e0a83a');
+    px(ctx, x - 1, y, 2, 1, i % 5 === 0 ? '#ffffff' : '#fff07a');
+  }
+  px(ctx, Math.round(m.x) - 1, Math.round(m.y) - 8, 3, 3, '#ff6fa8');
+}
+
 // ---- Characters ----------------------------------------------------------
 
 const PRINCESS_TOP = [

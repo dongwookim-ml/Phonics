@@ -333,8 +333,9 @@ function buildHouseInterior(h) {
   return sc;
 }
 
-// Where the door to the princess's room sits along the throne room's right wall.
-const YUNA_DOOR_X = 168;
+// Where the door to the princess's room sits along the throne room's left
+// wall, measured from the front corner (tile 0, 6). The stairs take the right.
+const YUNA_DOOR_X = 56;
 
 function buildCastleInterior() {
   const sc = makeScene('room', 12, 10, 120, 50);
@@ -352,6 +353,7 @@ function buildCastleInterior() {
   addRoomWalls(sc, 92, '#fbe8f2', '#e8c8dc', (ctx, WA, WB) => {
     for (const W of [WA, WB]) {
       for (let x = 24; x < W.len - 16; x += 56) {
+        if (W === WA && Math.abs(x - YUNA_DOOR_X) < 28) continue;
         wallArch(ctx, W, x - 12, x + 12, 30, 80, '#d8b0c8');
         wallArch(ctx, W, x - 10, x + 10, 32, 78, '#9fd0ff');
         // Stained glass diamonds.
@@ -360,13 +362,13 @@ function buildCastleInterior() {
       }
       // Banners, leaving room for the door to the princess's room.
       for (let x = 52; x < W.len - 20; x += 56) {
-        if (W === WB && Math.abs(x - YUNA_DOOR_X) < 24) continue;
+        if (W === WA && Math.abs(x - YUNA_DOOR_X) < 24) continue;
         wallRect(ctx, W, x - 6, x + 6, 40, 84, '#ff6fa8');
         wallRect(ctx, W, x - 4, x + 4, 44, 82, '#ff8fc0');
         wallRect(ctx, W, x - 2, x + 2, 60, 66, '#ffd34d');
       }
     }
-    drawWallDoor(ctx, WB, YUNA_DOOR_X, '#ff8fc0');
+    drawWallDoor(ctx, WA, YUNA_DOOR_X, '#ff8fc0');
   });
 
   const furn = (c, r, w, d, up, draw) => {
@@ -387,12 +389,101 @@ function buildCastleInterior() {
   sc.exit = exit;
   sc.exitTiles = [{ c: 5, r: sc.D - 1 }, { c: 6, r: sc.D - 1 }];
   sc.start = { c: 5, r: sc.D - 2 };
-  // A door in the right wall leads to the princess's own room.
+  // A door in the left wall leads to the princess's own room.
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
-  const door = wallPt(wall(k.T, k.R), YUNA_DOOR_X, 28);
-  tileAt(sc, 10, 0).rug = '#ff8fc0';
-  sc.links = [{ c: 10, r: 0, target: 'yuna', icon: '🎀', style: 'door', door }];
+  const door = wallPt(wall(k.L, k.T), YUNA_DOOR_X, 28);
+  tileAt(sc, 0, 6).rug = '#ff8fc0';
+  sc.links = [{ c: 0, r: 6, target: 'yuna', icon: '🎀', style: 'door', door }];
   sc.signs.push({ x: door.x, y: door.y - 46, text: `🎀 ${PLAYER.shown}의 방`, color: '#ff6fa8' });
+  // A staircase in the back-right corner climbs to the second floor.
+  addStairs(sc, 10, 0, 2, 3, ctx => drawCastleStairs(ctx, sc, 10, 0, 2, 3),
+    [10, 11].map(c => ({ c, r: 3, target: 'castle2', at: { c: 7, r: 4 }, icon: '⬆️' })));
+  const up = tileCenter(sc, 10.5, 1);
+  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#b98cff' });
+  renderGround(sc);
+  return sc;
+}
+
+// A drawn staircase prop. Tapping it walks to its links like a door.
+function addStairs(sc, c, r, w, d, draw, links) {
+  block(sc, c, r, w, d);
+  addObject(sc, { c, r, w, d }, footBounds(sc, c, r, w, d, 110, 10), draw, { stairs: links });
+  sc.links = (sc.links || []).concat(links);
+}
+
+// The castle's second floor: the royal library on the left, a balcony
+// looking out over the town, a harp and the treasure corner.
+function buildCastleUpstairs() {
+  const sc = makeScene('room', 10, 9, 120, 50);
+  sc.floorTint = '#e8c8a0';
+  for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'wood');
+  for (let r = 2; r <= 6; r++) for (let c = 2; c <= 5; c++) {
+    const t = tileAt(sc, c, r);
+    t.type = 'carpet';
+    t.color = '#c7a4ff';
+    t.edge = r === 2 || r === 6 || c === 2 || c === 5;
+  }
+
+  addRoomWalls(sc, 92, '#f0e4ff', '#d8c4f0', (ctx, WA, WB) => {
+    // Balcony doors on the back-right wall, open to the sky and the town.
+    const bx = WB.len * 0.5;
+    const x0 = bx - 26;
+    const x1 = bx + 26;
+    wallArch(ctx, WB, x0 - 4, x1 + 4, 0, 84, CASTLE.gold);
+    wallArch(ctx, WB, x0, x1, 0, 80, '#9fd8ff');
+    wallRect(ctx, WB, x0, x1, 0, 44, '#bfe6ff');
+    wallRect(ctx, WB, x0, x1, 0, 30, '#e0f4ff');
+    // Clouds, faraway hills and little pink roofs.
+    for (const [cx, v] of [[x0 + 12, 66], [x1 - 14, 56]]) {
+      wallRect(ctx, WB, cx - 7, cx + 7, v, v + 4, '#ffffff');
+      wallRect(ctx, WB, cx - 4, cx + 4, v + 4, v + 7, '#ffffff');
+    }
+    for (let x = x0; x < x1; x++) {
+      const h = 22 + Math.round(Math.sin((x - x0) / 7) * 3 + Math.sin((x - x0) / 3) * 1.5);
+      wallRect(ctx, WB, x, x + 1, 12, h, x % 9 < 1 ? '#7fcf86' : '#8fd896');
+    }
+    for (const [hx, col] of [[x0 + 9, '#ff8fc0'], [x0 + 22, '#ffd34d'], [x1 - 16, '#b98cff'], [x1 - 6, '#ff6fa8']]) {
+      wallRect(ctx, WB, hx - 3, hx + 3, 14, 20, '#fff7ee');
+      for (let i = 0; i < 4; i++) wallRect(ctx, WB, hx - 4 + i, hx + 4 - i, 20 + i, 21 + i, col);
+    }
+    // Balcony railing in front of the view.
+    wallRect(ctx, WB, x0, x1, 0, 4, '#f4e6f0');
+    wallRect(ctx, WB, x0, x1, 15, 17, '#ffffff');
+    for (let x = x0 + 2; x < x1; x += 5) wallRect(ctx, WB, x, x + 2, 4, 15, '#ffffff');
+    wallRect(ctx, WB, bx - 1, bx + 1, 17, 80, CASTLE.gold);
+    // Purple curtains.
+    wallRect(ctx, WB, x0 - 12, x0 - 2, 6, 88, '#9a6ad8');
+    wallRect(ctx, WB, x1 + 2, x1 + 12, 6, 88, '#9a6ad8');
+    wallRect(ctx, WB, x0 - 12, x0 - 9, 6, 88, '#b98cff');
+    wallRect(ctx, WB, x1 + 9, x1 + 12, 6, 88, '#b98cff');
+    // Little star lights on the library wall.
+    for (let x = 12; x < WA.len - 8; x += 20) wallRect(ctx, WA, x, x + 2, 76, 78, CASTLE.gold);
+  });
+
+  const furn = (c, r, w, d, up, draw, extra) => {
+    block(sc, c, r, Math.ceil(w), Math.ceil(d));
+    return addObject(sc, { c, r, w: Math.ceil(w), d: Math.ceil(d) }, footBounds(sc, c, r, w, d, up, 8), draw, extra);
+  };
+  furn(0, 1, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 1, 2));
+  furn(0, 4, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 4, 2));
+  furn(1, 0, 1, 1, 44, ctx => drawShelf(ctx, sc, 1, 0, '#b98cff'));
+  furn(3, 7, 1, 1, 24, ctx => drawTable(ctx, sc, 3, 7));
+  furn(7, 2, 1, 1, 44, ctx => drawHarp(ctx, sc, 7, 2));
+  furn(8, 0, 1, 1, 34, ctx => drawTreasureChest(ctx, sc, 8, 0));
+  furn(9, 0, 1, 1, 34, ctx => drawTreasureChest(ctx, sc, 9, 0));
+  furn(9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1));
+  furn(9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3));
+  const lib = tileCenter(sc, 0, 3);
+  sc.signs.push({ x: lib.x - 4, y: lib.y - 68, text: '📚 왕실 도서관', color: '#4a6ab8' });
+  const gem = tileCenter(sc, 8.5, 0);
+  sc.signs.push({ x: gem.x, y: gem.y - 44, text: '💎', color: '#ffd34d', plain: true });
+
+  // Stairs back down in the front-right corner.
+  addStairs(sc, 7, 6, 2, 3, ctx => drawStairwell(ctx, sc, 7, 6, 2, 3),
+    [7, 8].map(c => ({ c, r: 5, target: 'castle', at: { c: 10, r: 4 }, icon: '⬇️' })));
+
+  for (const n of CASTLE_UP_NPCS) sc.npcs.push(makeNpc(n, null));
+  sc.start = { c: 7, r: 4 };
   renderGround(sc);
   return sc;
 }
@@ -443,7 +534,7 @@ function buildYunaRoom() {
   furn(0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6));
   furn(5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0));
 
-  sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 10, r: 1 }, icon: '🚪', style: 'mat' }];
+  sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 1, r: 6 }, icon: '🚪', style: 'mat' }];
   sc.start = { c: 4, r: sc.D - 2 };
   renderGround(sc);
   return sc;
