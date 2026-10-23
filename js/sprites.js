@@ -195,6 +195,23 @@ function drawCarpet(ctx, ox, oy, color, edge) {
   });
 }
 
+// A striped doormat with a fringe on its front edges, marking a way out.
+function drawDoormat(ctx, ox, oy, color) {
+  const cx = ox + 16;
+  const cy = oy + 8;
+  const scaled = k => diamondPts(ox, oy).map(p => ({ x: cx + (p.x - cx) * k, y: cy + (p.y - cy) * k }));
+  fillPoly(ctx, scaled(0.84), shade(color, -50));
+  fillPoly(ctx, scaled(0.72), (x, y) => ((x + 2 * y) >> 2) % 2 ? color : shade(color, 22));
+  fillPoly(ctx, scaled(0.26), '#fff4e0');
+  // Fringe along the two front edges.
+  const [, R, B, L] = scaled(0.84);
+  for (let i = 1; i < 13; i += 2) {
+    const t = i / 13;
+    px(ctx, Math.round(L.x + (B.x - L.x) * t), Math.round(L.y + (B.y - L.y) * t) + 1, 1, 2, '#fff4e0');
+    px(ctx, Math.round(B.x + (R.x - B.x) * t), Math.round(B.y + (R.y - B.y) * t) + 1, 1, 2, '#fff4e0');
+  }
+}
+
 function drawWaterTile(ctx, ox, oy, c, r, t) {
   fillPoly(ctx, diamondPts(ox, oy), (x, y) => {
     const w = Math.sin(x * 0.31 + y * 0.9 - t * 2.1) + Math.sin(x * 0.13 - y * 0.4 + t * 1.3);
@@ -321,6 +338,56 @@ function makeGatePost() {
   px(ctx, 3, 3, 8, 4, '#c8f0ff');
   px(ctx, 6, 0, 2, 2, '#ffd34d');
   return { canvas: cv, ax: 7, ay: 47 };
+}
+
+// Curved wooden beam with a flower garland between two gate posts standing
+// on world points A (left) and B (right).
+function drawGateArch(ctx, A, B, accent) {
+  const x0 = Math.round(A.x) + 3;
+  const x1 = Math.round(B.x) - 3;
+  for (let x = x0; x <= x1; x++) {
+    const t = (x - x0) / (x1 - x0);
+    const y = Math.round(A.y + (B.y - A.y) * t - 38 - Math.sin(Math.PI * t) * 14);
+    px(ctx, x, y - 6, 1, 7, '#5a3a28');
+    px(ctx, x, y - 5, 1, 5, '#a8714a');
+    px(ctx, x, y - 5, 1, 1, '#c8925f');
+    if ((x - x0) % 9 === 4) px(ctx, x, y - 4, 1, 3, '#7a4a30');
+    // Garland of leaves with flowers hanging just under the beam.
+    const sag = Math.round(Math.sin(((x - x0) / 12) * Math.PI) * 1.5) + 2;
+    px(ctx, x, y + sag - 1, 1, 2, (x % 3) ? '#5fc46a' : '#4fa35a');
+    if ((x - x0) % 7 === 3) {
+      px(ctx, x - 1, y + sag - 1, 3, 3, accent);
+      px(ctx, x, y + sag, 1, 1, '#fff4e0');
+    }
+  }
+}
+
+// A decorated arched door painted on wall W, centred at x along the wall.
+function drawWallDoor(ctx, W, x, color) {
+  wallArch(ctx, W, x - 15, x + 15, 0, 57, '#8a5a1c');
+  wallArch(ctx, W, x - 14, x + 14, 0, 56, '#ffd34d');
+  wallArch(ctx, W, x - 11, x + 11, 0, 51, shade(color, -40));
+  wallArch(ctx, W, x - 10, x + 10, 0, 50, color);
+  // Two raised panels on each leaf and a seam down the middle.
+  for (const [a, b] of [[-8, -2], [2, 8]]) {
+    wallRect(ctx, W, x + a, x + b, 6, 22, shade(color, -18));
+    wallRect(ctx, W, x + a + 1, x + b - 1, 7, 21, shade(color, 14));
+    wallRect(ctx, W, x + a, x + b, 26, 40, shade(color, -18));
+    wallRect(ctx, W, x + a + 1, x + b - 1, 27, 39, shade(color, 14));
+  }
+  wallRect(ctx, W, x - 0.5, x + 0.5, 0, 50, shade(color, -40));
+  wallRect(ctx, W, x - 4, x - 2, 23, 26, '#ffd34d');
+  wallRect(ctx, W, x + 2, x + 4, 23, 26, '#ffd34d');
+  // A heart in the arch and a bow on top.
+  wallRect(ctx, W, x - 3, x - 1, 45, 47, '#ff4f8f');
+  wallRect(ctx, W, x + 1, x + 3, 45, 47, '#ff4f8f');
+  wallRect(ctx, W, x - 2, x + 2, 43, 45, '#ff4f8f');
+  wallRect(ctx, W, x - 1, x + 1, 42, 43, '#ff4f8f');
+  wallRect(ctx, W, x - 7, x - 1, 58, 63, '#ff6fa8');
+  wallRect(ctx, W, x + 1, x + 7, 58, 63, '#ff6fa8');
+  wallRect(ctx, W, x - 2, x + 2, 59, 62, '#e8507a');
+  wallRect(ctx, W, x - 4, x - 2, 53, 58, '#ff6fa8');
+  wallRect(ctx, W, x + 2, x + 4, 53, 58, '#ff6fa8');
 }
 
 function makeLamp() {
