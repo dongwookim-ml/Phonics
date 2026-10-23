@@ -211,9 +211,55 @@ const Quiz = (() => {
     },
   });
 
+  // Spelling: letters whose sound the narrator can say on its own.
+  const soundOf = l => PART_SOUNDS[l] || (LETTERS.find(x => x.letter === l.toUpperCase()) || {}).sound;
+  // Three and four letter words where every letter says its own sound:
+  // no digraphs (sh, ck, oo), no silent e and no r after a vowel.
+  const spellWords = () => {
+    const seen = new Set();
+    const list = [];
+    for (const [w, e] of allWords().map(x => [x.w, x.e]).concat(...WORD_FAMILIES)) {
+      if (seen.has(w) || w.length < 3 || w.length > 4 || !/^[a-z]+$/.test(w)) continue;
+      if (/sh|ch|th|ck|ng|ll|ss|oo|ee|ea|oa|ai|[aeiou]r|[aeiouwy]$|[wyjqvz]/.test(w) || (w.match(/[aeiou]/g) || []).length !== 1) continue;
+      if (![...w].every(soundOf)) continue;
+      seen.add(w);
+      list.push({ w, e });
+    }
+    return list;
+  };
+  Object.assign(builders, {
+    // She hears a word and taps its letters in order. The dialog shows
+    // `tiles` (the word's letters plus a few others) and fills the blanks.
+    spell() {
+      const t = pick(fresh(spellWords()));
+      const own = [...t.w];
+      // Never a letter that sounds like one in the word, such as c for milk.
+      const free = l => !own.some(o => soundOf(o) === soundOf(l));
+      const vowels = 'aeiou'.split('').filter(free);
+      const others = shuffle('bcdfghlmnprst'.split('').filter(free));
+      // One other vowel, so she has to listen for the middle sound too.
+      const extra = [pick(vowels)].concat(others).slice(0, Math.max(SPELL_TILES, own.length + 3) - own.length);
+      const sounds = own.map(l => ({ text: soundOf(l), narrator: true, rate: 0.8 }));
+      return {
+        target: t.w,
+        word: t.w,
+        clue: `<span class="clue-pic">${t.e}</span><span class="spell-word">${own.map(() => '<span class="slot"></span>').join('')}</span>`,
+        tiles: shuffle(own.concat(extra)).map(l => ({ l, sound: soundOf(l) })),
+        ask: [{ text: line('spell') }, { pause: 600 }, say(t.w)],
+        replay: [say(t.w)],
+        // Filled in when the last blank is filled (see checkSpell in game.js).
+        options: [],
+        // Sound it out, then say it: "kuh, ah, tuh... cat!"
+        answer: sounds.flatMap(s => [s, { pause: 120 }]).concat({ pause: 250 }, say(`${t.w}!`)),
+        solved: `<span class="clue-pic">${t.e}</span><span class="spell-word right">${own.map(l => `<span class="slot full">${l}</span>`).join('')}</span>`,
+        isWord: w => w !== t.w && allWords().concat(WORD_FAMILIES.flat().map(([x]) => ({ w: x }))).some(x => x.w === w),
+      };
+    },
+  });
+
   // Picks a kind of question this person didn't ask last time.
   function make(npc) {
-    const kinds = QUIZ_TYPES[npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
+    const kinds = QUIZ_TYPES[npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
     const choices = kinds.filter(k => k !== npc.lastQuiz);
     const kind = pick(choices.length ? choices : kinds);
     npc.lastQuiz = kind;

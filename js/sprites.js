@@ -2188,6 +2188,9 @@ const HATS = {
   leaf:    { x: 3, y: -3, rows: ['....gg....', '..gggggg..', '.gggGgggg.', 'gggggggggg'] },
   flowerband: { x: 3, y: -1, rows: ['.r..y..r..', 'rgrgygrgrg'] },
   mushroom: { x: 2, y: -6, rows: ['...oooooo...', '..orrwrrro..', '.orwrrrrwro.', 'orrrrwrrrrro', 'oooooooooooo'] },
+  // Fairy Village hats: a dewdrop on a leaf, and an upside-down flower.
+  dewdrop: { x: 3, y: -6, rows: ['....oo....', '...odco...', '..odwcco..', '..odccdo..', '...oddo...', 'gggGGGGggg'] },
+  petalcap: { x: 2, y: -5, rows: ['.....oo.....', '....oGGo....', '..oottttoo..', '.ottttwttto.', 'ottYttttYtto', 'o..o....o..o'] },
 };
 
 const villagerCache = new Map();
@@ -2212,6 +2215,12 @@ function villagerSprite(lookKey, frame) {
     rows = rows.slice();
     rows[21] = '...oddo..oddo...'.replace('oddo..oddo', 'oddo..oddo');
     rows[22] = '..offo....offo..';
+  }
+  // Fairy folk have a pair of see-through wings behind them.
+  if (look.wings) {
+    const wp = { w: shade(look.wings, -50), W: look.wings, s: '#ffffff' };
+    drawBitmap(ctx, WING, wp, 0, OYv + 10);
+    drawBitmap(ctx, WING, wp, cv.width - WING[0].length, OYv + 10, true);
   }
   drawBitmap(ctx, rows, pal, OXv, OYv);
   const hat = HATS[look.hat];
@@ -2834,4 +2843,285 @@ function drawCaveWall(ctx, W, H, salt) {
     wallRect(ctx, W, x, x + 9, v, v + 6, '#7a6cb4');
     wallRect(ctx, W, x, x + 9, v, v + 1, '#8f82c8');
   }
+}
+
+// ---- Fairy Village -----------------------------------------------------------
+
+TREE_PALETTES.lilac = { dark: '#b890e0', mid: '#d8b8ff', light: '#f4e8ff', spark: '#ffffff', line: '#8060b0', sparks: 0.07 };
+
+// A tiny fairy friend, front-facing, with see-through wings. Frame 1 has the
+// wings down. Returns { canvas, ax, ay } anchored at her middle.
+const fairyCache = new Map();
+function fairySprite(key, frame) {
+  const ck = `${key}|${frame}`;
+  if (fairyCache.has(ck)) return fairyCache.get(ck);
+  const f = FAIRIES[key] || FAIRIES.pink;
+  const W = 15;
+  const H = 12;
+  const body = [];
+  const wing = [];
+  for (let y = 0; y < H; y++) { body.push(new Array(W).fill(null)); wing.push(new Array(W).fill(false)); }
+  const set = (x, y, col) => { if (x >= 0 && y >= 0 && x < W && y < H) body[y][x] = col; };
+  const rect = (x, y, w, h, col) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) set(x + i, y + j, col); };
+  // Wings: an upper and a lower pair, mirrored about the middle column.
+  const wings = frame === 1 ? [[3, 5.5, 2.8, 1.9], [4.4, 8.8, 1.5, 1.3]] : [[3.2, 3.8, 2.5, 2.6], [4.4, 8.4, 1.6, 1.6]];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const mx = x <= 7 ? x : 14 - x;
+    if (wings.some(([cx, cy, rx, ry]) => ((mx + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1)) wing[y][x] = true;
+  }
+  // Hair, face, dress, arms and legs, and a twinkle on top.
+  rect(6, 1, 3, 1, f.hair);
+  rect(5, 2, 5, 1, f.hair);
+  rect(5, 3, 1, 3, f.hair);
+  rect(9, 3, 1, 3, f.hair);
+  rect(6, 3, 3, 2, '#ffe3d0');
+  set(6, 3, '#3a2340');
+  set(8, 3, '#3a2340');
+  set(7, 4, '#ffadbc');
+  rect(6, 5, 3, 2, f.dress);
+  set(5, 6, '#ffe3d0');
+  set(9, 6, '#ffe3d0');
+  rect(5, 7, 5, 1, f.dress);
+  rect(4, 8, 7, 1, shade(f.dress, -30));
+  set(6, 9, '#ffe3d0');
+  set(8, 9, '#ffe3d0');
+  set(7, 0, '#ffe066');
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  const near = (grid, x, y, test) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => grid[y + dy] && test(grid[y + dy][x + dx]));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (body[y][x]) px(ctx, x, y, 1, 1, body[y][x]);
+    else if (near(body, x, y, v => !!v)) px(ctx, x, y, 1, 1, '#4a2c4f');
+    else if (wing[y][x]) px(ctx, x, y, 1, 1, (x + y) % 5 ? f.wing : '#ffffff');
+    else if (near(wing, x, y, v => v === true)) px(ctx, x, y, 1, 1, shade(f.dress, -30));
+  }
+  const sprite = { canvas: cv, ax: 7, ay: 6 };
+  fairyCache.set(ck, sprite);
+  return sprite;
+}
+
+// Draws a flying sprite centred on (x, y), with no shadow on the ground.
+function drawFlying(ctx, sprite, x, y, flip) {
+  const dx = Math.round(x - (flip ? sprite.canvas.width - sprite.ax : sprite.ax));
+  const dy = Math.round(y - sprite.ay);
+  if (!flip) { ctx.drawImage(sprite.canvas, dx, dy); return; }
+  ctx.save();
+  ctx.translate(dx + sprite.canvas.width, dy);
+  ctx.scale(-1, 1);
+  ctx.drawImage(sprite.canvas, 0, 0);
+  ctx.restore();
+}
+
+// Soft pastel lawn with clover and tiny petals.
+function drawFairyGrass(ctx, ox, oy, c, r, flowers) {
+  fillPoly(ctx, diamondPts(ox, oy), (x, y) => {
+    const n = hash(x, y, 2);
+    if (n < 0.04) return '#f4ecff';
+    if (n < 0.08) return '#a8e0b8';
+    return (c * 5 + r * 3) % 7 === 0 ? '#c4eed0' : '#bfeacb';
+  });
+  for (let i = 0; i < 2; i++) {
+    const tx = ox + 8 + Math.floor(hash(c, r, 31 + i) * 16);
+    const ty = oy + 4 + Math.floor(hash(c, r, 41 + i) * 8);
+    px(ctx, tx, ty, 2, 1, '#9fdcb0');
+    px(ctx, tx, ty + 1, 1, 1, '#9fdcb0');
+  }
+  if (flowers) {
+    const colors = ['#ffb0d8', '#d8c0ff', '#fff2a8', '#ffffff', '#a8e4ff'];
+    for (let i = 0; i < 4; i++) {
+      const fx = ox + 7 + Math.floor(hash(c, r, 11 + i) * 18);
+      const fy = oy + 3 + Math.floor(hash(c, r, 21 + i) * 10);
+      const col = colors[Math.floor(hash(c, r, 51 + i) * colors.length)];
+      px(ctx, fx - 1, fy, 3, 1, col);
+      px(ctx, fx, fy - 1, 1, 3, col);
+      px(ctx, fx, fy, 1, 1, '#ffe066');
+    }
+  }
+}
+
+// Stepping path of pink and cream petal stones.
+function drawPetalPath(ctx, ox, oy) {
+  fillPoly(ctx, diamondPts(ox, oy), stonePattern('#ffe4f0', '#e8bcd4', ['#fff0f6', '#ffe0ee', '#fdeaf4', '#f6dcf0'], 6));
+}
+
+// A lily pad floating on the pond, sometimes with a flower.
+function drawLilyPad(ctx, cx, cy, flower) {
+  for (let y = -3; y <= 3; y++) for (let x = -6; x <= 6; x++) {
+    const d = (x / 6.5) ** 2 + (y / 3.4) ** 2;
+    if (d > 1 || (x > 0 && y <= 0 && -y <= x / 3)) continue;
+    px(ctx, cx + x, cy + y, 1, 1, d > 0.6 ? '#4fa86a' : (x + y) % 4 ? '#6fc884' : '#8fdc9c');
+  }
+  if (!flower) return;
+  px(ctx, cx - 2, cy - 3, 5, 2, flower);
+  px(ctx, cx - 1, cy - 5, 3, 3, flower);
+  px(ctx, cx - 3, cy - 4, 1, 1, flower);
+  px(ctx, cx + 3, cy - 4, 1, 1, flower);
+  px(ctx, cx, cy - 4, 1, 1, '#ffe066');
+}
+
+// A flower taller than the princess. (cx, cy) is where its stem meets the ground.
+function drawGiantFlower(ctx, cx, cy, petal, H = 44) {
+  ctx.fillStyle = 'rgba(40,30,70,0.16)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 3, cy, 9, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  px(ctx, cx - 1, cy - H, 3, H, '#5fb86a');
+  px(ctx, cx - 1, cy - H, 1, H, '#4a9a58');
+  // Two leaves.
+  for (let i = 0; i < 7; i++) {
+    px(ctx, cx + 2 + i, cy - 14 - Math.round(i * 0.6), 2, i < 4 ? 3 : 2, i % 2 ? '#7fd07a' : '#5fb86a');
+    px(ctx, cx - 3 - i, cy - 24 - Math.round(i * 0.5), 2, i < 4 ? 3 : 2, i % 2 ? '#7fd07a' : '#5fb86a');
+  }
+  // Six round petals and a sunny middle.
+  const top = cy - H - 2;
+  const light = mix(petal, '#ffffff', 0.45);
+  const dark = shade(petal, -45);
+  for (let a = 0; a < 6; a++) {
+    const ang = a / 6 * Math.PI * 2 - Math.PI / 2;
+    const x0 = cx + Math.cos(ang) * 7;
+    const y0 = top + Math.sin(ang) * 5;
+    for (let y = -4; y <= 4; y++) for (let x = -4; x <= 4; x++) {
+      const d = x * x + y * y;
+      if (d > 17) continue;
+      px(ctx, Math.round(x0 + x), Math.round(y0 + y), 1, 1, d > 11 ? dark : y < 0 ? light : petal);
+    }
+  }
+  for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) {
+    const d = x * x + y * y;
+    if (d > 10) continue;
+    px(ctx, cx + x, top + y, 1, 1, d > 6 ? '#e0a52a' : (x + y) % 2 ? '#ffd34d' : '#ffe680');
+  }
+}
+
+// A tall toadstool with a spotted cap.
+function drawTallShroom(ctx, cx, cy, cap) {
+  ctx.fillStyle = 'rgba(40,30,70,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 3, cy, 11, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  px(ctx, cx - 3, cy - 26, 7, 26, '#fff6e6');
+  px(ctx, cx - 3, cy - 26, 2, 26, '#ecdcc4');
+  px(ctx, cx + 3, cy - 26, 1, 26, '#ffffff');
+  for (let dx = -15; dx <= 15; dx++) {
+    const t = dx / 15.5;
+    const h = Math.round(Math.sqrt(Math.max(0, 1 - t * t)) * 14);
+    for (let y = 0; y <= h + 2; y++) {
+      let col = dx < -8 ? shade(cap, -30) : dx > 6 ? shade(cap, 18) : cap;
+      const sx = Math.floor((dx + 20) / 6);
+      const sy = Math.floor(y / 5);
+      if (y < h && hash(sx, sy, 47) < 0.4 && (dx + 20) % 6 > 1 && (dx + 20) % 6 < 5 && y % 5 > 1 && y % 5 < 4) col = '#ffffff';
+      if (y === h + 2) col = shade(cap, -60);
+      px(ctx, cx + dx, cy - 25 - y, 1, 1, col);
+    }
+    px(ctx, cx + dx, cy - 24, 1, 1, shade(cap, -60));
+  }
+}
+
+// A giant teacup cottage on its saucer, with a lid for a roof.
+function drawTeacupHouse(ctx, cx, cy, color) {
+  ctx.fillStyle = 'rgba(40,30,70,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 6, cy + 4, 40, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Saucer.
+  for (let y = -10; y <= 8; y++) for (let x = -38; x <= 38; x++) {
+    const d = (x / 38) ** 2 + (y / 10) ** 2;
+    if (d > 1) continue;
+    px(ctx, cx + x, cy + y, 1, 1, d > 0.8 ? shade(color, -20) : y > 2 ? '#f0e4f0' : '#ffffff');
+  }
+  // Cup: a round bowl, with a coloured band and dots.
+  const H = 40;
+  const rim = cy - H + 2;
+  for (let x = -28; x <= 28; x++) {
+    const t = x / 28;
+    const round = Math.sqrt(1 - t * t);
+    const bottom = cy - 2 + Math.round(round * 6);
+    // The sides curve in toward the foot of the cup.
+    const top = rim + Math.round(round * 6) + Math.round(Math.max(0, Math.abs(t) - 0.75) * 40);
+    for (let y = top; y < bottom; y++) {
+      const v = y - rim;
+      let col = t < -0.5 ? '#ece0ee' : t > 0.55 ? '#ffffff' : '#fbf4fb';
+      if (v > 8 && v < 13) col = t < -0.5 ? shade(color, -20) : color;
+      else if (v > 18 && (x + 100) % 10 < 3 && v % 8 < 3 && Math.floor((x + 100) / 10) % 2 === Math.floor(v / 8) % 2) col = mix(color, '#ffffff', 0.35);
+      px(ctx, cx + x, y, 1, 1, col);
+    }
+    px(ctx, cx + x, bottom - 1, 1, 1, '#d8c8dc');
+  }
+  // Handle on the right.
+  for (let a = 0; a < 48; a++) {
+    const ang = a / 48 * Math.PI * 2;
+    const x = Math.round(cx + 29 + Math.cos(ang) * 7);
+    const y = Math.round(cy - 20 + Math.sin(ang) * 8);
+    if (x < cx + 28) continue;
+    px(ctx, x - 1, y - 1, 3, 3, a % 4 ? '#ffffff' : '#e8dcec');
+  }
+  // Rim, and the lid with a pearl knob.
+  for (let y = -6; y <= 6; y++) for (let x = -30; x <= 30; x++) {
+    const d = (x / 30) ** 2 + (y / 6) ** 2;
+    if (d > 1) continue;
+    px(ctx, cx + x, rim + y, 1, 1, d > 0.75 ? '#e8dcec' : '#ffffff');
+  }
+  for (let x = -26; x <= 26; x++) {
+    const t = x / 26;
+    const h = Math.round(Math.sqrt(1 - t * t) * 16);
+    for (let y = 0; y < h; y++) px(ctx, cx + x, rim - 1 - y, 1, 1, y === h - 1 ? shade(color, -35) : t < -0.4 ? shade(color, -18) : t > 0.4 ? mix(color, '#ffffff', 0.25) : color);
+  }
+  for (let x = -24; x <= 24; x += 6) px(ctx, cx + x, rim - 3, 2, 2, '#ffffff');
+  px(ctx, cx - 3, rim - 22, 6, 6, '#fff6e6');
+  px(ctx, cx - 2, rim - 21, 2, 2, '#ffffff');
+  // Arched door and a round window.
+  px(ctx, cx - 8, cy - 18, 12, 17, '#8a5a3c');
+  px(ctx, cx - 6, cy - 20, 8, 2, '#8a5a3c');
+  px(ctx, cx - 7, cy - 17, 10, 16, '#c8905a');
+  px(ctx, cx - 2, cy - 17, 1, 16, '#a8704a');
+  px(ctx, cx + 1, cy - 10, 2, 2, '#ffd34d');
+  px(ctx, cx + 11, cy - 27, 9, 8, shade(color, -40));
+  px(ctx, cx + 12, cy - 26, 7, 6, '#fff2a8');
+  px(ctx, cx + 15, cy - 26, 1, 6, shade(color, -40));
+}
+
+// A tulip cottage: a fat flower bud with three petal tips for a roof.
+function drawFlowerHouse(ctx, cx, cy, petal) {
+  ctx.fillStyle = 'rgba(40,30,70,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 6, cy + 3, 34, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const light = mix(petal, '#ffffff', 0.4);
+  const dark = shade(petal, -40);
+  const R = 26;
+  const H = 46;
+  for (let x = -R; x <= R; x++) {
+    const t = x / R;
+    const round = Math.sqrt(1 - t * t);
+    const bottom = cy - 2 + Math.round(round * 6);
+    const k = ((x + R) / (2 * R + 1)) * 3;
+    const tip = Math.abs((k % 1) - 0.5) * 2;
+    const top = cy - H - 8 + Math.round(tip * 12 + (1 - round) * 22);
+    const seam = Math.abs(k - Math.round(k)) < 0.04 && Math.abs(x) < R - 2;
+    for (let y = top; y < bottom; y++) {
+      let col = t < -0.45 ? shade(petal, -18) : t > 0.45 ? light : petal;
+      if (y === top || (seam && y < top + 26)) col = dark;
+      px(ctx, cx + x, y, 1, 1, col);
+    }
+    px(ctx, cx + x, bottom - 1, 1, 1, dark);
+  }
+  // Big leaves at the base.
+  for (const s of [-1, 1]) for (let i = 0; i < 16; i++) {
+    const x = cx + s * (16 + i);
+    const y = cy - 2 - Math.round(i * 0.9);
+    px(ctx, x - 1, y - 2, 3, 5 - Math.floor(i / 5), i % 3 ? '#6fc884' : '#4fa86a');
+  }
+  // Round door and a heart window.
+  px(ctx, cx - 7, cy - 18, 13, 17, '#6a4a7a');
+  px(ctx, cx - 5, cy - 20, 9, 2, '#6a4a7a');
+  px(ctx, cx - 6, cy - 17, 11, 16, '#a8804a');
+  px(ctx, cx - 1, cy - 17, 1, 16, '#8a6038');
+  px(ctx, cx + 2, cy - 10, 2, 2, '#ffd34d');
+  const wx = cx + 14;
+  const wy = cy - 30;
+  px(ctx, wx - 4, wy - 1, 9, 7, dark);
+  px(ctx, wx - 3, wy, 3, 3, '#fff2a8');
+  px(ctx, wx + 1, wy, 3, 3, '#fff2a8');
+  px(ctx, wx - 2, wy + 3, 5, 1, '#fff2a8');
+  px(ctx, wx - 1, wy + 4, 3, 1, '#fff2a8');
 }

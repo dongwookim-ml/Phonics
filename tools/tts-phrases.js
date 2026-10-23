@@ -11,7 +11,7 @@ const src = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const D = vm.runInNewContext(`${src}
 ({ PLAYER, TITLES, LETTERS, LINES, PERSONA, VOICES, TTS_NARRATOR, TOWN_NPCS, TOWN_HOUSES, FOREST_NPCS,
    UNICORN_NPCS, CASTLE_UP_NPCS, WORD_FAMILIES, RHYMES, PART_SOUNDS, SENTENCES, FOREST_STARS, UNICORN_STARS,
-   DUNGEON_NPCS, DUNGEON_STARS })`);
+   DUNGEON_NPCS, DUNGEON_STARS, FAIRY_NPCS, FAIRY_STARS })`);
 
 const out = new Map();
 const add = (voice, text, speed = 0.95) => {
@@ -39,6 +39,7 @@ const town = new Set([...D.TOWN_NPCS.map(n => n.look), ...D.TOWN_HOUSES.map(h =>
 const forest = new Set(D.FOREST_NPCS.map(n => n.look));
 const unicorn = new Set([...D.UNICORN_NPCS, ...D.DUNGEON_NPCS].map(n => n.look));
 const monsters = new Set(D.DUNGEON_NPCS.map(n => n.look));
+const fairies = new Set(D.FAIRY_NPCS.map(n => n.look));
 for (const [look, style] of Object.entries(D.VOICES)) {
   const v = style.tts;
   if (!v) continue;
@@ -57,6 +58,7 @@ for (const [look, style] of Object.entries(D.VOICES)) {
     add(v, 'hmm, hmm', 0.85);
   }
   if (monsters.has(look)) lines(v, ['caught']);
+  if (fairies.has(look)) lines(v, ['spell', 'newFairy']);
   if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
 }
 for (const h of D.TOWN_HOUSES) add(D.VOICES[h.look].tts, `This is the ${h.letter} house.`);
@@ -76,9 +78,9 @@ for (const l of D.LETTERS) {
 }
 for (const s of Object.values(D.PART_SOUNDS)) add(N, s, 0.8);
 for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
-lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs']);
+lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland']);
 for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
-for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS]) lines(N, ['locked'], { stars });
+for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
 for (const t of Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 
 const list = [...out.values()];
