@@ -683,10 +683,14 @@ function cameraTarget() {
   return { x, y };
 }
 
+// The canvas fills whatever the browser actually shows. On iPad, 100vh is
+// taller than the visible area while the toolbar is up, which stretched the
+// picture and made taps land below the finger, so measure the element.
 function resize() {
   const dpr = window.devicePixelRatio || 1;
-  screen.width = Math.round(innerWidth * dpr);
-  screen.height = Math.round(innerHeight * dpr);
+  const box = screen.getBoundingClientRect();
+  screen.width = Math.round(box.width * dpr);
+  screen.height = Math.round(box.height * dpr);
   // Integer zoom keeps the pixels square; aim for ~270 world pixels tall.
   state.scale = Math.max(2, Math.round(Math.min(screen.height / 270, screen.width / 300)));
   view.width = Math.ceil(screen.width / state.scale);
@@ -991,9 +995,10 @@ function onPointer(e) {
   Sound.unlock();
   if (state.busy) return;
   const sc = state.scene;
-  const dpr = window.devicePixelRatio || 1;
-  const sx = e.clientX * dpr;
-  const sy = e.clientY * dpr;
+  // Map the tap into canvas pixels using its real on-screen box.
+  const box = screen.getBoundingClientRect();
+  const sx = (e.clientX - box.left) * (screen.width / box.width);
+  const sy = (e.clientY - box.top) * (screen.height / box.height);
   const wx = sx / state.scale + Math.round(state.cam.x);
   const wy = sy / state.scale + Math.round(state.cam.y);
   state.ripples.push({ x: sx, y: sy, t0: performance.now() });
@@ -1096,6 +1101,7 @@ function setPictures(on) {
 
 resize();
 addEventListener('resize', resize);
+if (window.visualViewport) visualViewport.addEventListener('resize', resize);
 state.scene = sceneFor('town');
 placeHero(state.scene.start.c, state.scene.start.r);
 parkUnicorn();
