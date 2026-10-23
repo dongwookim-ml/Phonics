@@ -336,6 +336,31 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   animation: breathe 1.6s ease-in-out infinite;
 }
 
+/* ---- Login (js/account.js) ---- */
+
+.login { z-index: 5; background: radial-gradient(circle at 50% 40%, #fff6fc, #ffc8e6); }
+.login .profile { width: min(520px, 100%); }
+.login-tabs { display: flex; gap: 8px; width: 100%; }
+.login-tabs .chip { flex: 1; justify-content: center; font-size: 26px; padding: 8px 10px; }
+.login-msg { min-height: 1.3em; font-size: 20px; color: #d6336c; }
+.login-msg.good { color: var(--ink); opacity: 0.8; }
+.login-go {
+  width: 100%;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 36px;
+  color: #fff;
+  background: var(--accent);
+  border: 4px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 6px 0 rgba(74, 44, 79, 0.35);
+}
+.login-go:disabled { opacity: 0.6; }
+.login-guest { font: inherit; font-size: 19px; color: var(--ink); background: none; border: none; text-decoration: underline; opacity: 0.75; padding: 8px; }
+.account-bar { position: absolute; top: 10px; right: 12px; display: flex; align-items: center; gap: 6px; font-size: 18px; }
+.account-bar:empty { display: none; }
+.account-bar .who { background: rgba(255, 255, 255, 0.8); border-radius: 12px; padding: 3px 10px; }
+
 @keyframes pop { 40% { transform: scale(1.12); } }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @keyframes breathe { 50% { transform: scale(1.08); } }
@@ -361,6 +386,8 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .start-btn { width: 88px; height: 88px; font-size: 40px; margin: 4px 0; }
   .field { font-size: 26px; }
   .field input { font-size: 36px; }
+  .login-go { font-size: 30px; }
+  .account-bar { position: static; align-self: flex-end; }
   .choices.four { display: grid; grid-template-columns: 1fr 1fr; }
   .choices.four .choice { position: relative; padding: 4px 2px 6px; }
   .choices.four .choice .w { font-size: 22px; }

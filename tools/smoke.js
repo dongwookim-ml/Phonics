@@ -29,6 +29,8 @@ for (const s of scripts) {
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('file://' + path.join(root, 'index.html'));
     await page.waitForTimeout(300);
+    // Play without an account, so the login screen doesn't block the test.
+    await page.click('#login-guest');
     const scenes = await page.evaluate(async look => {
       document.querySelector(`[data-title="${look === 'boy' ? 'prince' : 'princess'}"]`).click();
       document.querySelector('.start').classList.add('hidden');
