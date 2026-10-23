@@ -334,7 +334,7 @@ function rec(kind, name) {
   return `audio/${kind}/${name.toLowerCase()}.mp3`;
 }
 function letterSound(info) {
-  return { text: `${info.sound}, ${info.sound}`, file: rec('letters', info.letter), rate: 0.7 };
+  return { text: `${info.sound}, ${info.sound}`, file: rec('letters', info.letter), rate: 0.7, narrator: true };
 }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -440,9 +440,9 @@ function choose(i, btn) {
     btn.disabled = true;
     btn.classList.add('wrong');
     Sound.wrong();
-    const retry = line(o.sound ? 'retrySound' : 'retry', { wrong: o.wrong });
-    ui.text.textContent = retry;
-    Sound.say([{ text: retry }, { pause: 750 }].concat(q.replay), voiceOf(state.talking));
+    const retry = line('retry');
+    ui.text.textContent = `${o.wrong}… ${retry}`;
+    Sound.say([{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }, { text: retry }, { pause: 750 }].concat(q.replay), voiceOf(state.talking));
   }
 }
 

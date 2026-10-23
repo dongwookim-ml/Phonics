@@ -161,21 +161,28 @@ const TOWN_HOUSES = [
 // (the first one installed wins); otherwise a voice of the right `gender` is
 // picked for each person. Pitch and rate keep people distinct even when the
 // device has only one English voice.
+// `tts` is the Kokoro voice used for the pre-recorded lines in audio/tts
+// (see tools/); the rest describes the device voice used as a fallback.
+const TTS_NARRATOR = 'af_heart';
+// Optional live speech server (server/ in this repo, e.g. on Railway) for
+// lines that were not pre-recorded, such as a custom name. Leave empty to
+// use the device voice for those.
+const TTS_SERVER = '';
 const VOICES = {
-  knight: { gender: 'male',   pitch: 0.75, rate: 0.92, voice: ['Daniel', 'Google UK English Male', 'Microsoft Ryan', 'Arthur'] },
-  flower: { gender: 'female', pitch: 1.35, rate: 1.0,  voice: ['Samantha', 'Microsoft Aria', 'Google US English'] },
-  granny: { gender: 'female', pitch: 1.05, rate: 0.8,  voice: ['Moira', 'Martha', 'Microsoft Hazel', 'Google UK English Female'] },
-  fisher: { gender: 'male',   pitch: 0.85, rate: 0.95, voice: ['Fred', 'Rishi', 'Microsoft Guy', 'Aaron'] },
-  baker:  { gender: 'male',   pitch: 1.0,  rate: 1.0,  voice: ['Alex', 'Tom', 'Microsoft Andrew', 'Google US English'] },
-  kid:    { gender: 'female', pitch: 1.65, rate: 1.08, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
-  bard:   { gender: 'male',   pitch: 1.2,  rate: 1.05, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
-  farmer: { gender: 'male',   pitch: 0.9,  rate: 0.9,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
-  king:   { gender: 'male',   pitch: 0.65, rate: 0.85, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
-  queen:  { gender: 'female', pitch: 1.1,  rate: 0.88, voice: ['Serena', 'Kate', 'Google UK English Female', 'Microsoft Sonia'] },
-  maid:   { gender: 'female', pitch: 1.25, rate: 0.98, voice: ['Karen', 'Tessa', 'Microsoft Libby', 'Microsoft Jenny'] },
+  knight: { gender: 'male', tts: 'am_michael',   pitch: 0.75, rate: 0.92, voice: ['Daniel', 'Google UK English Male', 'Microsoft Ryan', 'Arthur'] },
+  flower: { gender: 'female', tts: 'af_bella', pitch: 1.35, rate: 1.0,  voice: ['Samantha', 'Microsoft Aria', 'Google US English'] },
+  granny: { gender: 'female', tts: 'bf_isabella', pitch: 1.05, rate: 0.8,  voice: ['Moira', 'Martha', 'Microsoft Hazel', 'Google UK English Female'] },
+  fisher: { gender: 'male', tts: 'am_eric',   pitch: 0.85, rate: 0.95, voice: ['Fred', 'Rishi', 'Microsoft Guy', 'Aaron'] },
+  baker:  { gender: 'male', tts: 'am_adam',   pitch: 1.0,  rate: 1.0,  voice: ['Alex', 'Tom', 'Microsoft Andrew', 'Google US English'] },
+  kid:    { gender: 'female', tts: 'af_sky', pitch: 1.65, rate: 1.08, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  bard:   { gender: 'male', tts: 'bm_fable',   pitch: 1.2,  rate: 1.05, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
+  farmer: { gender: 'male', tts: 'am_liam',   pitch: 0.9,  rate: 0.9,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
+  king:   { gender: 'male', tts: 'bm_george',   pitch: 0.65, rate: 0.85, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
+  queen:  { gender: 'female', tts: 'bf_alice', pitch: 1.1,  rate: 0.88, voice: ['Serena', 'Kate', 'Google UK English Female', 'Microsoft Sonia'] },
+  maid:   { gender: 'female', tts: 'bf_lily', pitch: 1.25, rate: 0.98, voice: ['Karen', 'Tessa', 'Microsoft Libby', 'Microsoft Jenny'] },
 };
 
-// Things people say. {title} {name} is the hero ("Princess Yuna"), {little} the title in lower case, {wrong} the word she picked.
+// Things people say. {title} {name} is the hero ("Princess Yuna"), {little} the title in lower case.
 const LINES = {
   ask: [
     'Listen carefully.', 'Here is my word.', 'Can you find this one?', 'Which word am I saying?',
@@ -185,9 +192,10 @@ const LINES = {
     'Wonderful!', 'You got it!', 'Brilliant, {title}!', 'That is exactly right!',
     'Wow, great listening!', 'Perfect!', 'Hooray, well done!', 'You are so clever!',
   ],
+  // Said right after the wrong answer itself, so they don't name it.
   retry: [
-    "Oops, that one says {wrong}. Let's listen again.", 'Almost! That word is {wrong}. Try once more.',
-    'Hmm, that is {wrong}. Listen carefully.', 'Good try! That says {wrong}. One more time.',
+    "Oops, not that one. Let's listen again.", 'Almost! Try once more.',
+    'Hmm, not quite. Listen carefully.', 'Good try! One more time.',
   ],
   gift: [
     'I have a little present for you. Would you like to try it on?', 'This is for you, {title}! Do you want to wear it?',
@@ -249,11 +257,11 @@ const FOREST_NPCS = [
 ];
 
 Object.assign(VOICES, {
-  fairy:  { gender: 'female', pitch: 1.75, rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
-  elf:    { gender: 'male',   pitch: 1.3,  rate: 1.02, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
-  wizard: { gender: 'male',   pitch: 0.6,  rate: 0.8,  voice: ['Gordon', 'Arthur', 'Daniel', 'Microsoft George'] },
-  gnome:  { gender: 'male',   pitch: 1.1,  rate: 0.85, voice: ['Ralph', 'Fred', 'Aaron'] },
-  ranger: { gender: 'female', pitch: 0.95, rate: 0.95, voice: ['Fiona', 'Tessa', 'Karen', 'Microsoft Hazel'] },
+  fairy:  { gender: 'female', tts: 'af_nova', pitch: 1.75, rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  elf:    { gender: 'male', tts: 'am_puck',   pitch: 1.3,  rate: 1.02, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
+  wizard: { gender: 'male', tts: 'bm_lewis',   pitch: 0.6,  rate: 0.8,  voice: ['Gordon', 'Arthur', 'Daniel', 'Microsoft George'] },
+  gnome:  { gender: 'male', tts: 'am_santa',   pitch: 1.1,  rate: 0.85, voice: ['Ralph', 'Fred', 'Aaron'] },
+  ranger: { gender: 'female', tts: 'af_river', pitch: 0.95, rate: 0.95, voice: ['Fiona', 'Tessa', 'Karen', 'Microsoft Hazel'] },
 });
 
 Object.assign(PERSONA, {
@@ -324,10 +332,6 @@ LINES.findStart = ['Which one starts with', 'Find the picture that starts with',
 LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
 LINES.vowel = ['What sound is in the middle?', 'Which sound is missing?', 'Listen for the middle sound.'];
 LINES.ending = ['How does it end?', 'What is the last sound?', 'Listen to the very end.'];
-LINES.retrySound = [
-  "Oops, that letter says {wrong}. Let's listen again.", 'Almost! That sound is {wrong}. Try once more.',
-  "Good try! That's {wrong}. Listen carefully.",
-];
 LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'No peeking at my voice! Read it yourself.'];
 
 // ---- Unicorn Village (level 3) ----------------------------------------------
@@ -383,8 +387,8 @@ const UNICORN_NPCS = [
 ];
 
 Object.assign(VOICES, {
-  unicorn: { gender: 'female', pitch: 1.55, rate: 0.95, voice: ['Samantha', 'Karen', 'Google US English', 'Microsoft Jenny'] },
-  keeper:  { gender: 'female', pitch: 1.2,  rate: 1.0,  voice: ['Tessa', 'Karen', 'Microsoft Aria'] },
+  unicorn: { gender: 'female', tts: 'af_nicole', pitch: 1.55, rate: 0.95, voice: ['Samantha', 'Karen', 'Google US English', 'Microsoft Jenny'] },
+  keeper:  { gender: 'female', tts: 'af_jessica', pitch: 1.2,  rate: 1.0,  voice: ['Tessa', 'Karen', 'Microsoft Aria'] },
 });
 Object.assign(PERSONA, {
   unicorn: ['Neigh! Hello, {title} {name}!', 'Sparkle, sparkle! Do you like my mane?', 'Hello! I love sentences. Want to play?', 'Neigh! My horn is glowing today!'],

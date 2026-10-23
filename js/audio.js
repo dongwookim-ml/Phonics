@@ -36,7 +36,41 @@ const Sound = (() => {
       const pool = voices.filter(x => isGender(x, style.gender === 'male' ? MALE : FEMALE));
       if (pool.length) v = pool[Math.abs(seed) % pool.length];
     }
-    return { voice: v || null, pitch: style.pitch, rate: style.rate };
+    return { voice: v || null, pitch: style.pitch, rate: style.rate, tts: style.tts };
+  }
+
+  // Pre-recorded lines (audio/tts, made with the Kokoro voice model). The
+  // index maps each voice's sentences to a file. Anything not recorded, such
+  // as a custom name, comes from TTS_SERVER if set, else the device voice.
+  const index = typeof TTS_INDEX !== 'undefined' ? TTS_INDEX : {};
+  const norm = t => String(t).trim().replace(/\s+/g, ' ');
+  function recorded(item, who) {
+    const v = item.narrator || !who.tts ? TTS_NARRATOR : who.tts;
+    const text = norm(item.text);
+    const id = index[v] && index[v][text];
+    if (id) return { url: `audio/tts/${v}/${id}.mp3` };
+    if (!TTS_SERVER) return null;
+    const speed = item.narrator ? 0.8 : 0.95;
+    return { url: `${TTS_SERVER.replace(/\/$/, '')}/tts?voice=${v}&speed=${speed}&text=${encodeURIComponent(text)}`, live: true };
+  }
+  // One audio element, reused so iPad keeps it unlocked after the first tap.
+  const player = typeof Audio !== 'undefined' ? new Audio() : null;
+  let unlocked = false;
+  function unlockPlayer() {
+    if (unlocked || !player) return;
+    unlocked = true;
+    player.src = 'audio/tts/silence.mp3';
+    player.play().catch(() => { unlocked = false; });
+  }
+  // A live clip that hasn't started after a few seconds gives way to the
+  // device voice so nobody waits on a slow server.
+  function playFile(url, done, fail, live) {
+    const timer = live ? setTimeout(fail, 4000) : null;
+    player.onplaying = () => clearTimeout(timer);
+    player.onended = () => { clearTimeout(timer); done(); };
+    player.onerror = () => { clearTimeout(timer); fail(); };
+    player.src = url;
+    player.play().catch(() => { clearTimeout(timer); fail(); });
   }
 
   // Speak a list of phrases in order. Each item is a string or
@@ -45,6 +79,7 @@ const Sound = (() => {
   function say(parts, who) {
     if (muted) return;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
+    if (player) { player.onended = null; player.onerror = null; player.onplaying = null; player.pause(); }
     clearTimeout(pauseTimer);
     const queue = (Array.isArray(parts) ? parts : [parts]).map(p => typeof p === 'string' ? { text: p } : p);
     playNext(queue, who || {}, ++generation);
@@ -58,12 +93,20 @@ const Sound = (() => {
     const item = queue.shift();
     if (!item) return;
     const next = () => playNext(queue, who, gen);
+    // Your own recordings (USE_RECORDINGS) come first, then Kokoro's.
+    const own = USE_RECORDINGS && item.file && player ? { url: item.file } : null;
+    const file = own || (item.text && player ? recorded(item, who) : null);
     if (item.pause) {
       pauseTimer = setTimeout(next, item.pause);
-    } else if (USE_RECORDINGS && item.file) {
-      const a = new Audio(item.file);
-      a.onended = next;
-      a.play().catch(() => speak(item, who, next));
+    } else if (file) {
+      let failed = false;
+      playFile(file.url, next, () => {
+        if (failed || gen !== generation) return;
+        failed = true;
+        player.onended = null;
+        player.pause();
+        speak(item, who, next);
+      }, file.live);
     } else {
       speak(item, who, next);
     }
@@ -120,7 +163,11 @@ const Sound = (() => {
     wrong: () => notes([[300, 0, 0.12], [250, 0.12, 0.2]], 'triangle', 0.08),
     door: () => notes([[392, 0, 0.08], [523, 0.08, 0.08], [659, 0.16, 0.14]], 'triangle', 0.07),
     party: () => notes([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.4], [784, 0.5, 0.1], [1047, 0.6, 0.5]]),
-    toggleMute() { muted = !muted; if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); } return muted; },
-    unlock: ctx,
+    toggleMute() {
+      muted = !muted;
+      if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); if (player) player.pause(); }
+      return muted;
+    },
+    unlock() { unlockPlayer(); return ctx(); },
   };
 })();

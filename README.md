@@ -71,14 +71,43 @@ the wardrobe options, the villagers and the house positions.
 
 ### Voices and lines
 
-Each kind of villager has its own voice (`VOICES` in `js/data.js`). The game
-uses a preferred system voice when the device has one, otherwise any English
-voice of the right gender, and pitch and speed keep people distinct even on
-a device with a single voice. iPads and Macs usually have the most voices.
-What people say comes from `LINES` and `PERSONA`, and a short pause comes
-before each quiz word.
+What people say comes from `LINES` and `PERSONA` in `js/data.js`. Every line
+is pre-recorded with the open-source [Kokoro](https://github.com/thewh1teagle/kokoro-onnx)
+voice model into `audio/tts/`, one natural voice per kind of villager
+(`tts` in `VOICES`) and a narrator voice for quiz words and letter sounds.
 
-### Recorded voices
+After changing lines, words or the default name, record again:
+
+```sh
+pip install kokoro-onnx soundfile        # once, plus ffmpeg
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx
+curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+node tools/tts-phrases.js                # lists every line the game can say
+python tools/tts-build.py --model kokoro-v1.0.int8.onnx --voices voices-v1.0.bin
+```
+
+Lines that are not recorded, such as a name typed on the start screen, come
+from the live speech server when `TTS_SERVER` is set, otherwise from the
+device's own voice.
+
+### Live speech server (optional)
+
+`server/` is a small web service that speaks any line with Kokoro (or
+Amazon Polly). To run it on [Railway](https://railway.app):
+
+1. New Project → Deploy from GitHub repo → pick this repository.
+2. In the service's Settings, set **Root Directory** to `server`. Railway
+   builds the `Dockerfile` there. Give it about 1 GB of memory.
+3. Settings → Networking → Generate Domain, then open it: it should show
+   `{"ok":true,...}`.
+4. Put that address in `TTS_SERVER` in `js/data.js`, for example
+   `const TTS_SERVER = 'https://pixeltown-tts.up.railway.app';`, and push.
+
+Optional variables: `ALLOWED_ORIGINS=https://dongwookim-ml.github.io` to
+accept calls only from the game, and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` to use Amazon Polly instead.
+
+### Your own recordings
 
 Browser speech voices pronounce isolated sounds unevenly. To use your own
 recordings, set `USE_RECORDINGS = true` and add files such as:
@@ -88,7 +117,7 @@ audio/letters/b.mp3   "buh"
 audio/words/bus.mp3   "bus"
 ```
 
-Any missing file falls back to the speech voice.
+These win over the Kokoro recordings; any missing file falls back to them.
 
 ## Files
 

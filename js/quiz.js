@@ -3,9 +3,8 @@
 //   ask      speech parts that pose the question
 //   prompt   the question as text (defaults to its spoken line)
 //   replay   speech parts for the 🔊 button
-//   options  [{ html, right, wrong }] where `wrong` is what the retry line
-//            says when that option is picked by mistake (`sound` when it
-//            is a letter sound rather than a word)
+//   options  [{ html, right, wrong }] where `wrong` is what is said back
+//            when that option is picked by mistake
 //   answer   speech parts said after the praise
 //   solved   optional clue HTML once it is answered
 
@@ -35,7 +34,7 @@ const Quiz = (() => {
     recent = recent.filter(w => w !== word).concat(word).slice(-RECENT_WORDS);
   }
 
-  const say = w => ({ text: w, file: rec('words', w), rate: 0.72 });
+  const say = w => ({ text: w, file: rec('words', w), rate: 0.72, narrator: true });
   const firstBig = w => `<span class="first">${w[0]}</span>${w.slice(1)}`;
   const wordCard = (w, e) => `<span class="pic">${e}</span><span class="w">${firstBig(w)}</span>`;
   const picCard = (w, e) => `<span class="bigpic">${e}</span><span class="w hide">${w}</span>`;
@@ -73,8 +72,8 @@ const Quiz = (() => {
         target: t.w, clue: `<span class="clue-pic">${t.e}</span>`,
         ask: [say(t.w), { pause: 600 }, { text: line('firstSound') }],
         replay: [say(t.w)],
-        options: letters.map(l => ({ html: letterCard(l.letter + l.letter.toLowerCase()), right: l === t.info, wrong: l.sound, sound: true })),
-        answer: [{ text: `${t.w} starts with` }, letterSound(t.info)],
+        options: letters.map(l => ({ html: letterCard(l.letter + l.letter.toLowerCase()), right: l === t.info, wrong: l.sound })),
+        answer: [{ text: `${t.w} starts with`, narrator: true }, letterSound(t.info)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
       };
     },
@@ -107,7 +106,7 @@ const Quiz = (() => {
         ask: [{ text: lead }, { pause: 300 }, say(base.w)],
         replay: [say(base.w)],
         options: opts.map(o => ({ html: wordCard(o.w, o.e), right: o === ans, wrong: o.w, alwaysPictures: true })),
-        answer: [{ text: `${base.w}, ${ans.w}!` }],
+        answer: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
       };
     },
 
@@ -133,7 +132,7 @@ const Quiz = (() => {
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="blank">?</span>${t.w[2]}</span>`,
         ask: [{ text: line('vowel') }, { pause: 600 }, say(t.w)],
         replay: [say(t.w)],
-        options: vowels.map(x => ({ html: letterCard(x), right: x === v, wrong: PART_SOUNDS[x], sound: true })),
+        options: vowels.map(x => ({ html: letterCard(x), right: x === v, wrong: PART_SOUNDS[x] })),
         answer: [say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="first">${v}</span>${t.w[2]}</span>`,
       };
@@ -148,7 +147,7 @@ const Quiz = (() => {
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="blank">?</span></span>`,
         ask: [{ text: line('ending') }, { pause: 600 }, say(t.w)],
         replay: [say(t.w)],
-        options: ends.map(x => ({ html: letterCard(x), right: x === end, wrong: PART_SOUNDS[x], sound: true })),
+        options: ends.map(x => ({ html: letterCard(x), right: x === end, wrong: PART_SOUNDS[x] })),
         answer: [say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="first">${end}</span></span>`,
       };
