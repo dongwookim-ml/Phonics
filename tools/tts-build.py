@@ -30,9 +30,29 @@ TRIM = ('silenceremove=start_periods=1:start_threshold=-45dB,areverse,'
 
 kokoro = None
 
+# The voice model reads letter sounds like "hhh" as letter names ("aitch aitch
+# aitch") and "eh" as the letter A, so lines made only of these sounds are
+# recorded from phonemes instead. Keys match LETTERS and PART_SOUNDS in data.js.
+SOUND_IPA = {
+    'ah': 'ˈæ', 'eh': 'ˈɛ', 'ih': 'ˈɪ', 'aw': 'ˈɑː', 'uh': 'ˈʌ',
+    'fff': 'fˈə', 'hhh': 'hˈə', 'mmm': 'mˈə', 'nnn': 'nˈə', 'sss': 'sˈə', 'lll': 'lˈə', 'rrr': 'ɹˈə',
+    'ks': 'ks',
+}
+
+
+def phonemes(text):
+    words = [w.strip() for w in text.split(',')]
+    if all(w in SOUND_IPA for w in words):
+        return ', '.join(SOUND_IPA[w] for w in words)
+    return None
+
 
 def clip_id(p):
-    return hashlib.sha1(f"{p['voice']}|{p['text']}|{p['speed']}".encode()).hexdigest()[:10]
+    key = f"{p['voice']}|{p['text']}|{p['speed']}"
+    ipa = phonemes(p['text'])
+    if ipa:
+        key += f'|{ipa}'
+    return hashlib.sha1(key.encode()).hexdigest()[:10]
 
 
 def init(model, voices):
@@ -45,7 +65,9 @@ def record(p):
     path = os.path.join(OUT, p['voice'], clip_id(p) + '.mp3')
     if os.path.exists(path):
         return p, True
-    samples, rate = kokoro.create(p['text'], voice=p['voice'], speed=p['speed'], lang='en-us')
+    ipa = phonemes(p['text'])
+    samples, rate = kokoro.create(ipa or p['text'], voice=p['voice'], speed=p['speed'], lang='en-us',
+                                  is_phonemes=bool(ipa))
     with tempfile.NamedTemporaryFile(suffix='.wav') as wav:
         sf.write(wav.name, samples, rate)
         subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', wav.name, '-af', TRIM,

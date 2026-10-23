@@ -213,9 +213,9 @@ const LINES = {
 // Greetings in each person's own style.
 const PERSONA = {
   knight: ['Good day, {title} {name}! I am guarding the castle gate.', 'Halt! Oh, it is you, {title} {name}. Fancy a word game?', 'At your service, {title} {name}!'],
-  flower: ['Hi, {title} {name}! Smell these roses. Mmm!', 'Hello! I just picked fresh flowers this morning.', 'Oh, {title} {name}! You look like a flower today.'],
+  flower: ['Hi, {title} {name}! Smell these roses. They smell so sweet!', 'Hello! I just picked fresh flowers this morning.', 'Oh, {title} {name}! You look like a flower today.'],
   granny: ['Oh, my dear {title} {name}! How you have grown!', 'Come here, sweetie. Grandma has a word for you.', 'Hello, darling. Would you like a cookie later?'],
-  fisher: ['Ahoy, {title} {name}! The fish are jumping today.', "Shh, the fish might hear us! Let's play quietly.", 'Hello there! I caught a big one this morning.'],
+  fisher: ['Ahoy, {title} {name}! The fish are jumping today.', "Quiet, the fish might hear us! Let's play quietly.", 'Hello there! I caught a big one this morning.'],
   baker:  ['Good morning, {title} {name}! My bread just came out of the oven.', 'Hello! Something smells yummy in here, right?', 'Welcome, welcome! Fresh cakes for everyone!'],
   kid:    ['Hey, {title} {name}! Wanna play a game with me?', 'Yay, you came! I have a super fun word for you.', 'Hi hi hi! Guess what? I have a word!'],
   bard:   ['La la la! Hello, {title} {name}! Let me sing you a word.', 'Greetings, {title}! Listen to my song.', 'Ding ding! A musical word, coming right up!'],
@@ -266,7 +266,7 @@ Object.assign(VOICES, {
 
 Object.assign(PERSONA, {
   fairy:  ['Twinkle twinkle! Hello, {title} {name}!', 'Hee hee! I was dancing on a flower. Want to play?', 'Sprinkle, sprinkle! A magic word for you!'],
-  elf:    ['Welcome to the Starlight Forest, {title} {name}!', 'Shh, the trees are listening. Are you ready?', 'Ah, a visitor! Elves love word puzzles.'],
+  elf:    ['Welcome to the Starlight Forest, {title} {name}!', 'Hush, the trees are listening. Are you ready?', 'Ah, a visitor! Elves love word puzzles.'],
   wizard: ['Hmm, hmm. A new visitor. Let us test those clever ears.', 'Abracadabra! These words all look alike. Listen very closely.', 'Welcome, {title} {name}. My puzzles are a little tricky.'],
   gnome:  ['Oh ho! A visitor! Mind the mushrooms, {title} {name}.', 'Hello, little one. I have lived here a hundred years!', 'Psst! Want to hear a secret word?'],
   ranger: ['Hello, {title} {name}! I look after the forest animals.', 'Did you see the fireflies? Aren\'t they beautiful?', 'Good evening, {title}. Let\'s see how well you listen.'],
