@@ -49,6 +49,19 @@ npx http-server -p 8080 .
 - **No repeats**: a person never asks the same kind of question twice in a
   row, and the last 24 answers are kept out of new questions (saved with the
   game). The mix lives in `QUIZ_TYPES` and the builders in `js/quiz.js`.
+- **Solved questions and review**: every question has a stable id
+  (`rhyme:cat`, `sentence:The {} says moo.`) and each kind has a pool of all
+  its ids (`reviewPool(kind, npc)`; house pools are per letter). Answers are
+  saved in `history` (tries, right, wrong, last time). Questions she has
+  already got right are not asked again until the whole pool is done; a
+  miss stays a miss even if the retry is right. Then that kind switches to
+  review (a 복습 tag on the dialog), which favours the ones she missed and
+  the ones not seen for a while.
+- **Parent panel (⚙️, top right)**: asks for the login password (0000
+  without an account) and shows stars, coins, fairy dust and answers, a
+  bar per question kind (right / missed / not tried, out of the pool) with
+  the first-try accuracy, the most-missed questions and the last 7 days.
+  The game is paused while it is open. Code in `js/parent.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
   colour. The child sees "now" and "after" side by side and chooses to

@@ -116,9 +116,9 @@ function load() {
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
     outfit = fitOutfit(outfit);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures: !!s.pictures, looks: s.looks || {} };
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures: !!s.pictures, looks: s.looks || {}, history: s.history || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: false };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: false, history: {} };
   }
 }
 
@@ -139,7 +139,7 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, player: PLAYER })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -154,6 +154,7 @@ const state = {
   stars: saved.stars,
   coins: saved.coins,
   dust: saved.dust,  // fairy dust from the Fairy Village
+  history: saved.history, // { questionId: { kind, tries, right, wrong, last } }
   pictures: saved.pictures,
   scenes: {},
   scene: null,
@@ -452,6 +453,7 @@ function openDialog(npc) {
   npc.missed = null;
   q.done = false;
   state.question = q;
+  if (q.review) ui.name.insertAdjacentHTML('beforeend', ' <span class="review-tag">복습</span>');
   const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
   ui.text.textContent = `${hello} ${q.prompt}`;
   ui.clue.innerHTML = q.clue;
@@ -487,6 +489,7 @@ function choose(i, btn) {
   const q = state.question;
   if (!q || q.done || btn.disabled) return;
   const o = q.options[i];
+  reviewRecord(q, o.right);
   if (o.right) {
     q.done = true;
     btn.classList.add('right');
