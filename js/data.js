@@ -167,7 +167,7 @@ const TTS_NARRATOR = 'af_heart';
 // Optional live speech server (server/ in this repo, e.g. on Railway) for
 // lines that were not pre-recorded, such as a custom name. Leave empty to
 // use the device voice for those.
-const TTS_SERVER = '';
+const TTS_SERVER = 'https://phonics-production-5a6d.up.railway.app';
 const VOICES = {
   knight: { gender: 'male', tts: 'am_michael',   pitch: 0.75, rate: 0.92, voice: ['Daniel', 'Google UK English Male', 'Microsoft Ryan', 'Arthur'] },
   flower: { gender: 'female', tts: 'af_bella', pitch: 1.35, rate: 1.0,  voice: ['Samantha', 'Microsoft Aria', 'Google US English'] },
