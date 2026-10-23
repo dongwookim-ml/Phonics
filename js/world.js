@@ -120,6 +120,11 @@ function renderGround(sc) {
 
 const TOWN_N = 40;
 const CASTLE_AT = { c: 15, r: 3, w: 10, d: 7 };
+// Each letter house gets its own look (see HOUSE_DRAW in sprites.js).
+const HOUSE_SHAPES = {
+  A: 'thatch', B: 'bakery', C: 'tower', D: 'cottage', F: 'windmill', G: 'mushroom',
+  H: 'manor', M: 'tower', N: 'thatch', P: 'bakery', S: 'windmill', T: 'manor',
+};
 
 function buildTown() {
   const sc = makeScene('town', TOWN_N, TOWN_N, 150, 60);
@@ -160,9 +165,9 @@ function buildTown() {
     const info = LETTERS.find(l => l.letter === h.letter);
     block(sc, h.c, h.r, 3, 3);
     for (let r = h.r - 1; r <= h.r + 3; r++) for (let c = h.c - 1; c <= h.c + 3; c++) reserve(c, r);
-    const style = { roof: info.color, wall: '#fff7ee', door: 'left' };
-    const obj = addObject(sc, { c: h.c, r: h.r, w: 3, d: 3 }, footBounds(sc, h.c, h.r, 3, 3, 110, 12),
-      ctx => drawCottage(ctx, boxCorners(sc, h.c, h.r, 3, 3), style), { kind: 'house', house: h, info });
+    const style = { roof: info.color, wall: '#fff7ee', door: 'left', shape: HOUSE_SHAPES[h.letter] || 'cottage' };
+    const obj = addObject(sc, { c: h.c, r: h.r, w: 3, d: 3 }, footBounds(sc, h.c, h.r, 3, 3, houseUp(style.shape), 12),
+      ctx => drawHouse(ctx, boxCorners(sc, h.c, h.r, 3, 3), style), { kind: 'house', house: h, info });
     const door = { c: h.c + 1, r: h.r + 3 };
     sc.doors.push({ c: door.c, r: door.r, obj, target: `house-${h.letter}` });
     // Sign hangs over the door.
@@ -195,6 +200,9 @@ function buildTown() {
   // Trees: a forest ring around town and a few scattered inside.
   const green = makeTree('green');
   const blossom = makeTree('blossom');
+  const ringTrees = [green, green, blossom, makePlant('pine'), makePlant('oak')];
+  const innerPlants = [green, makePlant('oak'), makePlant('birch'), makePlant('pine'), makePlant('bush'), makePlant('tulips'), makePlant('bluebells')];
+  const nearPond = (c, r) => Math.abs(c - 28.5) < 7 && Math.abs(r - 31.5) < 6;
   const nearRoad = (c, r) => {
     for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
       const t = tileAt(sc, c + dc, r + dr);
@@ -210,7 +218,12 @@ function buildTown() {
     if (hash(c, r, 91) >= chance) continue;
     // Keep trees from touching each other so the town stays airy.
     if (sc.objects.some(o => o.tree && Math.abs(o.c0 - c) <= 1 && Math.abs(o.r0 - r) <= 1) && !ring) continue;
-    const tree = (Math.abs(c - 20) < 9 && r < 24 && hash(c, r, 5) < 0.6) || hash(c, r, 6) < 0.25 ? blossom : green;
+    let tree = (Math.abs(c - 20) < 9 && r < 24 && hash(c, r, 5) < 0.6) || hash(c, r, 6) < 0.25 ? blossom : green;
+    // Mix in other kinds: pines and oaks in the ring, bushes and flowers in town.
+    const pick = hash(c, r, 7);
+    if (ring && pick < 0.45) tree = ringTrees[Math.floor(hash(c, r, 8) * ringTrees.length)];
+    else if (!ring && nearPond(c, r) && pick < 0.6) tree = makePlant('palm');
+    else if (!ring && pick < 0.6) tree = innerPlants[Math.floor(hash(c, r, 8) * innerPlants.length)];
     block(sc, c, r, 1, 1);
     const p = tileCenter(sc, c, r);
     sc.objects.push({ c0: c, r0: r, c1: c, r1: r, tree: true, canvas: tree.canvas, x: p.x - tree.ax, y: p.y - tree.ay, w: tree.canvas.width, h: tree.canvas.height });
@@ -626,7 +639,7 @@ function buildForest() {
   };
 
   // Dense trees around the edge, a few inside.
-  const trees = [makeTree('star'), makeTree('violet'), makeTree('green')];
+  const trees = [makeTree('star'), makeTree('violet'), makeTree('green'), makePlant('starPine'), makePlant('pine'), makeTree('star'), makePlant('berryBush'), makePlant('bluebells')];
   const nearPath = (c, r) => {
     for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
       const t = tileAt(sc, c + dc, r + dr);
@@ -697,15 +710,33 @@ function buildUnicornVillage() {
   for (const [c, r] of [[13, 7], [17, 3], [12, 7], [13, 8], [17, 2], [18, 3]]) reserve(c, r);
   const ac = tileCenter(sc, 15, 5);
   addObject(sc, { c: 13, r: 3, w: 5, d: 5 }, { x: ac.x - 74, y: ac.y - 84, w: 148, h: 100 }, ctx => drawRainbowArch(ctx, Math.round(ac.x), Math.round(ac.y), 64));
-  // Unicorn stables: pastel cottages.
-  for (const [c, r, roof] of [[4, 6, '#ff9ec4'], [21, 7, '#b9a0ff'], [8, 11, '#8fd3ff'], [20, 11, '#ffe066']]) {
+  // Unicorn homes, each one different.
+  for (const [c, r, shape, roof] of [[3, 9, 'cloud', '#ff9ec4'], [21, 7, 'stable', '#b9a0ff'], [8, 11, 'crystal', '#8fd3ff'], [20, 11, 'candy', '#ff9ec4'], [8, 2, 'star', '#b9a0ff']]) {
     block(sc, c, r, 3, 3);
     for (let rr = r - 1; rr <= r + 3; rr++) for (let cc = c - 1; cc <= c + 3; cc++) reserve(cc, rr);
-    addObject(sc, { c, r, w: 3, d: 3 }, footBounds(sc, c, r, 3, 3, 110, 12),
-      ctx => drawCottage(ctx, boxCorners(sc, c, r, 3, 3), { roof, wall: '#fffaf4', door: 'left' }));
+    addObject(sc, { c, r, w: 3, d: 3 }, footBounds(sc, c, r, 3, 3, houseUp(shape), 12),
+      ctx => drawHouse(ctx, boxCorners(sc, c, r, 3, 3), { roof, wall: '#fffaf4', door: 'left', shape }));
     const k = boxCorners(sc, c, r, 3, 3);
     const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 30);
     sc.signs.push({ x: sign.x, y: sign.y, text: '🦄', color: roof, plain: true });
+  }
+  // A fountain inside the rainbow loop.
+  block(sc, 9, 21, 2, 2);
+  for (let r = 20; r <= 23; r++) for (let c = 8; c <= 11; c++) reserve(c, r);
+  const fc = tileCenter(sc, 9.5, 21.5);
+  sc.objects.push({ c0: 9, r0: 21, c1: 10, r1: 22, x: fc.x - 30, y: fc.y - 40, w: 60, h: 60,
+    animated: (ctx, t) => drawFountain(ctx, Math.round(fc.x), Math.round(fc.y), t) });
+  // Flower arches over the rainbow road: only their feet block the way.
+  for (const [a, b] of [[[9, 15], [9, 17]], [[4, 21], [6, 21]], [[24, 19], [26, 19]]]) {
+    for (const [c, r] of [a, b]) { block(sc, c, r, 1, 1); reserve(c, r); }
+    const pa = tileCenter(sc, a[0], a[1]);
+    const pb = tileCenter(sc, b[0], b[1]);
+    const c0 = Math.min(a[0], b[0]);
+    const r0 = Math.min(a[1], b[1]);
+    const foot = { c: c0, r: r0, w: Math.abs(a[0] - b[0]) + 1, d: Math.abs(a[1] - b[1]) + 1 };
+    const x0 = Math.min(pa.x, pb.x) - 10;
+    const y0 = Math.min(pa.y, pb.y) - 70;
+    addObject(sc, foot, { x: x0, y: y0, w: Math.abs(pa.x - pb.x) + 20, h: Math.abs(pa.y - pb.y) + 80 }, ctx => drawFlowerArch(ctx, pa, pb));
   }
   // Clouds resting on the meadow.
   for (const [c, r] of [[3, 2], [25, 3], [2, 14], [27, 17], [9, 28], [22, 28], [27, 24]]) {
@@ -718,7 +749,7 @@ function buildUnicornVillage() {
   for (let r = 0; r <= 2; r++) for (let c = 13; c <= 17; c++) reserve(c, r);
 
   // Cotton candy trees.
-  const trees = [makeTree('cotton'), makeTree('candy'), makeTree('blossom')];
+  const trees = [makeTree('cotton'), makeTree('candy'), makeTree('blossom'), makeTree('cotton'), makePlant('mintPine'), makePlant('lollipop'), makePlant('heartBush'), makePlant('tulips')];
   const nearRoad = (c, r) => {
     for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
       const t = tileAt(sc, c + dc, r + dr);
