@@ -39,7 +39,7 @@ for (const [look, style] of Object.entries(D.VOICES)) {
   const v = style.tts;
   if (!v) continue;
   for (const l of D.PERSONA[look] || []) for (const t of fills(l)) add(v, t);
-  lines(v, ['praise', 'retry', 'gift', 'yes', 'keep']);
+  lines(v, ['praise', 'retry', 'later', 'gift', 'yes', 'keep']);
   if (town.has(look)) lines(v, ['ask', 'firstSound', 'findStart', 'rhyme']);
   if (forest.has(look)) lines(v, ['ask2', 'vowel', 'ending', 'read', 'rhyme']);
   if (unicorn.has(look)) {

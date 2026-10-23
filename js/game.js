@@ -114,6 +114,7 @@ function save() {
 
 const saved = load();
 const state = {
+  answered: 0, // questions finished this visit, right or wrong
   outfit: saved.outfit,
   owned: saved.owned,
   stars: saved.stars,
@@ -380,14 +381,32 @@ function faceEachOther(npc) {
   if (dx !== 0) { h.flip = dx < 0; npc.flip = dx > 0; }
 }
 
+// After a wrong answer she has to answer someone else's question before
+// this person asks theirs again.
+const waiting = npc => npc.waitUntil > state.answered;
+
 function openDialog(npc) {
   faceEachOther(npc);
   state.busy = true;
   state.talking = npc;
-  const q = Quiz.make(npc);
-  state.question = q;
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
+  if (waiting(npc)) {
+    const not = line('later');
+    ui.text.textContent = not;
+    ui.clue.classList.add('hidden');
+    ui.choices.innerHTML = '';
+    ui.dialog.classList.remove('hidden');
+    ui.reward.classList.add('hidden');
+    Sound.say(not, voiceOf(npc));
+    later(2800, closeDialog);
+    return;
+  }
+  // The question she missed comes back, otherwise a new one.
+  const q = npc.missed || Quiz.make(npc);
+  npc.missed = null;
+  q.done = false;
+  state.question = q;
   const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
   ui.text.textContent = `${hello} ${q.prompt}`;
   ui.clue.innerHTML = q.clue;
@@ -431,18 +450,25 @@ function choose(i, btn) {
     Sound.correct();
     Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(state.talking));
     state.stars++;
+    state.answered++;
     save();
     renderStars(true);
     burstAtHero(30);
     later(2600, () => offerReward(state.talking));
   } else {
     q.misses++;
-    btn.disabled = true;
+    q.done = true;
     btn.classList.add('wrong');
+    ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
     Sound.wrong();
+    const npc = state.talking;
+    state.answered++;
+    npc.missed = q;
+    npc.waitUntil = state.answered + 1;
     const retry = line('retry');
     ui.text.textContent = `${o.wrong}… ${retry}`;
-    Sound.say([{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }, { text: retry }, { pause: 750 }].concat(q.replay), voiceOf(state.talking));
+    Sound.say([{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }, { text: retry }], voiceOf(npc));
+    later(5200, () => { if (state.talking === npc) closeDialog(); });
   }
 }
 
@@ -917,7 +943,8 @@ function drawOverlay(now) {
       if (n.mount) continue;
       const w = tileCenter(sc, n.c, n.r);
       const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
-      ctx.fillStyle = '#ffffff';
+      const wait = waiting(n);
+      ctx.fillStyle = wait ? '#e4dce8' : '#ffffff';
       ctx.strokeStyle = '#4a2c4f';
       ctx.lineWidth = s * 0.8;
       roundRect(ctx, p.x - 7 * s, p.y - 5 * s, 14 * s, 10 * s, 4 * s);
@@ -928,11 +955,11 @@ function drawOverlay(now) {
       ctx.lineTo(p.x, p.y + 8 * s);
       ctx.lineTo(p.x + 2 * s, p.y + 5 * s - 1);
       ctx.fill();
-      ctx.fillStyle = '#ff6fa8';
+      ctx.fillStyle = wait ? '#9a8aa3' : '#ff6fa8';
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
+      ctx.fillText(wait ? '…' : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
     }
   }
 

@@ -192,10 +192,18 @@ const LINES = {
     'Wonderful!', 'You got it!', 'Brilliant, {title}!', 'That is exactly right!',
     'Wow, great listening!', 'Perfect!', 'Hooray, well done!', 'You are so clever!',
   ],
-  // Said right after the wrong answer itself, so they don't name it.
+  // Said right after the wrong answer itself, so they don't name it. She
+  // has to answer someone else's question before trying this one again.
   retry: [
-    "Oops, not that one. Let's listen again.", 'Almost! Try once more.',
-    'Hmm, not quite. Listen carefully.', 'Good try! One more time.',
+    'Oops, not that one. Go help a friend, then come back and try again!',
+    'Almost! Answer someone else first, then come back to me.',
+    'Hmm, not quite. Visit another friend and come back later!',
+    'Good try! Help someone else, and then we can try again.',
+  ],
+  // Tapping someone she has to come back to later.
+  later: [
+    'Help a friend first, then come back to me!', 'Not yet! Answer someone else first.',
+    'Come back after you help another friend!',
   ],
   gift: [
     'I have a little present for you. Would you like to try it on?', 'This is for you, {title}! Do you want to wear it?',
