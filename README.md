@@ -88,6 +88,17 @@ npx http-server -p 8080 .
 
 The name, title and look (girl or boy), stars, coins, the outfit, recent words and the hint setting are saved in the browser.
 
+- **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
+  (3–20 lowercase letters, digits or _) and a password (4 or more
+  characters). Signed in, the whole save is kept on the server as well, so
+  another tablet that logs into the same account gets the same progress;
+  the newer save wins. The tablet stays signed in, and the game keeps
+  working offline and uploads again later. "계정 없이 할래요" plays with the
+  browser-only save; 🔑 로그인 / 로그아웃 is at the top right of the start
+  screen. The first login carries the progress so far into the account.
+  The account password is also the parent password (`Account.verify` in
+  `js/account.js`); without an account it is `0000`.
+
 ## Customizing
 
 Content lives in `js/data.js`: the default name and the titles (`TITLES`), the letters and words,
@@ -131,6 +142,30 @@ Optional variables: `ALLOWED_ORIGINS=https://dongwookim-ml.github.io` to
 accept calls only from the game, and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
 `AWS_SECRET_ACCESS_KEY` and `AWS_REGION` to use Amazon Polly instead.
 
+### Accounts on Railway
+
+The same `server/` keeps the accounts (`/auth/signup`, `/auth/login`,
+`/auth/verify`, `/save`). Its disk is wiped on every deploy, so give it a
+database once:
+
+1. In the Railway project: **+ New** → **Database** → **PostgreSQL**.
+2. Open the phonics service → **Variables** → **New Variable**, name
+   `DATABASE_URL`, value `${{Postgres.DATABASE_URL}}` (a reference
+   variable; Railway fills in the address).
+3. Redeploy the service. The home page should now show `"db":"postgres"`.
+
+Pushing to `main` redeploys the server, and the accounts stay in Postgres.
+Without `DATABASE_URL` the server uses SQLite at `$DATA_DIR/pixeltown.db`
+(default `./data`), which is fine locally or with a Railway Volume mounted
+at `DATA_DIR`. The game talks to the server at `TTS_SERVER`.
+
+To run it locally without the speech model (it loads on the first `/tts`):
+
+```sh
+cd server && pip install -r requirements.txt
+uvicorn app:app --port 8000
+```
+
 ### Your own recordings
 
 Browser speech voices pronounce isolated sounds unevenly. To use your own
@@ -146,6 +181,7 @@ These win over the Kokoro recordings; any missing file falls back to them.
 ## Files
 
 - `js/data.js`: content and settings
+- `js/account.js`: login / sign-up and the server save
 - `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
 - `js/world.js`: town and room layouts, pathfinding
 - `js/audio.js`: speech and sound effects
