@@ -42,6 +42,7 @@
       <div id="dlg-text" class="text"></div>
       <div id="dlg-clue" class="clue hidden"></div>
       <div id="dlg-choices" class="choices"></div>
+      <button id="dlg-books" class="dlg-books hidden">📖 책 읽어주세요</button>
     </div>
     <div class="side">
       <button id="dlg-replay" class="round" title="다시 듣기">🔊</button>
@@ -91,6 +92,38 @@
     </div>
   </section>
 
+  <section id="library" class="wardrobe library hidden">
+    <div class="wd-head">
+      <div class="wd-name">📚 왕실 도서관</div>
+      <div id="lib-count" class="wd-count"></div>
+    </div>
+    <div id="lib-books" class="lib-books"></div>
+    <button id="lib-done" class="wd-done">나갈래요 👋</button>
+  </section>
+
+  <section id="reader" class="reader hidden">
+    <div class="rd-head">
+      <div id="rd-title" class="rd-title"></div>
+      <div id="rd-pageno" class="rd-pageno"></div>
+      <button id="rd-close" class="round small" title="닫기">✖</button>
+    </div>
+    <div id="rd-paper" class="rd-paper">
+      <div id="rd-page" class="rd-page">
+        <div id="rd-pic" class="rd-pic"></div>
+        <div id="rd-text" class="rd-text" lang="en"></div>
+      </div>
+      <div id="rd-quiz" class="rd-quiz hidden" lang="en">
+        <div id="rd-q" class="rd-q"></div>
+        <div id="rd-options" class="rd-options"></div>
+      </div>
+    </div>
+    <div id="rd-nav" class="rd-nav">
+      <button id="rd-prev" class="rd-btn" title="앞 장">◀</button>
+      <button id="rd-play" class="rd-btn play" title="잠깐 멈춰요">⏸</button>
+      <button id="rd-next" class="rd-btn" title="다음 장">▶</button>
+    </div>
+  </section>
+
   <div id="start" class="start">
     <canvas id="start-preview" class="preview"></canvas>
     <h1><span id="start-title">윤아 공주의</span><br><span class="gold">소리 마을</span></h1>
@@ -117,6 +150,8 @@
   <script src="js/sprites.js"></script>
   <script src="js/world.js"></script>
   <script src="js/quiz.js"></script>
+  <script src="js/books.js"></script>
+  <script src="js/library.js"></script>
   <script src="js/game.js"></script>
   <script src="js/parent.js"></script>
 </body>

@@ -75,7 +75,8 @@ const Sound = (() => {
 
   // Speak a list of phrases in order. Each item is a string or
   // { text, rate, pitch, file } where `file` is an optional recording,
-  // or { pause: ms } for a short silence. `who` is a profile() result.
+  // or { pause: ms } for a short silence, or { call: fn } to run fn when
+  // the queue gets there. `who` is a profile() result.
   function say(parts, who) {
     if (muted) return;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -96,7 +97,10 @@ const Sound = (() => {
     // Your own recordings (USE_RECORDINGS) come first, then Kokoro's.
     const own = USE_RECORDINGS && item.file && player ? { url: item.file } : null;
     const file = own || (item.text && player ? recorded(item, who) : null);
-    if (item.pause) {
+    if (item.call) {
+      item.call();
+      next();
+    } else if (item.pause) {
       pauseTimer = setTimeout(next, item.pause);
     } else if (file) {
       let failed = false;

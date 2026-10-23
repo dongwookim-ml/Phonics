@@ -108,10 +108,19 @@ npx http-server -p 8080 .
   flies above her head and trails after her, also while riding; pick one
   in the wardrobe. Every right answer there also gives 2–4 ✨ fairy dust,
   shown next to the stars. What dust is for is not decided yet; it is saved.
+- **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
+  "📖 책 읽어주세요" button, for ten short fairy tales and fables retold in
+  simple English. The reader reads each sentence aloud and highlights it,
+  turning pages on its own (⏸ pauses, ◀ ▶ turn pages, tap a sentence to hear
+  it). After the last page come three questions; each right answer pays
+  🪙 1 coin, but only the first time that question is answered right, so
+  re-reading is free but can't farm coins. A wrong answer gets a second try,
+  then the answer is shown. Books live in `BOOKS` in `js/books.js`; the
+  reader is `js/library.js`.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words and the hint setting are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid) and the hint setting are saved in the browser.
 
 ## Customizing
 
@@ -180,4 +189,6 @@ These win over the Kokoro recordings; any missing file falls back to them.
 - `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
 - `js/world.js`: town and room layouts, pathfinding
 - `js/audio.js`: speech and sound effects
+- `js/books.js`: the library's story books and their questions
+- `js/library.js`: the book list, the reader and the book quiz
 - `js/game.js`: game loop, camera, input, dialogs, presents
