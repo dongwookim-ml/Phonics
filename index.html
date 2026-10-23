@@ -19,7 +19,10 @@
   <div class="fx vignette"></div>
 
   <header class="hud">
-    <div id="stars" class="stars"><span>⭐</span><span class="count">0</span></div>
+    <div class="counters">
+      <div id="stars" class="stars"><span>⭐</span><span class="count">0</span></div>
+      <div id="coins" class="stars coins hidden" title="코인"><span>🪙</span><span class="count">0</span></div>
+    </div>
     <nav class="buttons">
       <button id="ride" class="btn hidden" title="유니콘 타기/내리기">🦄</button>
       <button id="pictures" class="btn" title="그림 힌트 켜기/끄기">🖼️</button>
@@ -68,6 +71,22 @@
       <div id="wd-slots" class="wd-slots"></div>
     </div>
     <button id="wd-done" class="wd-done">다 입었어요 ✨</button>
+  </section>
+
+  <section id="shop" class="wardrobe shop hidden">
+    <div class="wd-head">
+      <div class="wd-name">🛍️ 별빛 상점</div>
+      <div id="shop-coins" class="wd-count"></div>
+    </div>
+    <div id="shop-msg" class="shop-msg"></div>
+    <div class="wd-main">
+      <div class="wd-mirror"><canvas id="shop-preview"></canvas></div>
+      <div id="shop-items" class="shop-items"></div>
+    </div>
+    <div class="answer">
+      <button id="shop-buy" class="yes">살래요</button>
+      <button id="shop-done" class="no">나갈래요 👋</button>
+    </div>
   </section>
 
   <div id="start" class="start">

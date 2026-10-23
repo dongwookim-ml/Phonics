@@ -437,3 +437,70 @@ Object.assign(PERSONA, {
   unicorn: ['Neigh! Hello, {title} {name}!', 'Sparkle, sparkle! Do you like my mane?', 'Hello! I love sentences. Want to play?', 'Neigh! My horn is glowing today!'],
   keeper:  ['Hi, {title} {name}! I take care of the unicorns.', 'Welcome to the unicorn farm!', 'The unicorns love clever friends like you!'],
 });
+
+// ---- Crystal Cave (level 4) and the shop ------------------------------------
+
+// The Crystal Cave opens from the west end of the Starlight Forest path.
+const DUNGEON_STARS = 30;
+
+// Cute cave monsters ask sentence questions like the unicorns. Answering
+// right "catches" one: it goes poof and leaves 1 to `coins` coins behind.
+// Caught monsters come back after a while, or when she comes in again.
+const DUNGEON_NPCS = [
+  { name: '말랑 슬라임', look: 'slime',     c: 4,  r: 9,  coins: 2 },
+  { name: '꼬마 박쥐',   look: 'bat',       c: 10, r: 2,  coins: 2 },
+  { name: '부끄럼 유령', look: 'ghost',     c: 13, r: 7,  coins: 3 },
+  { name: '아기 드래곤', look: 'dragon',    c: 7,  r: 5,  coins: 3 },
+  { name: '버섯 꼬물이', look: 'shroom',    c: 3,  r: 3,  coins: 2 },
+  { name: '분홍 슬라임', look: 'slimepink', c: 12, r: 11, coins: 2 },
+];
+const MONSTER_RESPAWN_MS = 60000;
+
+QUIZ_TYPES.dungeon = ['sentence', 'meaning'];
+
+// Monsters are drawn by monsterSprite() in js/sprites.js.
+for (const m of ['slime', 'slimepink', 'bat', 'ghost', 'dragon', 'shroom']) LOOKS[m] = { monster: m };
+LOOKS.merchant = { hair: '#ff9a6b', shirt: '#ffd34d', pants: '#8a5a3a', hat: 'feather' };
+
+Object.assign(VOICES, {
+  slime:     { gender: 'female', tts: 'af_sky',   pitch: 1.7,  rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  slimepink: { gender: 'female', tts: 'af_sky',   pitch: 1.8,  rate: 1.05, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  bat:       { gender: 'male',   tts: 'am_puck',  pitch: 1.5,  rate: 1.1,  voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
+  ghost:     { gender: 'female', tts: 'af_nova',  pitch: 1.4,  rate: 0.85, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  dragon:    { gender: 'male',   tts: 'bm_fable', pitch: 0.9,  rate: 1.0,  voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
+  shroom:    { gender: 'male',   tts: 'am_santa', pitch: 1.3,  rate: 0.95, voice: ['Ralph', 'Fred', 'Aaron'] },
+  merchant:  { gender: 'male',   tts: 'am_liam',  pitch: 1.05, rate: 1.0,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
+});
+Object.assign(PERSONA, {
+  slime:     ['Bloop bloop! I am a wobbly slime. Catch me if you can!', 'Boing! Answer my question and I will give you coins!', 'Wiggle wiggle! Hello, {title} {name}!'],
+  slimepink: ['Blip! I am a pink slime. I love sentences!', 'Boing boing! Can you catch me, {title} {name}?', 'Wobble wobble! I have a shiny coin for you.'],
+  bat:       ['Flap flap! I am a little bat. I sleep upside down!', 'Eek! Oh, hello, {title} {name}! Want to play?', 'Flutter flutter! Catch me with a right answer!'],
+  ghost:     ['Boo! Hee hee, did I scare you? I am a friendly ghost.', 'Oh! You found me, {title} {name}! I am a little shy.', 'Ooh, ooh! Answer my riddle and I will go poof!'],
+  dragon:    ['Rawr! I am a baby dragon. My fire is just tiny sparkles!', 'Hello, {title} {name}! I guard the shiny coins.', 'Rawr rawr! Can you beat a dragon at words?'],
+  shroom:    ['Pop! I am a mushroom. I glow in the dark!', 'Hey there, {title} {name}! I hide under my big hat.', 'Hop hop! Answer me and I will share my coins.'],
+  merchant:  ['Welcome to the Starlight Shop, {title} {name}!', 'Hello, hello! Come and see my treasures!', 'Ah, {title} {name}! Do you have coins today?'],
+});
+
+LINES.dungeon = ['Welcome to the Crystal Cave!', 'Wow, the crystals are glowing!', "The cave sparkles! Let's find some monsters."];
+// Said by a monster as it goes poof.
+LINES.caught = ['You caught me! Here are some shiny coins!', 'Poof! You win! Take these coins!', 'Okay, okay, you got me! Coins for you!', 'Wow, so clever! Here, have my coins!'];
+// The shopkeeper.
+LINES.shop = ['What would you like today?', 'Pick something lovely!', 'Everything here is extra special!'];
+LINES.bought = ['Thank you! It is yours now!', 'A wonderful choice!', 'Here you go! Enjoy it!'];
+LINES.poor = ['Oh, you need a few more coins. Catch some monsters in the cave!', 'Almost! Visit the Crystal Cave for more coins.', 'Not enough coins yet. The cave monsters have lots!'];
+LINES.soldOut = ['Wow, you have everything already!', 'You bought all my treasures! Amazing!'];
+
+// Shop-only treasures, bought with coins. `price` is in coins; everything
+// else in the shop is priced by shopPrice() in js/game.js.
+Object.assign(DRESS_COLORS, {
+  crystal: { name: '크리스탈', icon: '💠', c: ['#a8f0f0', '#64c4d4', '#e4ffff', '#c8a0ff'], shop: true, price: 10 },
+});
+Object.assign(HAIR_COLORS, {
+  silver: { name: '은빛 머리', icon: '🩶', c: ['#c4c4dc', '#f2f2ff'], shop: true, price: 8 },
+});
+Object.assign(HEADWEAR, {
+  gemband: { name: '보석 머리띠', icon: '💠', shop: true, price: 10 },
+});
+Object.assign(HAND_ITEMS, {
+  lantern: { name: '반딧불 랜턴', icon: '🏮', shop: true, price: 8 },
+});

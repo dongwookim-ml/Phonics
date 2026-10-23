@@ -98,6 +98,7 @@ function renderGround(sc) {
         case 'path': drawPath(g, o.x, o.y); break;
         case 'meadow': drawMeadow(g, o.x, o.y, c, r, t.flowers); break;
         case 'rainbow': drawRainbowPath(g, o.x, o.y, Math.floor(t.band / 2)); break;
+        case 'cave': drawCaveFloor(g, o.x, o.y); break;
         default: drawGrass(g, o.x, o.y, c, r, false);
       }
       if (t.rug) drawDoormat(g, o.x, o.y, t.rug);
@@ -621,6 +622,11 @@ function buildForest() {
     addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 44, y: m.y - 80, w: 90, h: 92 }, ctx => drawMushroomHouse(ctx, Math.round(m.x), Math.round(m.y), cap));
     sc.lamps.push({ x: m.x + 15, y: m.y - 17 });
   }
+  // The Crystal Cave at the west end of the cross path, and the shop beside it.
+  const cave = addForestCave(sc);
+  for (let r = 12; r <= 20; r++) for (let c = 0; c <= 3; c++) reserve(c, r);
+  const shop = addForestShop(sc);
+  for (let r = 12; r <= 17; r++) for (let c = 7; c <= 12; c++) reserve(c, r);
   for (const n of FOREST_NPCS) reserve(n.c, n.r);
   for (let r = 0; r <= 2; r++) for (let c = 13; c <= 16; c++) reserve(c, r);
   for (let r = 26; r <= 29; r++) for (let c = 13; c <= 18; c++) reserve(c, r);
@@ -673,6 +679,8 @@ function buildForest() {
   for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', style: 'gate', needStars: UNICORN_STARS });
   const ug = tileCenter(sc, 15.5, 28);
   sc.signs.push({ x: ug.x, y: ug.y - 64, text: '🦄 유니콘 마을', color: '#ff6fa8', needStars: UNICORN_STARS });
+  sc.links.push(...cave);
+  sc.npcs.push(shop.keeper);
   sc.start = { c: 14, r: 1 };
   renderGround(sc);
   return sc;
@@ -780,6 +788,132 @@ function buildUnicornVillage() {
   const fg = tileCenter(sc, 14.5, 1);
   sc.signs.push({ x: fg.x, y: fg.y - 64, text: '🌲 별빛 숲 마을', color: '#8f70e0' });
   sc.start = { c: 14, r: 1 };
+  renderGround(sc);
+  return sc;
+}
+
+// ---- Crystal Cave ------------------------------------------------------------
+
+// A rocky hill on the forest's west edge whose doorway leads into the cave.
+// Returns the links for the doorway tiles.
+function addForestCave(sc) {
+  for (let c = 2; c <= 4; c++) setTile(sc, c, 17, 'path');
+  setTile(sc, 2, 16, 'path');
+  block(sc, 0, 15, 2, 4);
+  const m = tileCenter(sc, 1.5, 16.5);
+  addObject(sc, { c: 0, r: 15, w: 2, d: 4 }, { x: m.x - 48, y: m.y - 64, w: 96, h: 80 }, ctx => drawCaveMouth(ctx, Math.round(m.x), Math.round(m.y)), { kind: 'cave' });
+  sc.lamps.push({ x: m.x, y: m.y - 8 });
+  sc.signs.push({ x: m.x, y: m.y - 70, text: '💎 반짝 동굴', color: '#8f70e0', needStars: DUNGEON_STARS });
+  return [16, 17].map(r => ({ c: 2, r, target: 'dungeon', at: { c: 7 + (r - 16), r: 12 }, icon: '💎', needStars: DUNGEON_STARS }));
+}
+
+// The Starlight Shop: a golden cottage on the cross path, its keeper outside.
+function addForestShop(sc) {
+  const S = { c: 8, r: 13 };
+  block(sc, S.c, S.r, 3, 3);
+  setTile(sc, S.c + 1, S.r + 3, 'path');
+  const obj = addObject(sc, { c: S.c, r: S.r, w: 3, d: 3 }, footBounds(sc, S.c, S.r, 3, 3, 110, 12),
+    ctx => drawCottage(ctx, boxCorners(sc, S.c, S.r, 3, 3), { roof: '#ffc94d', wall: '#fff4e0', door: 'left' }), { kind: 'shop' });
+  const k = boxCorners(sc, S.c, S.r, 3, 3);
+  const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 30);
+  sc.signs.push({ x: sign.x, y: sign.y, text: '🛍️ 별빛 상점', color: '#e0a52a' });
+  const keeper = makeNpc({ who: '상점 아저씨', look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
+  keeper.shop = true;
+  keeper.badge = '🪙';
+  obj.keeper = keeper;
+  return obj;
+}
+
+// Back walls of rock with glowing crystals and wall torches.
+function addCaveWalls(sc, H) {
+  const k = boxCorners(sc, 0, 0, sc.W, sc.D);
+  const back = { x: k.L.x - 4, y: k.T.y - H - 30, w: k.R.x - k.L.x + 8, h: H + 36 + (k.R.y - k.T.y) };
+  const WA = wall(k.L, k.T);
+  const WB = wall(k.T, k.R);
+  const obj = addObject(sc, { c: -1, r: -1, w: 1, d: 1 }, back, ctx => {
+    drawCaveWall(ctx, WA, H, 1);
+    drawCaveWall(ctx, WB, H, 2);
+    [[WA, 0.2, '#7fe8ff'], [WA, 0.62, '#ff9cf0'], [WB, 0.35, '#c8a0ff'], [WB, 0.8, '#7fe8ff']].forEach(([W, u, col]) => {
+      const p = wallPt(W, W.len * u, 6);
+      drawCrystal(ctx, Math.round(p.x), Math.round(p.y), col, 1.1);
+    });
+  }, { background: true });
+  obj.c0 = -10; obj.r0 = -10; obj.c1 = -10; obj.r1 = -10;
+  // Torches hung on the walls.
+  const torch = makeTorch();
+  for (const [W, u] of [[WA, 0.42], [WA, 0.85], [WB, 0.15], [WB, 0.58]]) {
+    const p = wallPt(W, W.len * u, 18);
+    sc.objects.push({ c0: -10, r0: -10, c1: -10, r1: -10, background: true, canvas: torch.canvas, x: Math.round(p.x - torch.ax), y: Math.round(p.y - torch.ay), w: torch.canvas.width, h: torch.canvas.height });
+    sc.lamps.push({ x: p.x, y: p.y - torch.ay + torch.glow.y });
+  }
+}
+
+function buildDungeon() {
+  const sc = makeScene('dungeon', 16, 14, 140, 50);
+  for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'cave');
+  // A little underground pool.
+  for (let r = 7; r <= 11; r++) for (let c = 7; c <= 11; c++) {
+    if (((c - 9) / 1.8) ** 2 + ((r - 9) / 1.4) ** 2 <= 1) setTile(sc, c, r, 'water');
+  }
+  addCaveWalls(sc, 84);
+
+  // Props stand on single tiles.
+  const prop = (c, r, up, draw) => {
+    block(sc, c, r, 1, 1);
+    const p = tileCenter(sc, c, r);
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    return p;
+  };
+  for (const [c, r, col] of [[1, 1, '#7fe8ff'], [14, 1, '#ff9cf0'], [0, 7, '#c8a0ff'], [15, 9, '#7fe8ff'], [4, 12, '#ff9cf0'], [6, 8, '#c8a0ff']]) {
+    const p = prop(c, r, 30, (ctx, x, y) => drawCrystal(ctx, x, y, col));
+    sc.lamps.push({ x: p.x, y: p.y - 12 });
+  }
+  for (const [c, r, col] of [[2, 6, '#7fe8ff'], [11, 4, '#ff9cf0'], [14, 12, '#fff6a8'], [8, 2, '#c8a0ff']]) {
+    const p = prop(c, r, 26, (ctx, x, y) => drawBigShroom(ctx, x, y, col));
+    sc.lamps.push({ x: p.x, y: p.y - 18 });
+  }
+  for (const [c, r] of [[5, 2], [12, 9], [1, 10]]) prop(c, r, 28, drawStalagmite);
+  const torch = makeTorch();
+  for (const [c, r] of [[6, 13], [9, 13]]) {
+    block(sc, c, r, 1, 1);
+    const p = tileCenter(sc, c, r);
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: torch.canvas, x: p.x - torch.ax, y: p.y - torch.ay, w: torch.canvas.width, h: torch.canvas.height });
+    sc.lamps.push({ x: p.x, y: p.y - torch.ay + torch.glow.y });
+  }
+
+  // Puddles, tiny glowing mushrooms and a rocky front edge.
+  sc.paintGround = g => {
+    for (const [c, r] of [[5, 6], [12, 6], [3, 11], [13, 3], [10, 12]]) {
+      const p = tileCenter(sc, c, r);
+      drawPuddle(g, p.x, p.y);
+    }
+    for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) {
+      const t = tileAt(sc, c, r);
+      const o = tileOrigin(sc, c, r);
+      if (r === sc.D - 1 || c === sc.W - 1) {
+        for (let x = 0; x < 16; x++) {
+          if (r === sc.D - 1) px(g, o.x + x, o.y + 8 + Math.floor(x / 2), 1, 12, x % 5 ? '#4f4288' : '#463a7c');
+          if (c === sc.W - 1) px(g, o.x + 16 + x, o.y + 15 - Math.floor(x / 2), 1, 12, x % 5 ? '#3f3470' : '#382d66');
+        }
+      }
+      if (t.type !== 'cave' || t.blocked || hash(c, r, 73) > 0.07) continue;
+      const p = tileCenter(sc, c, r);
+      const col = ['#7fe8ff', '#ff9cf0', '#fff6a8'][Math.floor(hash(c, r, 74) * 3)];
+      drawGlowShroom(g, Math.round(p.x - 6), Math.round(p.y + 3), col);
+      sc.lamps.push({ x: p.x - 6, y: p.y, small: true });
+    }
+  };
+
+  for (const n of DUNGEON_NPCS) {
+    const npc = makeNpc(n, null);
+    Object.assign(npc, { level: 4, monster: true, coins: n.coins, home: { c: n.c, r: n.r }, badge: '◆' });
+    sc.npcs.push(npc);
+  }
+  sc.caught = [];
+  // Back out to the forest through the glowing mat at the front.
+  for (const c of [7, 8]) tileAt(sc, c, sc.D - 1).mat = '#bfefff';
+  sc.links = [7, 8].map(c => ({ c, r: sc.D - 1, target: 'forest', at: { c: 3, r: 16 + (c - 7) }, icon: '🌲' }));
+  sc.start = { c: 7, r: sc.D - 2 };
   renderGround(sc);
   return sc;
 }

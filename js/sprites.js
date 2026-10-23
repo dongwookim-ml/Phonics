@@ -2196,6 +2196,7 @@ function villagerSprite(lookKey, frame) {
   const key = `${lookKey}|${frame}`;
   if (villagerCache.has(key)) return villagerCache.get(key);
   const look = LOOKS[lookKey];
+  if (look.monster) return monsterSprite(look.monster, frame);
   const cv = makeCanvas(20, 34);
   const ctx = cv.getContext('2d');
   const OXv = 2;
@@ -2548,5 +2549,289 @@ function drawCloudPuff(ctx, cx, cy, k = 1) {
     if (!inside(x + 0.5, y + 0.5)) continue;
     const edge = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5) || !inside(x + 0.5, y + 1.5);
     px(ctx, cx + x, cy + y, 1, 1, edge ? '#b8b0e0' : y > 3 * k ? '#e8e8fa' : '#ffffff');
+  }
+}
+
+// ---- Crystal Cave ------------------------------------------------------------
+
+// Cute cave monsters, front-facing. Letters are colours; an ink outline is
+// added wherever an empty pixel touches the body. `lift` floats fliers.
+const MONSTERS = {
+  slime: {
+    pal: { b: '#7fe0a0', D: '#4fb878', W: '#ffffff' },
+    rows: [
+      '.....bbbbbb.....',
+      '...bbbbbbbbbb...',
+      '..bbWWbbbbbbbb..',
+      '..bWWbbbbbbbbb..',
+      '.bbWbbbbbbbbbbb.',
+      '.bbbkwbbbbkwbbb.',
+      'bbbbkkbbbbkkbbbb',
+      'bbbbkkbbbbkkbbbb',
+      'bbpbbbbmmbbbbpbb',
+      'bbbbbbbbbbbbbbbb',
+      'DbbbbbbbbbbbbbbD',
+      '.DDDDDDDDDDDDDD.',
+    ],
+  },
+  bat: {
+    lift: 7,
+    pal: { b: '#a88ae0', B: '#e4d8ff', v: '#7a5ac0', V: '#5a3a9a', f: '#5a3a9a' },
+    rows: [
+      '.....b......b.....',
+      '.....bb....bb.....',
+      '......bbbbbb......',
+      'v....bbbbbbbb....v',
+      'vv..bbkwbbkwbb..vv',
+      'vvv.bbkkbbkkbb.vvv',
+      'vvvvbbbbbbbbbbvvvv',
+      'vVvvbpbbmmbbpbvvVv',
+      '.VvVbbbbbbbbbbVvV.',
+      '...V.bBBBBBBb.V...',
+      '.....bBBBBBBb.....',
+      '......bbbbbb......',
+      '.......f..f.......',
+    ],
+  },
+  ghost: {
+    lift: 5,
+    pal: { g: '#f6f2ff', G: '#cfc6ee' },
+    rows: [
+      '....gggggg....',
+      '..gggggggggg..',
+      '.gggggggggggg.',
+      '.ggkkggggkkgg.',
+      'gggkwggggkwggg',
+      'gggkkggggkkggg',
+      'ggpggggggggpgg',
+      'ggggggmmgggggg',
+      'gggggggggggggg',
+      'Gggggggggggggg',
+      'GggggggggggggG',
+      'GGggggggggggGG',
+      'GGG..GGGG..GGG',
+      '.G....GG....G.',
+    ],
+  },
+  dragon: {
+    pal: { d: '#8fdc9a', h: '#fff2c0', y: '#fff2a0', v: '#ff9ec4', t: '#ff9ec4', f: '#4fa36a' },
+    rows: [
+      '...h........h...',
+      '...hd......dh...',
+      '....dddddddd....',
+      '...dddddddddd...',
+      '..ddkwddddkwdd..',
+      '..ddkkddddkkdd..',
+      '..dpddddddddpd..',
+      '...ddddmmdddd...',
+      '.v..dddddddd..v.',
+      'vv.ddyyyyyydd.vv',
+      'vvvddyyyyyyddvvv',
+      '.vvddyyyyyyddvv.',
+      '...ddyyyyyyddt..',
+      '...dddddddddtt..',
+      '...ddd....ddd...',
+      '...fff....fff...',
+    ],
+  },
+  shroom: {
+    pal: { r: '#b98cff', c: '#e8d8c0', s: '#fff6e6', f: '#a8704a' },
+    rows: [
+      '....rrrrrr....',
+      '..rrwwrrrrrr..',
+      '.rrwwwrrrrwwr.',
+      'rrrwwrrrrrwwwr',
+      'rrrrrrrwwrrrrr',
+      'rwwrrrrwwrrrrr',
+      '.cccccccccccc.',
+      '..skwsssskws..',
+      '..skksssskks..',
+      '..spssmmssps..',
+      '...ssssssss...',
+      '...ff....ff...',
+    ],
+  },
+};
+MONSTERS.slimepink = { pal: { b: '#ffb0d6', D: '#e878b0', W: '#ffffff' }, rows: MONSTERS.slime.rows };
+
+const monsterCache = new Map();
+function monsterSprite(key, frame) {
+  const ck = `${key}|${frame}`;
+  if (monsterCache.has(ck)) return monsterCache.get(ck);
+  const m = MONSTERS[key] || MONSTERS.slime;
+  const W = 20;
+  const H = 34;
+  const foot = 31;
+  const pal = Object.assign({ k: '#3a2340', w: '#ffffff', p: '#ff9ec4', m: '#c0507a' }, m.pal);
+  const bw = m.rows[0].length;
+  const x0 = Math.floor((W - bw) / 2);
+  const y0 = foot - m.rows.length + 1 - (m.lift || 0);
+  const grid = [];
+  for (let y = 0; y < H; y++) grid.push(new Array(W).fill(null));
+  m.rows.forEach((row, j) => {
+    for (let i = 0; i < bw; i++) if (pal[row[i]]) grid[y0 + j][x0 + i] = pal[row[i]];
+  });
+  const cv = makeCanvas(W, H);
+  const ctx = cv.getContext('2d');
+  const ink = '#4a2c4f';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (grid[y][x]) { px(ctx, x, y, 1, 1, grid[y][x]); continue; }
+    const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => grid[y + dy] && grid[y + dy][x + dx]);
+    if (near) px(ctx, x, y, 1, 1, ink);
+  }
+  const sprite = { canvas: cv, ax: 10, ay: foot };
+  monsterCache.set(ck, sprite);
+  return sprite;
+}
+
+// Shop treasures worn by the princess.
+Object.assign(HEAD_ITEMS, {
+  gemband: { x: 4, y: -1, rows: ['...b.g.b..', '..bybgbyb.', 'yyyyyyyyyy'] },
+});
+Object.assign(HAND_BITMAPS, {
+  lantern: { x: 15, y: 10, rows: ['.o..', 'oooo', 'oyyo', 'oywo', 'oyyo', 'oooo'] },
+});
+
+// Lavender stone floor with tiny crystal specks.
+function drawCaveFloor(ctx, ox, oy) {
+  const stone = stonePattern('#7a6cb0', '#5a4c90', ['#7e70b4', '#7468aa', '#8476ba', '#7064a6'], 8);
+  fillPoly(ctx, diamondPts(ox, oy), (x, y) => (hash(x, y, 3) < 0.012 ? '#bfefff' : stone(x, y)));
+}
+
+// A shiny puddle lying on the floor. (cx, cy) is its centre.
+function drawPuddle(ctx, cx, cy, k = 1) {
+  const rx = 9 * k;
+  const ry = 4 * k;
+  for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) {
+    const d = (x / rx) ** 2 + (y / ry) ** 2;
+    if (d > 1) continue;
+    let col = d > 0.7 ? '#5aa6d8' : '#8fd8f8';
+    if (y === -1 && x > -rx / 2 && x < 0) col = '#e6fbff';
+    px(ctx, Math.round(cx + x), Math.round(cy + y), 1, 1, col);
+  }
+}
+
+// A cluster of pointed crystals. (cx, cy) is the ground centre.
+function drawCrystal(ctx, cx, cy, color, k = 1) {
+  ctx.fillStyle = 'rgba(30,20,70,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 11 * k, 4 * k, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const shards = [[-6, 14, 3], [5, 12, 3], [0, 24, 4], [-2, 9, 3], [3, 7, 2]];
+  const light = mix(color, '#ffffff', 0.5);
+  const dark = shade(color, -70);
+  for (const [dx, h, w] of shards) {
+    const x0 = Math.round(cx + dx * k);
+    const H = Math.round(h * k);
+    const half = Math.round(w * k);
+    for (let i = -half - 1; i <= half; i++) {
+      const top = H - Math.abs(i + 0.5) * 2;
+      const edge = i === -half - 1 || i === half;
+      const col = edge ? dark : i < 0 ? light : color;
+      px(ctx, x0 + i, Math.round(cy - top), 1, Math.round(top), col);
+      px(ctx, x0 + i, Math.round(cy - top), 1, 1, dark);
+    }
+    px(ctx, x0 - 1, Math.round(cy - H + 4), 1, 2, '#ffffff');
+  }
+}
+
+// Big glowing mushroom, as tall as the princess's knee.
+function drawBigShroom(ctx, cx, cy, color) {
+  ctx.fillStyle = 'rgba(30,20,70,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 8, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  px(ctx, cx - 2, cy - 11, 5, 11, '#fff6e6');
+  px(ctx, cx - 2, cy - 11, 1, 11, '#e8d8c0');
+  for (let dx = -9; dx <= 9; dx++) {
+    const t = dx / 9.5;
+    const h = Math.round(Math.sqrt(Math.max(0, 1 - t * t)) * 8);
+    const col = dx < -4 ? shade(color, -30) : dx > 3 ? shade(color, 20) : color;
+    px(ctx, cx + dx, cy - 12 - h, 1, h + 2, col);
+    px(ctx, cx + dx, cy - 12 - h, 1, 1, shade(color, -60));
+    px(ctx, cx + dx, cy - 10, 1, 1, shade(color, -60));
+  }
+  for (const [x, y] of [[-4, -16], [2, -18], [5, -14]]) px(ctx, cx + x, cy + y, 2, 2, '#ffffff');
+}
+
+// A round rocky spike rising from the floor.
+function drawStalagmite(ctx, cx, cy) {
+  ctx.fillStyle = 'rgba(30,20,70,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 8, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (let dx = -6; dx <= 6; dx++) {
+    const h = Math.round(22 * (1 - Math.abs(dx) / 7) ** 1.3) + 2;
+    const col = dx < -2 ? '#9a8cd0' : dx > 2 ? '#5f5296' : '#7a6cb0';
+    px(ctx, cx + dx, cy - h, 1, h, col);
+    px(ctx, cx + dx, cy - h, 1, 1, '#3f3470');
+  }
+  px(ctx, cx - 3, cy - 12, 1, 3, '#c8bcf0');
+}
+
+// Torch on a pole with a happy orange flame.
+function makeTorch() {
+  const cv = makeCanvas(12, 34);
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = 'rgba(30,20,70,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(6, 31, 5, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  px(ctx, 5, 12, 2, 19, '#8a5a3c');
+  px(ctx, 5, 12, 1, 19, '#6b4228');
+  px(ctx, 3, 10, 6, 3, '#5a4a6a');
+  px(ctx, 3, 4, 6, 6, '#ff9a4a');
+  px(ctx, 4, 2, 4, 3, '#ffbe5a');
+  px(ctx, 5, 0, 2, 2, '#ffd34d');
+  px(ctx, 4, 6, 4, 4, '#ffe680');
+  px(ctx, 5, 7, 2, 2, '#ffffff');
+  return { canvas: cv, ax: 6, ay: 31, glow: { x: 6, y: 6 } };
+}
+
+// Rocky hill with a round, glowing doorway, seen from the forest.
+function drawCaveMouth(ctx, cx, cy) {
+  const blobs = [[0, -22, 30], [-22, -12, 18], [22, -12, 18], [-10, -38, 16], [12, -36, 15]];
+  const inside = (x, y) => blobs.some(([bx, by, br]) => (x - bx) ** 2 + ((y - by) * 1.15) ** 2 <= br * br) && y <= 2;
+  ctx.fillStyle = 'rgba(30,20,60,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, 44, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (let y = -56; y <= 2; y++) for (let x = -42; x <= 42; x++) {
+    if (!inside(x + 0.5, y + 0.5)) continue;
+    const edge = !inside(x - 0.5, y + 0.5) || !inside(x + 1.5, y + 0.5) || !inside(x + 0.5, y - 0.5);
+    const l = (-x * 0.5 - y * 0.6) / 40 + (hash(x, y, 31) - 0.5) * 0.3;
+    let col = l > 0.55 ? '#a89ad8' : l < -0.05 ? '#64579c' : '#8172bc';
+    if (hash(Math.floor((x + 50) / 6), Math.floor((y + 60) / 5), 32) < 0.12) col = shade(col, 14);
+    px(ctx, cx + x, cy + y, 1, 1, edge ? '#3f3470' : col);
+  }
+  // The doorway: an arch fading into a soft purple glow.
+  for (let x = -12; x <= 12; x++) {
+    const t = x / 12.5;
+    const top = Math.round(Math.sqrt(1 - t * t) * 12) + 12;
+    for (let y = 0; y < top; y++) {
+      const col = y > top - 2 ? '#3f3470' : mix('#2a2050', '#7a5ac0', Math.max(0, 1 - y / top - 0.2));
+      px(ctx, cx + x, cy + 1 - y, 1, 1, col);
+    }
+  }
+  for (const [x, y] of [[-5, -8], [4, -14], [7, -5], [-8, -16]]) px(ctx, cx + x, cy + y, 1, 1, '#bfefff');
+  drawCrystal(ctx, cx - 26, cy - 4, '#7fe8ff', 0.7);
+  drawCrystal(ctx, cx + 25, cy - 2, '#ff9cf0', 0.6);
+  drawCrystal(ctx, cx + 6, cy - 46, '#c8a0ff', 0.6);
+}
+
+// Rocky back wall of the cave with crystals growing out of it.
+function drawCaveWall(ctx, W, H, salt) {
+  for (let x = 0; x < W.len; x++) {
+    const top = H - 10 + Math.round(Math.sin(x / 9 + salt) * 4 + hash(Math.floor(x / 3), salt, 33) * 5);
+    wallRect(ctx, W, x, x + 1, 0, 10, '#4f4288');
+    wallRect(ctx, W, x, x + 1, 10, top, (Math.floor(x / 11) + salt) % 2 ? '#6a5ca8' : '#6658a2');
+    wallRect(ctx, W, x, x + 1, top - 3, top, '#8a7cc8');
+    wallRect(ctx, W, x, x + 1, top, top + 1, '#3f3470');
+  }
+  // Light rock blocks.
+  for (let x = 6; x < W.len - 10; x += 17) {
+    const v = 18 + Math.floor(hash(x, salt, 34) * (H - 40));
+    wallRect(ctx, W, x, x + 9, v, v + 6, '#7a6cb4');
+    wallRect(ctx, W, x, x + 9, v, v + 1, '#8f82c8');
   }
 }

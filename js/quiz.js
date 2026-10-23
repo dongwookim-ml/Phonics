@@ -213,7 +213,7 @@ const Quiz = (() => {
 
   // Picks a kind of question this person didn't ask last time.
   function make(npc) {
-    const kinds = QUIZ_TYPES[npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
+    const kinds = QUIZ_TYPES[npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
     const choices = kinds.filter(k => k !== npc.lastQuiz);
     const kind = pick(choices.length ? choices : kinds);
     npc.lastQuiz = kind;

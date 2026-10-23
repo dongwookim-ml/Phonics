@@ -71,10 +71,22 @@ npx http-server -p 8080 .
   unicorns. Tap 🦄 (top right) or the waiting unicorn to ride, which is
   faster than walking. She gets off at the door of a house or the castle and
   the unicorn waits outside. Pick which unicorn to ride in the wardrobe.
+- **Crystal Cave (level 4)**: a rocky hill at the west end of the forest's
+  cross path opens at 30 stars (`DUNGEON_STARS`). Cute monsters (◆ bubble:
+  slimes, a bat, a ghost, a baby dragon, a mushroom) ask the same sentence
+  questions as the Unicorn Village. A right answer catches the monster: it
+  goes poof and drops 1–3 🪙 coins instead of a star and a present. Caught
+  monsters come back after a minute or when she walks in again. Monsters
+  live in `DUNGEON_NPCS` in `js/data.js`.
+- **Starlight Shop**: the golden cottage on the forest's cross path. Tap it
+  or the shopkeeper (🪙 bubble) to buy anything she doesn't own yet with
+  coins, including a few shop-only treasures (crystal dress, silver hair,
+  gem headband, firefly lantern). Prices are in `shopPrice()` in
+  `js/game.js`, or `price` on an item.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
-The name, title and look (girl or boy), stars, the outfit, recent words and the hint setting are saved in the browser.
+The name, title and look (girl or boy), stars, coins, the outfit, recent words and the hint setting are saved in the browser.
 
 ## Customizing
 
