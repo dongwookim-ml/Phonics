@@ -350,7 +350,8 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .dialog { flex-wrap: wrap; }
   .portrait { width: 64px; }
   .portrait canvas { width: 56px; height: 95px; }
-  .choice .w { font-size: 22px; letter-spacing: 0; overflow-wrap: anywhere; }
+  .choice .w { font-size: 18px; letter-spacing: 0; overflow-wrap: normal; word-break: keep-all; }
+  .choice .w.long { font-size: 13px; }
   .choice .bigpic { font-size: 42px; }
   .clue-pic, .clue-word, .clue-letter { font-size: 34px; }
   .clue-word.big { font-size: 40px; }

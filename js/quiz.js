@@ -36,7 +36,8 @@ const Quiz = (() => {
 
   const say = w => ({ text: w, file: rec('words', w), rate: 0.72, narrator: true });
   const firstBig = w => `<span class="first">${w[0]}</span>${w.slice(1)}`;
-  const wordCard = (w, e) => `<span class="pic">${e}</span><span class="w">${firstBig(w)}</span>`;
+  const long = w => (w.length > 6 ? ' long' : '');
+  const wordCard = (w, e) => `<span class="pic">${e}</span><span class="w${long(w)}">${firstBig(w)}</span>`;
   const picCard = (w, e) => `<span class="bigpic">${e}</span><span class="w hide">${w}</span>`;
   const letterCard = l => `<span class="letter">${l}</span>`;
 
@@ -175,7 +176,7 @@ const Quiz = (() => {
   }
   const blankHtml = x => { const p = sentenceParts(x); return `<span class="clue-sentence">${p.before}<span class="blank wide">?</span>${p.after}</span>`; };
   const filledHtml = x => { const p = sentenceParts(x); return `<span class="clue-sentence">${p.before}<span class="first">${x.w[0]}</span>${p.after}</span>`; };
-  const plainCard = w => `<span class="w">${w}</span>`;
+  const plainCard = w => `<span class="w${long(w)}">${w}</span>`;
   Object.assign(builders, {
     // She hears the whole sentence and picks the word she heard from
     // words that sound alike.
