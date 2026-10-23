@@ -15,6 +15,7 @@ const ui = {
   spokenInput: document.getElementById('spoken-input'),
   hearName: document.getElementById('hear-name'),
   titleChips: document.getElementById('title-chips'),
+  lookChips: document.getElementById('look-chips'),
   wdTitle: document.getElementById('wd-title'),
   stars: document.getElementById('stars'),
   pictures: document.getElementById('pictures'),
@@ -63,6 +64,23 @@ function setPlayer(p) {
   if (typeof p.shown === 'string' && p.shown.trim()) PLAYER.shown = p.shown.trim().slice(0, 10);
   if (typeof p.spoken === 'string' && p.spoken.trim()) PLAYER.spoken = p.spoken.trim().slice(0, 20);
   if (TITLES[p.title]) PLAYER.title = p.title;
+  if (p.look === 'girl' || p.look === 'boy') PLAYER.look = p.look;
+  // Princes and kings are boys, princesses, queens and fairies girls.
+  if (TITLES[PLAYER.title].look) PLAYER.look = TITLES[PLAYER.title].look;
+}
+const isBoy = () => PLAYER.look === 'boy';
+// Whether a wardrobe item suits the hero's look.
+const suits = item => !!item && !(isBoy() ? item.girl : item.boy);
+const defaultOutfit = () => (isBoy() ? DEFAULT_BOY_OUTFIT : DEFAULT_OUTFIT);
+// Swaps anything that doesn't suit the hero's look for the starting item.
+function fitOutfit(outfit) {
+  const fit = Object.assign({}, outfit);
+  for (const { slot, items } of WARDROBE) if (!suits(items[fit[slot]])) fit[slot] = defaultOutfit()[slot];
+  return fit;
+}
+// The hero's standing sprite: a princess or a boy, by look.
+function heroSprite(outfit, frame) {
+  return isBoy() ? boySprite(outfit, frame) : princessSprite(outfit, frame);
 }
 // "윤아님" style title on screen, such as 공주님.
 const titleKo = () => TITLES[PLAYER.title].ko;
@@ -84,12 +102,13 @@ function romanize(text) {
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
-    const outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
+    let outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, pictures: !!s.pictures };
+    outfit = fitOutfit(outfit);
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, pictures: !!s.pictures, looks: s.looks || {} };
   } catch (e) {
-    return { outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, pictures: false };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, pictures: false };
   }
 }
 
@@ -100,6 +119,7 @@ function ownedFrom(saved, outfit) {
   for (const { slot } of WARDROBE) {
     const set = new Set((saved && saved[slot]) || []);
     set.add(DEFAULT_OUTFIT[slot]);
+    set.add(DEFAULT_BOY_OUTFIT[slot]);
     set.add(outfit[slot]);
     if (slot === 'head' || slot === 'hand' || slot === 'back' || slot === 'ride') set.add('none');
     owned[slot] = [...set];
@@ -107,7 +127,7 @@ function ownedFrom(saved, outfit) {
   return owned;
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, owned: state.owned, stars: state.stars, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -116,6 +136,7 @@ const saved = load();
 const state = {
   answered: 0, // questions finished this visit, right or wrong
   outfit: saved.outfit,
+  looks: saved.looks, // the outfit last worn as a girl and as a boy
   owned: saved.owned,
   stars: saved.stars,
   pictures: saved.pictures,
@@ -484,7 +505,7 @@ function closeDialog() {
 
 function itemLabel(slot, value) {
   const v = WARDROBE.find(w => w.slot === slot).items[value];
-  return slot === 'dress' ? `${v.icon} ${v.name} 드레스` : `${v.icon} ${v.name}`;
+  return slot === 'dress' ? `${v.icon} ${v.name} ${isBoy() ? '옷' : '드레스'}` : `${v.icon} ${v.name}`;
 }
 
 // New presents first; once everything is collected, anything not being worn.
@@ -495,6 +516,7 @@ function rewardChoices(level) {
   for (const { slot, items } of WARDROBE) {
     for (const value of Object.keys(items)) {
       if (value === 'none' || value === o[slot]) continue;
+      if (!suits(items[value])) continue;
       if (items[value].forest && level < 2) continue;
       if (items[value].unicorn && level < 3) continue;
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
@@ -513,7 +535,7 @@ function collected() {
   let total = 0;
   for (const { slot, items } of WARDROBE) {
     for (const value of Object.keys(items)) {
-      if (value === 'none') continue;
+      if (value === 'none' || !suits(items[value])) continue;
       total++;
       if (state.owned[slot].includes(value)) have++;
     }
@@ -565,7 +587,7 @@ function acceptReward(yes) {
 }
 
 function heroPortrait(outfit, riding) {
-  return riding && outfit.ride !== 'none' ? riderSprite(outfit, 0) : princessSprite(outfit, 0);
+  return riding && outfit.ride !== 'none' ? riderSprite(outfit, 0, isBoy()) : heroSprite(outfit, 0);
 }
 
 function drawPortrait(cv, sprite) {
@@ -618,14 +640,16 @@ function renderWardrobe() {
   ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
   ui.wdSlots.innerHTML = '';
   for (const { slot, title, items } of WARDROBE) {
+    const boyTitle = { dress: '옷 색', shape: '옷 모양' }[slot];
     const row = document.createElement('div');
     row.className = 'wd-row';
     const h = document.createElement('div');
     h.className = 'wd-title';
-    h.textContent = title;
+    h.textContent = (isBoy() && boyTitle) || title;
     const chips = document.createElement('div');
     chips.className = 'wd-chips';
     for (const [value, item] of Object.entries(items)) {
+      if (!suits(item)) continue;
       const owned = state.owned[slot].includes(value);
       const b = document.createElement('button');
       b.className = 'chip';
@@ -830,7 +854,7 @@ function drawCharacter(ch, now) {
     const h = state.hero;
     const bob = h.path.length ? (h.frame ? -1 : 0) : 0;
     const riding = state.mounted && hasUnicorn();
-    drawSprite(vctx, riding ? riderSprite(state.outfit, h.frame) : princessSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
+    drawSprite(vctx, riding ? riderSprite(state.outfit, h.frame, isBoy()) : heroSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
   } else {
     const n = ch.npc;
     const idle = Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0;
@@ -1136,7 +1160,6 @@ renderRide();
 snapCamera();
 renderStars(false);
 setPictures(state.pictures);
-drawPortrait(ui.startPreview, princessSprite(state.outfit, 0));
 
 screen.addEventListener('pointerdown', onPointer);
 ui.replay.addEventListener('click', () => { Sound.tap(); askAgain(); });
@@ -1159,11 +1182,27 @@ addEventListener('keydown', e => {
 });
 // The start screen: pick a name and a title, then press play.
 let spokenEdited = false;
+// Switching between a girl and a boy puts on what that look wore last time.
+let wornLook = PLAYER.look;
+function wearLook() {
+  if (wornLook !== PLAYER.look) {
+    state.looks[wornLook] = state.outfit;
+    const ride = state.outfit.ride;
+    state.outfit = Object.assign({}, state.looks[PLAYER.look] || defaultOutfit(), { ride });
+    wornLook = PLAYER.look;
+  }
+  state.outfit = fitOutfit(state.outfit);
+}
 function renderStart() {
   ui.startTitle.textContent = `${PLAYER.shown} ${titleKo()}의`;
-  ui.wdTitle.textContent = `🎀 ${titleKo()}님의 옷장`;
+  ui.wdTitle.textContent = `${isBoy() ? '👑' : '🎀'} ${titleKo()}님의 옷장`;
   document.title = `${PLAYER.shown} ${titleKo()}의 소리 마을`;
   ui.titleChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.title === PLAYER.title));
+  // Knights, wizards, explorers and captains can be a girl or a boy.
+  ui.lookChips.classList.toggle('hidden', !!TITLES[PLAYER.title].look);
+  ui.lookChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.look === PLAYER.look));
+  wearLook();
+  drawPortrait(ui.startPreview, heroSprite(state.outfit, 0));
 }
 ui.nameInput.value = PLAYER.shown;
 ui.spokenInput.value = PLAYER.spoken;
@@ -1181,6 +1220,19 @@ for (const [key, t] of Object.entries(TITLES)) {
     Sound.say([{ text: `${t.en} ${PLAYER.spoken}!`, pitch: 1.3 }]);
   });
   ui.titleChips.append(b);
+}
+for (const [look, label] of [['girl', '👧 여자'], ['boy', '👦 남자']]) {
+  const b = document.createElement('button');
+  b.className = 'chip';
+  b.dataset.look = look;
+  b.textContent = label;
+  b.addEventListener('click', () => {
+    Sound.unlock();
+    Sound.tap();
+    setPlayer({ look });
+    renderStart();
+  });
+  ui.lookChips.append(b);
 }
 ui.nameInput.addEventListener('input', () => {
   setPlayer({ shown: ui.nameInput.value });
