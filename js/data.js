@@ -463,21 +463,21 @@ for (const m of ['slime', 'slimepink', 'bat', 'ghost', 'dragon', 'shroom']) LOOK
 LOOKS.merchant = { hair: '#ff9a6b', shirt: '#ffd34d', pants: '#8a5a3a', hat: 'feather' };
 
 Object.assign(VOICES, {
-  slime:     { gender: 'female', tts: 'af_sky',   pitch: 1.7,  rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
-  slimepink: { gender: 'female', tts: 'af_sky',   pitch: 1.8,  rate: 1.05, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  slime:     { gender: 'female', tts: 'af_kore',   pitch: 1.7,  rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  slimepink: { gender: 'female', tts: 'af_aoede',   pitch: 1.8,  rate: 1.05, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   bat:       { gender: 'male',   tts: 'am_puck',  pitch: 1.5,  rate: 1.1,  voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
-  ghost:     { gender: 'female', tts: 'af_nova',  pitch: 1.4,  rate: 0.85, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
-  dragon:    { gender: 'male',   tts: 'bm_fable', pitch: 0.9,  rate: 1.0,  voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
-  shroom:    { gender: 'male',   tts: 'am_santa', pitch: 1.3,  rate: 0.95, voice: ['Ralph', 'Fred', 'Aaron'] },
+  ghost:     { gender: 'female', tts: 'bf_emma',   pitch: 1.4,  rate: 0.85, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  dragon:    { gender: 'male',   tts: 'am_fenrir', pitch: 0.9,  rate: 1.0,  voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
+  shroom:    { gender: 'male',   tts: 'am_michael', pitch: 1.3,  rate: 0.95, voice: ['Ralph', 'Fred', 'Aaron'] },
   merchant:  { gender: 'male',   tts: 'am_liam',  pitch: 1.05, rate: 1.0,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
 });
 Object.assign(PERSONA, {
-  slime:     ['Bloop bloop! I am a wobbly slime. Catch me if you can!', 'Boing! Answer my question and I will give you coins!', 'Wiggle wiggle! Hello, {title} {name}!'],
-  slimepink: ['Blip! I am a pink slime. I love sentences!', 'Boing boing! Can you catch me, {title} {name}?', 'Wobble wobble! I have a shiny coin for you.'],
-  bat:       ['Flap flap! I am a little bat. I sleep upside down!', 'Eek! Oh, hello, {title} {name}! Want to play?', 'Flutter flutter! Catch me with a right answer!'],
-  ghost:     ['Boo! Hee hee, did I scare you? I am a friendly ghost.', 'Oh! You found me, {title} {name}! I am a little shy.', 'Ooh, ooh! Answer my riddle and I will go poof!'],
-  dragon:    ['Rawr! I am a baby dragon. My fire is just tiny sparkles!', 'Hello, {title} {name}! I guard the shiny coins.', 'Rawr rawr! Can you beat a dragon at words?'],
-  shroom:    ['Pop! I am a mushroom. I glow in the dark!', 'Hey there, {title} {name}! I hide under my big hat.', 'Hop hop! Answer me and I will share my coins.'],
+  slime:     ['Hello! I am a wobbly slime. Catch me if you can!', 'Hi there! Answer my question and I will give you coins!', 'Wiggle, wiggle! Hello, {title} {name}!'],
+  slimepink: ['Hello! I am a pink slime. I love sentences!', 'Bounce, bounce! Can you catch me, {title} {name}?', 'Hi! I have a shiny coin for you.'],
+  bat:       ['Hello! I am a little bat. I sleep upside down!', 'Oh, hello, {title} {name}! Do you want to play?', 'Flap, flap! Catch me with a right answer!'],
+  ghost:     ['Boo! Did I scare you? I am a friendly ghost.', 'Oh! You found me, {title} {name}! I am a little shy.', 'Answer my riddle and I will go poof!'],
+  dragon:    ['Roar! I am a baby dragon. My fire is just tiny sparkles!', 'Hello, {title} {name}! I guard the shiny coins.', 'Roar! Can you beat a dragon at words?'],
+  shroom:    ['Hello! I am a mushroom. I glow in the dark!', 'Hey there, {title} {name}! I hide under my big hat.', 'Answer me, and I will share my coins.'],
   merchant:  ['Welcome to the Starlight Shop, {title} {name}!', 'Hello, hello! Come and see my treasures!', 'Ah, {title} {name}! Do you have coins today?'],
 });
 

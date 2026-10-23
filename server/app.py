@@ -30,6 +30,7 @@ POLLY_VOICES = {
     'af_river': 'Ruth', 'af_jessica': 'Danielle', 'bf_isabella': 'Amy', 'bf_alice': 'Emma', 'bf_lily': 'Amy',
     'am_michael': 'Matthew', 'am_eric': 'Stephen', 'am_adam': 'Gregory', 'am_liam': 'Joey', 'am_puck': 'Kevin',
     'am_santa': 'Gregory', 'bm_fable': 'Brian', 'bm_george': 'Arthur', 'bm_lewis': 'Brian',
+    'af_kore': 'Ivy', 'af_aoede': 'Kimberly', 'bf_emma': 'Emma', 'am_fenrir': 'Justin',
 }
 
 kokoro = None
