@@ -37,6 +37,10 @@ SOUND_IPA = {
     'ah': 'ˈæ', 'eh': 'ˈɛ', 'ih': 'ˈɪ', 'aw': 'ˈɑː', 'uh': 'ˈʌ',
     'fff': 'fˈə', 'hhh': 'hˈə', 'mmm': 'mˈə', 'nnn': 'nˈə', 'sss': 'sˈə', 'lll': 'lˈə', 'rrr': 'ɹˈə',
     'ks': 'ks',
+    # Letter names, for the spelling tiles: a lone "A" is read as the word "a".
+    'A': 'ˈA', 'B': 'bˈi', 'C': 'sˈi', 'D': 'dˈi', 'E': 'ˈi', 'F': 'ˈɛf', 'G': 'ʤˈi', 'H': 'ˈAʧ', 'I': 'ˈI',
+    'J': 'ʤˈA', 'K': 'kˈA', 'L': 'ˈɛl', 'M': 'ˈɛm', 'N': 'ˈɛn', 'O': 'ˈO', 'P': 'pˈi', 'Q': 'kjˈu', 'R': 'ˈɑɹ',
+    'S': 'ˈɛs', 'T': 'tˈi', 'U': 'jˈu', 'V': 'vˈi', 'W': 'dˈʌbəlju', 'X': 'ˈɛks', 'Y': 'wˈI', 'Z': 'zˈi',
 }
 
 

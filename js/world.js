@@ -526,7 +526,7 @@ function buildCastleUpstairs() {
   furn(9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1));
   furn(9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3));
   const lib = tileCenter(sc, 0, 3);
-  sc.signs.push({ x: lib.x - 4, y: lib.y - 68, text: '📚 왕실 도서관', color: '#4a6ab8' });
+  sc.signs.push({ x: lib.x - 4, y: lib.y - 84, text: '📚 왕실 도서관', color: '#4a6ab8' });
   const gem = tileCenter(sc, 8.5, 0);
   sc.signs.push({ x: gem.x, y: gem.y - 44, text: '💎', color: '#ffd34d', plain: true });
 

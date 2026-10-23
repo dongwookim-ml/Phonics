@@ -301,7 +301,7 @@ const Quiz = (() => {
         id: t.id, target: t.w,
         word: t.w,
         clue: `<span class="clue-pic">${t.e}</span><span class="spell-word">${own.map(() => '<span class="slot"></span>').join('')}</span>`,
-        tiles: shuffle(own.concat(extra)).map(l => ({ l, sound: soundOf(l) })),
+        tiles: shuffle(own.concat(extra)).map(l => ({ l, sound: l.toUpperCase() })), // tapping a tile says its name
         ask: [{ text: line('spell') }, { pause: 600 }, say(t.w)],
         replay: [say(t.w)],
         // Filled in when the last blank is filled (see checkSpell in game.js).

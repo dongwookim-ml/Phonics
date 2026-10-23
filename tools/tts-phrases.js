@@ -80,6 +80,8 @@ for (const l of D.LETTERS) {
   for (const [w] of l.words) add(N, `${w} starts with`);
 }
 for (const s of Object.values(D.PART_SOUNDS)) add(N, s, 0.8);
+// Letter names, said as she taps a spelling tile in the Fairy Village.
+for (const l of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') add(N, l, 0.8);
 for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
 lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland']);
 for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
@@ -88,7 +90,7 @@ for (const t of Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 
 // The royal library: the librarian's welcome, then the narrator reads each
 // book a sentence at a time and asks its questions (js/library.js).
-for (const l of B.BOOK_LINES.welcome) for (const t of fills(l)) add(D.VOICES.librarian.tts, t);
+for (const l of B.BOOK_LINES.welcome.concat(B.BOOK_LINES.invite)) for (const t of fills(l)) add(D.VOICES.librarian.tts, t);
 for (const k of ['quiz', 'right', 'tryAgain', 'reveal', 'done', 'theEnd']) for (const l of B.BOOK_LINES[k]) for (const t of fills(l)) add(N, t);
 for (const b of B.BOOKS) {
   add(N, `${b.title}.`, 0.85);

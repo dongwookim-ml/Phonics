@@ -11,6 +11,7 @@ const library = {
   token: 0,          // bumps whenever reading stops, so stale callbacks give up
   watchdog: null,
   quiz: null,        // { i, tries, right, coins, order, locked }
+  hintUntil: 0,      // the bookcase hints stay big until then
 };
 
 const libraryEl = id => document.getElementById(id);
@@ -325,6 +326,65 @@ function bookSummary() {
   renderBookPage();
   if (z.right) { Sound.party(); bookCheer(); }
   bookSay([{ text: bookLine('done'), narrator: true }]);
+}
+
+// ---- Hints ---------------------------------------------------------------
+
+// Coming upstairs, the librarian waves her over to the bookcases.
+function libraryInvite() {
+  later(2600, () => {
+    const npc = libraryLibrarian();
+    if (state.scene !== sceneFor('castle2') || state.talking || !libraryEl('library').classList.contains('hidden')) return;
+    library.hintUntil = performance.now() + 8000;
+    Sound.say([{ text: bookLine('invite') }], voiceOf(npc));
+  });
+}
+
+// A bobbing "read a book" bubble and twinkles over each bookcase. They are
+// bigger right after the invite and until she has read her first book.
+function drawBookHints(now) {
+  const sc = state.scene;
+  if (sc !== sceneFor('castle2')) return;
+  const s = state.scale;
+  const ctx = sctx;
+  const loud = now < (library.hintUntil || 0) || !Object.keys(state.books).length;
+  for (const o of sc.objects.filter(o => o.kind === 'bookcase')) {
+    const f = o.front[0];
+    const w = tileCenter(sc, 0.2, f.r + 0.5);
+    const p = toScreen(w.x, w.y - 52 + Math.sin(now / 280 + f.r) * (loud ? 3 : 1.5));
+    ctx.font = `800 ${(loud ? 9 : 7) * s}px "Baloo 2", "Trebuchet MS", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const text = '📖 책 읽기';
+    const bw = ctx.measureText(text).width + 8 * s;
+    const bh = (loud ? 13 : 10) * s;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#4a6ab8';
+    ctx.lineWidth = s;
+    roundRect(ctx, p.x - bw / 2, p.y - bh / 2, bw, bh, 4 * s);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p.x - 2.5 * s, p.y + bh / 2 - 1);
+    ctx.lineTo(p.x, p.y + bh / 2 + 3.5 * s);
+    ctx.lineTo(p.x + 2.5 * s, p.y + bh / 2 - 1);
+    ctx.fill();
+    ctx.fillStyle = '#4a6ab8';
+    ctx.fillText(text, p.x, p.y + 0.5 * s);
+    // Twinkles on the shelves.
+    if (!loud) continue;
+    ctx.fillStyle = '#fff2a8';
+    for (let i = 0; i < 3; i++) {
+      const tw = Math.sin(now / 260 + i * 2.1 + f.r);
+      if (tw < 0.3) continue;
+      const q = toScreen(w.x - 6 + i * 6, w.y - 14 - ((i * 23 + f.r * 7) % 26));
+      const z = Math.max(1, Math.round(s * (0.6 + tw)));
+      ctx.globalAlpha = tw;
+      ctx.fillRect(q.x - z / 2, q.y - z * 1.5, z, z * 3);
+      ctx.fillRect(q.x - z * 1.5, q.y - z / 2, z * 3, z);
+    }
+    ctx.globalAlpha = 1;
+  }
 }
 
 // ---- Wiring --------------------------------------------------------------

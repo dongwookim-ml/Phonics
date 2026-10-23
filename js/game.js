@@ -678,7 +678,8 @@ function followLink(link) {
     changeScene('town', link.at, '🌸 소리 마을');
   } else if (link.target === 'castle2') {
     changeScene('castle2', link.at, '📚 성 2층');
-    Sound.say([{ text: line('upstairs'), pitch: 1.3 }]);
+    Sound.say([{ text: line('upstairs'), pitch: 1.3 }, { pause: 400 }]);
+    libraryInvite();
   } else {
     changeScene(link.target, link.at, `🏰 ${titleKo()}님의 성`);
   }
@@ -1377,6 +1378,7 @@ function drawOverlay(now) {
   // Ways out of the scene glow softly, with arrows or a lock.
   if (!state.busy) drawExitHints(now);
   drawFairyGlows(now);
+  if (!state.busy) drawBookHints(now);
 
   // Tap ripples.
   for (const r of state.ripples) {

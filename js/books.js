@@ -190,6 +190,8 @@ const BOOKS = [
 
 // What the narrator and the librarian say around the books.
 const BOOK_LINES = {
+  // Said when she comes upstairs, so she knows the bookcases open stories.
+  invite: ['Welcome to the library, {title} {name}! Tap a bookshelf, and I will read you a story.', 'Hello, {name}! Would you like a story? Tap the bookshelf over there!', 'Come and read with me, {title} {name}! Just tap a bookshelf.'],
   welcome: ['Which book shall we read today, {title} {name}?', 'Pick a book, and I will read it with you!', 'So many stories! Which one do you like?'],
   quiz: ["Let's see what you remember!"],
   right: ['Yes! That is right!', 'Well done, {name}!', 'You remembered!', 'Great listening!'],
