@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 const src = fs.readFileSync(path.join(root, 'js/data.js'), 'utf8');
 const D = vm.runInNewContext(`${src}
 ({ PLAYER, TITLES, LETTERS, LINES, PERSONA, VOICES, TTS_NARRATOR, TOWN_NPCS, TOWN_HOUSES, FOREST_NPCS,
-   UNICORN_NPCS, WORD_FAMILIES, RHYMES, PART_SOUNDS, SENTENCES, FOREST_STARS, UNICORN_STARS })`);
+   UNICORN_NPCS, CASTLE_UP_NPCS, WORD_FAMILIES, RHYMES, PART_SOUNDS, SENTENCES, FOREST_STARS, UNICORN_STARS })`);
 
 const out = new Map();
 const add = (voice, text, speed = 0.95) => {
@@ -32,7 +32,8 @@ const lines = (voice, kinds, vars) => {
 };
 
 // Who asks what: town and house folk, forest folk, unicorn village folk.
-const town = new Set([...D.TOWN_NPCS.map(n => n.look), ...D.TOWN_HOUSES.map(h => h.look), 'king', 'queen', 'maid']);
+const town = new Set([...D.TOWN_NPCS.map(n => n.look), ...D.TOWN_HOUSES.map(h => h.look), 'king', 'queen', 'maid',
+  ...D.CASTLE_UP_NPCS.map(n => n.look)]);
 const forest = new Set(D.FOREST_NPCS.map(n => n.look));
 const unicorn = new Set(D.UNICORN_NPCS.map(n => n.look));
 for (const [look, style] of Object.entries(D.VOICES)) {
@@ -70,7 +71,7 @@ for (const l of D.LETTERS) {
 }
 for (const s of Object.values(D.PART_SOUNDS)) add(N, s, 0.8);
 for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
-lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'mount', 'dismount']);
+lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'mount', 'dismount', 'upstairs']);
 for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
 for (const stars of [D.FOREST_STARS, D.UNICORN_STARS]) lines(N, ['locked'], { stars });
 for (const t of Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);

@@ -140,6 +140,7 @@ function sceneFor(target) {
   if (!state.scenes[target]) {
     if (target === 'town') state.scenes[target] = buildTown();
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
+    else if (target === 'castle2') state.scenes[target] = buildCastleUpstairs();
     else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
     else if (target === 'forest') state.scenes[target] = buildForest();
     else if (target === 'unicorn') state.scenes[target] = buildUnicornVillage();
@@ -572,6 +573,9 @@ function followLink(link) {
     Sound.say([{ text: line('unicorn'), pitch: 1.3 }]);
   } else if (link.target === 'town') {
     changeScene('town', link.at, '🌸 소리 마을');
+  } else if (link.target === 'castle2') {
+    changeScene('castle2', link.at, '📚 성 2층');
+    Sound.say([{ text: line('upstairs'), pitch: 1.3 }]);
   } else {
     changeScene(link.target, link.at, `🏰 ${titleKo()}님의 성`);
   }
@@ -1040,6 +1044,16 @@ function onPointer(e) {
 
   // Buildings with doors: walk to the door and go in.
   const hits = sc.objects.filter(o => !o.background && o.canvas && hitObject(o, wx, wy));
+  // A staircase walks her to its foot and up (or down).
+  const stairs = hits.find(o => o.stairs);
+  if (stairs) {
+    Sound.tap();
+    walkTo((c, r) => stairs.stairs.some(l => l.c === c && l.r === r), () => {
+      const here = heroTile();
+      followLink(stairs.stairs.find(l => l.c === here.c && l.r === here.r) || stairs.stairs[0]);
+    });
+    return;
+  }
   const robe = hits.find(o => o.kind === 'wardrobe');
   if (robe) {
     Sound.tap();

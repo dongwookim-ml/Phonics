@@ -225,6 +225,26 @@ const PERSONA = {
   maid:   ['Good afternoon, {title} {name}. Shall I give you a word?', 'Hello, {title}! I have tidied your room. Now, a word game?', 'Hello, {title}! Would you like some tea after this?'],
 };
 
+// ---- Castle upstairs -----------------------------------------------------
+
+// The second floor of the castle: the royal library, a balcony and the
+// treasure corner. Its people ask town questions (level 1).
+LOOKS.librarian = { hair: '#e8e4ee', shirt: '#4a6ab8', pants: '#2e3a6a', hat: 'none' };
+LOOKS.harpist = { hair: '#ffcf6a', shirt: '#ffb0d0', pants: '#ffe0ee', hat: 'flowerband', gown: true };
+const CASTLE_UP_NPCS = [
+  { name: '왕실 사서',       look: 'librarian', c: 2, r: 4 },
+  { name: '궁정 하프 연주가', look: 'harpist',   c: 6, r: 2 },
+];
+Object.assign(VOICES, {
+  librarian: { gender: 'male', tts: 'bm_lewis', pitch: 0.8, rate: 0.88, voice: ['Daniel', 'Arthur', 'Google UK English Male', 'Microsoft Ryan'] },
+  harpist:   { gender: 'female', tts: 'af_river', pitch: 1.3, rate: 0.95, voice: ['Samantha', 'Kate', 'Microsoft Aria', 'Google US English'] },
+});
+Object.assign(PERSONA, {
+  librarian: ['Welcome to the royal library, {title} {name}!', 'Every book in here is full of words. Shall we find one?', 'Ah, {title} {name}! I was just reading about dragons.'],
+  harpist:   ['Hello, {title} {name}! Listen to my harp. Pling, pling!', 'Welcome, {title}! Music and words go together.', 'What a lovely day for a song on the balcony!'],
+});
+LINES.upstairs = ['Up, up, up the stairs!', 'Up we go to the second floor!', 'Look, the royal library is up here!'];
+
 // ---- Starlight Forest ----------------------------------------------------
 
 // Stars needed before the forest gate at the south end of town opens.

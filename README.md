@@ -25,6 +25,11 @@ npx http-server -p 8080 .
   ground to walk there.
 - **Castle**: the princess's home at the top of town. Tap it to walk to the
   gate and go inside the throne room, where the king, the queen and a maid live.
+  The staircase in the back-right corner climbs to the **second floor**: the
+  royal library, a balcony looking over the town, a golden harp and the
+  treasure corner. The royal librarian and the court harpist ask town
+  questions there. Tap the stairs (or the ⬆️ / ⬇️ at their foot) to go up or
+  down.
 - **Houses**: there are twelve letter houses (A B C D F G H M N P S T). Tap a
   house to walk in. Each house's resident asks words that start with that
   house's letter, and the wall shows the letter and its pictures.
