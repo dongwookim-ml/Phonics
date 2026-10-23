@@ -127,7 +127,8 @@ function ownedFrom(saved, outfit) {
   for (const { slot } of WARDROBE) {
     const set = new Set((saved && saved[slot]) || []);
     set.add(DEFAULT_OUTFIT[slot]);
-    set.add(DEFAULT_BOY_OUTFIT[slot]);
+    // Boy-only starting clothes, so switching looks never leaves her bare.
+    if (WARDROBE.find(w => w.slot === slot).items[DEFAULT_BOY_OUTFIT[slot]].boy) set.add(DEFAULT_BOY_OUTFIT[slot]);
     set.add(outfit[slot]);
     if (slot === 'head' || slot === 'hand' || slot === 'back' || slot === 'ride') set.add('none');
     owned[slot] = [...set];
@@ -135,6 +136,7 @@ function ownedFrom(saved, outfit) {
   return owned;
 }
 function save() {
+  state.looks[state.worn] = state.outfit;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify({ outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, pictures: state.pictures, recent: Quiz.recent, player: PLAYER })); } catch (e) { /* private mode */ }
 }
 
@@ -145,6 +147,7 @@ const state = {
   answered: 0, // questions finished this visit, right or wrong
   outfit: saved.outfit,
   looks: saved.looks, // the outfit last worn as a girl and as a boy
+  worn: PLAYER.look, // which of those state.outfit is
   owned: saved.owned,
   stars: saved.stars,
   coins: saved.coins,
@@ -434,7 +437,7 @@ function openDialog(npc) {
     ui.dialog.classList.remove('hidden');
     ui.reward.classList.add('hidden');
     Sound.say(not, voiceOf(npc));
-    later(2800, closeDialog);
+    later(2800, () => { if (state.talking === npc && !state.question) closeDialog(); });
     return;
   }
   // The question she missed comes back, otherwise a new one.
@@ -552,7 +555,7 @@ function collected() {
   let total = 0;
   for (const { slot, items } of WARDROBE) {
     for (const value of Object.keys(items)) {
-      if (value === 'none' || !suits(items[value])) continue;
+      if (value === 'none' || items[value].shop || !suits(items[value])) continue;
       total++;
       if (state.owned[slot].includes(value)) have++;
     }
@@ -734,7 +737,8 @@ function catchMonster(npc) {
     if (state.scene === sc) poofAt(tileCenter(sc, npc.c, npc.r));
     sc.npcs = sc.npcs.filter(n => n !== npc);
     sc.caught.push(npc);
-    later(MONSTER_RESPAWN_MS, () => respawnMonster(sc, npc));
+    const catchNo = npc.catches = (npc.catches || 0) + 1;
+    later(MONSTER_RESPAWN_MS, () => { if (npc.catches === catchNo) respawnMonster(sc, npc); });
     state.coins += coins;
     save();
     renderCoins(true);
@@ -819,8 +823,7 @@ function renderShop() {
     b.classList.toggle('on', !!pick && pick.slot === it.slot && pick.value === it.value);
     b.classList.toggle('dear', it.price > state.coins);
     const look = it.item.c ? `<span class="sw" style="background:${it.item.c[0]}"></span>` : `<span class="ic">${it.item.icon}</span>`;
-    const name = it.slot === 'dress' ? `${it.item.name} 드레스` : it.item.name;
-    b.innerHTML = `${look}<span class="nm">${name}</span><span class="price">🪙${it.price}</span>`;
+    b.innerHTML = `${look}<span class="nm">${it.label.replace(/^\S+ /, '')}</span><span class="price">🪙${it.price}</span>`;
     b.addEventListener('click', () => {
       Sound.tap();
       state.shopPick = it;
@@ -1487,15 +1490,16 @@ addEventListener('keydown', e => {
 // The start screen: pick a name and a title, then press play.
 let spokenEdited = false;
 // Switching between a girl and a boy puts on what that look wore last time.
-let wornLook = PLAYER.look;
 function wearLook() {
-  if (wornLook !== PLAYER.look) {
-    state.looks[wornLook] = state.outfit;
+  if (state.worn !== PLAYER.look) {
+    state.looks[state.worn] = state.outfit;
     const ride = state.outfit.ride;
     state.outfit = Object.assign({}, state.looks[PLAYER.look] || defaultOutfit(), { ride });
-    wornLook = PLAYER.look;
+    state.worn = PLAYER.look;
   }
   state.outfit = fitOutfit(state.outfit);
+  // The starting clothes of a look she just switched to are hers.
+  for (const { slot } of WARDROBE) if (!state.owned[slot].includes(state.outfit[slot])) state.owned[slot].push(state.outfit[slot]);
 }
 function renderStart() {
   ui.startTitle.textContent = `${PLAYER.shown} ${titleKo()}의`;
