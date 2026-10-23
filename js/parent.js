@@ -15,7 +15,7 @@ const PARENT_KINDS = [
   ['meaning', '뜻 맞추기', '유니콘 · 동굴'],
   ['spell', '스펠링', '요정 마을'],
 ];
-const PARENT_PASSWORD = '0000';
+const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 
 const parentUi = {
   gear: document.getElementById('parent'),
@@ -77,7 +77,7 @@ function parentLock() {
     err.textContent = '확인하는 중…';
     let ok = false;
     try {
-      ok = parentHasAccount() ? await Account.verify(input.value) : input.value === PARENT_PASSWORD;
+      ok = typeof Account !== 'undefined' ? await Account.verify(input.value) : input.value === PARENT_PASSWORD;
     } catch (x) {
       err.textContent = '서버에 연결하지 못했어요. 잠시 후 다시 해 보세요.';
       return;

@@ -12,7 +12,10 @@
 // the login screen with ?guest or window.ACCOUNT_SKIP.
 const ACCOUNT_SERVER = (window.ACCOUNT_SERVER || TTS_SERVER || '').replace(/\/$/, '');
 const ACCOUNT_SAVE_KEY = 'pixeltown-v2'; // the game's own save (SAVE_KEY in game.js)
-const ACCOUNT_KEYS = { token: 'pixeltown-token', user: 'pixeltown-user', guest: 'pixeltown-guest', updated: 'pixeltown-updated', snap: 'pixeltown-synced' };
+const ACCOUNT_KEYS = { token: 'pixeltown-token', user: 'pixeltown-user', guest: 'pixeltown-guest', updated: 'pixeltown-updated', snap: 'pixeltown-synced', dirty: 'pixeltown-dirty', owner: 'pixeltown-owner' };
+// updated: the server version the local save builds on (the server's clock).
+// dirty:   the local save has changes the server has not seen.
+// owner:   whose progress the local save is; empty for a guest or an old save.
 const ACCOUNT_GUEST_PW = '0000'; // parent password when playing without an account
 
 const accountUi = {
@@ -61,7 +64,7 @@ const Account = {
   _resolve: null,
   _started: false, // the login screen is done; saves from now on are real progress
   _timer: 0,
-  _dirty: false,
+  get _dirty() { return !!accountGet('dirty'); },
 
   async verify(pw) {
     if (!this.user) return pw === ACCOUNT_GUEST_PW;
@@ -82,8 +85,7 @@ const Account = {
     const json = JSON.stringify(saveObject);
     if (json === accountGet('snap')) return;
     accountSet('snap', json);
-    accountSet('updated', Date.now());
-    this._dirty = true;
+    accountSet('dirty', '1');
     if (!this.user) return;
     clearTimeout(this._timer);
     this._timer = setTimeout(() => this._upload(), 2000);
@@ -94,35 +96,56 @@ const Account = {
     clearTimeout(this._timer);
     const json = accountLocalSave();
     if (!this.user || !json || !this._dirty) return;
-    const body = { save: JSON.parse(json), updated: Number(accountGet('updated')) || Date.now() };
+    const body = { save: JSON.parse(json), base: Number(accountGet('updated')) || 0 };
     // Browsers cap keepalive bodies at 64 KB.
     const r = await accountFetch('PUT', '/save', body, { keepalive: keepalive && json.length < 60000 });
-    if (r.status === 200) this._dirty = false;
-    else if (r.status === 401) this._expired();
+    if (r.status === 200 && r.data) {
+      accountSet('updated', r.data.updated);
+      if (accountLocalSave() === json) accountSet('dirty', null); // nothing changed meanwhile
+    } else if (r.status === 409 && !keepalive) {
+      // Another device saved first: its save wins and this one reloads with it.
+      const s = await accountFetch('GET', '/save');
+      if (s.status === 200 && s.data && s.data.save) this._adopt(s.data);
+    } else if (r.status === 401) this._expired();
   },
 
-  // After signing in (or on boot with a saved token): the newer save wins.
-  // A newer server save replaces the local one and the page reloads with it.
+  // Makes the server's save the local one, and reloads the page with it.
+  _adopt(data) {
+    const json = JSON.stringify(data.save);
+    try { localStorage.setItem(ACCOUNT_SAVE_KEY, json); } catch (e) { return false; }
+    accountSet('snap', json);
+    accountSet('updated', data.updated);
+    accountSet('dirty', null);
+    accountSet('owner', this.user);
+    location.reload();
+    return true;
+  },
+
+  // After signing in (or on boot with a saved token). The local save is kept
+  // only when it is this account's and the server has nothing newer; a guest's
+  // or an old save is carried into an account that has no save yet.
   async _sync() {
     const r = await accountFetch('GET', '/save', null, { timeout: 5000 });
     if (r.status === 401) { this._expired(); return 'expired'; }
     if (r.status !== 200 || !r.data) return 'offline';
-    const local = Number(accountGet('updated')) || 0;
-    const server = r.data.save ? r.data.updated : 0;
-    if (r.data.save && server > local) {
-      // Already playing (a slow network): keep going, and don't jump back.
-      if (document.getElementById('start').classList.contains('hidden')) return 'kept';
-      const json = JSON.stringify(r.data.save);
-      try { localStorage.setItem(ACCOUNT_SAVE_KEY, json); } catch (e) { return 'offline'; }
-      accountSet('snap', json);
-      accountSet('updated', server);
+    const owner = accountGet('owner') || '';
+    const mine = owner === this.user;
+    const base = mine ? Number(accountGet('updated')) || 0 : 0;
+    if (r.data.save && (!mine || r.data.updated > base)) {
+      return this._adopt(r.data) ? 'reload' : 'offline';
+    }
+    if (!r.data.save && owner && !mine) {
+      // Someone else's progress is on this device: a new account starts fresh.
+      try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { return 'offline'; }
+      ['snap', 'updated', 'dirty'].forEach(k => accountSet(k, null));
+      accountSet('owner', this.user);
       location.reload();
       return 'reload';
     }
-    if (accountLocalSave() && (local > server || !r.data.save)) {
-      // A first login carries her progress so far into the account.
-      if (!local) accountSet('updated', Date.now());
-      this._dirty = true;
+    accountSet('owner', this.user);
+    if (!mine) accountSet('updated', 0);
+    if (accountLocalSave() && (this._dirty || !r.data.save)) {
+      accountSet('dirty', '1');
       await this._upload();
     }
     return 'synced';
@@ -142,16 +165,17 @@ const Account = {
     if (this._resolve) { this._resolve(this.user); this._resolve = null; }
   },
 
+  // The progress is on the server, so the device forgets it and starts over
+  // at the login screen. If the upload failed it stays, still marked as hers.
   async logout() {
     if (this._dirty) await this._upload();
-    accountFetch('POST', '/auth/logout');
-    accountSet('token', null);
-    accountSet('user', null);
-    accountSet('guest', null);
-    this.user = null;
-    this._started = false;
-    this.ready = new Promise(r => { this._resolve = r; });
-    accountShowLogin();
+    await accountFetch('POST', '/auth/logout', null, { timeout: 3000 });
+    if (!this._dirty) {
+      try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { /* private mode */ }
+      ['snap', 'updated', 'owner'].forEach(k => accountSet(k, null));
+    }
+    ['token', 'user', 'guest'].forEach(k => accountSet(k, null));
+    location.reload();
   },
 };
 Account.ready = new Promise(r => { Account._resolve = r; });

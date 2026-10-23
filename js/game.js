@@ -522,6 +522,7 @@ function choose(i, btn) {
     state.answered++;
     npc.missed = q;
     npc.waitUntil = state.answered + 1;
+    save(); // keeps the miss in the question history
     const retry = line('retry');
     // A misspelled word that isn't a real word has nothing to say back.
     const back = o.wrong ? [{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }] : [];

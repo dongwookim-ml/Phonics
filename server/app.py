@@ -182,7 +182,7 @@ class Verify(BaseModel):
 
 class SaveBody(BaseModel):
     save: dict
-    updated: int
+    base: int = 0  # the server version this save builds on
 
 
 def hash_pw(pw, salt):
@@ -219,9 +219,11 @@ def current_user(authorization: str = Header('')):
     return row[0]
 
 
-# Failed logins, in memory: at most 10 per id and 30 per address in 10 minutes.
+# Failed logins, in memory: at most 10 per id and 30 per address in 10 minutes,
+# and at most 5 new accounts per address an hour.
 LIMIT_WINDOW = 600
-LIMITS = {'id': 10, 'ip': 30}
+LIMITS = {'id': 10, 'ip': 30, 'signup': 5}
+WINDOWS = {'signup': 3600}
 failures = defaultdict(deque)
 fail_lock = threading.Lock()
 
@@ -229,9 +231,13 @@ fail_lock = threading.Lock()
 def limited(keys):
     t = time.time()
     with fail_lock:
+        if len(failures) > 10000:
+            # Forget keys whose tries are all old, so random ids can't fill memory.
+            for k in [k for k, q in failures.items() if not q or t - q[-1] > WINDOWS.get(k[0], LIMIT_WINDOW)]:
+                del failures[k]
         for kind, key in keys:
             q = failures[(kind, key)]
-            while q and t - q[0] > LIMIT_WINDOW:
+            while q and t - q[0] > WINDOWS.get(kind, LIMIT_WINDOW):
                 q.popleft()
             if len(q) >= LIMITS[kind]:
                 return True
@@ -245,9 +251,10 @@ def note_failure(keys):
 
 
 def client_ip(request):
-    # Railway sits behind a proxy that sets X-Forwarded-For.
+    # Railway's proxy appends the real address to X-Forwarded-For; earlier
+    # entries come from the caller and can be made up.
     fwd = request.headers.get('x-forwarded-for', '')
-    return fwd.split(',')[0].strip() or (request.client.host if request.client else '?')
+    return fwd.split(',')[-1].strip() or (request.client.host if request.client else '?')
 
 
 @app.post('/auth/signup')
@@ -257,12 +264,14 @@ def signup(body: Creds, request: Request):
         raise HTTPException(400, 'bad id')
     if not MIN_PW <= len(body.pw) <= MAX_PW:
         raise HTTPException(400, 'bad pw')
-    keys = [('ip', client_ip(request))]
-    if limited(keys):
+    ip = client_ip(request)
+    keys = [('ip', ip)]
+    if limited(keys + [('signup', ip)]):
         raise HTTPException(429, 'too many tries')
     if db.run('SELECT 1 FROM users WHERE id = ?', (uid,), one=True):
         note_failure(keys)
         raise HTTPException(409, 'id taken')
+    note_failure([('signup', ip)])
     salt = secrets.token_hex(16)
     try:
         db.run('INSERT INTO users (id, salt, hash, created) VALUES (?, ?, ?, ?)', (uid, salt, hash_pw(body.pw, salt), now_ms()))
@@ -315,12 +324,14 @@ def put_save(body: SaveBody, uid: str = Depends(current_user)):
     data = json.dumps(body.save, separators=(',', ':'))
     if len(data) > MAX_SAVE:
         raise HTTPException(413, 'save too big')
+    # The server stamps each save with its own clock. A save built on an older
+    # version than the stored one means another device saved first: 409.
     row = db.run('SELECT updated FROM saves WHERE user_id = ?', (uid,), one=True)
-    # The newer save wins; an older one (from a device that was offline) is ignored.
-    if row and row[0] > body.updated:
-        return {'ok': False, 'updated': row[0]}
-    if row:
-        db.run('UPDATE saves SET data = ?, updated = ? WHERE user_id = ?', (data, body.updated, uid))
-    else:
-        db.run('INSERT INTO saves (user_id, data, updated) VALUES (?, ?, ?)', (uid, data, body.updated))
-    return {'ok': True, 'updated': body.updated}
+    stamp = max(now_ms(), (row[0] if row else 0) + 1)
+    db.run('INSERT INTO saves (user_id, data, updated) VALUES (?, ?, ?) '
+           'ON CONFLICT (user_id) DO UPDATE SET data = excluded.data, updated = excluded.updated '
+           'WHERE saves.updated <= ?', (uid, data, stamp, body.base))
+    row = db.run('SELECT updated FROM saves WHERE user_id = ?', (uid,), one=True)
+    if row[0] != stamp:
+        raise HTTPException(409, 'newer save on the server')
+    return {'ok': True, 'updated': stamp}
