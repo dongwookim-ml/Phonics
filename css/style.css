@@ -911,6 +911,14 @@ body.captain {
   --paper: #f4f8ff;
   --accent: #2f8cff;
 }
+/* Town, HQ and rooms: a clear blue sky instead of the pink one. */
+html:has(body.captain), body.captain { --sky-top: #a8d8ff; --sky-mid: #d6ecff; --sky-bottom: #eaf6ff; }
+body.captain .bloom {
+  background:
+    radial-gradient(ellipse at 18% 0%, rgba(255, 244, 200, 0.5), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(140, 200, 255, 0.35), transparent 60%);
+}
+body.captain .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(40, 80, 140, 0.28)); }
 body.captain .dialog { background: linear-gradient(#f8fbff, #e6f0ff); }
 body.captain .portrait { background: #dcebff; }
 body.captain .round.small, body.captain .choices.spell .erase { background: #dcebff; }

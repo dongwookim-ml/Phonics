@@ -98,6 +98,16 @@ if (isCaptain()) {
     librarian: ['Welcome to the HQ library, {title} {name}!', 'Every book in here is full of words. Shall we find one?', 'Ah, {title} {name}! I was just reading about rockets.'],
   });
 
+  // Sentence questions about princesses and unicorns get robot-world ones.
+  const swap = {
+    'A unicorn has a shiny {}.': { s: 'A rocket flies to the {}.', w: ['moon', '🌙'], alike: ['spoon', 'noon'], other: [['cake', '🎂'], ['fish', '🐟']] },
+    'The princess wears a gold {}.': { s: 'The robot has a shiny {}.', w: ['bolt', '🔩'], alike: ['boat', 'bowl'], other: [['cow', '🐄'], ['bus', '🚌']] },
+    'The king lives in a big {}.': { s: 'The dinosaur has a long {}.', w: ['tail', '🦖'], alike: ['tall', 'pail'], other: [['cup', '🥤'], ['sock', '🧦']] },
+    'The fairy waves her magic {}.': { s: 'The fire truck puts out the {}.', w: ['fire', '🔥'], alike: ['tire', 'wire'], other: [['pig', '🐷'], ['cake', '🎂']] },
+    'The prince rides a white {}.': { s: 'The race car goes very {}.', w: ['fast', '🏎️'], alike: ['last', 'fist'], other: [['cake', '🎂'], ['spoon', '🥄']] },
+  };
+  SENTENCES.forEach((x, i) => { if (swap[x.s]) SENTENCES[i] = swap[x.s]; });
+
   // Narrator and reward lines that talked about castles, dresses and wardrobes.
   Object.assign(LINES, {
     room: ['Here is your room, {title}!', 'Welcome to your own room, {title}!', 'Your workbench is waiting for you!'],
