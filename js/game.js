@@ -308,7 +308,7 @@ function enterDoor(door) {
     Sound.say([{ text: line('castle'), pitch: 1.3 }]);
   } else {
     const info = door.obj.info;
-    changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} 집`);
+    changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? '공방' : '집'}`);
     Sound.say([{ text: line('house', { letter: info.letter }) }, { pause: 300 }, letterSound(info)]);
   }
 }

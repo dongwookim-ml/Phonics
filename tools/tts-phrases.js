@@ -11,7 +11,7 @@ const root = path.join(__dirname, '..');
 // js/captain-*.js files, which change those tables and add their own).
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'PART_SOUNDS', 'SENTENCES', 'FOREST_STARS',
-  'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES'];
+  'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAPTAIN_HQ_NPCS'];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -50,7 +50,7 @@ function collect(D) {
   // Who asks what: town and house folk, forest folk, unicorn village folk
   // and the cave monsters, who ask the same sentence questions.
   const town = new Set([...D.TOWN_NPCS.map(n => n.look), ...D.TOWN_HOUSES.map(h => h.look), 'king', 'queen', 'maid',
-    ...D.CASTLE_UP_NPCS.map(n => n.look)]);
+    ...D.CASTLE_UP_NPCS.map(n => n.look), ...(D.CAPTAIN_HQ_NPCS || []).map(n => n.look)]);
   const forest = new Set(D.FOREST_NPCS.map(n => n.look));
   const unicorn = new Set([...D.UNICORN_NPCS, ...D.DUNGEON_NPCS].map(n => n.look));
   const monsters = new Set(D.DUNGEON_NPCS.map(n => n.look));
