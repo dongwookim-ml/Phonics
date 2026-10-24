@@ -30,6 +30,7 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
         run: python tools/polly-build.py
       - name: Commit the clips
+        if: always()
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898299+github-actions[bot]@users.noreply.github.com'
