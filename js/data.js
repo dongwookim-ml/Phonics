@@ -369,11 +369,11 @@ LINES.locked = ['Collect {stars} stars to open this gate!', 'This gate opens wit
 // the same kind twice in a row.
 //   word       hear a word, pick it from written words
 //   start      hear a word (with its picture), pick the letter it starts with
-//   findStart  hear a letter sound, pick the picture that starts with it
+//   findStart  hear a letter's name, pick the picture that starts with it
 //   rhyme      pick the picture that rhymes with a word
 //   family     hear a word, pick it from four that share the first letter
-//   vowel      fill in the missing middle sound: c ? t
-//   ending     fill in the missing last sound: ca ?
+//   vowel      fill in the missing middle letter: c ? t
+//   ending     fill in the missing last letter: ca ?
 //   read       read a written word, pick its picture
 const QUIZ_TYPES = {
   town: ['word', 'start', 'rhyme'],
@@ -428,12 +428,12 @@ const PART_SOUNDS = {
   b: 'buh', d: 'duh', g: 'guh', m: 'mmm', n: 'nnn', p: 'puh', t: 'tuh', x: 'ks', k: 'kuh', l: 'lll', s: 'sss', f: 'fff',
 };
 
-LINES.firstSound = ['What sound does it start with?', 'Which letter does it start with?', 'Listen to the first sound!'];
-LINES.findStart = ['Which one starts with', 'Find the picture that starts with', 'What begins with'];
+LINES.firstSound = ['Which letter does it start with?', 'What is the first letter?', 'Which letter comes first?'];
+LINES.findStart = ['Which one starts with', 'Which picture starts with', 'What begins with'];
 LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
-LINES.vowel = ['What sound is in the middle?', 'Which sound is missing?', 'Listen for the middle sound.'];
-LINES.ending = ['How does it end?', 'What is the last sound?', 'Listen to the very end.'];
-LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'No peeking at my voice! Read it yourself.'];
+LINES.vowel = ['Which letter is in the middle?', 'Which letter is missing?', 'Find the middle letter!'];
+LINES.ending = ['Which letter is at the end?', 'What is the last letter?', 'How does it end?'];
+LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'Read it all by yourself!'];
 
 // ---- Unicorn Village (level 3) ----------------------------------------------
 

@@ -134,8 +134,8 @@ const Quiz = (() => {
         id: t.id, target: t.w, clue: `<span class="clue-pic">${t.e}</span>`,
         ask: [voiced(t.w), { pause: 600 }, { text: line('firstSound') }],
         replay: [voiced(t.w)],
-        options: letters.map(l => ({ html: letterCard(l.letter + l.letter.toLowerCase()), right: l === t.info, wrong: l.sound })),
-        answer: [{ text: `${t.w} starts with`, narrator: true }, letterSound(t.info)],
+        options: letters.map(l => ({ html: letterCard(l.letter + l.letter.toLowerCase()), right: l === t.info, wrong: l.letter })),
+        answer: [{ text: `${t.w} starts with ${t.info.letter}.`, narrator: true }],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
       };
     },
@@ -144,12 +144,12 @@ const Quiz = (() => {
       const t = take('findStart', npc);
       const info = t.info;
       const opts = shuffle([t, ...distractors(t, 2)]);
-      const lead = line('findStart');
+      // One sentence in the asker's voice, the letter said by its name.
+      const ask = { text: `${line('findStart')} ${info.letter}?` };
       return {
         id: t.id, target: t.w, clue: `<span class="clue-letter">${info.letter}${info.letter.toLowerCase()}</span>`,
-        prompt: `${lead} ${info.letter}?`,
-        ask: [{ text: lead }, { pause: 300 }, letterSound(info, true)],
-        replay: [letterSound(info, true)],
+        ask: [ask],
+        replay: [ask],
         options: opts.map(o => ({ html: picCard(o.w, o.e), right: o === t, wrong: o.w })),
         answer: [say(`${t.w}!`)],
       };
@@ -193,7 +193,7 @@ const Quiz = (() => {
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="blank">?</span>${t.w[2]}</span>`,
         ask: [{ text: line('vowel') }, { pause: 600 }, voiced(t.w)],
         replay: [voiced(t.w)],
-        options: vowels.map(x => ({ html: letterCard(x), right: x === v, wrong: PART_SOUNDS[x] })),
+        options: vowels.map(x => ({ html: letterCard(x), right: x === v, wrong: x.toUpperCase() })),
         answer: [say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="first">${v}</span>${t.w[2]}</span>`,
       };
@@ -208,7 +208,7 @@ const Quiz = (() => {
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="blank">?</span></span>`,
         ask: [{ text: line('ending') }, { pause: 600 }, voiced(t.w)],
         replay: [voiced(t.w)],
-        options: ends.map(x => ({ html: letterCard(x), right: x === end, wrong: PART_SOUNDS[x] })),
+        options: ends.map(x => ({ html: letterCard(x), right: x === end, wrong: x.toUpperCase() })),
         answer: [say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="first">${end}</span></span>`,
       };
@@ -299,7 +299,7 @@ const Quiz = (() => {
       const others = shuffle('bcdfghlmnprst'.split('').filter(free));
       // One other vowel, so she has to listen for the middle sound too.
       const extra = [pick(vowels)].concat(others).slice(0, Math.max(SPELL_TILES, own.length + 3) - own.length);
-      const sounds = own.map(l => ({ text: soundOf(l), narrator: true, rate: 0.8 }));
+      const names = own.map(l => ({ text: l.toUpperCase(), narrator: true, rate: 0.8 }));
       return {
         id: t.id, target: t.w,
         word: t.w,
@@ -309,8 +309,8 @@ const Quiz = (() => {
         replay: [voiced(t.w)],
         // Filled in when the last blank is filled (see checkSpell in game.js).
         options: [],
-        // Sound it out, then say it: "kuh, ah, tuh... cat!"
-        answer: sounds.flatMap(s => [s, { pause: 120 }]).concat({ pause: 250 }, say(`${t.w}!`)),
+        // Spell it out, then say it: "C, A, T... cat!"
+        answer: names.flatMap(s => [s, { pause: 120 }]).concat({ pause: 250 }, say(`${t.w}!`)),
         solved: `<span class="clue-pic">${t.e}</span><span class="spell-word right">${own.map(l => `<span class="slot full">${l}</span>`).join('')}</span>`,
         isWord: w => w !== t.w && allWords().concat(WORD_FAMILIES.flat().map(([x]) => ({ w: x }))).some(x => x.w === w),
       };

@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -51,11 +52,26 @@ def phonemes(text):
     return None
 
 
+# The letter A inside a sentence ("the A house") is read as the word "a", so
+# it is swapped for a stand-in word and its phonemes for the letter's name.
+LETTER_A = re.compile(r'(?<=[a-z,] )A\b')
+STAND_IN = ('Zork', 'zˈɔːɹk')
+
+
+def sentence_phonemes(text):
+    if not LETTER_A.search(text):
+        return None
+    ipa = kokoro.tokenizer.phonemize(LETTER_A.sub(STAND_IN[0], text), 'en-us')
+    return ipa.replace('ðə ' + STAND_IN[1], 'ðɪ ˈeɪ').replace(STAND_IN[1], 'ˈeɪ')
+
+
 def clip_id(p):
     key = f"{p['voice']}|{p['text']}|{p['speed']}"
     ipa = phonemes(p['text'])
     if ipa:
         key += f'|{ipa}'
+    elif LETTER_A.search(p['text']):
+        key += '|letter-a'
     return hashlib.sha1(key.encode()).hexdigest()[:10]
 
 
@@ -69,7 +85,7 @@ def record(p):
     path = os.path.join(OUT, p['voice'], clip_id(p) + '.mp3')
     if os.path.exists(path):
         return p, True
-    ipa = phonemes(p['text'])
+    ipa = phonemes(p['text']) or sentence_phonemes(p['text'])
     samples, rate = kokoro.create(ipa or p['text'], voice=p['voice'], speed=p['speed'], lang='en-us',
                                   is_phonemes=bool(ipa))
     with tempfile.NamedTemporaryFile(suffix='.wav') as wav:

@@ -10,7 +10,7 @@ const root = path.join(__dirname, '..');
 // Content constants read from js/data.js (and, for the robot edition, the
 // js/captain-*.js files, which change those tables and add their own).
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
-  'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'PART_SOUNDS', 'SENTENCES', 'FOREST_STARS',
+  'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS'];
 function loadData(edition) {
   const files = ['js/data.js'];
@@ -79,8 +79,8 @@ function collect(D) {
     // The word in each question, said by whoever asks it (`voiced` in quiz.js).
     const asks = new Set();
     if (town.has(look)) for (const w of letterWords.concat(rhymeWords)) asks.add(w);
-    // Letter sounds too (recorded from phonemes, see tts-build.py).
-    if (town.has(look)) for (const l of D.LETTERS) add(v, `${l.sound}, ${l.sound}`, 0.75);
+    // "Which one starts with C?", the letter said by its name.
+    if (town.has(look)) for (const lead of D.LINES.findStart) for (const l of D.LETTERS) add(v, `${lead} ${l.letter}?`);
     if (forest.has(look)) for (const w of famWords.concat(rhymeWords)) asks.add(w);
     if (fairies.has(look)) for (const w of letterWords.concat(famWords)) if (/^[a-z]{3,4}$/.test(w)) asks.add(w);
     for (const w of asks) add(v, w, 0.85);
@@ -88,9 +88,10 @@ function collect(D) {
     if (fairies.has(look)) lines(v, ['spell', 'newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
   }
-  for (const h of D.TOWN_HOUSES) add(D.VOICES[h.look].tts, `This is the ${h.letter} house.`);
+  const robots = D.TITLES.captain.look === 'robot';
+  for (const h of D.TOWN_HOUSES) add(D.VOICES[h.look].tts, `This is the ${h.letter} ${robots ? 'workshop' : 'house'}.`);
 
-  // The narrator: words, letter sounds and lines said by nobody in particular.
+  // The narrator: words, letters and lines said by nobody in particular.
   const N = D.TTS_NARRATOR;
   const words = new Set();
   for (const l of D.LETTERS) for (const [w] of l.words) words.add(w);
@@ -98,19 +99,14 @@ function collect(D) {
   for (const r of D.RHYMES) for (const [w] of r) words.add(w);
   for (const x of D.SENTENCES) { words.add(x.w[0]); x.alike.forEach(w => words.add(w)); x.other.forEach(([w]) => words.add(w)); }
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
-  for (const l of D.LETTERS) {
-    add(N, `${l.sound}, ${l.sound}`, 0.75);
-    add(N, l.sound, 0.8);
-    for (const [w] of l.words) add(N, `${w} starts with`);
-  }
-  for (const s of Object.values(D.PART_SOUNDS)) add(N, s, 0.8);
-  // Letter names, said as she taps a spelling tile in the Fairy Village.
+  for (const l of D.LETTERS) for (const [w] of l.words) add(N, `${w} starts with ${l.letter}.`);
+  // Letter names: spelling tiles and spelled-out answers, and a wrong letter picked.
   for (const l of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') add(N, l, 0.8);
   for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland']);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
-  for (const t of D.TITLES.captain.look === 'robot' ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
+  for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 
   // The royal library: the librarian's welcome, then the narrator reads each
   // book a sentence at a time and asks its questions (js/library.js).
