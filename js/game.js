@@ -65,6 +65,7 @@ const WARDROBE = [
   { slot: 'ride', title: '유니콘 (유니콘 마을)', items: UNICORNS },
   { slot: 'fairy', title: '요정 친구 (요정 마을)', items: FAIRIES },
 ];
+if (isCaptain()) captainWardrobe(WARDROBE); // robot parts, js/captain-hero.js
 
 // ---- Saved progress ------------------------------------------------------
 
@@ -90,6 +91,7 @@ function fitOutfit(outfit) {
 }
 // The hero's standing sprite: a princess or a boy, by look.
 function heroSprite(outfit, frame) {
+  if (isCaptain()) return robotSprite(outfit, frame);
   return isBoy() ? boySprite(outfit, frame) : princessSprite(outfit, frame);
 }
 // "윤아님" style title on screen, such as 공주님.
@@ -563,6 +565,7 @@ function closeDialog() {
 
 function itemLabel(slot, value) {
   const v = WARDROBE.find(w => w.slot === slot).items[value];
+  if (isCaptain()) return captainItemLabel(slot, v);
   return slot === 'dress' ? `${v.icon} ${v.name} ${isBoy() ? '옷' : '드레스'}` : `${v.icon} ${v.name}`;
 }
 
@@ -625,6 +628,7 @@ function offerReward(npc) {
   ui.rewardName.textContent = !gift.isNew ? gift.label : ride || fairy ? `${gift.label} · 새 친구가 생겼어요!` : `${gift.label} · 옷장에 쏙!`;
   ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
   ui.rewardNo.textContent = !gift.isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
+  if (isCaptain()) captainRewardText(gift.isNew, gift.label, ride, fairy);
   drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
   drawPortrait(ui.pvNew, heroPortrait(next, ride || state.mounted));
   ui.dialog.classList.add('hidden');
@@ -717,6 +721,7 @@ function renderWardrobe() {
   drawPortrait(ui.wdPreview, heroPortrait(state.outfit, true));
   const { have, total } = collected();
   ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
+  if (isCaptain()) ui.wdCount.textContent = CAPTAIN_TEXT.collected(have, total);
   ui.wdSlots.innerHTML = '';
   for (const { slot, title, items } of WARDROBE) {
     const boyTitle = { dress: '옷 색', shape: '옷 모양' }[slot];
@@ -878,6 +883,7 @@ function renderShop() {
       Sound.tap();
       state.shopPick = it;
       ui.shopMsg.textContent = it.item.shop ? '✨ 상점에만 있는 보물이에요!' : '갖고 싶은 걸 골라 보세요!';
+      if (isCaptain() && it.item.shop) ui.shopMsg.textContent = CAPTAIN_TEXT.shopOnly;
       renderShop();
     });
     ui.shopItems.append(b);
@@ -893,6 +899,7 @@ function buyPick() {
   if (state.coins < pick.price) {
     Sound.wrong();
     ui.shopMsg.textContent = `코인이 ${pick.price - state.coins}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎`;
+    if (isCaptain()) ui.shopMsg.textContent = CAPTAIN_TEXT.poor(pick.price - state.coins);
     Sound.say([{ text: line('poor') }], voiceOf(npc));
     return;
   }
@@ -910,6 +917,7 @@ function buyPick() {
   ui.rewardName.textContent = ride || fairy ? `${pick.label} · 새 친구가 생겼어요!` : `${pick.label} · 옷장에 쏙!`;
   ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
   ui.rewardNo.textContent = ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
+  if (isCaptain()) captainRewardText(true, pick.label, ride, fairy);
   drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
   drawPortrait(ui.pvNew, heroPortrait(Object.assign({}, state.outfit, { [pick.slot]: pick.value }), ride || state.mounted));
   ui.reward.classList.remove('hidden');
@@ -1731,6 +1739,7 @@ function wearLook() {
 function renderStart() {
   ui.startTitle.textContent = `${PLAYER.shown} ${titleKo()}의`;
   ui.wdTitle.textContent = `${isBoy() ? '👑' : '🎀'} ${titleKo()}님의 옷장`;
+  if (isCaptain()) ui.wdTitle.textContent = CAPTAIN_TEXT.workbench();
   document.title = `${PLAYER.shown} ${titleKo()}의 ${placeName('game')}`;
   ui.titleChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.title === PLAYER.title));
   // Knights, wizards, explorers and captains can be a girl or a boy.

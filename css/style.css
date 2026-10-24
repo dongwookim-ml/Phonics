@@ -904,3 +904,29 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
   .rd-option .w { font-size: 24px; text-align: left; }
   .rd-qtext { font-size: 26px; }
 }
+
+/* ---- Captain edition: steel blue and yellow instead of pink ---- */
+body.captain {
+  --ink: #2f2c56;
+  --paper: #f4f8ff;
+  --accent: #2f8cff;
+}
+body.captain .dialog { background: linear-gradient(#f8fbff, #e6f0ff); }
+body.captain .portrait { background: #dcebff; }
+body.captain .round.small, body.captain .choices.spell .erase { background: #dcebff; }
+body.captain .clue { background: #f4f8ff; border-color: #9cc4f0; }
+body.captain .reward { background: radial-gradient(circle at 50% 30%, #fffdf2, #d8e8ff); }
+body.captain #wardrobe { background: radial-gradient(circle at 30% 20%, #fbfdff, #dbe7f7); }
+body.captain .shop { background: radial-gradient(circle at 30% 20%, #fffdf2, #ffeec0); }
+/* The workbench: a steel frame on a blueprint grid instead of a mirror. */
+body.captain .wd-mirror {
+  border-color: #9aa4c4;
+  border-radius: 18px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(#3f78c8, #2a5aa0);
+}
+body.captain .chip:disabled { background: #e4eaf4; }
+body.captain .start { background: radial-gradient(circle at 50% 40%, rgba(244, 250, 255, 0.92), rgba(160, 200, 255, 0.88)); }
+body.captain .field input:focus { box-shadow: 0 0 0 3px #b8d8ff; }
