@@ -1,0 +1,926 @@
+[
+ {
+  "engine": "generative",
+  "voice": "Amy",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Amy-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Amy",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Amy-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Amy",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Amy-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Amy",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Amy-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Aria",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Aria-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Aria",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Aria-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Aria",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Aria-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Aria",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Aria-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ayanda",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Ayanda-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ayanda",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Ayanda-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ayanda",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Ayanda-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ayanda",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Ayanda-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Brian",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Brian-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Brian",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Brian-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Brian",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Brian-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Brian",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Brian-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Danielle",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Danielle-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Danielle",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Danielle-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Danielle",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Danielle-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Danielle",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Danielle-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Jasmine",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Jasmine-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Jasmine",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Jasmine-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Jasmine",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Jasmine-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Jasmine",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Jasmine-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Joanna",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Joanna-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Joanna",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Joanna-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Joanna",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Joanna-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Joanna",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Joanna-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kajal",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Kajal-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kajal",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Kajal-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kajal",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Kajal-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kajal",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Kajal-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kenneth",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Kenneth-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kenneth",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Kenneth-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kenneth",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Kenneth-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Kenneth",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Kenneth-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Matthew",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Matthew-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Matthew",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Matthew-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Matthew",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Matthew-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Matthew",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Matthew-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Nate",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Nate-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Nate",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Nate-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Nate",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Nate-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Nate",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Nate-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Niamh",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Niamh-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Niamh",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Niamh-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Niamh",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Niamh-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Niamh",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Niamh-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Olivia",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Olivia-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Olivia",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Olivia-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Olivia",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Olivia-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Olivia",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Olivia-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ruth",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Ruth-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ruth",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Ruth-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ruth",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Ruth-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Ruth",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Ruth-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Salli",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Salli-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Salli",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Salli-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Salli",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Salli-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Salli",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Salli-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Stephen",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Stephen-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Stephen",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Stephen-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Stephen",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Stephen-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Stephen",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Stephen-4.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Tiffany",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "generative-Tiffany-1.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Tiffany",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "generative-Tiffany-2.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Tiffany",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "generative-Tiffany-3.mp3"
+ },
+ {
+  "engine": "generative",
+  "voice": "Tiffany",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "generative-Tiffany-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Amy",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Amy-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Amy",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Amy-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Amy",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Amy-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Amy",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Amy-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Arthur",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Arthur-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Arthur",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Arthur-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Arthur",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Arthur-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Arthur",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Arthur-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Brian",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Brian-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Brian",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Brian-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Brian",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Brian-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Brian",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Brian-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Emma",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Emma-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Emma",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Emma-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Emma",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Emma-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Emma",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Emma-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Gregory",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Gregory-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Gregory",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Gregory-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Gregory",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Gregory-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Gregory",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Gregory-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ivy",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Ivy-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ivy",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Ivy-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ivy",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Ivy-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ivy",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Ivy-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joanna",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Joanna-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joanna",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Joanna-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joanna",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Joanna-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joanna",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Joanna-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joey",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Joey-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joey",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Joey-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joey",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Joey-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Joey",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Joey-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Justin",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Justin-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Justin",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Justin-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Justin",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Justin-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Justin",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Justin-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kendra",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Kendra-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kendra",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Kendra-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kendra",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Kendra-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kendra",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Kendra-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kevin",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Kevin-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kevin",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Kevin-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kevin",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Kevin-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kevin",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Kevin-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kimberly",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Kimberly-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kimberly",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Kimberly-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kimberly",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Kimberly-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Kimberly",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Kimberly-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Matthew",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Matthew-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Matthew",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Matthew-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Matthew",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Matthew-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Matthew",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Matthew-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ruth",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Ruth-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ruth",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Ruth-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ruth",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Ruth-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Ruth",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Ruth-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Salli",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Salli-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Salli",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Salli-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Salli",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Salli-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Salli",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Salli-4.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Stephen",
+  "line": 1,
+  "text": "Good morning, Princess Yuna! My bread just came out of the oven.",
+  "file": "neural-Stephen-1.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Stephen",
+  "line": 2,
+  "text": "This is the C house. C says kuh. Which one starts with C?",
+  "file": "neural-Stephen-2.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Stephen",
+  "line": 3,
+  "text": "This is the A house. A says ah. Which picture starts with A?",
+  "file": "neural-Stephen-3.mp3"
+ },
+ {
+  "engine": "neural",
+  "voice": "Stephen",
+  "line": 4,
+  "text": "M says mmm. S says sss. F says fff.",
+  "file": "neural-Stephen-4.mp3"
+ }
+]
