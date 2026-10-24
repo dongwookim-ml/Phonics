@@ -1,5 +1,9 @@
 """Records every phrase in tools/tts-phrases.json with the Kokoro voice model.
 
+The game's clips now come from Amazon Polly (tools/polly-build.py). Running
+this replaces them with Kokoro recordings, so use it only as an offline
+fallback.
+
 Setup (once):
     pip install kokoro-onnx soundfile
     curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx

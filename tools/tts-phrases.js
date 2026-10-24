@@ -1,5 +1,6 @@
-// Lists every line the game can say, with the Kokoro voice that says it,
-// so tools/tts-build.py can record them. Run: node tools/tts-phrases.js
+// Lists every line the game can say, with the voice that says it (by its
+// Kokoro name), so tools/polly-build.py (Amazon Polly, see
+// .github/workflows/polly.yml) can record them. Run: node tools/tts-phrases.js
 // Anything missed here still plays, just with the device voice.
 
 const fs = require('fs');
