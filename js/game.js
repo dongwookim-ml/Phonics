@@ -1009,7 +1009,7 @@ function addDust() {
   const n = lo + Math.floor(Math.random() * (hi - lo + 1));
   state.dust += n;
   renderDust(true);
-  showPlace(`✨ 요정의 가루 ${n}개!`);
+  showPlace(isCaptain() ? `⚡ 배터리 ${n}개!` : `✨ 요정의 가루 ${n}개!`);
 }
 
 function renderDust(pop) {
@@ -1072,7 +1072,7 @@ function drawFairyGlows(now) {
   }
   ctx.globalCompositeOperation = 'source-over';
   if (state.scene.kind === 'fairy') {
-    const cols = ['#ffffff', '#ffd0ec', '#fff2a8', '#d8c8ff', '#c8f4ff'];
+    const cols = isCaptain() ? ['#ffffff', '#9fe8ff', '#fff27a', '#8fffc8', '#c8e0ff'] : ['#ffffff', '#ffd0ec', '#fff2a8', '#d8c8ff', '#c8f4ff'];
     state.motes.forEach((m, i) => {
       const tw = Math.sin(now / 380 + m.ph * 3);
       if (tw < 0.2) return;

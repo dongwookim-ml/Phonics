@@ -529,6 +529,14 @@ body.fairy .bloom {
     radial-gradient(ellipse at 85% 100%, rgba(200, 180, 255, 0.45), transparent 60%);
 }
 body.fairy .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(220, 150, 220, 0.3)); }
+/* The Drone Village sky in the captain edition: clear blue with a warm sun. */
+body.captain.fairy { background: linear-gradient(#bfe6ff, #e0f2ff 50%, #dff6e0); }
+body.captain.fairy .bloom {
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(255, 244, 200, 0.55), transparent 55%),
+    radial-gradient(ellipse at 85% 100%, rgba(160, 220, 255, 0.4), transparent 60%);
+}
+body.captain.fairy .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(90, 150, 220, 0.25)); }
 .dust.pop { animation: pop 0.5s ease; }
 
 .spell-word { display: flex; gap: 8px; }

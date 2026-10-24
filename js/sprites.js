@@ -2200,6 +2200,7 @@ function villagerSprite(lookKey, frame) {
   if (villagerCache.has(key)) return villagerCache.get(key);
   const look = LOOKS[lookKey];
   if (look.monster) return monsterSprite(look.monster, frame);
+  if (look.draw) return look.draw(lookKey, frame);
   const cv = makeCanvas(20, 34);
   const ctx = cv.getContext('2d');
   const OXv = 2;
@@ -2853,6 +2854,7 @@ TREE_PALETTES.lilac = { dark: '#b890e0', mid: '#d8b8ff', light: '#f4e8ff', spark
 // wings down. Returns { canvas, ax, ay } anchored at her middle.
 const fairyCache = new Map();
 function fairySprite(key, frame) {
+  if (isCaptain()) return captainBuddySprite(key, frame);
   const ck = `${key}|${frame}`;
   if (fairyCache.has(ck)) return fairyCache.get(ck);
   const f = FAIRIES[key] || FAIRIES.pink;
