@@ -2355,6 +2355,7 @@ function drawGlowShroom(ctx, x, y, color) {
 // A side-view unicorn facing right, drawn on a pixel grid and then outlined.
 const unicornCache = new Map();
 function unicornSprite(key, frame) {
+  if (isCaptain() && typeof captainCarSprite === 'function') return captainCarSprite(key, frame);
   const ck = `${key}|${frame}`;
   if (unicornCache.has(ck)) return unicornCache.get(ck);
   const u = UNICORNS[key] || UNICORNS.snow;
@@ -2432,6 +2433,7 @@ function unicornSprite(key, frame) {
 // the skirt draped over the unicorn's side. A boy shows a leg and a boot.
 const riderCache = new Map();
 function riderSprite(outfit, frame, boy) {
+  if (isCaptain() && typeof captainRiderSprite === 'function') return captainRiderSprite(outfit, frame);
   const key = `${Object.values(outfit).join('|')}|${frame}|${!!boy}`;
   if (riderCache.has(key)) return riderCache.get(key);
   const uni = unicornSprite(outfit.ride, frame);
