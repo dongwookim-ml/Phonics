@@ -11,7 +11,7 @@ const root = path.join(__dirname, '..');
 // js/captain-*.js files, which change those tables and add their own).
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'PART_SOUNDS', 'SENTENCES', 'FOREST_STARS',
-  'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES'];
+  'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES'];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -83,7 +83,7 @@ function collect(D) {
     if (forest.has(look)) for (const w of famWords.concat(rhymeWords)) asks.add(w);
     if (fairies.has(look)) for (const w of letterWords.concat(famWords)) if (/^[a-z]{3,4}$/.test(w)) asks.add(w);
     for (const w of asks) add(v, w, 0.85);
-    if (monsters.has(look)) lines(v, ['caught']);
+    if (monsters.has(look)) lines(v, ['caught'].concat(D.CAVE_LINES ? D.CAVE_LINES.villain : []));
     if (fairies.has(look)) lines(v, ['spell', 'newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
   }

@@ -476,7 +476,8 @@ function openDialog(npc) {
   q.done = false;
   state.question = q;
   if (q.review) ui.name.insertAdjacentHTML('beforeend', ' <span class="review-tag">복습</span>');
-  const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
+  // A captain-edition villain shows its hearts and taunts between questions.
+  const hello = (isCaptain() && npc.monster && villainRound(npc)) || line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
   ui.text.textContent = `${hello} ${q.prompt}`;
   ui.clue.innerHTML = q.clue;
   ui.clue.classList.toggle('hidden', !q.clue);
@@ -536,6 +537,8 @@ function choose(i, btn) {
     btn.classList.add('wrong');
     ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
     Sound.wrong();
+    // A captain-edition villain attacks instead, and asks it again.
+    if (isCaptain() && state.talking.monster) { villainMiss(state.talking, q, o); return; }
     const npc = state.talking;
     state.answered++;
     npc.missed = q;
@@ -777,6 +780,8 @@ function renderCoins(pop) {
 // A right answer catches the monster: after the praise it goes poof,
 // leaves coins and comes back a while later.
 function catchMonster(npc) {
+  // In the captain edition it's a fight: see villainHit in js/captain-cave.js.
+  if (isCaptain()) { villainHit(npc); return; }
   state.answered++;
   npc.caught = true;
   const coins = 1 + Math.floor(Math.random() * npc.coins);
@@ -1407,6 +1412,9 @@ function drawOverlay(now) {
     ctx.ellipse(r.x, r.y, (4 + k * 10) * s, (2 + k * 5) * s, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
+
+  // Lasers, punches and shields in the Villain Cave.
+  if (isCaptain()) drawCaveFx(now);
 
   // Sparkles.
   for (const p of state.particles) {
