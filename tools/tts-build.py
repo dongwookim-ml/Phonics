@@ -38,6 +38,7 @@ SOUND_IPA = {
     'ah': 'ˈæ', 'eh': 'ˈɛ', 'ih': 'ˈɪ', 'aw': 'ˈɑː', 'uh': 'ˈʌ',
     'fff': 'fˈə', 'hhh': 'hˈə', 'mmm': 'mˈə', 'nnn': 'nˈə', 'sss': 'sˈə', 'lll': 'lˈə', 'rrr': 'ɹˈə',
     'ks': 'ks',
+    'buh': 'bˈʌ', 'kuh': 'kˈʌ', 'duh': 'dˈʌ', 'guh': 'ɡˈʌ', 'puh': 'pˈʌ', 'tuh': 'tˈʌ',
     # Letter names, for the spelling tiles: a lone "A" is read as the word "a".
     'A': 'ˈA', 'B': 'bˈi', 'C': 'sˈi', 'D': 'dˈi', 'E': 'ˈi', 'F': 'ˈɛf', 'G': 'ʤˈi', 'H': 'ˈAʧ', 'I': 'ˈI',
     'J': 'ʤˈA', 'K': 'kˈA', 'L': 'ˈɛl', 'M': 'ˈɛm', 'N': 'ˈɛn', 'O': 'ˈO', 'P': 'pˈi', 'Q': 'kjˈu', 'R': 'ˈɑɹ',
@@ -52,17 +53,24 @@ def phonemes(text):
     return None
 
 
-# The letter A inside a sentence ("the A house") is read as the word "a", so
-# it is swapped for a stand-in word and its phonemes for the letter's name.
-LETTER_A = re.compile(r'(?<=[a-z,] )A\b')
+# Inside a sentence the letter A ("the A house", "A says ah") is read as the
+# word "a", and a letter sound ("C says kuh") as a word. Each is swapped for a
+# stand-in word, and the stand-in's phonemes for the right ones.
+LETTER_A = re.compile(r'(?<=[a-z,] )A\b|\bA(?= says\b)')
+SAYS = re.compile(r'(?<= says )(' + '|'.join(k for k in SOUND_IPA if k.islower()) + r')\b')
 STAND_IN = ('Zork', 'zˈɔːɹk')
+SOUND_STAND_IN = ('Zorp', 'zˈɔːɹp')
 
 
 def sentence_phonemes(text):
-    if not LETTER_A.search(text):
+    if not LETTER_A.search(text) and not SAYS.search(text):
         return None
-    ipa = kokoro.tokenizer.phonemize(LETTER_A.sub(STAND_IN[0], text), 'en-us')
-    return ipa.replace('ðə ' + STAND_IN[1], 'ðɪ ˈeɪ').replace(STAND_IN[1], 'ˈeɪ')
+    sounds = SAYS.findall(text)
+    ipa = kokoro.tokenizer.phonemize(SAYS.sub(SOUND_STAND_IN[0], LETTER_A.sub(STAND_IN[0], text)), 'en-us')
+    ipa = ipa.replace('ðə ' + STAND_IN[1], 'ðɪ ˈeɪ').replace(STAND_IN[1], 'ˈeɪ')
+    for sound in sounds:
+        ipa = ipa.replace(SOUND_STAND_IN[1], SOUND_IPA[sound], 1)
+    return ipa
 
 
 def clip_id(p):
@@ -70,6 +78,8 @@ def clip_id(p):
     ipa = phonemes(p['text'])
     if ipa:
         key += f'|{ipa}'
+    elif SAYS.search(p['text']):
+        key += '|says'
     elif LETTER_A.search(p['text']):
         key += '|letter-a'
     return hashlib.sha1(key.encode()).hexdigest()[:10]

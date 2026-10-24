@@ -89,7 +89,11 @@ function collect(D) {
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
   }
   const robots = D.TITLES.captain.look === 'robot';
-  for (const h of D.TOWN_HOUSES) add(D.VOICES[h.look].tts, `This is the ${h.letter} ${robots ? 'workshop' : 'house'}.`);
+  // Each letter house's host: "This is the C house. C says kuh." (houseHello in game.js)
+  for (const h of D.TOWN_HOUSES) {
+    const l = D.LETTERS.find(x => x.letter === h.letter);
+    add(D.VOICES[h.look].tts, `This is the ${l.letter} ${robots ? 'workshop' : 'house'}. ${l.letter} says ${l.sound}.`);
+  }
 
   // The narrator: words, letters and lines said by nobody in particular.
   const N = D.TTS_NARRATOR;

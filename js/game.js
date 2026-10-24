@@ -476,7 +476,10 @@ function openDialog(npc) {
   state.question = q;
   if (q.review) ui.name.insertAdjacentHTML('beforeend', ' <span class="review-tag">복습</span>');
   // A captain-edition villain shows its hearts and taunts between questions.
-  const hello = (isCaptain() && npc.monster && villainRound(npc)) || line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
+  // In a letter house the host skips the chat and teaches the letter instead.
+  const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
+  const hello = house ? houseHello(house) :
+    (isCaptain() && npc.monster && villainRound(npc)) || line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
   ui.text.textContent = `${hello} ${q.prompt}`;
   ui.clue.innerHTML = q.clue;
   ui.clue.classList.toggle('hidden', !q.clue);
@@ -495,11 +498,13 @@ function openDialog(npc) {
   if (q.tiles) renderSpell(q);
   ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
-  const greet = [{ text: hello }, { pause: 400 }];
-  const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
-  if (house) greet.push({ text: `This is the ${npc.letter} ${isCaptain() ? 'workshop' : 'house'}.` }, { pause: 500 });
-  Sound.say(greet.concat(q.ask), voiceOf(npc));
+  Sound.say([{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), voiceOf(npc));
   save();
+}
+
+// "This is the C house. C says kuh." (recorded per voice by tools/tts-phrases.js)
+function houseHello(info) {
+  return `This is the ${info.letter} ${isCaptain() ? 'workshop' : 'house'}. ${info.letter} says ${info.sound}.`;
 }
 
 function askAgain() {
