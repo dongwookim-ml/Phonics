@@ -2853,6 +2853,7 @@ TREE_PALETTES.lilac = { dark: '#b890e0', mid: '#d8b8ff', light: '#f4e8ff', spark
 // wings down. Returns { canvas, ax, ay } anchored at her middle.
 const fairyCache = new Map();
 function fairySprite(key, frame) {
+  if (isCaptain()) return captainBuddySprite(key, frame); // js/captain-hero.js
   const ck = `${key}|${frame}`;
   if (fairyCache.has(ck)) return fairyCache.get(ck);
   const f = FAIRIES[key] || FAIRIES.pink;
