@@ -156,7 +156,7 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions };
+  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -347,7 +347,7 @@ function parkUnicorn() {
   const path = findPath(sc, h, (c, r) => (c !== h.c || r !== h.r) && !busy(c, r));
   if (!path || !path.length) return;
   const spot = path[path.length - 1];
-  const npc = { mount: true, name: '유니콘', c: spot.c, r: spot.r, flip: state.hero.flip, phase: 0 };
+  const npc = { mount: true, name: isCaptain() ? '자동차' : '유니콘', c: spot.c, r: spot.r, flip: state.hero.flip, phase: 0 };
   sc.npcs.push(npc);
   state.parked = { sc, npc };
 }

@@ -37,7 +37,8 @@ function collect(D) {
   // Every way a line can come out: each title, the default name.
   function fills(text, vars = {}) {
     const res = new Set();
-    for (const t of Object.values(D.TITLES)) {
+    // The robot edition has just the one title.
+    for (const t of D.TITLES.captain.look === 'robot' ? [D.TITLES.captain] : Object.values(D.TITLES)) {
       const own = { name: D.PLAYER.spoken, title: t.en, little: t.en.toLowerCase() };
       res.add(text.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : own[k] !== undefined ? own[k] : m)));
     }
@@ -109,7 +110,7 @@ function collect(D) {
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland']);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
-  for (const t of Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
+  for (const t of D.TITLES.captain.look === 'robot' ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 
   // The royal library: the librarian's welcome, then the narrator reads each
   // book a sentence at a time and asks its questions (js/library.js).

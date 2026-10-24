@@ -58,6 +58,24 @@ async function accountFetch(method, path, body, opts = {}) {
   }
 }
 
+// One edition's progress in a save (see editionSave in game.js), and a save
+// with one edition's progress put back.
+function accountEditionOf(save, edition) {
+  if ((save.edition || 'princess') !== edition) return (save.other || {})[edition] || null;
+  const own = Object.assign({}, save);
+  delete own.other;
+  return own;
+}
+function accountKeepMine(server) {
+  let local = null;
+  try { local = JSON.parse(accountLocalSave()); } catch (e) { /* unreadable */ }
+  const mine = local && accountEditionOf(local, EDITION);
+  const theirs = accountEditionOf(server, EDITION);
+  if (!mine || (theirs && (theirs.at || 0) >= (mine.at || 0))) return server;
+  if ((server.edition || 'princess') === EDITION) return Object.assign({}, mine, { other: server.other });
+  return Object.assign({}, server, { other: Object.assign({}, server.other, { [EDITION]: mine }) });
+}
+
 const Account = {
   user: null,
   ready: null,
@@ -105,18 +123,24 @@ const Account = {
     } else if (r.status === 409 && !keepalive) {
       // Another device saved first: its save wins and this one reloads with it.
       const s = await accountFetch('GET', '/save');
-      if (s.status === 200 && s.data && s.data.save) this._adopt(s.data);
+      if (s.status === 200 && s.data && s.data.save) this._adopt(s.data, true);
     } else if (r.status === 401) this._expired();
   },
 
   // Makes the server's save the local one, and reloads the page with it.
-  _adopt(data) {
-    const json = JSON.stringify(data.save);
+  // With `mine`, unsent progress in the game being played here survives when
+  // it is newer than the server's copy of that game (another device may have
+  // been playing the other edition on the same account).
+  _adopt(data, mine) {
+    const save = mine && this._dirty ? accountKeepMine(data.save) : data.save;
+    const json = JSON.stringify(save);
     try { localStorage.setItem(ACCOUNT_SAVE_KEY, json); } catch (e) { return false; }
-    accountSet('snap', json);
+    accountSet('snap', save === data.save ? json : null);
     accountSet('updated', data.updated);
-    accountSet('dirty', null);
+    accountSet('dirty', save === data.save ? null : '1');
     accountSet('owner', this.user);
+    // The next page sends any kept progress, against the version just stored.
+    this._leaving = true;
     location.reload();
     return true;
   },
@@ -132,7 +156,7 @@ const Account = {
     const mine = owner === this.user;
     const base = mine ? Number(accountGet('updated')) || 0 : 0;
     if (r.data.save && (!mine || r.data.updated > base)) {
-      return this._adopt(r.data) ? 'reload' : 'offline';
+      return this._adopt(r.data, mine) ? 'reload' : 'offline';
     }
     if (!r.data.save && owner && !mine) {
       // Someone else's progress is on this device: a new account starts fresh.
@@ -159,8 +183,12 @@ const Account = {
   },
 
   _done() {
-    // The login screen picked the other edition: start over as that game.
-    if (accountEdition() !== EDITION && !/[?&]edition=/.test(location.search)) { location.reload(); return; }
+    // The login screen picked the other edition: start over as that game
+    // (dropping a ?edition= test override, which would win otherwise).
+    if (accountEditionPicked && accountEditionPicked !== EDITION) {
+      location.replace(location.pathname + location.search.replace(/([?&])edition=\w+&?/, '$1').replace(/[?&]$/, '') + location.hash);
+      return;
+    }
     accountUi.screen.classList.add('hidden');
     this._started = true;
     accountRenderBar();
@@ -184,19 +212,21 @@ Account.ready = new Promise(r => { Account._resolve = r; });
 
 // ---- Login screen --------------------------------------------------------
 
-// Princess or captain: which game starts after the login screen.
-function accountEdition() {
-  try { return localStorage.getItem('pixeltown-edition') || EDITION; } catch (e) { return EDITION; }
-}
-function accountPickEdition(edition) {
-  try { localStorage.setItem('pixeltown-edition', edition); } catch (e) { /* private mode */ }
+// Princess or captain: which game starts after the login screen. Only a tap
+// on the login screen changes it; the game being played is shown at first.
+let accountEditionPicked = null;
+function accountPickEdition(edition, tapped) {
+  if (tapped) {
+    accountEditionPicked = edition;
+    try { localStorage.setItem('pixeltown-edition', edition); } catch (e) { /* private mode */ }
+  }
   document.querySelectorAll('#login .edition').forEach(b => b.classList.toggle('on', b.dataset.edition === edition));
   document.getElementById('login-icon').textContent = edition === 'captain' ? '🤖' : '🏰';
   document.getElementById('login-game').textContent = edition === 'captain' ? '로봇 마을' : '소리 마을';
 }
 document.querySelectorAll('#login .edition').forEach(b => b.addEventListener('click', () => {
   if (typeof Sound !== 'undefined') Sound.tap();
-  accountPickEdition(b.dataset.edition);
+  accountPickEdition(b.dataset.edition, true);
 }));
 accountPickEdition(EDITION);
 
@@ -307,7 +337,7 @@ accountUi.guest.addEventListener('click', () => {
 });
 
 // Send what is left when the page goes away; try again when back online.
-addEventListener('pagehide', () => { if (Account._dirty) Account._upload(true); });
+addEventListener('pagehide', () => { if (Account._dirty && !Account._leaving) Account._upload(true); });
 addEventListener('online', () => { if (Account._dirty) Account._upload(); });
 
 // ---- Boot ----------------------------------------------------------------

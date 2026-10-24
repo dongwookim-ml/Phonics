@@ -6,14 +6,14 @@ const PARENT_KINDS = [
   ['word', '단어 듣기', '마을'],
   ['start', '첫소리', '마을'],
   ['findStart', '첫소리 그림 찾기', '글자 집'],
-  ['rhyme', '라임', '마을 · 숲'],
-  ['family', '단어 가족', '숲'],
-  ['vowel', '가운데 소리', '숲'],
-  ['ending', '끝소리', '숲'],
-  ['read', '읽기', '숲'],
-  ['sentence', '문장 듣기', '유니콘 · 동굴'],
-  ['meaning', '뜻 맞추기', '유니콘 · 동굴'],
-  ['spell', '스펠링', isCaptain() ? '드론 마을' : '요정 마을'],
+  ['rhyme', '라임', `마을 · ${placeName('forest')}`],
+  ['family', '단어 가족', placeName('forest')],
+  ['vowel', '가운데 소리', placeName('forest')],
+  ['ending', '끝소리', placeName('forest')],
+  ['read', '읽기', placeName('forest')],
+  ['sentence', '문장 듣기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
+  ['meaning', '뜻 맞추기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
+  ['spell', '스펠링', placeName('fairy')],
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 

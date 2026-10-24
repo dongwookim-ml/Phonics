@@ -1,7 +1,6 @@
 // Captain edition: Robot Town, its workshops, Captain HQ (the castle), the
 // HQ library upstairs and the captain's own room. Same map, links and letter
 // houses as the princess town, re-skinned with robots, bolts and bright paint.
-// See /tmp/claude-0/brief3.md.
 //
 // The top level only touches data.js tables (tools/tts-phrases.js runs this
 // file without a DOM); all drawing lives inside functions.

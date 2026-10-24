@@ -1,5 +1,5 @@
 // Captain edition: the Car Village (자동차 마을), its talking cars and
-// mechanics, and the cars the robot rides. See /tmp/claude-0/brief3.md.
+// mechanics, and the cars the robot rides.
 //
 // The top level only touches js/data.js tables, because tools/tts-phrases.js
 // runs this file in node; drawing and scene building live in functions.

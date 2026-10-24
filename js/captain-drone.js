@@ -1,4 +1,4 @@
-// Captain edition: drone. See /tmp/claude-0/brief3.md.
+// Captain edition: drone.
 //
 // The Drone Village replaces the Fairy Village (scene key `fairy`, level 5):
 // an airfield with hangars, a control tower, landing pads and charging

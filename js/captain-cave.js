@@ -4,7 +4,7 @@
 // or rocket punch that knocks off one of its three hearts, a wrong answer
 // is a silly attack the robot blocks with its shield. At no hearts left the
 // villain gives up, drops coins and runs off, and comes back later.
-// See /tmp/claude-0/brief3.md. Hooks in js/game.js: openDialog, choose,
+// Hooks in js/game.js: openDialog, choose,
 // catchMonster and drawOverlay, all behind isCaptain().
 
 // Hearts a villain starts a fight with: one question each.
@@ -696,6 +696,7 @@ function villainHit(npc) {
     const kind = npc.hp === 1 ? 'mega' : npc.hp === VILLAIN_HP ? 'laser' : 'punch';
     const impact = caveFire(kind, npc);
     later(impact, () => {
+      if (!live()) return;
       npc.hp = Math.max(0, npc.hp - 1);
       if (npc.hp > 0) {
         caveSayThen([{ text: line('villainHit') }], voiceOf(npc), () => {
