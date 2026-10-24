@@ -364,7 +364,7 @@ function getOff() {
   if (!state.mounted) return;
   state.mounted = false;
   parkUnicorn();
-  showPlace('🦄 유니콘은 밖에서 기다려요');
+  showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.wait : '🦄 유니콘은 밖에서 기다려요');
   Sound.say([{ text: line('dismount'), pitch: 1.3 }]);
   renderRide();
 }
@@ -373,11 +373,11 @@ function toggleRide() {
   Sound.tap();
   if (!hasUnicorn()) {
     const first = state.owned.ride.find(v => v !== 'none');
-    if (!first) { showPlace('🦄 유니콘 마을에서 유니콘을 만나요'); return; }
+    if (!first) { showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.find : '🦄 유니콘 마을에서 유니콘을 만나요'); return; }
     state.outfit = Object.assign({}, state.outfit, { ride: first });
     save();
   }
-  if (!state.scene.outdoor) { showPlace('🏠 집 안에서는 유니콘을 탈 수 없어요'); return; }
+  if (!state.scene.outdoor) { showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.indoors : '🏠 집 안에서는 유니콘을 탈 수 없어요'); return; }
   if (state.mounted) { getOff(); return; }
   const p = state.parked;
   if (p && p.sc === state.scene) {

@@ -478,6 +478,8 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 body.unicorn { background: linear-gradient(#ffd6ec, #e4d8ff 50%, #c8f0ff); }
 body.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 150, 200, 0.35)); }
+body.captain.unicorn { background: linear-gradient(#bfe6ff, #dff3ff 50%, #e4f6dc); }
+body.captain.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(90, 150, 220, 0.3)); }
 body.forest { background: linear-gradient(#2e2a6a, #6a5ab8 45%, #b8a0e8); }
 body.forest .bloom {
   background:
