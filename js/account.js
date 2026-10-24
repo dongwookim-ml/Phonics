@@ -159,6 +159,8 @@ const Account = {
   },
 
   _done() {
+    // The login screen picked the other edition: start over as that game.
+    if (accountEdition() !== EDITION && !/[?&]edition=/.test(location.search)) { location.reload(); return; }
     accountUi.screen.classList.add('hidden');
     this._started = true;
     accountRenderBar();
@@ -181,6 +183,22 @@ const Account = {
 Account.ready = new Promise(r => { Account._resolve = r; });
 
 // ---- Login screen --------------------------------------------------------
+
+// Princess or captain: which game starts after the login screen.
+function accountEdition() {
+  try { return localStorage.getItem('pixeltown-edition') || EDITION; } catch (e) { return EDITION; }
+}
+function accountPickEdition(edition) {
+  try { localStorage.setItem('pixeltown-edition', edition); } catch (e) { /* private mode */ }
+  document.querySelectorAll('#login .edition').forEach(b => b.classList.toggle('on', b.dataset.edition === edition));
+  document.getElementById('login-icon').textContent = edition === 'captain' ? '🤖' : '🏰';
+  document.getElementById('login-game').textContent = edition === 'captain' ? '로봇 마을' : '소리 마을';
+}
+document.querySelectorAll('#login .edition').forEach(b => b.addEventListener('click', () => {
+  if (typeof Sound !== 'undefined') Sound.tap();
+  accountPickEdition(b.dataset.edition);
+}));
+accountPickEdition(EDITION);
 
 let accountTab = 'login';
 const ACCOUNT_ID_RE = /^[a-z0-9_]{3,20}$/;

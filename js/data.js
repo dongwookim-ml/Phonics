@@ -1,10 +1,26 @@
 // Phonics content, rewards and characters for PixelTown.
 // Everything a parent might want to tweak lives in this file.
 
+// Which game this is: 'princess' (the original) or 'captain' (the robot
+// edition). Chosen on the login screen; ?edition=captain overrides it.
+const EDITION = (() => {
+  try {
+    const q = /[?&]edition=(\w+)/.exec(location.search);
+    const e = q ? q[1] : localStorage.getItem('pixeltown-edition');
+    return e === 'captain' ? 'captain' : 'princess';
+  } catch (e) { return 'princess'; }
+})();
+const isCaptain = () => EDITION === 'captain';
+
+// Scene builders for the captain edition, by scene name (js/captain-*.js
+// fill this in). A scene without one uses the princess builder.
+const CAPTAIN_SCENES = {};
+
 // The hero's name and title, chosen on the start screen and saved.
 // `spoken` is read by the English voice, `shown` is on screen.
 // `look` is 'girl' or 'boy': which hero sprite and wardrobe she or he gets.
 const PLAYER = { spoken: 'Yuna', shown: '윤아', title: 'princess', look: 'girl' };
+if (isCaptain()) Object.assign(PLAYER, { spoken: 'Max', shown: '맥스', title: 'captain', look: 'robot' });
 
 // Titles the hero can pick. `en` is what villagers call her, `ko` is shown.
 // A title with a `look` decides the hero's look; the others let you choose.
@@ -17,8 +33,23 @@ const TITLES = {
   fairy:    { ko: '요정',   en: 'Fairy',    icon: '🧚', look: 'girl' },
   wizard:   { ko: '마법사', en: 'Wizard',   icon: '🧙' },
   explorer: { ko: '탐험가', en: 'Explorer', icon: '🧭' },
-  captain:  { ko: '선장',   en: 'Captain',  icon: '⚓' },
+  captain:  { ko: isCaptain() ? '캡틴' : '선장', en: 'Captain', icon: isCaptain() ? '🤖' : '⚓', look: isCaptain() ? 'robot' : undefined },
 };
+
+// Place names, shown on signs and when she arrives. Values may be functions
+// of the hero (her room carries her name); use place(key).
+const PLACES = isCaptain() ? {
+  town: '🤖 로봇 마을', forest: '🦖 공룡 마을', fairy: '🛸 드론 마을', unicorn: '🚗 자동차 마을', dungeon: '😈 악당 동굴',
+  castle: '🛡️ 캡틴 본부', castle2: '📚 본부 2층', library: '📚 본부 도서관', room: () => '🛏️ 캡틴의 방', shop: '🔧 부품 상점',
+  game: '로봇 마을',
+} : {
+  town: '🌸 소리 마을', forest: '🌲 별빛 숲 마을', fairy: '🧚 요정 마을', unicorn: '🦄 유니콘 마을', dungeon: '💎 반짝 동굴',
+  castle: () => `🏰 ${TITLES[PLAYER.title].ko}님의 성`, castle2: '📚 성 2층', library: '📚 왕실 도서관', room: () => `🎀 ${PLAYER.shown}의 방`, shop: '🎁 별빛 상점',
+  game: '소리 마을',
+};
+const place = key => (typeof PLACES[key] === 'function' ? PLACES[key]() : PLACES[key]);
+// Just the name, without its emoji.
+const placeName = key => place(key).replace(/^[^\p{L}]+\s/u, '');
 
 // Letters and words. `sound` is what the speech engine says for the
 // letter sound; short spellings like "buh" work better than IPA.

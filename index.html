@@ -127,7 +127,7 @@
   <div id="start" class="start">
     <div id="account-bar" class="account-bar"></div>
     <canvas id="start-preview" class="preview"></canvas>
-    <h1><span id="start-title">윤아 공주의</span><br><span class="gold">소리 마을</span></h1>
+    <h1><span id="start-title">윤아 공주의</span><br><span id="start-game" class="gold">소리 마을</span></h1>
     <div class="profile">
       <label class="field">
         <span>이름</span>
@@ -147,7 +147,11 @@
 
   <!-- Login / sign-up, shown before the start screen (js/account.js). -->
   <div id="login" class="start login hidden">
-    <h1>🏰<br><span class="gold">소리 마을</span></h1>
+    <h1><span id="login-icon">🏰</span><br><span id="login-game" class="gold">소리 마을</span></h1>
+    <div class="login-edition">
+      <button class="edition" data-edition="princess" type="button"><span class="ic">👸</span>공주</button>
+      <button class="edition" data-edition="captain" type="button"><span class="ic">🤖</span>캡틴</button>
+    </div>
     <div class="profile">
       <div class="login-tabs">
         <button class="chip on" data-tab="login" type="button">로그인</button>
@@ -176,6 +180,12 @@
   <script src="js/quiz.js"></script>
   <script src="js/books.js"></script>
   <script src="js/library.js"></script>
+  <script src="js/captain-hero.js"></script>
+  <script src="js/captain-town.js"></script>
+  <script src="js/captain-dino.js"></script>
+  <script src="js/captain-drone.js"></script>
+  <script src="js/captain-car.js"></script>
+  <script src="js/captain-cave.js"></script>
   <script src="js/game.js"></script>
   <script src="js/parent.js"></script>
 </body>

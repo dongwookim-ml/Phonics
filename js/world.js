@@ -239,7 +239,7 @@ function buildTown() {
   addGate(sc, [18, 21], 38, '#b8a0e8');
   sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', style: 'gate', needStars: FOREST_STARS }));
   const gp = tileCenter(sc, 19.5, 38);
-  sc.signs.push({ x: gp.x, y: gp.y - 64, text: '🌲 별빛 숲 마을', color: '#8f70e0', needStars: FOREST_STARS });
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS });
   addTownFairyGate(sc);
   renderGround(sc);
   return sc;
@@ -256,7 +256,7 @@ function addTownFairyGate(sc) {
   for (const r of [26, 27]) sc.links.push({ c: 39, r, target: 'fairy', at: { c: 2, r: r - 14 }, icon: '🧚', style: 'gate', needStars: FAIRY_STARS });
   // The sign hangs a little toward the far post so it clears the T house sign.
   const gp = tileCenter(sc, 39, 25.5);
-  sc.signs.push({ x: gp.x, y: gp.y - 64, text: '🧚 요정 마을', color: '#e070a8', needStars: FAIRY_STARS });
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('fairy'), color: '#e070a8', needStars: FAIRY_STARS });
 }
 
 // Like addGate, for a gate on the left or right edge: the posts stand at
@@ -444,7 +444,7 @@ function buildCastleInterior() {
   const door = wallPt(wall(k.L, k.T), YUNA_DOOR_X, 28);
   tileAt(sc, 0, 6).rug = '#ff8fc0';
   sc.links = [{ c: 0, r: 6, target: 'yuna', icon: '🎀', style: 'door', door }];
-  sc.signs.push({ x: door.x, y: door.y - 46, text: `🎀 ${PLAYER.shown}의 방`, color: '#ff6fa8' });
+  sc.signs.push({ x: door.x, y: door.y - 46, text: place('room'), color: '#ff6fa8' });
   // A staircase in the back-right corner climbs to the second floor.
   addStairs(sc, 10, 0, 2, 3, ctx => drawCastleStairs(ctx, sc, 10, 0, 2, 3),
     [10, 11].map(c => ({ c, r: 3, target: 'castle2', at: { c: 7, r: 4 }, icon: '⬆️' })));
@@ -526,7 +526,7 @@ function buildCastleUpstairs() {
   furn(9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1));
   furn(9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3));
   const lib = tileCenter(sc, 0, 3);
-  sc.signs.push({ x: lib.x - 4, y: lib.y - 84, text: '📚 왕실 도서관', color: '#4a6ab8' });
+  sc.signs.push({ x: lib.x - 4, y: lib.y - 84, text: place('library'), color: '#4a6ab8' });
   const gem = tileCenter(sc, 8.5, 0);
   sc.signs.push({ x: gem.x, y: gem.y - 44, text: '💎', color: '#ffd34d', plain: true });
 
@@ -712,11 +712,11 @@ function buildForest() {
   addGate(sc, [13, 16], 1, '#c8b0f0');
   sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰', style: 'gate' }));
   const tg = tileCenter(sc, 14.5, 1);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: '🌸 소리 마을', color: '#ff8fc0' });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#ff8fc0' });
   addGate(sc, [14, 17], 28, '#ff9ec4');
   for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', style: 'gate', needStars: UNICORN_STARS });
   const ug = tileCenter(sc, 15.5, 28);
-  sc.signs.push({ x: ug.x, y: ug.y - 64, text: '🦄 유니콘 마을', color: '#ff6fa8', needStars: UNICORN_STARS });
+  sc.signs.push({ x: ug.x, y: ug.y - 64, text: place('unicorn'), color: '#ff6fa8', needStars: UNICORN_STARS });
   sc.links.push(...cave);
   sc.npcs.push(shop.keeper);
   sc.start = { c: 14, r: 1 };
@@ -824,7 +824,7 @@ function buildUnicornVillage() {
   addGate(sc, [13, 16], 1, '#b8a0e8');
   sc.links = [14, 15].map(c => ({ c, r: 0, target: 'forest', at: { c: c + 1, r: 27 }, icon: '🌲', style: 'gate' }));
   const fg = tileCenter(sc, 14.5, 1);
-  sc.signs.push({ x: fg.x, y: fg.y - 64, text: '🌲 별빛 숲 마을', color: '#8f70e0' });
+  sc.signs.push({ x: fg.x, y: fg.y - 64, text: place('forest'), color: '#8f70e0' });
   sc.start = { c: 14, r: 1 };
   renderGround(sc);
   return sc;
@@ -841,7 +841,7 @@ function addForestCave(sc) {
   const m = tileCenter(sc, 1.5, 16.5);
   addObject(sc, { c: 0, r: 15, w: 2, d: 4 }, { x: m.x - 48, y: m.y - 64, w: 96, h: 80 }, ctx => drawCaveMouth(ctx, Math.round(m.x), Math.round(m.y)), { kind: 'cave' });
   sc.lamps.push({ x: m.x, y: m.y - 8 });
-  sc.signs.push({ x: m.x, y: m.y - 70, text: '💎 반짝 동굴', color: '#8f70e0', needStars: DUNGEON_STARS });
+  sc.signs.push({ x: m.x, y: m.y - 70, text: place('dungeon'), color: '#8f70e0', needStars: DUNGEON_STARS });
   return [16, 17].map(r => ({ c: 2, r, target: 'dungeon', at: { c: 7 + (r - 16), r: 12 }, icon: '💎', needStars: DUNGEON_STARS }));
 }
 
@@ -854,7 +854,7 @@ function addForestShop(sc) {
     ctx => drawCottage(ctx, boxCorners(sc, S.c, S.r, 3, 3), { roof: '#ffc94d', wall: '#fff4e0', door: 'left' }), { kind: 'shop' });
   const k = boxCorners(sc, S.c, S.r, 3, 3);
   const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 48);
-  sc.signs.push({ x: sign.x, y: sign.y, text: '🎁 별빛 상점', color: '#e0a52a' });
+  sc.signs.push({ x: sign.x, y: sign.y, text: place('shop'), color: '#e0a52a' });
   const keeper = makeNpc({ who: '상점 아저씨', look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
   keeper.shop = true;
   keeper.badge = '🪙';
@@ -1080,7 +1080,7 @@ function buildFairyVillage() {
   addSideGate(sc, 1, [11, 14], '#ffd0ec', [0, 1]);
   sc.links = [12, 13].map(r => ({ c: 0, r, target: 'town', at: { c: 37, r: r + 14 }, icon: '🌸', style: 'gate' }));
   const tg = tileCenter(sc, 1, 12.5);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: '🌸 소리 마을', color: '#ff8fc0' });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#ff8fc0' });
   sc.start = { c: 2, r: 12 };
   renderGround(sc);
   return sc;

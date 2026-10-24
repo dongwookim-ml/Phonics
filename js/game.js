@@ -73,7 +73,7 @@ const SAVE_KEY = 'pixeltown-v2';
 function setPlayer(p) {
   if (typeof p.shown === 'string' && p.shown.trim()) PLAYER.shown = p.shown.trim().slice(0, 10);
   if (typeof p.spoken === 'string' && p.spoken.trim()) PLAYER.spoken = p.spoken.trim().slice(0, 20);
-  if (TITLES[p.title]) PLAYER.title = p.title;
+  if (TITLES[p.title] && !isCaptain()) PLAYER.title = p.title;
   if (p.look === 'girl' || p.look === 'boy') PLAYER.look = p.look;
   // Princes and kings are boys, princesses, queens and fairies girls.
   if (TITLES[PLAYER.title].look) PLAYER.look = TITLES[PLAYER.title].look;
@@ -109,9 +109,24 @@ function romanize(text) {
   }
   return out.charAt(0).toUpperCase() + out.slice(1);
 }
+// One save holds both editions: the one being played at the top level, the
+// other tucked under `other`, so one account keeps both games' progress.
+function editionSave(s) {
+  const had = s.edition || 'princess';
+  if (had === EDITION) return s;
+  const other = Object.assign({}, s.other);
+  const mine = other[EDITION] || {};
+  delete other[EDITION];
+  const rest = Object.assign({}, s);
+  delete rest.other;
+  other[had] = rest;
+  return Object.assign({}, mine, { edition: EDITION, other });
+}
+let otherEditions = {};
 function load() {
   try {
-    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+    const s = editionSave(JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
+    otherEditions = s.other || {};
     let outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
@@ -139,7 +154,7 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER };
+  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -180,7 +195,9 @@ function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
 
 function sceneFor(target) {
   if (!state.scenes[target]) {
-    if (target === 'town') state.scenes[target] = buildTown();
+    const captain = isCaptain() && CAPTAIN_SCENES[target];
+    if (captain) state.scenes[target] = captain();
+    else if (target === 'town') state.scenes[target] = buildTown();
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
     else if (target === 'castle2') state.scenes[target] = buildCastleUpstairs();
     else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
@@ -287,7 +304,7 @@ function enterDoor(door) {
   getOff();
   Sound.door();
   if (door.target === 'castle') {
-    changeScene('castle', null, `🏰 ${titleKo()}님의 성`);
+    changeScene('castle', null, place('castle'));
     Sound.say([{ text: line('castle'), pitch: 1.3 }]);
   } else {
     const info = door.obj.info;
@@ -301,9 +318,9 @@ function leaveRoom() {
   Sound.door();
   if (sc.house) {
     const h = sc.house;
-    changeScene('town', { c: h.c + 1, r: h.r + 3 }, '🌸 소리 마을');
+    changeScene('town', { c: h.c + 1, r: h.r + 3 }, place('town'));
   } else {
-    changeScene('town', { c: 19, r: 10 }, '🌸 소리 마을');
+    changeScene('town', { c: 19, r: 10 }, place('town'));
   }
 }
 
@@ -659,30 +676,30 @@ function renderStars(pop) {
 function followLink(link) {
   Sound.door();
   if (link.target === 'yuna') {
-    changeScene('yuna', null, `🎀 ${PLAYER.shown}의 방`);
+    changeScene('yuna', null, place('room'));
     Sound.say([{ text: line('room') }]);
   } else if (link.target === 'forest') {
-    changeScene('forest', link.at, '🌲 별빛 숲 마을');
+    changeScene('forest', link.at, place('forest'));
     Sound.say([{ text: line('forest'), pitch: 1.3 }]);
   } else if (link.target === 'unicorn') {
-    changeScene('unicorn', link.at, '🦄 유니콘 마을');
+    changeScene('unicorn', link.at, place('unicorn'));
     Sound.say([{ text: line('unicorn'), pitch: 1.3 }]);
   } else if (link.target === 'dungeon') {
     getOff();
     respawnMonsters(sceneFor('dungeon'));
-    changeScene('dungeon', link.at, '💎 반짝 동굴');
+    changeScene('dungeon', link.at, place('dungeon'));
     Sound.say([{ text: line('dungeon'), pitch: 1.3 }]);
   } else if (link.target === 'fairy') {
-    changeScene('fairy', link.at, '🧚 요정 마을');
+    changeScene('fairy', link.at, place('fairy'));
     Sound.say([{ text: line('fairyland'), pitch: 1.3 }]);
   } else if (link.target === 'town') {
-    changeScene('town', link.at, '🌸 소리 마을');
+    changeScene('town', link.at, place('town'));
   } else if (link.target === 'castle2') {
-    changeScene('castle2', link.at, '📚 성 2층');
+    changeScene('castle2', link.at, place('castle2'));
     Sound.say([{ text: line('upstairs'), pitch: 1.3 }, { pause: 400 }]);
     libraryInvite();
   } else {
-    changeScene(link.target, link.at, `🏰 ${titleKo()}님의 성`);
+    changeScene(link.target, link.at, place('castle'));
   }
 }
 
@@ -1713,7 +1730,7 @@ function wearLook() {
 function renderStart() {
   ui.startTitle.textContent = `${PLAYER.shown} ${titleKo()}의`;
   ui.wdTitle.textContent = `${isBoy() ? '👑' : '🎀'} ${titleKo()}님의 옷장`;
-  document.title = `${PLAYER.shown} ${titleKo()}의 소리 마을`;
+  document.title = `${PLAYER.shown} ${titleKo()}의 ${placeName('game')}`;
   ui.titleChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.title === PLAYER.title));
   // Knights, wizards, explorers and captains can be a girl or a boy.
   ui.lookChips.classList.toggle('hidden', !!TITLES[PLAYER.title].look);
@@ -1721,10 +1738,13 @@ function renderStart() {
   wearLook();
   drawPortrait(ui.startPreview, heroSprite(state.outfit, 0));
 }
+document.body.classList.toggle('captain', isCaptain());
+document.getElementById('start-game').textContent = placeName('game');
 ui.nameInput.value = PLAYER.shown;
 ui.spokenInput.value = PLAYER.spoken;
 spokenEdited = PLAYER.spoken !== romanize(PLAYER.shown);
 for (const [key, t] of Object.entries(TITLES)) {
+  if (isCaptain() && key !== 'captain') continue; // the robot edition has one title
   const b = document.createElement('button');
   b.className = 'chip';
   b.dataset.title = key;
@@ -1775,7 +1795,7 @@ ui.startBtn.addEventListener('click', () => {
   ui.spokenInput.blur();
   save();
   ui.start.classList.add('hidden');
-  showPlace('🌸 소리 마을');
+  showPlace(place('town'));
   Sound.say([{ text: line('start'), pitch: 1.3 }]);
 });
 requestAnimationFrame(frame);
