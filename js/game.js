@@ -279,6 +279,7 @@ function changeScene(target, at, label) {
     document.body.classList.toggle('unicorn', state.scene.kind === 'unicorn');
     document.body.classList.toggle('dungeon', state.scene.kind === 'dungeon');
     document.body.classList.toggle('fairy', state.scene.kind === 'fairy');
+    document.body.classList.toggle('dino', state.scene.kind === 'dino');
     state.fairyAt = null;
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);

@@ -2200,6 +2200,7 @@ function villagerSprite(lookKey, frame) {
   if (villagerCache.has(key)) return villagerCache.get(key);
   const look = LOOKS[lookKey];
   if (look.monster) return monsterSprite(look.monster, frame);
+  if (look.dino) return dinoFolkSprite(look.dino, frame);
   const cv = makeCanvas(20, 34);
   const ctx = cv.getContext('2d');
   const OXv = 2;
