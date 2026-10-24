@@ -100,11 +100,7 @@ if (isCaptain()) {
 
   // Narrator and reward lines that talked about castles, dresses and wardrobes.
   Object.assign(LINES, {
-    gift: ['I have a new robot part for you! Shall we fit it now?', 'This is for you, {title}! Do you want to try it on?', 'Ta-da! A shiny new part! Shall we try it?', 'You earned a robot part! Would you like to put it on?'],
-    yes: ['Looking cool!', 'Wow, super strong!', 'That part fits perfectly!', 'Awesome, {title}!', 'Beep boop! You look amazing!'],
-    keep: ["Okay! I'll put it on your workbench.", 'To the workbench it goes!', 'Great! You can fit it in your room later.'],
     room: ['Here is your room, {title}!', 'Welcome to your own room, {title}!', 'Your workbench is waiting for you!'],
-    dressup: ["Let's build!", 'Which parts shall we use today?', 'Pick your favourite parts!'],
     castle: ['Welcome back to HQ, {title}!', 'Back to base!', 'Captain on deck!'],
     house: ['Knock, knock! The {letter} workshop!', 'Here is the {letter} workshop!', "Let's visit the {letter} workshop!"],
     start: ["Good morning, {title} {name}! Let's visit Robot Town!", 'What a sunny day, {title} {name}! Shall we go and say hello to the robots?'],
@@ -285,7 +281,7 @@ function robotBitmap(def) {
   return grid.map(r => r.join(''));
 }
 
-function robotPalette(pal) {
+function rtRobotPalette(pal) {
   const t = pal.t || '#ffd34d';
   const h = pal.h || '#ff6b6b';
   return Object.assign({
@@ -298,7 +294,7 @@ function robotPalette(pal) {
 // Adds every robot to the cave monsters' bitmap table (needs sprites.js).
 function registerRobots() {
   for (const [key, def] of Object.entries(ROBOTS)) {
-    MONSTERS[key] = { pal: robotPalette(def.pal), rows: robotBitmap(def), lift: def.lift || 0 };
+    MONSTERS[key] = { pal: rtRobotPalette(def.pal), rows: robotBitmap(def), lift: def.lift || 0 };
   }
 }
 if (isCaptain() && typeof MONSTERS !== 'undefined') registerRobots();
