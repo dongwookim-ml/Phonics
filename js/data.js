@@ -431,8 +431,8 @@ const PART_SOUNDS = {
 LINES.firstSound = ['Which letter does it start with?', 'What is the first letter?', 'Which letter comes first?'];
 LINES.findStart = ['Which one starts with', 'Which picture starts with', 'What begins with'];
 LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
-LINES.vowel = ['Which letter is in the middle?', 'Which letter is missing?', 'Find the middle letter!'];
-LINES.ending = ['Which letter is at the end?', 'What is the last letter?', 'How does it end?'];
+LINES.vowel = ['Which letter goes in the middle?', 'What letter is missing in the middle?', 'Can you find the middle letter?'];
+LINES.ending = ['Which letter goes at the end?', 'What letter is missing at the end?', 'Can you find the last letter?'];
 LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'Read it all by yourself!'];
 
 // ---- Unicorn Village (level 3) ----------------------------------------------

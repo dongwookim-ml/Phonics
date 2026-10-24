@@ -191,7 +191,8 @@ const Quiz = (() => {
       return {
         id: t.id, target: t.w,
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="blank">?</span>${t.w[2]}</span>`,
-        ask: [{ text: line('vowel') }, { pause: 600 }, voiced(t.w)],
+        // The word first, then the question about it.
+        ask: [voiced(t.w), { pause: 600 }, { text: line('vowel') }],
         replay: [voiced(t.w)],
         options: vowels.map(x => ({ html: letterCard(x), right: x === v, wrong: x.toUpperCase() })),
         answer: [say(`${t.w}!`)],
@@ -206,7 +207,8 @@ const Quiz = (() => {
       return {
         id: t.id, target: t.w,
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="blank">?</span></span>`,
-        ask: [{ text: line('ending') }, { pause: 600 }, voiced(t.w)],
+        // The word first, then the question about it.
+        ask: [voiced(t.w), { pause: 600 }, { text: line('ending') }],
         replay: [voiced(t.w)],
         options: ends.map(x => ({ html: letterCard(x), right: x === end, wrong: x.toUpperCase() })),
         answer: [say(`${t.w}!`)],

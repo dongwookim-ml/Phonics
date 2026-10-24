@@ -1,0 +1,40 @@
+# Records the game's voices with Amazon Polly (tools/polly-build.py) and
+# commits the clips to the branch. Runs when tools/polly-run.json changes:
+# {"mode": "sample"} records a few lines in every voice, {"mode": "all"}
+# records every phrase in tools/tts-phrases.json.
+# Needs the repository secrets AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+name: Record voices with Amazon Polly
+on:
+  push:
+    branches-ignore: [main]
+    paths: [tools/polly-run.json]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: polly
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install boto3
+      - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Record
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        run: python tools/polly-build.py
+      - name: Commit the clips
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898299+github-actions[bot]@users.noreply.github.com'
+          git add -A audio
+          git diff --cached --quiet && exit 0
+          git commit -qm "Record voices with Amazon Polly ($(jq -r .mode tools/polly-run.json))"
+          for i in 1 2 3; do git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done
+          exit 1
