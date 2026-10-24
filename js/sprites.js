@@ -2201,6 +2201,7 @@ function villagerSprite(lookKey, frame) {
   const look = LOOKS[lookKey];
   if (look.monster) return monsterSprite(look.monster, frame);
   if (look.draw) return look.draw(lookKey, frame);
+  if (look.dino) return dinoFolkSprite(look.dino, frame);
   const cv = makeCanvas(20, 34);
   const ctx = cv.getContext('2d');
   const OXv = 2;

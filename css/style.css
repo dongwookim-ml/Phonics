@@ -486,6 +486,16 @@ body.forest .bloom {
 }
 body.forest .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
 
+/* ---- Dinosaur Village (captain): a sunny jungle ---- */
+
+body.dino { background: linear-gradient(#9ee4ff, #d4f6c4 50%, #fff0b0); }
+body.dino .bloom {
+  background:
+    radial-gradient(ellipse at 18% 0%, rgba(255, 240, 170, 0.6), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(255, 190, 120, 0.35), transparent 60%);
+}
+body.dino .vignette { background: radial-gradient(ellipse at center, transparent 60%, rgba(40, 110, 60, 0.25)); }
+
 /* ---- Crystal Cave and the shop ---- */
 
 body.dungeon { background: linear-gradient(#2a2050, #4f4288 50%, #7a6cb0); }
