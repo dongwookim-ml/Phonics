@@ -13,7 +13,7 @@ const PARENT_KINDS = [
   ['read', '읽기', '숲'],
   ['sentence', '문장 듣기', '유니콘 · 동굴'],
   ['meaning', '뜻 맞추기', '유니콘 · 동굴'],
-  ['spell', '스펠링', '요정 마을'],
+  ['spell', '스펠링', isCaptain() ? '드론 마을' : '요정 마을'],
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 
@@ -181,7 +181,7 @@ function parentStats() {
     .join('');
   parentUi.panel.querySelector('.parent-body').innerHTML = `
     <div class="parent-tiles">
-      ${tile('⭐', '별', state.stars)}${tile('🪙', '코인', state.coins | 0)}${tile('✨', '요정의 가루', state.dust | 0)}
+      ${tile('⭐', '별', state.stars)}${tile('🪙', '코인', state.coins | 0)}${isCaptain() ? tile('⚡', '배터리', state.dust | 0) : tile('✨', '요정의 가루', state.dust | 0)}
       ${tile('📝', '답한 횟수', answers)}${tile('✅', '맞힌 문제', solvedCount)}
     </div>
     <h3>문제 유형별 진행도</h3>
