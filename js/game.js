@@ -381,8 +381,9 @@ function renderRide() {
 function rec(kind, name) {
   return `audio/${kind}/${name.toLowerCase()}.mp3`;
 }
-function letterSound(info) {
-  return { text: `${info.sound}, ${info.sound}`, file: rec('letters', info.letter), rate: 0.7, narrator: true };
+// `voiced`: said by the villager talking, not the narrator.
+function letterSound(info, voiced) {
+  return { text: `${info.sound}, ${info.sound}`, file: rec('letters', info.letter), rate: 0.7, narrator: !voiced };
 }
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -479,7 +480,7 @@ function openDialog(npc) {
   ui.reward.classList.add('hidden');
   const greet = [{ text: hello }, { pause: 400 }];
   const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
-  if (house) greet.push({ text: `This is the ${npc.letter} house.` }, { pause: 250 }, letterSound(house), { pause: 500 });
+  if (house) greet.push({ text: `This is the ${npc.letter} house.` }, { pause: 250 }, letterSound(house, true), { pause: 500 });
   Sound.say(greet.concat(q.ask), voiceOf(npc));
   save();
 }

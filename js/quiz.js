@@ -94,6 +94,9 @@ const Quiz = (() => {
   }
 
   const say = w => ({ text: w, file: rec('words', w), rate: 0.72, narrator: true });
+  // The word in a question, in the asker's own voice so the line doesn't
+  // switch speakers halfway (recorded for each voice by tools/tts-phrases.js).
+  const voiced = w => ({ text: w, file: rec('words', w), rate: 0.85 });
   const firstBig = w => `<span class="first">${w[0]}</span>${w.slice(1)}`;
   const long = w => (w.length > 6 ? ' long' : '');
   const wordCard = (w, e) => `<span class="pic">${e}</span><span class="w${long(w)}">${firstBig(w)}</span>`;
@@ -117,8 +120,8 @@ const Quiz = (() => {
       const opts = shuffle([t, ...distractors(t, 2)]);
       return {
         id: t.id, target: t.w, clue: '',
-        ask: [{ text: line('ask') }, { pause: 750 }, say(t.w)],
-        replay: [say(t.w)],
+        ask: [{ text: line('ask') }, { pause: 750 }, voiced(t.w)],
+        replay: [voiced(t.w)],
         options: opts.map(o => ({ html: wordCard(o.w, o.e), right: o === t, wrong: o.w, words: true })),
         answer: [say(`${t.w}!`)],
       };
@@ -129,8 +132,8 @@ const Quiz = (() => {
       const letters = shuffle([t.info, ...shuffle(LETTERS.filter(l => l !== t.info)).slice(0, 2)]);
       return {
         id: t.id, target: t.w, clue: `<span class="clue-pic">${t.e}</span>`,
-        ask: [say(t.w), { pause: 600 }, { text: line('firstSound') }],
-        replay: [say(t.w)],
+        ask: [voiced(t.w), { pause: 600 }, { text: line('firstSound') }],
+        replay: [voiced(t.w)],
         options: letters.map(l => ({ html: letterCard(l.letter + l.letter.toLowerCase()), right: l === t.info, wrong: l.sound })),
         answer: [{ text: `${t.w} starts with`, narrator: true }, letterSound(t.info)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
@@ -145,8 +148,8 @@ const Quiz = (() => {
       return {
         id: t.id, target: t.w, clue: `<span class="clue-letter">${info.letter}${info.letter.toLowerCase()}</span>`,
         prompt: `${lead} ${info.letter}?`,
-        ask: [{ text: lead }, { pause: 300 }, letterSound(info)],
-        replay: [letterSound(info)],
+        ask: [{ text: lead }, { pause: 300 }, letterSound(info, true)],
+        replay: [letterSound(info, true)],
         options: opts.map(o => ({ html: picCard(o.w, o.e), right: o === t, wrong: o.w })),
         answer: [say(`${t.w}!`)],
       };
@@ -161,8 +164,8 @@ const Quiz = (() => {
       return {
         id, target: set[0][0], clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
         prompt: `${lead} "${base.w}"?`,
-        ask: [{ text: lead }, { pause: 300 }, say(base.w)],
-        replay: [say(base.w)],
+        ask: [{ text: lead }, { pause: 300 }, voiced(base.w)],
+        replay: [voiced(base.w)],
         options: opts.map(o => ({ html: wordCard(o.w, o.e), right: o === ans, wrong: o.w, alwaysPictures: true })),
         answer: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
       };
@@ -174,8 +177,8 @@ const Quiz = (() => {
       const four = shuffle([t, ...others]);
       return {
         id: t.id, target: t.w, clue: '',
-        ask: [{ text: line('ask2') }, { pause: 750 }, say(t.w)],
-        replay: [say(t.w)],
+        ask: [{ text: line('ask2') }, { pause: 750 }, voiced(t.w)],
+        replay: [voiced(t.w)],
         options: four.map(o => ({ html: wordCard(o.w, o.e), right: o === t, wrong: o.w, words: true })),
         answer: [say(`${t.w}!`)],
       };
@@ -188,8 +191,8 @@ const Quiz = (() => {
       return {
         id: t.id, target: t.w,
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="blank">?</span>${t.w[2]}</span>`,
-        ask: [{ text: line('vowel') }, { pause: 600 }, say(t.w)],
-        replay: [say(t.w)],
+        ask: [{ text: line('vowel') }, { pause: 600 }, voiced(t.w)],
+        replay: [voiced(t.w)],
         options: vowels.map(x => ({ html: letterCard(x), right: x === v, wrong: PART_SOUNDS[x] })),
         answer: [say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="first">${v}</span>${t.w[2]}</span>`,
@@ -203,8 +206,8 @@ const Quiz = (() => {
       return {
         id: t.id, target: t.w,
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="blank">?</span></span>`,
-        ask: [{ text: line('ending') }, { pause: 600 }, say(t.w)],
-        replay: [say(t.w)],
+        ask: [{ text: line('ending') }, { pause: 600 }, voiced(t.w)],
+        replay: [voiced(t.w)],
         options: ends.map(x => ({ html: letterCard(x), right: x === end, wrong: PART_SOUNDS[x] })),
         answer: [say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="first">${end}</span></span>`,
@@ -302,8 +305,8 @@ const Quiz = (() => {
         word: t.w,
         clue: `<span class="clue-pic">${t.e}</span><span class="spell-word">${own.map(() => '<span class="slot"></span>').join('')}</span>`,
         tiles: shuffle(own.concat(extra)).map(l => ({ l, sound: l.toUpperCase() })), // tapping a tile says its name
-        ask: [{ text: line('spell') }, { pause: 600 }, say(t.w)],
-        replay: [say(t.w)],
+        ask: [{ text: line('spell') }, { pause: 600 }, voiced(t.w)],
+        replay: [voiced(t.w)],
         // Filled in when the last blank is filled (see checkSpell in game.js).
         options: [],
         // Sound it out, then say it: "kuh, ah, tuh... cat!"

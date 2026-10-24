@@ -43,6 +43,9 @@ const forest = new Set(D.FOREST_NPCS.map(n => n.look));
 const unicorn = new Set([...D.UNICORN_NPCS, ...D.DUNGEON_NPCS].map(n => n.look));
 const monsters = new Set(D.DUNGEON_NPCS.map(n => n.look));
 const fairies = new Set(D.FAIRY_NPCS.map(n => n.look));
+const letterWords = D.LETTERS.flatMap(l => l.words.map(([w]) => w));
+const rhymeWords = D.RHYMES.flat().map(([w]) => w);
+const famWords = D.WORD_FAMILIES.flat().map(([w]) => w);
 for (const [look, style] of Object.entries(D.VOICES)) {
   const v = style.tts;
   if (!v) continue;
@@ -60,6 +63,14 @@ for (const [look, style] of Object.entries(D.VOICES)) {
     }
     add(v, 'hmm, hmm', 0.85);
   }
+  // The word in each question, said by whoever asks it (`voiced` in quiz.js).
+  const asks = new Set();
+  if (town.has(look)) for (const w of letterWords.concat(rhymeWords)) asks.add(w);
+  // Letter sounds too (recorded from phonemes, see tts-build.py).
+  if (town.has(look)) for (const l of D.LETTERS) add(v, `${l.sound}, ${l.sound}`, 0.75);
+  if (forest.has(look)) for (const w of famWords.concat(rhymeWords)) asks.add(w);
+  if (fairies.has(look)) for (const w of letterWords.concat(famWords)) if (/^[a-z]{3,4}$/.test(w)) asks.add(w);
+  for (const w of asks) add(v, w, 0.85);
   if (monsters.has(look)) lines(v, ['caught']);
   if (fairies.has(look)) lines(v, ['spell', 'newFairy']);
   if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
