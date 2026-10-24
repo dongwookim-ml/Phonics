@@ -1737,10 +1737,10 @@ function wearLook() {
   for (const { slot } of WARDROBE) if (!state.owned[slot].includes(state.outfit[slot])) state.owned[slot].push(state.outfit[slot]);
 }
 function renderStart() {
-  ui.startTitle.textContent = `${PLAYER.shown} ${titleKo()}의`;
+  ui.startTitle.textContent = isCaptain() ? `${titleKo()} ${PLAYER.shown}의` : `${PLAYER.shown} ${titleKo()}의`;
   ui.wdTitle.textContent = `${isBoy() ? '👑' : '🎀'} ${titleKo()}님의 옷장`;
   if (isCaptain()) ui.wdTitle.textContent = CAPTAIN_TEXT.workbench();
-  document.title = `${PLAYER.shown} ${titleKo()}의 ${placeName('game')}`;
+  document.title = `${ui.startTitle.textContent} ${placeName('game')}`;
   ui.titleChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.title === PLAYER.title));
   // Knights, wizards, explorers and captains can be a girl or a boy.
   ui.lookChips.classList.toggle('hidden', !!TITLES[PLAYER.title].look);
