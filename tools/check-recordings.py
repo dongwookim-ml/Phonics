@@ -84,6 +84,10 @@ def main():
     report('letter-sound lines read with phonemes (their pure sound is missing)', fallback, warnings)
     report('clips recorded without their speed (the engine refused <prosody rate>)', norate, warnings)
 
+    # Lines the fix gave up on after every way of saying them (tools/polly-build.py
+    # marks them in clip-check.json, whichever check they failed).
+    given_up = {k for k, c in (read(os.path.join(TOOLS, 'clip-check.json'), {}) or {}).get('clips', {}).items()
+                if c.get('unfixable')}
     for name, fails_of in (('clip-check', lambda c: c.get('fails')),
                            ('voice-check', lambda c: c.get('status') in ('article', 'extra', 'silent', 'different',
                                                                           'error'))):
@@ -94,10 +98,11 @@ def main():
         if rep.get('index') != digest:
             problems.append(f"tools/{name}.json checked index {rep.get('index') or '(unknown)'}, not this one ({digest})")
         live = {f'{v}|{t}': i for v, m in index.items() for t, i in m.items()}
-        bad = [f"{k}: {fails_of(c) if name == 'clip-check' else c.get('status')}"
-               for k, c in sorted(rep.get('clips', {}).items())
-               if live.get(k) == c.get('id') and fails_of(c) and not (args.allow_unfixable and c.get('unfixable'))]
-        report(f'clips failing {name}', bad, problems)
+        failing = [(k, f"{k}: {fails_of(c) if name == 'clip-check' else c.get('status')}")
+                   for k, c in sorted(rep.get('clips', {}).items()) if live.get(k) == c.get('id') and fails_of(c)]
+        allowed = [x for k, x in failing if args.allow_unfixable and k in given_up]
+        report(f'clips failing {name}', [x for k, x in failing if x not in allowed], problems)
+        report(f'clips failing {name} that no way of saying fixed', allowed, warnings)
         unchecked = [k for k, i in live.items() if rep.get('clips', {}).get(k, {}).get('id') != i]
         report(f'clips {name} has not checked', unchecked, problems if name == 'clip-check' else warnings)
 
