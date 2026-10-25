@@ -197,7 +197,6 @@
 "bm_fable|bee": 1,
 "bm_fable|chess": 3,
 "bm_fable|chopstick": 3,
-"bm_fable|hope": 1,
 "bm_fable|hotdog": 3,
 "bm_fable|lake": 1,
 "bm_fable|leaf": 1,
@@ -233,14 +232,11 @@
 "bm_lewis|cook": 1,
 "bm_lewis|elf": 1,
 "bm_lewis|lock": 3,
-"bm_lewis|mane": 4,
-"bm_lewis|meat": 3,
 "bm_lewis|net": 1,
 "bm_lewis|notebook": 1,
 "bm_lewis|nut": 4,
 "bm_lewis|rain": 2,
 "bm_lewis|rice": 1,
-"bm_lewis|rode": 1,
 "bm_lewis|violin": 1,
 "bm_lewis|yum": 1
 }
