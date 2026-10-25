@@ -679,7 +679,22 @@ async function deployedWardrobe(browser, deployed) {
   check('deployed tab loads a save with new clothes: a boy in things it knows, the new ones kept in its lists', old.look === 'boy' && old.known && old.kept, old);
   check(`deployed tab + this version: the treasure shelf (${afterOld} after the deployed tab saved) and the new clothes are all there after both save`,
     ['shell', 'kite'].every(v => (owned.treasure || []).includes(v)) && (owned.shape || []).includes('suit'), owned);
-  check('deployed tab + this version\'s wardrobe: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
+  // Then this tablet signs out (nothing here holds the shelf any more) and
+  // the deployed tab saves twice: the shelf's own copy (`shelf`, a field the
+  // deployed game keeps as it is) brings it back on a new tablet.
+  await Promise.all([N.page.waitForNavigation({ timeout: 15000 }), N.page.evaluate(() => Account.logout())]).catch(() => {});
+  for (let i = 0; i < 2; i++) {
+    await earnOld(O, 'o');
+    await settle(O).catch(() => {});
+  }
+  const left = shelf((await serverSave(acct)).save).length;
+  const F = await tablet(browser);
+  await login(F, acct);
+  const fresh = await F.page.evaluate(() => state.owned.treasure);
+  check(`deployed tab saving after this tablet signed out (the shelf ${left} in its save): a new tablet still has the treasures`,
+    ['shell', 'kite'].every(v => fresh.includes(v)), fresh);
+  check('deployed tab + this version\'s wardrobe: no page errors', !N.errors.length && !O.errors.length && !F.errors.length, N.errors.concat(O.errors, F.errors));
+  await F.ctx.close();
   await O.ctx.close();
   await N.ctx.close();
 }

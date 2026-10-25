@@ -1746,6 +1746,35 @@ async function musicFlows(browser, edition) {
   await bare.close();
 }
 
+// The shop: another tab picks its first thing (the mirror and the 🪙 button
+// never show one from a tab she has left), and a village's clothes cost
+// what other villages' do, less than a unicorn or a car.
+async function shopTabs(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const r = await page.evaluate(() => {
+    state.stars = 99; // every village's things are in the shop
+    const npc = ['town', 'forest', 'unicorn', 'fairy', 'dungeon'].map(sceneFor).flatMap(sc => sc.npcs).find(n => n.shop);
+    openShop(npc);
+    const first = { tab: state.shopTab, pick: state.shopPick && state.shopPick.slot };
+    const tabs = [...document.querySelectorAll('#shop-tabs .wd-tab')];
+    const other = tabs.find(b => !b.classList.contains('on'));
+    other.click();
+    const pick = state.shopPick;
+    const after = { tabs: tabs.length, tab: state.shopTab, pick: pick && pick.slot, lit: document.querySelectorAll('#shop-items .wd-item.on').length,
+      buy: document.getElementById('shop-buy').textContent, price: pick && pick.price };
+    const price = slot => { const w = WARDROBE.find(w => w.slot === slot); const v = Object.keys(w.items).find(v => w.items[v].unicorn); return v ? shopPrice(slot, w.items[v]) : null; };
+    const prices = { ride: price('ride'), head: price('head'), back: price('back'), forestBack: shopPrice('back', { forest: true }) };
+    closeShop();
+    return { first, after, prices };
+  });
+  const tag = `shop (${edition})`;
+  check(`${tag}: it opens on the tab of the thing picked`, !!r.first.tab && r.first.tab === r.first.pick, r.first);
+  check(`${tag}: another tab picks its first thing, lit, on the 🪙 button`, r.after.tabs > 1 && r.after.tab !== r.first.tab && r.after.pick === r.after.tab && r.after.lit === 1 && r.after.buy.includes(String(r.after.price)), r.after);
+  check(`${tag}: a village's clothes cost like other villages', a ride more`, r.prices.ride === 12 && [r.prices.head, r.prices.back].every(p => p === null || p === r.prices.forestBack) && r.prices.forestBack < 12, r.prices);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const site = await serve();
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -1756,7 +1785,8 @@ async function musicFlows(browser, edition) {
     games: b => littleGames(b, 'princess'), gamesCaptain: b => littleGames(b, 'captain'),
     presentsGirl: b => presents(b, 'princess', 'girl'), presentsBoy: b => presents(b, 'princess', 'boy'), presentsRobot: b => presents(b, 'captain', 'robot'),
     outside: b => outsideTaps(b, 'princess'), outsideCaptain: b => outsideTaps(b, 'captain'),
-    music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
+    music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain'),
+    shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

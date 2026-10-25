@@ -354,6 +354,9 @@ const LINES = {
   // A treasure for her shelf (giftLine in game.js says the present line
   // until this one is recorded in the giver's voice).
   treasure: ['A little treasure for you!', 'Look! A shiny treasure for you!', 'Here is a treasure for your shelf!'],
+  // Once it is on the shelf (acceptReward in game.js; nothing is said until
+  // it is recorded in the giver's voice).
+  shelf: ['Onto your treasure shelf it goes!', 'It looks so pretty on your shelf!'],
   room:['Here is your room, {title}!', 'Welcome to your own room!', 'Your wardrobe is waiting for you!'],
   dressup: ["Let's dress up!", 'What shall we wear today?', 'Pick your favourite!'],
   castle: ['Welcome home, {title}!', 'Back to the castle!', 'Home sweet home!'],

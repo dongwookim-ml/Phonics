@@ -141,6 +141,7 @@ if (isCaptain()) {
     yes: ['Looking cool!', 'Awesome upgrade!', 'Super cool, {title}!', 'Beep boop! You look great!', 'Wow, what a robot!'],
     keep: ["Okay! I'll put it on your workbench.", 'Off to the workbench it goes!', 'Great! You can fit it on in your room later.'],
     treasure: ['A cool treasure for you!', 'Look! A treasure for your workbench!', 'Here is something cool for your shelf!'],
+    shelf: ['Onto your treasure shelf it goes!', 'It looks so cool on your shelf!'],
     dressup: ["Let's build your robot!", 'Time for a robot upgrade!', 'Pick your favourite parts!'],
     shop: ['What would you like today?', 'Pick a cool part!', 'These parts are extra special!'],
     poor: ['Oh, you need a few more coins. Beat the villains in the cave!', 'Almost! Visit the Villain Cave for more coins.', 'Not enough coins yet. The cave villains drop lots of coins!'],

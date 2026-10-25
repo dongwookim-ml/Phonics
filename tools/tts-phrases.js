@@ -89,7 +89,7 @@ function collect(D) {
     for (const l of D.LINES.nudge || []) for (const t of fills(l)) add(v, t);
     // Praise, the hints after a miss and the answer shown after a second one
     // (choose in js/game.js), and the present.
-    lines(v, ['praise', 'listen', 'showMe', 'tapIt', 'soon', 'again', 'next', 'gift', 'yes', 'keep', 'treasure']);
+    lines(v, ['praise', 'listen', 'showMe', 'tapIt', 'soon', 'again', 'next', 'gift', 'yes', 'keep', 'treasure', 'shelf']);
     // A cheer instead of the praise for answers right in a row (js/album.js).
     lines(v, ['combo', 'combo5', 'comboMore']);
     const kinds = kindsOf(look);

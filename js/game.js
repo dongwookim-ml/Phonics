@@ -160,7 +160,7 @@ function load(raw) {
     // The first-steps pointer (js/guide.js) is for new players only.
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
     // Stars, coins and dust are also counted per device (js/progress.js).
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
+    return { outfit, owned: ownedFrom(s.owned, outfit, s.shelf), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
       skill, settings, friends: s.friends || {}, guide: firstSteps, playtime,
       stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
   } catch (e) {
@@ -172,12 +172,16 @@ function load(raw) {
 // Presents she has collected, by slot. The starting outfit, "none" and
 // whatever she is wearing (from before the wardrobe existed) always count.
 // Things this version doesn't know (a newer version's) stay in the lists,
-// and a slot it doesn't know stays as it is.
-function ownedFrom(saved, outfit) {
+// and a slot it doesn't know stays as it is. The treasure shelf is also
+// saved on its own (`shelf`): a tab still open on an older version rebuilds
+// `owned` from the slots it knows and saves it without the shelf, but keeps
+// a field it doesn't know.
+function ownedFrom(saved, outfit, shelfCopy) {
   const owned = {};
   const list = slot => (saved && Array.isArray(saved[slot]) ? saved[slot] : []);
   for (const { slot, items, shelf } of WARDROBE) {
     const set = new Set(list(slot));
+    if (shelf && Array.isArray(shelfCopy)) for (const v of shelfCopy) if (typeof v === 'string') set.add(v);
     if (!shelf) {
       set.add(DEFAULT_OUTFIT[slot]);
       // Boy-only starting clothes, so switching looks never leaves her bare.
@@ -200,7 +204,7 @@ function save() {
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
   const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, stamps: state.stamps, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
-    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests }, Progress.count(state));
+    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests, shelf: state.owned.treasure || [] }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -926,10 +930,13 @@ function acceptReward(yes) {
   // The wardrobe opens where it went, and it sparkles there.
   if (gift) wdNew = { slot: gift.slot, value: gift.value };
   if (gift && isShelf(gift.slot)) {
-    // A treasure goes on the shelf.
+    // A treasure goes on the shelf ("Into the wardrobe it goes!" would be
+    // wrong, so nothing is said until the shelf line is recorded).
     burstAtHero(30);
     Sound.sparkle();
-    Sound.say([{ text: line('keep') }], voiceOf(state.giver));
+    const kept = line('shelf');
+    const who = voiceOf(state.giver);
+    if (Sound.hasClip(kept, who || undefined)) Sound.say([{ text: kept }], who);
   } else if (yes && gift) {
     const was = state.outfit;
     state.outfit = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
@@ -1369,8 +1376,8 @@ function respawnMonsters(sc) {
 function shopPrice(slot, item) {
   if (item.price) return item.price;
   if (isShelf(slot)) return item.forest || item.unicorn || item.fairy ? 5 : 3;
-  if (item.unicorn) return 12;
-  if (item.forest || item.fairy) return 8;
+  if (slot === 'ride') return 12; // a unicorn or a car
+  if (item.forest || item.unicorn || item.fairy) return 8;
   return slot === 'head' || slot === 'hand' ? 6 : 4;
 }
 
@@ -1415,7 +1422,9 @@ function renderShop() {
   const tabs = WARDROBE.filter(w => list.some(it => it.slot === w.slot));
   if (!tabs.some(w => w.slot === state.shopTab)) state.shopTab = tabs.length ? tabs[0].slot : null;
   ui.shopTabs.classList.toggle('hidden', !tabs.length);
-  renderTabs(ui.shopTabs, tabs, state.shopTab, slot => { state.shopTab = slot; renderShop(); });
+  // Another tab picks its first thing: the mirror and 🪙 button never show
+  // one from a tab she has left.
+  renderTabs(ui.shopTabs, tabs, state.shopTab, slot => { state.shopTab = slot; shopChoose(list.find(it => it.slot === slot)); renderShop(); });
   ui.shopItems.innerHTML = '';
   for (const it of list) {
     if (it.slot !== state.shopTab) continue;
@@ -1427,15 +1436,19 @@ function renderShop() {
     b.insertAdjacentHTML('beforeend', `<span class="price"><span class="coin">🪙</span>${it.price}</span>`);
     b.addEventListener('click', () => {
       Sound.tap();
-      state.shopPick = it;
-      ui.shopMsg.textContent = it.item.shop ? '✨ 상점에만 있는 보물이에요!' : '갖고 싶은 걸 골라 보세요!';
-      if (isCaptain() && it.item.shop) ui.shopMsg.textContent = CAPTAIN_TEXT.shopOnly;
+      shopChoose(it);
       renderShop();
     });
     ui.shopItems.append(b);
   }
   ui.shopBuy.classList.toggle('hidden', !pick);
   if (pick) ui.shopBuy.textContent = `🪙 ${pick.price}개로 살래요`;
+}
+
+function shopChoose(it) {
+  state.shopPick = it || null;
+  ui.shopMsg.textContent = it && it.item.shop ? '✨ 상점에만 있는 보물이에요!' : '갖고 싶은 걸 골라 보세요!';
+  if (isCaptain() && it && it.item.shop) ui.shopMsg.textContent = CAPTAIN_TEXT.shopOnly;
 }
 
 // The shop's mirror: her with `pick` on (riding, if it is a unicorn), or a
