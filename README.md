@@ -77,7 +77,11 @@ npx http-server -p 8080 .
   without an account) and shows stars, coins, fairy dust and answers, a
   bar per question kind (right / missed / not tried, out of the pool) with
   the first-try accuracy, the most-missed questions and the last 7 days.
-  The game is paused while it is open. Code in `js/parent.js`.
+  The game is paused while it is open: she stops walking, nobody talks,
+  and timers wait until it closes. Without a connection the password is
+  checked against a copy kept on the tablet at login (PBKDF2, WebCrypto);
+  otherwise it says the internet is not connected, or to try again later.
+  Code in `js/parent.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
   colour. The child sees "now" and "after" side by side (on foot, unless
@@ -161,13 +165,29 @@ npx http-server -p 8080 .
 The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid) and the hint setting are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
-  (3–20 lowercase letters, digits or _) and a password (4 or more
-  characters). Signed in, the whole save is kept on the server as well, so
-  another tablet that logs into the same account gets the same progress;
-  the newer save wins. The tablet stays signed in, and the game keeps
-  working offline and uploads again later. "계정 없이 할래요" plays with the
-  browser-only save; 🔑 로그인 / 로그아웃 is at the top right of the start
-  screen. The first login carries the progress so far into the account.
+  (3–20 lowercase letters, digits or _) and a password (6 or more
+  characters; accounts made before with 4 or 5 keep working). Signed in,
+  the whole save is kept on the server as well, so another tablet that
+  logs into the same account gets the same progress.
+  Two tablets can play at once, say one the princess and one the captain
+  edition: when one saves after the other, the two saves are put together
+  in place, without a reload (`js/progress.js`). Answers, presents and books
+  are joined, and stars, coins and fairy dust are counted per device
+  (`earned` / `spent` in the save, which is marked `fmt: 2`), so both
+  tablets' stars add up. The save keeps the plain totals and any fields a
+  newer version added, so an older version of the game can still read it.
+  Totals uploaded by an older version (no `fmt`) are taken as a floor
+  under one "old client" entry, never added on top of the per-device
+  counts they already include (`node tools/check-merge.js`). The outfit
+  and name come from the tablet playing that edition, or else from the
+  copy saved on the newer server version. The tablet stays signed in, and
+  the game keeps working offline and uploads again later (one upload at a
+  time). "계정 없이 할래요" plays with the browser-only save; 🔑 로그인 /
+  로그아웃 is at the top right of the start screen. Logging in on a tablet that was played as a guest adds that
+  progress to the account (its stars count on top of the account's) and
+  says so in a short note ("이 기기의 별 42개를 계정에 합쳤어요"); a copy of
+  the tablet's old save stays in its browser as `pixeltown-v2-backup-<time>`
+  (the last three).
   The account password is also the parent password (`Account.verify` in
   `js/account.js`); without an account it is `0000`.
 
@@ -216,6 +236,32 @@ under the signs and bubbles. On a slow tablet it turns itself down; add
 `?fx=2` (all), `?fx=1` (no tilt-shift) or `?fx=0` (none) to the address to
 fix the level.
 
+The other checks, all run by
+`.github/workflows/ci.yml` on every push and pull request:
+
+- `node tools/check-merge.js`: the save merge rules (no browser).
+- `ROUNDS=30 node tools/quiz-test.js`: thousands of questions from every
+  asker, under an empty, a finished and a mixed history.
+- `node tools/check-tts.js`: every recording has its file, and nothing the
+  game says while playing both editions lacks a recording.
+- `node tools/check-reach.js`: every villager, door and way out can be
+  walked to, also with the ride parked.
+- `node tools/check-flows.js`: the parent panel pauses the game, its
+  password messages, a broken save, the first tap after ▶.
+- `node tools/check-sync.js`: tablets on one account against a local
+  server (needs Python with `fastapi` and `uvicorn`), also next to the
+  deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
+  against the server still deployed.
+- `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
+
+Lines not recorded yet are listed; one the game actually says without a
+recording only fails with `TTS_STRICT=1` (CI sets it on `main`).
+
+The game is served from `main`, so stamp a build before merging there:
+`node tools/stamp.js`, then commit `index.html` and `version.json` (CI on
+`main` runs `node tools/check-build.js`, which fails on an unstamped `dev`
+build). Open tabs then see the new version.
+
 ### Live speech server (optional)
 
 `server/` is a small web service that speaks any line with Kokoro (or
@@ -229,9 +275,21 @@ Amazon Polly). To run it on [Railway](https://railway.app):
 4. Put that address in `TTS_SERVER` in `js/data.js`, for example
    `const TTS_SERVER = 'https://pixeltown-tts.up.railway.app';`, and push.
 
-Optional variables: `ALLOWED_ORIGINS=https://dongwookim-ml.github.io` to
-accept calls only from the game, and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` to use Amazon Polly instead.
+Optional variables: `ALLOWED_ORIGINS` lists the sites that may call it
+(comma separated, or `*`; by default the game's site
+`https://dongwookim-ml.github.io` and `localhost` / `127.0.0.1` on any port,
+so opening `index.html` as a file needs `ALLOWED_ORIGINS=*` to use the
+accounts), and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` uses Amazon Polly instead.
+
+`/tts` takes only the game's voices (`POLLY_VOICES`), about 60 lines a
+minute per address, makes at most two lines at a time in its own threads
+(so the accounts stay quick; more than 8 waiting get a 503 and the game
+uses the device's voice) and caches 50 MB of them. Request bodies over
+1 MB are refused before they are read. Wrong passwords: 10 per id from one
+address, then 429 for that address; from many addresses an id's logins
+only slow down (doubling waits up to a minute), and the parent panel's
+check is never held up by someone else's tries.
 
 ### Accounts on Railway
 
@@ -246,6 +304,15 @@ database once:
 3. Redeploy the service. The home page should now show `"db":"postgres"`.
 
 Pushing to `main` redeploys the server, and the accounts stay in Postgres.
+The last 20 saves of each account are kept in the `save_history` table, to
+roll back by hand, for example
+`SELECT updated, length(data) FROM save_history WHERE user_id = 'yuna' ORDER BY updated DESC;`
+then `UPDATE saves SET data = (SELECT data FROM save_history WHERE user_id = 'yuna' AND updated = …), updated = <now in ms> WHERE user_id = 'yuna';`.
+A tab still running an older version of the game (its saves have no
+`fmt`) gets one 409 once the stored save is `fmt: 2`, so it reloads into
+the new version; at most once every 10 minutes, so a tab still served the
+old files never keeps reloading. `pytest server` tests it all (SQLite, or
+the Postgres at `DATABASE_URL`).
 Without `DATABASE_URL` the server uses SQLite at `$DATA_DIR/pixeltown.db`
 (default `./data`), which is fine locally or with a Railway Volume mounted
 at `DATA_DIR`. The game talks to the server at `TTS_SERVER`.
@@ -273,6 +340,7 @@ These win over the Kokoro recordings; any missing file falls back to them.
 
 - `js/data.js`: content and settings
 - `js/account.js`: login / sign-up and the server save
+- `js/progress.js`: putting two copies of the save together (account sync)
 - `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
 - `js/world.js`: town and room layouts, pathfinding
 - `js/touch.js`: what things on the map do and say when tapped

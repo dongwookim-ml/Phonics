@@ -64,13 +64,17 @@ const Sound = (() => {
     return Object.assign({}, item, { text: said });
   }
   // One audio element, reused so iPad keeps it unlocked after the first tap.
+  // The unlock never swaps out a clip that is playing (that cut off the line
+  // being said), and only a refusal to play counts as still locked: a
+  // say() in the same tap replacing the silence is fine.
   const player = typeof Audio !== 'undefined' ? new Audio() : null;
   let unlocked = false;
   function unlockPlayer() {
     if (unlocked || !player) return;
     unlocked = true;
+    if (player.src && !player.paused) return;
     player.src = 'audio/tts/silence.mp3';
-    player.play().catch(() => { unlocked = false; });
+    player.play().catch(e => { if (e && e.name === 'NotAllowedError') unlocked = false; });
   }
   // A live clip that hasn't started after a few seconds gives way to the
   // device voice so nobody waits on a slow server.

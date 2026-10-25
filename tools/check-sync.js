@@ -1,0 +1,407 @@
+// Account sync checks: real tablets (Chromium pages) against a local copy
+// of server/app.py with an empty database (the merge rules themselves are
+// in tools/check-merge.js):
+//  - a slow network: uploads go one at a time, no 409, no reload;
+//  - two tablets on one account, princess + captain and princess + princess,
+//    saving in turn: no reload, and every tablet's stars are kept;
+//  - a guest's stars join an account that already has some (with a backup
+//    and a note), someone else's synced save is replaced, unsent kept;
+//  - a newer save on the server goes into the game on boot, in place;
+//  - the deployed game (OLD_REF, default origin/main) next to this one: one
+//    tablet each on one account (both editions, both ways round), a guest
+//    tablet updated to this version then logging in, and a signed-in
+//    tablet updated to this version.
+// Run: node tools/check-sync.js  (needs the playwright package and Chromium,
+// git, and Python with fastapi and uvicorn; PYTHON picks the interpreter).
+// SYNC_SERVER_REF=origin/main plays against that version of server/app.py
+// instead (this game must work with the server still deployed).
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawn, spawnSync } = require('child_process');
+const { launch } = require('./browser');
+
+const root = path.join(__dirname, '..');
+const PORT = Number(process.env.SYNC_PORT || 20000 + (process.pid % 20000));
+const SERVER = `http://127.0.0.1:${PORT}`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const temp = []; // folders to remove at the end
+let failed = 0;
+function check(name, ok, detail) {
+  console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${ok || detail === undefined ? '' : `: ${JSON.stringify(detail)}`}`);
+  if (!ok) failed++;
+}
+
+// ---- The server --------------------------------------------------------------
+
+// server/app.py from this checkout, or from git at SYNC_SERVER_REF.
+function serverDir() {
+  const ref = process.env.SYNC_SERVER_REF;
+  if (!ref) return path.join(root, 'server');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-server-'));
+  temp.push(dir);
+  const src = spawnSync('git', ['-C', root, 'show', `${ref}:server/app.py`], { maxBuffer: 1 << 26 });
+  if (src.status !== 0) throw new Error(`no server/app.py at ${ref}`);
+  fs.writeFileSync(path.join(dir, 'app.py'), src.stdout);
+  return dir;
+}
+
+async function startServer() {
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-sync-'));
+  temp.push(data);
+  const env = Object.assign({}, process.env, { DATA_DIR: data, ALLOWED_ORIGINS: '*', DATABASE_URL: '' });
+  const proc = spawn(process.env.PYTHON || 'python3', ['-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', String(PORT)],
+    { cwd: serverDir(), env, stdio: ['ignore', 'ignore', 'pipe'] });
+  let log = '';
+  proc.stderr.on('data', d => { log += d; });
+  // Up when it says so itself (not some other server already on the port).
+  for (let i = 0; i < 100 && proc.exitCode === null; i++) {
+    if (/Uvicorn running/.test(log)) {
+      try { if ((await fetch(`${SERVER}/`)).ok) return proc; } catch (e) { /* not yet */ }
+    }
+    await sleep(100);
+  }
+  proc.kill();
+  throw new Error(`the server did not start on port ${PORT} (SYNC_PORT picks another):\n${log}`);
+}
+
+let ipNo = 0;
+async function api(method, p, body, token) {
+  // A different made-up address per call keeps the per-address signup limit out of the way.
+  const headers = { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.88.${++ipNo >> 8 & 255}.${ipNo & 255}` };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const r = await fetch(SERVER + p, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  return { status: r.status, data: await r.json().catch(() => null) };
+}
+let idNo = 0;
+async function newAccount() {
+  const id = `sync${process.pid % 10000}x${++idNo}`;
+  const r = await api('POST', '/auth/signup', { id, pw: 'secret12' });
+  if (r.status !== 200) throw new Error(`signup ${r.status}`);
+  return { id, pw: 'secret12', token: r.data.token };
+}
+const serverSave = async acct => (await api('GET', '/save', null, acct.token)).data;
+const editionOf = (save, ed) => (save.edition === ed ? save : (save.other || {})[ed]) || {};
+
+// ---- Tablets -------------------------------------------------------------------
+
+const gameUrl = (dir, edition) => `file://${path.join(dir, 'index.html')}${edition === 'captain' ? '?edition=captain' : ''}`;
+
+// A tablet: its own browser storage, optionally seeded before the first
+// load, running this game or the one in `dir`.
+async function tablet(browser, { edition = 'princess', seed, slowPut = 0, dir = root } = {}) {
+  const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+  const page = await ctx.newPage();
+  const t = { page, ctx, loads: 0, n409: 0, errors: [] };
+  page.on('pageerror', e => t.errors.push(e.message));
+  page.on('framenavigated', f => { if (f === page.mainFrame()) t.loads++; });
+  page.on('response', r => { if (r.url().startsWith(SERVER) && r.status() === 409) t.n409++; });
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1)/, r => r.abort());
+  await page.route(`${SERVER}/save`, async r => {
+    if (r.request().method() === 'PUT' && t.slowPut) await sleep(t.slowPut);
+    r.continue().catch(() => {});
+  });
+  t.slowPut = slowPut;
+  await page.addInitScript(([server, seed]) => {
+    window.ACCOUNT_SERVER = server;
+    if (seed && !sessionStorage.getItem('seeded')) {
+      sessionStorage.setItem('seeded', '1');
+      for (const [k, v] of Object.entries(seed)) localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+    }
+  }, [SERVER, seed || null]);
+  await page.goto(gameUrl(dir, edition));
+  await page.waitForFunction(() => typeof Account !== 'undefined' && typeof state !== 'undefined');
+  return t;
+}
+async function login(t, acct) {
+  const { page } = t;
+  if (await page.evaluate(() => document.getElementById('login').classList.contains('hidden'))) {
+    await page.evaluate(() => document.querySelector('#account-bar .chip').click());
+  }
+  await page.fill('#login-id', acct.id);
+  await page.fill('#login-pw', acct.pw);
+  await page.click('#login-go');
+  await page.waitForFunction(() => Account._started && Account.user && document.getElementById('login').classList.contains('hidden'), null, { timeout: 15000 });
+}
+// Progress as the game makes it: stars, a coin and an answer each, then save().
+const earn = (t, n, tag) => t.page.evaluate(([n, tag]) => {
+  for (let i = 0; i < n; i++) {
+    state.stars++;
+    state.coins++;
+    state.history[`word:${tag}${state.stars}`] = { kind: 'word', tries: 1, right: 1, wrong: 0, last: Date.now() };
+  }
+  save();
+}, [n, tag]);
+// Lets a tablet send what it has (and merge what the server has).
+const settle = t => t.page.evaluate(async () => { save(); for (let i = 0; i < 3 && Account._dirty; i++) await Account._upload(); });
+const live = t => t.page.evaluate(() => ({ stars: state.stars, coins: state.coins, history: Object.keys(state.history).length, name: PLAYER.shown,
+  start: !document.getElementById('start').classList.contains('hidden'), dirty: !!localStorage.getItem('pixeltown-dirty') }));
+
+async function slowNetwork(browser) {
+  const acct = await newAccount();
+  const t = await tablet(browser);
+  await login(t, acct);
+  await t.page.evaluate(() => document.getElementById('start-btn').click());
+  await sleep(2600);
+  const loads = t.loads;
+  t.slowPut = 3000;
+  await earn(t, 1, 'a');
+  await sleep(2600); // the present, 2.6 s after the right answer
+  await earn(t, 1, 'b');
+  await sleep(11000);
+  const s = await serverSave(acct);
+  check('slow network: no 409', t.n409 === 0, t.n409);
+  check('slow network: no reload, still playing', t.loads === loads && !(await live(t)).start, t.loads - loads);
+  check('slow network: both stars on the server', s.save.stars === 2, s.save.stars);
+  await t.ctx.close();
+}
+
+async function twoTablets(browser, editionB) {
+  const acct = await newAccount();
+  const A = await tablet(browser, { edition: 'princess' });
+  const B = await tablet(browser, { edition: editionB });
+  await login(A, acct);
+  await login(B, acct);
+  for (const t of [A, B]) await t.page.evaluate(() => document.getElementById('start-btn').click());
+  await sleep(2500);
+  const loads = [A.loads, B.loads];
+  const rounds = 8;
+  for (let i = 0; i < rounds; i++) {
+    await earn(A, 1, 'a');
+    await sleep(1300);
+    await earn(B, 1, 'b');
+    await sleep(1300);
+  }
+  await sleep(2500);
+  await settle(A);
+  await settle(B);
+  await settle(A);
+  const s = (await serverSave(acct)).save;
+  const [a, b] = [await live(A), await live(B)];
+  const name = `princess + ${editionB}`;
+  check(`${name}: no reload during play`, A.loads === loads[0] && B.loads === loads[1] && !a.start && !b.start, [A.loads - loads[0], B.loads - loads[1]]);
+  check(`${name}: they did conflict (409s merged)`, A.n409 + B.n409 > 0, A.n409 + B.n409);
+  if (editionB === 'captain') {
+    check(`${name}: each edition keeps its stars`, a.stars === rounds && b.stars === rounds && editionOf(s, 'princess').stars === rounds && editionOf(s, 'captain').stars === rounds,
+      { a: a.stars, b: b.stars, server: [editionOf(s, 'princess').stars, editionOf(s, 'captain').stars] });
+  } else {
+    check(`${name}: stars add up on both tablets and the server`, a.stars === 2 * rounds && b.stars === 2 * rounds && s.stars === 2 * rounds && Object.keys(s.history).length === 2 * rounds,
+      { a: a.stars, b: b.stars, server: s.stars, answers: Object.keys(s.history).length });
+  }
+  check(`${name}: no page errors`, !A.errors.length && !B.errors.length, A.errors.concat(B.errors));
+  await A.ctx.close();
+  await B.ctx.close();
+}
+
+const guestSave = (stars, coins, answers) => ({
+  edition: 'princess', stars, coins, at: Date.now() - 3600e3, player: { shown: '서연', spoken: 'Seoyeon', title: 'princess', look: 'girl' },
+  history: Object.fromEntries(Array.from({ length: answers }, (_, i) => [`word:g${i}`, { kind: 'word', tries: 2, right: 1, wrong: 1, last: Date.now() - i * 1e6 }])),
+});
+
+async function guestJoins(browser) {
+  const acct = await newAccount();
+  // The account already has a little progress, from another device.
+  await api('PUT', '/save', { save: guestSave(3, 2, 3), base: 0 }, acct.token);
+  const t = await tablet(browser, { seed: { 'pixeltown-v2': guestSave(42, 17, 60), 'pixeltown-guest': '1' } });
+  const loads = t.loads;
+  await login(t, acct);
+  await sleep(1500);
+  const after = await live(t);
+  const toast = await t.page.evaluate(() => (document.querySelector('.account-toast') || {}).textContent || '');
+  const backups = await t.page.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('pixeltown-v2-backup-')).length);
+  const s = (await serverSave(acct)).save;
+  check('guest login: stars, coins and answers join the account', after.stars === 45 && after.coins === 19 && after.history === 60 && s.stars === 45,
+    { live: after, server: s.stars });
+  check('guest login: a note for the parent', toast.includes('42'), toast);
+  check('guest login: a backup of the guest save', backups === 1, backups);
+  check('guest login: no reload', t.loads === loads, t.loads - loads);
+  await t.ctx.close();
+}
+
+async function otherOwner(browser) {
+  // Someone else's progress, already on the server (her sign-in ran out, and
+  // the login screen is up): the new account starts fresh.
+  const acct = await newAccount();
+  const seed = { 'pixeltown-v2': guestSave(9, 0, 5), 'pixeltown-owner': 'someone' };
+  let t = await tablet(browser, { seed });
+  let loads = t.loads;
+  await login(t, acct);
+  await sleep(800);
+  let after = await live(t);
+  check('another owner\'s synced save: a fresh start, in place', after.stars === 0 && after.history === 0 && after.name !== '서연' && t.loads === loads, { after, reloads: t.loads - loads });
+  await t.ctx.close();
+  // Someone else's progress that never reached the server comes along.
+  const acct2 = await newAccount();
+  t = await tablet(browser, { seed: Object.assign({}, seed, { 'pixeltown-dirty': '1' }) });
+  loads = t.loads;
+  await login(t, acct2);
+  await sleep(800);
+  after = await live(t);
+  check('another owner\'s unsent save is carried, not dropped', after.stars === 9 && (await serverSave(acct2)).save.stars === 9 && t.loads === loads, after);
+  await t.ctx.close();
+}
+
+async function newerOnBoot(browser) {
+  // This tablet was signed in and in sync at version 1; another device has
+  // saved since. On boot the newer save goes into the game without a reload.
+  const acct = await newAccount();
+  const first = await api('PUT', '/save', { save: guestSave(5, 0, 5), base: 0 }, acct.token);
+  const newer = Object.assign(guestSave(8, 1, 8), { player: { shown: '하나', spoken: 'Hana', title: 'queen', look: 'girl' } });
+  await api('PUT', '/save', { save: newer, base: first.data.updated }, acct.token);
+  const t = await tablet(browser, { seed: { 'pixeltown-v2': guestSave(5, 0, 5), 'pixeltown-token': acct.token, 'pixeltown-user': acct.id,
+    'pixeltown-owner': acct.id, 'pixeltown-updated': String(first.data.updated) } });
+  await t.page.waitForFunction(() => Account._started, null, { timeout: 15000 });
+  await sleep(500);
+  const after = await t.page.evaluate(() => ({ stars: state.stars, name: document.getElementById('name-input').value, title: PLAYER.title }));
+  check('boot: a newer save on the server goes in, in place', after.stars === 8 && after.name === '하나' && after.title === 'queen' && t.loads === 1, Object.assign(after, { loads: t.loads }));
+  await t.ctx.close();
+}
+
+// ---- The deployed game next to this one --------------------------------------
+
+// The game as deployed (OLD_REF, default origin/main) in a folder of its own,
+// with this checkout's recordings. null when that ref isn't here.
+const OLD_REF = process.env.OLD_REF || 'origin/main';
+function deployedGame() {
+  if (spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', `${OLD_REF}^{commit}`]).status !== 0) return null;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-deployed-'));
+  temp.push(dir);
+  const tar = spawnSync('git', ['-C', root, 'archive', '--format=tar', OLD_REF, 'index.html', 'js', 'css'], { maxBuffer: 1 << 28 });
+  if (tar.status !== 0 || spawnSync('tar', ['-x', '-C', dir], { input: tar.stdout }).status !== 0) throw new Error(`git archive ${OLD_REF} failed`);
+  fs.symlinkSync(path.join(root, 'audio'), path.join(dir, 'audio'));
+  return dir;
+}
+
+// The older game reloads itself on every conflict, so an answer there may
+// land in the middle of a reload: try again on the next page.
+async function earnOld(t, tag) {
+  for (let i = 0; i < 6; i++) {
+    try {
+      await t.page.waitForFunction(() => typeof state !== 'undefined' && typeof save === 'function' && typeof Account !== 'undefined' && Account._started, null, { timeout: 15000 });
+      await earn(t, 1, tag);
+      return;
+    } catch (e) {
+      await sleep(500);
+    }
+  }
+}
+// Stars in one edition of the server's save, and that edition's answers tagged `tag`.
+const tagged = (save, ed, tag) => ({ stars: editionOf(save, ed).stars, answers: Object.keys(editionOf(save, ed).history || {}).filter(k => k.startsWith(`word:${tag}`)).length });
+
+async function withDeployed(browser, deployed, oldEdition) {
+  const newEdition = oldEdition === 'princess' ? 'captain' : 'princess';
+  const name = `deployed ${oldEdition} + new ${newEdition}`;
+  const acct = await newAccount();
+  const O = await tablet(browser, { edition: oldEdition, dir: deployed });
+  const N = await tablet(browser, { edition: newEdition });
+  await login(O, acct);
+  await login(N, acct);
+  for (const t of [O, N]) await t.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
+  await sleep(2500);
+  const loads = [O.loads, N.loads];
+  const rounds = 6;
+  for (let i = 0; i < rounds; i++) {
+    await earnOld(O, 'o');
+    await sleep(1500);
+    await earn(N, 1, 'n');
+    await sleep(1500);
+  }
+  // Let both send what they have (the older one may reload on the way).
+  let s;
+  for (let i = 0; i < 12; i++) {
+    await sleep(2500);
+    await settle(N).catch(() => {});
+    s = (await serverSave(acct)).save;
+    const o = tagged(s, oldEdition, 'o');
+    if (o.stars === o.answers && o.answers >= rounds && tagged(s, newEdition, 'n').stars === rounds) break;
+  }
+  const o = tagged(s, oldEdition, 'o');
+  const n = tagged(s, newEdition, 'n');
+  check(`${name}: the new tablet's stars are all there`, n.stars === rounds && n.answers === rounds, n);
+  check(`${name}: the deployed tablet's stars are all there`, o.stars === o.answers && o.answers >= rounds, o);
+  check(`${name}: the new tablet never reloads`, N.loads === loads[1] && !(await live(N)).start, N.loads - loads[1]);
+  check(`${name}: the deployed tablet doesn't keep reloading`, O.loads - loads[0] <= 2 * rounds + 2, O.loads - loads[0]);
+  check(`${name}: the new tablet's edition is fmt 2 on the server`, editionOf(s, newEdition).fmt === 2, editionOf(s, newEdition).fmt);
+  check(`${name}: no page errors on the new tablet`, !N.errors.length, N.errors);
+  await O.ctx.close();
+  await N.ctx.close();
+}
+
+async function guestUpdated(browser, deployed) {
+  // A guest plays the deployed game, the tablet gets this version, then logs in.
+  const acct = await newAccount();
+  await api('PUT', '/save', { save: guestSave(3, 2, 3), base: 0 }, acct.token);
+  const t = await tablet(browser, { dir: deployed, seed: { 'pixeltown-guest': '1' } });
+  await t.page.evaluate(() => document.getElementById('start-btn').click());
+  await earn(t, 7, 'g');
+  await t.page.goto(gameUrl(root));
+  await t.page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+  const before = await live(t);
+  const loads = t.loads;
+  await login(t, acct);
+  await sleep(1500);
+  const after = await live(t);
+  const s = (await serverSave(acct)).save;
+  check('deployed guest → this version → login: the guest\'s 7 stars join the account\'s 3', before.stars === 7 && after.stars === 10 && s.stars === 10 && t.loads === loads,
+    { before: before.stars, after: after.stars, server: s.stars });
+  await t.ctx.close();
+}
+
+async function signedInUpdated(browser, deployed) {
+  // A tablet signed in on the deployed game gets this version.
+  const acct = await newAccount();
+  const t = await tablet(browser, { dir: deployed });
+  await login(t, acct);
+  await t.page.evaluate(() => document.getElementById('start-btn').click());
+  await earn(t, 4, 's');
+  await sleep(3500); // its upload
+  await t.page.goto(gameUrl(root));
+  await t.page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+  const loads = t.loads;
+  await t.page.evaluate(() => document.getElementById('start-btn').click());
+  await earn(t, 1, 's');
+  await settle(t);
+  const after = await live(t);
+  const s = (await serverSave(acct)).save;
+  check('deployed, signed in → this version: progress kept, and the save becomes fmt 2', after.stars === 5 && s.stars === 5 && s.fmt === 2 && t.loads === loads,
+    { live: after.stars, server: s.stars, fmt: s.fmt });
+  await t.ctx.close();
+}
+
+(async () => {
+  let server = null;
+  let browser = null;
+  try {
+    server = await startServer();
+    browser = await launch();
+  } catch (e) {
+    if (server) server.kill();
+    console.log(`FAIL ${e.message}`);
+    process.exit(1);
+  }
+  let deployed = null;
+  try { deployed = deployedGame(); } catch (e) { check('the deployed game could be unpacked', false, e.message); }
+  if (!deployed) check(`the deployed game (${OLD_REF}) is here`, !process.env.CI, `git has no ${OLD_REF}; fetch it (CI checks out with fetch-depth 0)`);
+  // ONLY=guest node tools/check-sync.js runs the parts whose name has "guest".
+  const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, newerOnBoot };
+  if (deployed) {
+    Object.assign(parts, {
+      deployedPrincess: b => withDeployed(b, deployed, 'princess'),
+      deployedCaptain: b => withDeployed(b, deployed, 'captain'),
+      deployedGuestUpdated: b => guestUpdated(b, deployed),
+      deployedSignedInUpdated: b => signedInUpdated(b, deployed),
+    });
+  }
+  try {
+    for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
+  } catch (e) {
+    check('ran to the end', false, e.stack || String(e));
+  } finally {
+    await browser.close();
+    server.kill();
+    for (const dir of temp) fs.rmSync(dir, { recursive: true, force: true });
+  }
+  console.log(failed ? `${failed} problem(s)` : 'sync OK');
+  process.exit(failed ? 1 : 0);
+})();

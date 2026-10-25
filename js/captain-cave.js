@@ -15,6 +15,8 @@ const VILLAIN_HP = 3;
 // LINES kinds the villains say in a fight, for tools/tts-phrases.js.
 // `narrator` ones are said by the narrator.
 const CAVE_LINES = { villain: ['villainHit', 'villainNext'], narrator: ['tapFire'] };
+// After a second miss, the narrator asks her to tap the answer to fire.
+function villainTapLine() { return { text: line('tapFire'), narrator: true }; }
 
 if (isCaptain()) {
   // Who lives in the cave. `coins` is the smallest prize for beating one;

@@ -388,6 +388,29 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .account-bar { position: absolute; top: 10px; right: 12px; display: flex; align-items: center; gap: 6px; font-size: 18px; }
 .account-bar:empty { display: none; }
 .account-bar .who { background: rgba(255, 255, 255, 0.8); border-radius: 12px; padding: 3px 10px; }
+/* A note for the parent, such as a guest's stars joining the account. */
+.account-toast {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: calc(100% - 24px);
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--gold);
+  box-shadow: 0 6px 24px rgba(90, 50, 110, 0.35);
+  font-size: 20px;
+  text-align: center;
+  pointer-events: none;
+  animation: account-toast 6.5s ease forwards;
+}
+@keyframes account-toast {
+  0% { opacity: 0; transform: translate(-50%, -20px); }
+  6%, 88% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 0); }
+}
 
 /* Landscape: the hero, the title and ▶ on the left, the form on the right,
    so ▶ and the guest button are on screen without scrolling even with the
