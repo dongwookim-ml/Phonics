@@ -17,6 +17,11 @@
 //  - the robot's cave fight: closing the parent panel while the dialog is
 //    stepped aside for the laser or the shield keeps the game busy, and ✕
 //    or the end of the fight frees it;
+//  - the Crystal Cave monsters' magic (princess edition): a wrong answer has
+//    the monster cast at her after the hint, a right answer its last spell,
+//    her star and the poof, both with the dialog stepped aside; the parent
+//    panel over a spell keeps the game busy, ✕ or the poof frees it, and ✕
+//    during the praise still pays the coins;
 //  - a book she reads herself: tapping words sounds them out, ▶ comes after
 //    every word is tapped or a while, reading to the end pays a star once
 //    and puts a ✓ on its cover, each time counts for the 📖 quest and the
@@ -622,6 +627,108 @@ async function caveFight(browser) {
   await ctx.close();
 }
 
+// The Crystal Cave monsters' magic in the princess edition (js/cave-magic.js):
+// a wrong answer has the monster cast a spell at her with the dialog
+// stepped aside, then the same question again; a right answer its last
+// spell, her star, a giggle, a twirl and the poof. The parent panel opened
+// and closed over a spell never frees the game; ✕ and the poof do, and ✕
+// during the praise still pays the coins.
+async function caveMagic(browser) {
+  const { page, ctx, errors } = await game(browser, { seed: { stars: 40 } });
+  await page.evaluate(() => { if (!Sound.muted) Sound.toggleMute(); changeScene('dungeon'); });
+  await page.waitForTimeout(800);
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const shown = id => !document.getElementById(id).classList.contains('hidden');
+    const until = async (ok, ms = 8000) => { for (let t = 0; t < ms && !ok(); t += 100) await sleep(100); return ok(); };
+    const out = {};
+    // Each part of a spell as it starts, and each move of the monsters.
+    const fx = [];
+    const push = magicFx.push;
+    magicFx.push = (...a) => { a.forEach(f => fx.push(f.kind)); return push.apply(magicFx, a); };
+    const moves = [];
+    for (const n of state.scene.npcs) {
+      let spell = null;
+      Object.defineProperty(n, 'spell', { get: () => spell, set: x => { spell = x; moves.push(`${n.look}:${x ? x.kind : '-'}`); } });
+    }
+    const [v, w] = state.scene.npcs.filter(n => n.monster);
+    // A question answered with a tap on a card (not letter tiles).
+    const ask = n => {
+      for (let i = 0; i < 20 && (!state.question || state.question.tiles); i++) {
+        if (state.talking) closeDialog();
+        openDialog(n);
+      }
+    };
+    const tap = (n, right) => { ask(n); const i = state.question.options.findIndex(o => !!o.right === right); choose(i, ui.choices.children[i]); return i; };
+    // The parent panel over what the monster says, closed after the spell's
+    // own timer has come due: the dialog steps aside as it closes.
+    const panel = async ms => { document.getElementById('parent').click(); await sleep(ms); document.querySelector('.parent-close').click(); };
+    const now = () => ({ aside: !shown('dialog') && state.talking === v, busy: state.busy, spell: v.spell && v.spell.kind });
+    // Busy the whole time the dialog is away, checked every 100 ms.
+    let freed = false;
+    const watch = () => { if (state.talking && !shown('dialog') && !state.busy) freed = true; };
+
+    placeHero(v.c + 1, v.r);
+    const hp = state.answered;
+    const wrong = tap(v, false);
+    const q = state.question;
+    out.first = { aside: !shown('dialog'), fx: fx.length }; // she hears the hint first
+    await panel(1500);
+    out.miss = now();
+    openAlbum();
+    out.miss.album = shown('album');
+    if (out.miss.album) closeAlbum();
+    // The panel again in the middle of the spell.
+    await panel(300);
+    out.miss.again = now();
+    out.back = await until(() => { watch(); return shown('dialog') && !state.question.locked; });
+    out.miss.freed = freed;
+    out.miss.fx = fx.splice(0);
+    out.miss.moves = moves.splice(0);
+    out.miss.same = state.question === q && ui.choices.children[wrong].disabled && !q.done && state.answered === hp;
+    // ✕ on the monster's dialog: free again, not stuck.
+    ui.close.click();
+    out.closed = { busy: state.busy, talking: !!state.talking };
+
+    // Right: its last spell, her star, the poof and the coins.
+    const coins = state.coins;
+    freed = false;
+    tap(v, true);
+    await panel(1500);
+    out.hit = now();
+    await panel(300);
+    out.hit.again = now();
+    await until(() => { watch(); return !state.talking; }, 10000);
+    out.hit.freed = freed;
+    out.end = { caught: !!v.caught, gone: !state.scene.npcs.includes(v), coins: state.coins - coins, busy: state.busy, talking: !!state.talking, dialog: shown('dialog'),
+      answered: state.answered - hp, fx: fx.splice(0), moves: moves.splice(0), alive: !!monsterFrameCache[v.look] };
+
+    // ✕ during the praise: free at once, and it still goes poof and pays.
+    placeHero(w.c + 1, w.r);
+    const before = state.coins;
+    tap(w, true);
+    ui.close.click();
+    out.early = { busy: state.busy, talking: !!state.talking };
+    out.early.gone = await until(() => !state.scene.npcs.includes(w));
+    Object.assign(out.early, { coins: state.coins - before, busy2: state.busy, fx: fx.splice(0) });
+    return out;
+  });
+  const order = (list, want) => want.every((k, i) => list.indexOf(k) >= 0 && (i === 0 || list.indexOf(k) > list.indexOf(want[i - 1])));
+  check('cave magic: a wrong answer: the hint first, then the monster casts with the dialog stepped aside', !r.first.aside && !r.first.fx && r.miss.aside &&
+    order(r.miss.fx, ['gather', 'bolt', 'bubble', 'burst']) && order(r.miss.moves, [`${r.miss.moves[0].split(':')[0]}:windup`, `${r.miss.moves[0].split(':')[0]}:hop`]), r.miss);
+  check('cave magic: the parent panel closed during the spell: still busy, no card opens under it', r.miss.busy && r.miss.again.aside && r.miss.again.busy && !r.miss.album && !r.miss.freed, r.miss);
+  check('cave magic: then the same question again, the wrong card greyed', r.back && r.miss.same, r);
+  check('cave magic: ✕ on the monster\'s dialog frees the game', r.closed.busy === false && !r.closed.talking, r.closed);
+  check('cave magic: a right answer: its last spell, her star, a giggle and a twirl, the panel never freeing it', r.hit.aside && r.hit.busy && r.hit.again.aside && r.hit.again.busy && !r.hit.freed &&
+    order(r.end.fx, ['gather', 'bolt', 'bubble', 'burst', 'charge', 'wand', 'hearts']) && order(r.end.moves.map(m => m.split(':')[1]), ['windup', 'hop', 'giggle', 'twirl', '-']), r);
+  check('cave magic: it goes poof, pays coins and the game is free', r.end.caught && r.end.gone && r.end.coins >= 1 && r.end.answered === 1 && r.end.busy === false &&
+    !r.end.talking && !r.end.dialog && r.end.alive, r.end);
+  check('cave magic: ✕ during the praise frees the game, and it still goes poof and pays', r.early.busy === false && !r.early.talking && r.early.gone && r.early.coins >= 1 &&
+    r.early.busy2 === false && !r.early.fx.length, r.early);
+  check('cave magic: no page errors', !errors.length, errors);
+  await ctx.close();
+}
+
 // The library's shelf of books she reads herself (js/library.js, DECODABLE_BOOKS in js/books.js).
 async function selfRead(browser) {
   const { page, ctx, errors } = await game(browser);
@@ -1111,7 +1218,7 @@ async function musicFlows(browser, edition) {
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
   const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
-    questEdges: b => questEdges(b, 'princess'), questEdgesCaptain: b => questEdges(b, 'captain'), caveFight,
+    questEdges: b => questEdges(b, 'princess'), questEdgesCaptain: b => questEdges(b, 'captain'), caveFight, caveMagic,
     cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
   try {
