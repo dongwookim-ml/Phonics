@@ -33,6 +33,10 @@
 
   <section id="dialog" class="dialog hidden">
     <div class="portrait"><canvas id="dlg-portrait"></canvas></div>
+    <!-- A monster she drew herself shows her drawing here instead (js/kid-monsters.js). -->
+    <button id="dlg-drawing" class="drawing hidden" type="button" title="크게 보기">
+      <span class="photo"><img id="dlg-drawing-img" alt=""><span id="dlg-drawing-by" class="by"></span></span>
+    </button>
     <div class="body">
       <div id="dlg-name" class="name"></div>
       <div id="dlg-text" class="text"></div>
@@ -46,6 +50,11 @@
       <button id="dlg-close" class="round small" title="닫기">✖</button>
     </div>
   </section>
+
+  <!-- Her drawing, big, until any tap (js/kid-monsters.js). -->
+  <div id="drawing-big" class="drawing-big hidden">
+    <figure><img id="drawing-big-img" alt=""><figcaption id="drawing-big-by"></figcaption></figure>
+  </div>
 
   <section id="reward" class="reward hidden">
     <div id="rw-title" class="title"></div>
@@ -245,6 +254,7 @@
   <script src="js/captain-car.js?v=202610252102"></script>
   <script src="js/captain-cave.js?v=202610252102"></script>
   <script src="js/cave-magic.js?v=202610252102"></script>
+  <script src="js/kid-monsters.js?v=202610252102"></script>
   <script src="js/friend.js?v=202610252102"></script>
   <script src="js/minigame.js?v=202610252102"></script>
   <script src="js/village-games.js?v=202610252102"></script>

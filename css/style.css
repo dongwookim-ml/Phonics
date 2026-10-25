@@ -1854,3 +1854,88 @@ body.captain .parent-head { background: #dcebff; }
   .login-go { padding: 6px 12px; font-size: 26px; }
   .login-guest { min-height: 56px; font-size: 20px; }
 }
+
+/* ---- The monsters she drew herself (js/kid-monsters.js) ---- */
+
+/* One of them shows her drawing where the portrait goes: a little photo
+   held on with a strip of tape, the caption under the picture. It takes
+   the height the rest of the dialog gives it and never adds any, so the
+   line and the cards stay where they are. Tapping it shows it big. */
+.dialog.drawn .portrait { display: none; }
+.drawing { position: relative; flex: 0 0 128px; padding: 0; background: none; }
+.drawing.hidden { display: none; }
+.drawing .photo {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 50%;
+  max-height: calc(100% - 14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 4px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  box-shadow: 0 5px 0 rgba(74, 44, 79, 0.25);
+  transform: translateY(-50%) rotate(-3deg);
+}
+.drawing .photo::before {
+  content: '';
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 46px;
+  height: 16px;
+  border-radius: 3px;
+  background: rgba(255, 158, 196, 0.75);
+  transform: translateX(-50%) rotate(5deg);
+}
+.drawing:active .photo { transform: translateY(calc(3px - 50%)) rotate(-3deg); box-shadow: none; }
+.drawing img { flex: 0 1 auto; min-height: 0; width: 100%; aspect-ratio: 3 / 4; object-fit: contain; }
+.drawing .by { font-size: 13px; line-height: 1.1; text-align: center; word-break: keep-all; color: var(--accent-ink); }
+body.captain .drawing .photo::before { background: rgba(143, 196, 255, 0.8); }
+
+/* Big, over everything, until any tap. */
+.drawing-big {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(74, 44, 79, 0.5);
+  cursor: pointer;
+}
+.drawing-big.hidden { display: none; }
+.drawing-big figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 12px 8px;
+  background: #fff;
+  border: 4px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 8px 0 rgba(74, 44, 79, 0.25);
+  transform: rotate(-2deg);
+  animation: rise 0.25s ease;
+}
+.drawing-big img { display: block; max-width: calc(100vw - 64px); max-height: calc(100vh - 100px); max-height: calc(100dvh - 100px); }
+.drawing-big figcaption { font-size: 24px; color: var(--accent-ink); }
+
+/* A phone held sideways: a smaller photo. */
+@media (max-height: 520px) {
+  .drawing { flex-basis: 84px; }
+  .drawing .photo { left: 1px; right: 1px; max-height: calc(100% - 10px); padding: 4px 4px 2px; border-width: 2px; }
+  .drawing .photo::before { top: -9px; width: 34px; height: 12px; }
+  .drawing .by { font-size: 11px; }
+  .drawing-big figcaption { font-size: 18px; }
+}
+/* Narrow phones: in the portrait's place, by the name and the line. */
+@media (max-width: 560px) {
+  .drawing { grid-area: pt; width: 64px; align-self: stretch; min-height: 96px; }
+  .drawing .by { font-size: 10px; }
+}

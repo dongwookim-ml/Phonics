@@ -237,6 +237,19 @@ npx http-server -p 8080 .
   monster still goes poof and pays. Sounds are the game's own effects; no
   new lines are said. Code in `js/cave-magic.js` (`MONSTER_MAGIC` sets each
   monster's magic and colours).
+- **Her own monsters**: five little monsters she drew herself live in the
+  Monster Tower (looks `kidmon1` to `kidmon5`): 뾰족모자 몬스터, 방긋 여우귀
+  몬스터, 줄무늬 고양이 몬스터, 뾰족탑 날개 몬스터 and 요술고리 토끼 몬스터.
+  Each is pixel art of her drawing, in its own pastel with her dark teal
+  marker for the outline, and in both editions they bob, blink and now and
+  then wave while they wait, their ♪ a little higher over a tall hat or
+  ears. Talking to one shows her drawing where the portrait goes, as a
+  little taped photo with "직접 그린 몬스터" under it; a tap shows it big and
+  any tap closes it. `python tools/kid-drawings.py SRC_DIR` makes photos of
+  new drawings into `img/monsters/kidmonN.jpg` (cropped to the drawing,
+  the table and the paper white, at most 480 px). Code and art in
+  `js/kid-monsters.js` (`KID_MONSTERS`; `kidMonsterArt` is the one place
+  a monster's art is looked up, for a drawing a parent uploads later).
 - **Starlight Shop**: the golden cottage on the forest's cross path. Tap it
   or the shopkeeper (🪙 bubble) to buy anything she doesn't own yet with
   coins, including a few shop-only treasures (crystal dress, silver hair,
@@ -636,7 +649,10 @@ The other checks, all run by
   and the background music in both editions (it starts only after the
   first tap, ducks under a line and for a whole question, follows 🔊, the
   parent panel and its setting, a hidden page and the sleeping town, and
-  plays nothing and breaks nothing without Web Audio).
+  plays nothing and breaks nothing without Web Audio), and the monsters
+  she drew in both editions (each one draws, its dialog shows her drawing
+  inside the dialog and off the cards at every size, anyone else's shows
+  the portrait, and closing hides it).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), among them the
   day's chest opened on two tablets before they sync (it pays once), also
@@ -749,3 +765,5 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations
 - `js/cave-magic.js`: the Crystal Cave monsters' idle moves and their magic, and hers (princess edition)
 - `js/monster-village.js`: the Monster Village, its tower and the gate to it in town (both editions)
+- `js/kid-monsters.js`: the monsters she drew herself: their pixel art, voices and hellos, how they move, and her drawing in their dialog
+- `img/monsters/`: photos of her drawings, made by `tools/kid-drawings.py`

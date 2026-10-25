@@ -9,7 +9,8 @@ const vm = require('vm');
 
 const root = path.join(__dirname, '..');
 // Content constants read from js/data.js (and, for the robot edition, the
-// js/captain-*.js files, which change those tables and add their own).
+// js/captain-*.js files, which change those tables and add their own), and
+// js/kid-monsters.js in both: the monsters she drew, with their voices and hellos.
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
@@ -20,6 +21,7 @@ function loadData(edition) {
   if (edition === 'captain') {
     files.push(...fs.readdirSync(path.join(root, 'js')).filter(f => /^captain-.*\.js$/.test(f)).sort().map(f => `js/${f}`));
   }
+  files.push('js/kid-monsters.js');
   const src = files.map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
   const store = { 'pixeltown-edition': edition };
   const ctx = { location: { search: '' }, localStorage: { getItem: k => store[k] || null, setItem() {} } };
