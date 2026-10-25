@@ -134,7 +134,12 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, re
   edition: when one saves after the other, the two saves are put together
   in place, without a reload (`js/progress.js`). Answers, presents and books
   are joined, and stars, coins and fairy dust are counted per device
-  (`earned` / `spent` in the save), so both tablets' stars add up. The
+  (`earned` / `spent` in the save, which is marked `fmt: 2`), so both
+  tablets' stars add up. The save keeps the plain totals and any fields a
+  newer version added, so an older version of the game can still read it.
+  Totals uploaded by an older version (no `fmt`) are taken as a floor
+  under one "old client" entry, never added on top of the per-device
+  counts they already include (`node tools/check-merge.js`). The
   outfit and name come from the tablet playing that edition, or else from
   the copy saved on the newer server version. The tablet stays signed in,
   and the game keeps working offline and uploads again later (one upload

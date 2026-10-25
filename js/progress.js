@@ -4,6 +4,7 @@
 // Nothing is lost: answers, presents and books are joined, and stars, coins
 // and fairy dust are counted per device, so two tablets' stars add up.
 //
+// Progress.FMT             the save format written (fmt in the save)
 // Progress.device          this device's id in the counters
 // Progress.tally(ed)       one edition's counters: { earned, spent }
 // Progress.count(state)    puts the live stars, coins and dust in the counters
@@ -14,11 +15,23 @@
 // Progress.same(a, b)      whether two saves hold the same
 
 const Progress = (() => {
-  // Counters per edition: earned[device] and spent[device] only ever grow,
-  // and each device adds to its own entry, so putting two copies together
-  // takes the larger of each entry (a grow-only counter). Totals are
-  // earned minus spent. A save from before the counters (or from an older
-  // version of the game) only has the totals: they count under '_'.
+  // Save format 2 (fmt: 2): counters per edition, earned[device] and
+  // spent[device], which only ever grow; each device adds to its own entry,
+  // so putting two copies together takes the larger of each entry (a
+  // grow-only counter). Totals are earned minus spent, and are written too
+  // (stars, coins, dust), so an older version of the game can still read
+  // the save.
+  //
+  // A copy without them (no fmt: an older version of the game wrote it, or a
+  // save from before) only has totals. Those totals are one "old client"
+  // entry, '_', taken as a floor: the old client started from a copy that
+  // already had the per-device counts in its totals, so its totals are never
+  // added on top of them. Merged with a fmt 2 copy, the result is the fmt 2
+  // counts, with '_' raised just enough that each total is at least the old
+  // copy's (a max, not a sum). Two copies without counters: the larger of
+  // each total. Only a guest's progress joining an account (how 'foreign')
+  // adds up in full, since it never was in the account.
+  const FMT = 2;
   const FIELDS = ['stars', 'coins', 'dust'];
   const OLD = '_';
   const n = x => { const v = Math.floor(Number(x)); return Number.isFinite(v) && v > 0 ? v : 0; };
@@ -205,6 +218,7 @@ const Progress = (() => {
     for (const f of FIELDS) out[f] = Math.max(0, sums[f]);
     out.earned = t.earned;
     out.spent = t.spent;
+    out.fmt = FMT;
     return out;
   }
 
@@ -223,7 +237,7 @@ const Progress = (() => {
   }
   // The other way round, with the edition played here at the top.
   function build(eds) {
-    const top = Object.assign({}, eds[EDITION] || {}, { edition: EDITION });
+    const top = Object.assign({}, eds[EDITION] || {}, { edition: EDITION, fmt: FMT });
     top.other = {};
     for (const [ed, x] of Object.entries(eds)) if (ed !== EDITION) top.other[ed] = x;
     return top;
@@ -286,5 +300,5 @@ const Progress = (() => {
   }
   const same = (a, b) => canon(editions(a)) === canon(editions(b));
 
-  return { device, tally, count, merge, history, played, stars, same, editions };
+  return { FMT, device, tally, count, merge, history, played, stars, same, editions };
 })();

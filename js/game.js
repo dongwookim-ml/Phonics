@@ -162,9 +162,12 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  // `ver`: the server version this was written on (js/account.js), the
-  // server's clock, so another device can tell which copy is newer.
-  const data = Object.assign({}, savedRest, { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now() }, Progress.count(state));
+  // fmt 2: stars, coins and dust are also counted per device (earned /
+  // spent, js/progress.js); the totals stay for older versions of the game.
+  // Fields this version doesn't know are kept (savedRest). `ver`: the server
+  // version this was written on (js/account.js), the server's clock, so
+  // another device can tell which copy is newer.
+  const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now() }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
