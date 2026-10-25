@@ -10,17 +10,25 @@
 //    can do are picked, doing each the way she would ticks it, the chest
 //    stays shut until all three are done and never opens over a question,
 //    it pays once, a reload keeps all of it, and the next day has new ones;
+//    at the edges: a pick she can no longer do is swapped when the
+//    account's copy comes in (never as she plays), a card left open
+//    overnight shows the new day, and a chest an older tab says is shut
+//    stays open and pays nothing more;
+//  - the robot's cave fight: closing the parent panel while the dialog is
+//    stepped aside for the laser or the shield keeps the game busy, and ✕
+//    or the end of the fight frees it;
 //  - a book she reads herself: tapping words sounds them out, ▶ comes after
 //    every word is tapped or a while, reading to the end pays a star once
 //    and puts a ✓ on its cover, and a locked book stays locked;
 //  - the M3 cards, in both editions: closing one (or the parent panel over
 //    it) never frees the game under another or leaves it stuck, the
 //    feeding card stops her walk, neither 🔁 at the pond nor another book in
-//    the library can outrun the play limit, a wake is counted, a town left
-//    asleep wakes the next morning, no village's friends in the shop before
-//    its gate, no fish she'd name with the round's sound by another name
-//    (ALIAS), a friend's growth is cheered even after 👋, feeding is counted
-//    per tablet;
+//    the library can outrun the play limit, a wake is counted and gives a
+//    whole limit from then on (even with the minutes far past it, and
+//    after a merge), a town left asleep wakes the next morning, no
+//    village's friends in the shop before its gate, no fish she'd name
+//    with the round's sound by another name (ALIAS), a friend's growth is
+//    cheered even after 👋, feeding is counted per tablet;
 //  - the background music (js/music.js), in both editions: it starts only
 //    after the first tap, and only once the town is on screen; it drops
 //    quickly while a line is said and comes back slowly after, stays down
@@ -445,6 +453,167 @@ async function quests(browser, edition) {
   await ctx.close();
 }
 
+// Today's adventures at the edges: quests picked from this tablet's old
+// copy before the account's came in, a card left open overnight, and a
+// chest that a tab still on an older version says is shut again.
+async function questEdges(browser, edition) {
+  const seed = { edition, stars: 40, dust: 12 };
+  const { page, ctx, errors } = await game(browser, { seed, edition });
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    if (!Sound.muted) Sound.toggleMute();
+    const out = {};
+    const shown = sel => document.querySelector(sel).classList;
+    const friend = Object.keys(FAIRIES).find(k => k !== 'none');
+    if (!state.owned.fairy.includes(friend)) state.owned.fairy.push(friend);
+    const wear = key => { state.outfit = Object.assign({}, state.outfit, { fairy: key }); };
+    wear(friend);
+    state.friends = {};
+    // A copy comes in with the account's: her friend grew up on the other tablet.
+    const synced = quests => {
+      save();
+      const s = JSON.parse(localStorage.getItem('pixeltown-v2'));
+      s.friends = { [friend]: { dOther: FRIEND_STAGES[FRIEND_STAGES.length - 1] } };
+      if (quests) s.quests = quests;
+      applyProgress(s);
+      return questsToday().picks.slice();
+    };
+    // This tablet picked today's from its own copy: feed her friend. Taking
+    // the friend off a moment swaps nothing as she plays.
+    const day = questDay();
+    state.quests = { day, picks: ['stars', 'feed', 'house'], got: {}, chest: false };
+    renderQuestHud();
+    wear('none');
+    renderQuestHud();
+    out.asShePlays = questsToday().picks.slice();
+    wear(friend);
+    const picks = synced();
+    out.synced = { picks, grown: friendGrown(friend), group: QUESTS[picks[1]].group, open: picks.every(questOpen), card: document.querySelectorAll('#quest-btn .pips i:not(.hidden)').length };
+    // One she has already done stays, though she couldn't do it now.
+    out.doneStays = synced({ day, picks: ['stars', 'feed', 'house'], got: { dOther: { feed: 1 } }, chest: false });
+    state.quests = { day, picks: picks.slice(), got: {}, chest: false };
+    renderQuestHud();
+
+    // Evening: all three done, the card open with the chest glowing, and the
+    // tablet put down until the morning.
+    for (const k of questsToday().picks) questAdd(k, QUESTS[k].n);
+    const today = questsToday();
+    await sleep(100);
+    openQuests();
+    out.evening = shown('#quests .qs-chest').contains('ready');
+    const D = Date;
+    const days = n => { window.Date = class extends D { constructor(...a) { super(...(a.length ? a : [D.now() + n * 864e5])); } static now() { return D.now() + n * 864e5; } }; };
+    days(1);
+    questMinute(); // the minute's refresh, past midnight
+    const card = () => ({ day: document.querySelector('#quests .qs-list').dataset.day === questsToday().day, glows: shown('#quests .qs-chest').contains('ready'),
+      done: document.querySelectorAll('#quests .qs-quest.done').length, hud: shown('#quest-btn').contains('ready') });
+    out.morning = card();
+    // A day later still, before the minute's refresh: the first tap on the chest shows the new day.
+    days(2);
+    const said = [];
+    const say = Sound.say;
+    Sound.say = (parts, who) => { said.push(parts); return say(parts, who); };
+    const coins0 = state.coins;
+    document.querySelector('#quests .qs-chest').click();
+    out.tap = Object.assign(card(), { paid: state.coins - coins0, said: said.length });
+    Sound.say = say;
+    window.Date = D;
+    closeQuests();
+    state.quests = today;
+
+    // Opened here; then a tab still on an older version puts back chest:
+    // false (its copy from before): open all the same, and it pays nothing.
+    openQuests();
+    const coins1 = state.coins;
+    document.querySelector('#quests .qs-chest').click();
+    await sleep(300);
+    out.paid = state.coins - coins1;
+    closeQuests();
+    save();
+    const s = JSON.parse(localStorage.getItem('pixeltown-v2'));
+    s.quests = Object.assign({}, s.quests, { chest: false });
+    const coins2 = state.coins;
+    applyProgress(s);
+    out.shutAgain = { chest: questsToday().chest, ready: questReady(), hud: shown('#quest-btn').contains('ready') };
+    openQuests();
+    document.querySelector('#quests .qs-chest').click();
+    await sleep(300);
+    Object.assign(out.shutAgain, { paid: state.coins - coins2, opened: shown('#quests .qs-chest').contains('opened') });
+    closeQuests();
+    out.chestCoins = QUEST_CHEST.coins;
+    return out;
+  });
+  const tag = `quest edges (${edition})`;
+  check(`${tag}: taking her friend off doesn't swap the quest as she plays`, r.asShePlays.includes('feed'), r.asShePlays);
+  check(`${tag}: a pick she can no longer do (her friend grew on the other tablet) is swapped when the account's copy comes in`,
+    r.synced.grown && !r.synced.picks.includes('feed') && r.synced.group === 'play' && r.synced.open && r.synced.card === 3, r.synced);
+  check(`${tag}: one she has already done stays`, r.doneStays.includes('feed'), r.doneStays);
+  check(`${tag}: the card left open overnight shows the new day at the minute's refresh`, r.evening && r.morning.day && !r.morning.glows && !r.morning.done && !r.morning.hud, r.morning);
+  check(`${tag}: and at the first tap on its chest, which says nothing and pays nothing`, r.tap.day && !r.tap.glows && !r.tap.paid && !r.tap.said, r.tap);
+  check(`${tag}: a chest put back shut by an older tab stays open and pays nothing more`, r.paid === r.chestCoins && r.shutAgain.chest && !r.shutAgain.ready && !r.shutAgain.hud &&
+    !r.shutAgain.paid && r.shutAgain.opened, r.shutAgain);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
+// The robot's fight with a cave villain (js/captain-cave.js): the dialog
+// steps aside for the laser and the shield, and closing the parent panel
+// then never frees the game under the fight; ✕ and the end of the fight
+// still leave it free.
+async function caveFight(browser) {
+  const { page, ctx, errors } = await game(browser, { seed: { edition: 'captain', stars: 40 }, edition: 'captain' });
+  await page.evaluate(() => { if (!Sound.muted) Sound.toggleMute(); changeScene('dungeon'); });
+  await page.waitForTimeout(800);
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const shown = id => !document.getElementById(id).classList.contains('hidden');
+    const until = async (ok, ms = 8000) => { for (let t = 0; t < ms && !ok(); t += 100) await sleep(100); return ok(); };
+    const out = {};
+    const v = state.scene.npcs.find(n => n.monster);
+    placeHero(v.c + 1, v.r);
+    // A question answered with a tap on a card (not letter tiles).
+    const ask = () => {
+      for (let i = 0; i < 20 && (!state.question || state.question.tiles); i++) {
+        if (state.talking) closeDialog();
+        openDialog(v);
+      }
+    };
+    const tap = right => { ask(); const i = state.question.options.findIndex(o => !!o.right === right); choose(i, ui.choices.children[i]); };
+    // The parent panel over what the robot says, closed after the fight's
+    // own timer has come due: the dialog steps aside as it closes.
+    const panel = async () => { document.getElementById('parent').click(); await sleep(1500); document.querySelector('.parent-close').click(); };
+    const now = () => ({ aside: !shown('dialog') && state.talking === v, busy: state.busy });
+    tap(true);
+    await panel();
+    out.hit = now();
+    openAlbum();
+    out.hit.album = shown('album');
+    if (out.hit.album) closeAlbum();
+    out.next = await until(() => shown('dialog') && !state.question.done);
+    tap(false);
+    await panel();
+    out.miss = now();
+    out.back = await until(() => shown('dialog') && !state.question.locked);
+    // ✕ on the villain's dialog: free again, not stuck.
+    ui.close.click();
+    out.closed = { busy: state.busy, talking: !!state.talking };
+    // The rest of the fight, to the end.
+    for (let i = 0; i < 8 && !v.caught; i++) {
+      tap(true);
+      await until(() => v.caught || (shown('dialog') && !state.question.done));
+    }
+    await until(() => !state.talking);
+    out.end = { caught: !!v.caught, busy: state.busy, talking: !!state.talking, dialog: shown('dialog') };
+    return out;
+  });
+  check('cave fight: the parent panel closed while the laser fires: still busy, no card opens under the fight', r.hit.aside && r.hit.busy && !r.hit.album && r.next, r);
+  check('cave fight: the same while the shield blocks a miss', r.miss.aside && r.miss.busy && r.back, r);
+  check('cave fight: ✕ on the villain\'s dialog frees the game', r.closed.busy === false && !r.closed.talking, r.closed);
+  check('cave fight: the villain gives up and the game is free', r.end.caught && r.end.busy === false && !r.end.talking && !r.end.dialog, r.end);
+  check('cave fight: no page errors', !errors.length, errors);
+  await ctx.close();
+}
+
 // The library's shelf of books she reads herself (js/library.js, DECODABLE_BOOKS in js/books.js).
 async function selfRead(browser) {
   const { page, ctx, errors } = await game(browser);
@@ -623,8 +792,9 @@ async function cards(browser, edition) {
     // A wake by the password is counted, not a reset: a merge can't undo it.
     guideWake();
     out.wake = { ms: state.playtime.ms, wakes: state.playtime.wakes, up: guideTimeUp(), busy: state.busy };
-    // Asleep, and the tab stays open overnight: the town wakes in the morning.
-    state.playtime.ms = 120001;
+    // A whole limit after the wake it sleeps again, and the tab stays open
+    // overnight: the town wakes in the morning.
+    state.playtime.ms = state.playtime.woke.ms + 60000;
     await sleep(300);
     out.night = guide.asleep;
     const D = Date;
@@ -640,6 +810,26 @@ async function cards(browser, edition) {
     openLibrary(); // 📚 다른 책 읽기
     await sleep(300);
     out.library = { libOpen, shut: ['library', 'reader'].every(id => document.getElementById(id).classList.contains('hidden')), asleep: guide.asleep };
+    if (guide.asleep) guideWake();
+    // The limit set late, with today's minutes already far past it (2.5
+    // limits): a wake still gives a whole limit from then on, and the other
+    // tablet's copy, without the wake, can't take it back.
+    state.playtime = { day: guideDay(), ms: 150000, wakes: 0 };
+    await sleep(300);
+    out.late = { asleep: guide.asleep };
+    guideWake();
+    await sleep(300);
+    Object.assign(out.late, { woke: !guide.asleep, up: guideTimeUp() });
+    save();
+    const mine = JSON.parse(localStorage.getItem('pixeltown-v2'));
+    const theirs = JSON.parse(JSON.stringify(mine));
+    for (const e of [theirs].concat(Object.values(theirs.other))) e.playtime = { day: guideDay(), ms: state.playtime.ms + 1000, wakes: 0 };
+    applyProgress(Progress.merge(mine, theirs, 'theirs'));
+    await sleep(300);
+    Object.assign(out.late, { merged: !guide.asleep && !guideTimeUp(), wakes: state.playtime.wakes });
+    state.playtime.ms = state.playtime.woke.ms + 60000;
+    await sleep(300);
+    out.late.again = guide.asleep;
     if (guide.asleep) guideWake();
     state.settings.playLimit = 0;
     // Today's play time goes with both editions, like her level.
@@ -677,6 +867,8 @@ async function cards(browser, edition) {
   check(`${tag}: another book past the play limit closes the library, and the town sleeps`, r.library.libOpen && r.library.shut && r.library.asleep, r.library);
   check(`${tag}: a parent's wake keeps the minutes and counts the wake`, r.wake.ms >= 60001 && r.wake.wakes === 1 && !r.wake.up && r.wake.busy === false, r.wake);
   check(`${tag}: left asleep overnight, the town wakes in the morning`, r.night && !r.morning.asleep && !r.morning.shown && r.morning.busy === false && r.morning.day && r.morning.wakes === 0, r);
+  check(`${tag}: the limit set late, minutes far past it: a wake gives a whole limit from then on, and a merge can't take it back`,
+    r.late.asleep && r.late.woke && !r.late.up && r.late.merged && r.late.wakes === 1 && r.late.again, r.late);
   check(`${tag}: today's play time is saved with both editions`, r.shared);
   check(`${tag}: no fairy or unicorn in the shop before its village opens`, !r.shop.early.length && r.shop.open > 0, r.shop);
   check(`${tag}: no wrong fish she'd name with the round's sound (ALIAS)`, !r.fish.length, r.fish);
@@ -894,6 +1086,7 @@ async function musicFlows(browser, edition) {
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
   const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
+    questEdges: b => questEdges(b, 'princess'), questEdgesCaptain: b => questEdges(b, 'captain'), caveFight,
     cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
   try {

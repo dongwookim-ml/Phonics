@@ -625,6 +625,22 @@ function caveLairWalls(sc, H) {
 const caveFx = [];
 const caveMuted = () => Sound.muted;
 
+// The dialog steps aside while the robot and a villain fight, and the fight
+// goes on without it: busyNow (js/game.js) counts that as showing, so
+// closing the parent panel over it never frees the game. It is over when
+// the dialog comes back (caveStepBack, or the next round's openDialog) or
+// the villain gives up.
+let caveAside = null; // the villain fighting with the dialog stepped aside
+function caveStepAside(npc) {
+  caveAside = npc;
+  ui.dialog.classList.add('hidden');
+}
+function caveStepBack() {
+  caveAside = null;
+  ui.dialog.classList.remove('hidden');
+}
+const caveFighting = () => !!caveAside && state.talking === caveAside && ui.dialog.classList.contains('hidden');
+
 // Says `parts`, then runs fn once the villain has finished talking, or
 // after `ms` at the latest (the voice can be muted, slow or missing).
 function caveSayThen(parts, who, fn, ms) {
@@ -700,7 +716,7 @@ function villainHit(npc, small) {
   const said = small ? q.answer : [{ text: ui.text.textContent }, { pause: 300 }].concat(q.answer);
   caveSayThen(said, voiceOf(npc), () => {
     if (!live()) return;
-    ui.dialog.classList.add('hidden');
+    caveStepAside(npc);
     const kind = small ? 'tap' : npc.hp === 1 ? 'mega' : npc.hp === VILLAIN_HP ? 'laser' : 'punch';
     const impact = caveFire(kind, npc);
     later(impact, () => {
@@ -710,6 +726,7 @@ function villainHit(npc, small) {
         caveSayThen([{ text: line('villainHit') }], voiceOf(npc), () => {
           if (!live()) return;
           npc.round = 'next';
+          caveAside = null;
           openDialog(npc);
         }, 3200);
       } else villainGiveUp(npc);
@@ -790,6 +807,7 @@ function villainGiveUp(npc) {
     npc.hp = VILLAIN_HP;
     const catchNo = npc.catches = (npc.catches || 0) + 1;
     later(MONSTER_RESPAWN_MS, () => { if (npc.catches === catchNo) respawnMonster(sc, npc); });
+    if (caveAside === npc) caveAside = null; // the fight is over (before closeDialog asks busyNow)
     if (state.talking === npc) closeDialog();
   }, 3600);
 }
@@ -809,7 +827,7 @@ function villainMiss(npc, q, o, showIt) {
   ui.text.textContent = shownText(parts);
   caveSayThen(parts, voiceOf(npc), () => {
     if (!live()) return;
-    ui.dialog.classList.add('hidden');
+    caveStepAside(npc);
     const t0 = performance.now();
     const from = caveVillainAt(npc);
     const to = caveHeroAt();
@@ -822,7 +840,7 @@ function villainMiss(npc, q, o, showIt) {
     });
     later(1300, () => {
       if (!live()) return;
-      ui.dialog.classList.remove('hidden');
+      caveStepBack();
       if (showIt) showAnswer(q, null);
       else listen(q, [], 0);
     });

@@ -53,12 +53,37 @@ function questPick(day) {
 
 // Today's quests; new ones when the saved ones are from an earlier day. A
 // later day (a tablet whose clock is ahead) stays until today gets there.
+// A chest paid on any tablet is open, whatever the copy says (a tab still on
+// an older version of the game can put back chest: false).
 function questsToday() {
   const day = questDay();
   const q = state.quests;
-  if (q && q.day >= day && q.picks.length) return q;
-  state.quests = { day, picks: questPick(day), got: {}, chest: false };
+  if (!(q && q.day >= day && q.picks.length)) state.quests = { day, picks: questPick(day), got: {}, chest: false };
+  if (!state.quests.chest && questPaid(state.quests.day)) state.quests.chest = true;
   return state.quests;
+}
+
+// The chest's coins are counted under the day's own entry in the counters
+// (js/progress.js keeps the larger of each entry), the same entry on every
+// tablet: a chest opened on two tablets before they sync pays once.
+const questPaidKey = day => `chest:${day}`;
+function questPaid(day) {
+  const e = state.tally && state.tally.earned[questPaidKey(day)];
+  return !!e && e.coins > 0;
+}
+
+// Quests that come in with a save (at boot, or merged by the account sync:
+// applyProgress in js/game.js) were picked on the tablet that started the
+// day, from what it had then. One she can no longer do (her friend grew on
+// the other tablet) and hasn't started is swapped for the day's pick from
+// its group, so the chest can still open. Only a copy that comes in is
+// checked, never as she plays.
+function questRecheck() {
+  const q = questsToday();
+  if (questUi.checked === q) return;
+  questUi.checked = q;
+  const fresh = questPick(q.day);
+  q.picks = q.picks.map(k => (questOpen(k) || questCount(k) ? k : fresh.find(f => QUESTS[f].group === QUESTS[k].group) || k));
 }
 
 // A saved state.quests, or null: known quests and plain counts only.
@@ -128,6 +153,7 @@ const questUi = (() => {
     box, title: box.querySelector('.qs-title'), list: box.querySelector('.qs-list'), done: box.querySelector('.qs-done'),
     chest: box.querySelector('.qs-chest'), chestArt: box.querySelector('.qs-chest canvas'), prize: box.querySelector('.prize'),
     party: 0, // when the chest last opened
+    checked: null, // the quests questRecheck last looked at
   };
 })();
 
@@ -182,6 +208,7 @@ function questPicture(kind) {
 // Called by renderStars (js/game.js): a dot lights for each quest done, the
 // chest glows when it can be opened and stays open once it has been.
 function renderQuestHud() {
+  questRecheck();
   const q = questsToday();
   const done = q.picks.filter(questDone).length;
   questUi.pips.forEach((p, i) => {
@@ -208,6 +235,7 @@ function renderQuests() {
   const q = questsToday();
   questUi.title.textContent = isCaptain() ? '🗺️ 오늘의 임무' : '🗺️ 오늘의 모험';
   questUi.list.innerHTML = '';
+  questUi.list.dataset.day = q.day; // the day the card shows (questChestTap)
   for (const kind of q.picks) {
     const need = QUESTS[kind].n;
     const have = Math.min(need, questCount(kind));
@@ -267,9 +295,11 @@ function closeQuests() {
 // ---- The chest -----------------------------------------------------------------
 
 // A tap on the chest: it opens when all three are done; otherwise it
-// wiggles (and says "chest!").
+// wiggles (and says "chest!"). A card left open since yesterday first
+// shows today's (the minute's refresh may not have come yet).
 function questChestTap() {
   const c = questUi.chest;
+  if (questUi.list.dataset.day !== questsToday().day) { Sound.tap(); renderQuestHud(); renderQuests(); return; }
   if (questReady()) { questOpenChest(); return; }
   c.classList.remove('wiggle');
   void c.offsetWidth;
@@ -279,9 +309,12 @@ function questChestTap() {
 }
 
 // It pops open, sparkles fly out and the coins fly into the purse while the
-// narrator cheers. It pays at once, so it pays once whatever happens next.
+// narrator cheers. It pays at once, so it pays once whatever happens next,
+// under the day's own entry in the counters (questPaid).
 function questOpenChest() {
-  questsToday().chest = true;
+  const q = questsToday();
+  q.chest = true;
+  state.tally.earned[questPaidKey(q.day)] = { coins: QUEST_CHEST.coins };
   state.coins += QUEST_CHEST.coins;
   save();
   renderCoins(false); // the purse shows, to catch them
@@ -388,5 +421,9 @@ function questParentLine() {
 questUi.button.addEventListener('click', () => { Sound.unlock(); openQuests(); });
 questUi.done.addEventListener('click', closeQuests);
 questUi.chest.addEventListener('click', questChestTap);
-// Past midnight the HUD shows the new day's quests.
-setInterval(() => { if (typeof state !== 'undefined' && !state.busy) renderQuestHud(); }, 60000);
+// Every minute: past midnight the HUD shows the new day's quests, and so
+// does the card if it was left open.
+function questMinute() {
+  if (typeof state !== 'undefined' && (!state.busy || !questUi.box.classList.contains('hidden'))) renderQuestHud();
+}
+setInterval(questMinute, 60000);

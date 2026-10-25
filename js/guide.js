@@ -8,9 +8,10 @@
 // - The parent panel's play-time limit (state.settings.playLimit minutes a
 //   day, counted in state.playtime while the game is on screen) puts the
 //   town to sleep at the next quiet moment: no dialog, present or anything
-//   else open. Only the parent password wakes it, for another stretch (a
-//   wake is counted in state.playtime.wakes, so two tablets can't undo it);
-//   a town left asleep wakes by itself the next day.
+//   else open. Only the parent password wakes it, for another stretch of
+//   the limit from then on (a wake is counted in state.playtime.wakes, and
+//   the minutes played when it came in state.playtime.woke, so two tablets
+//   can't undo it); a town left asleep wakes by itself the next day.
 //   The background music (js/music.js) stops while it sleeps.
 // - The parent panel can also hide the 🔊 button from the child.
 
@@ -138,11 +139,16 @@ function guidePlayTime(ms) {
   p.ms = (p.ms | 0) + Math.min(ms, 250);
   if (guideTimeUp() && !state.busy && !state.gift && !state.hero.onArrive) guideSleep();
 }
-// Today's play time is used up: the limit, once more for each wake.
+// Today's play time is used up: the limit, once more for each wake, and
+// never sooner than the limit after today's last wake (`woke`: the minutes
+// may already be far past the limit when the parent sets it late). A wake
+// noted on another day doesn't count: a new day's count starts without
+// clearing it, here and in older versions of the game.
 function guideTimeUp() {
   const limit = ((state.settings && state.settings.playLimit) | 0) * 60000;
   const p = state.playtime || {};
-  return !!limit && p.day === guideDay() && (p.ms | 0) >= limit * (1 + (p.wakes | 0));
+  const woke = p.woke && p.woke.day === p.day ? p.woke.ms | 0 : 0;
+  return !!limit && p.day === guideDay() && (p.ms | 0) >= Math.max(limit * (1 + (p.wakes | 0)), woke + limit);
 }
 
 // The town goes to sleep: it dims, stars twinkle, and the narrator says
@@ -172,13 +178,17 @@ function guideSleep() {
   Sound.say([{ pause: 600 }, { text: line('sleep'), narrator: true }]);
 }
 
-// The parent's password wakes the town for another stretch of play; the
-// next day (`morning`) it wakes by itself and the day's count starts again.
+// The parent's password wakes the town for another stretch of play, the
+// limit from now on; the next day (`morning`) it wakes by itself and the
+// day's count starts again.
 function guideWake(morning) {
   guide.asleep = false;
   guide.el.classList.add('hidden');
   const p = state.playtime || (state.playtime = {});
-  if (!morning) p.wakes = (p.wakes | 0) + 1;
+  if (!morning) {
+    p.wakes = (p.wakes | 0) + 1;
+    p.woke = { day: p.day, ms: p.ms | 0 };
+  }
   state.busy = busyNow(); // js/game.js
   guide.lastTap = performance.now();
   save();

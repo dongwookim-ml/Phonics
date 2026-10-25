@@ -274,13 +274,14 @@ function setPaused(on) {
 
 // Whether anything that stops the game is still showing: a question, a
 // present, a card (js/album.js, friend.js, minigame.js, quest.js), the
-// parent panel, the sleeping town or a scene change. Every close sets
+// parent panel, the sleeping town, a scene change or the robot's cave fight
+// with its dialog stepped aside (js/captain-cave.js). Every close sets
 // state.busy from this, so closing one thing never frees the game under
 // another, nor leaves it stuck with nothing open.
 const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests'];
 function busyNow() {
   const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
-  return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep;
+  return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep || caveFighting();
 }
 
 function sceneFor(target) {
