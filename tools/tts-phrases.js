@@ -48,6 +48,11 @@ function collect(D) {
   const lines = (voice, kinds, vars) => {
     for (const k of kinds) for (const l of D.LINES[k]) for (const t of fills(l, vars)) add(voice, t);
   };
+  // The robot's part show-off lines (LINES.partShow: by slot, then by part),
+  // said by whoever gave the part, or by the narrator at the workbench.
+  const partShow = [];
+  const flat = v => (typeof v === 'string' ? partShow.push(v) : Object.values(v).forEach(flat));
+  if (D.LINES.partShow) flat(D.LINES.partShow);
 
   // Who asks what: town and house folk, forest folk, unicorn village folk
   // and the cave monsters, who ask the same sentence questions.
@@ -88,6 +93,9 @@ function collect(D) {
     if (monsters.has(look)) lines(v, ['caught'].concat(D.CAVE_LINES ? D.CAVE_LINES.villain : []));
     if (fairies.has(look)) lines(v, ['spell', 'newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
+    // Anyone who gives presents (not the cave villains), and the shop.
+    const gives = town.has(look) || forest.has(look) || fairies.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
+    if (gives) for (const t of partShow) add(v, t);
   }
   const robots = D.TITLES.captain.look === 'robot';
   // Each letter house's host: "This is the C house. C says kuh." (houseHello in game.js)
@@ -109,6 +117,7 @@ function collect(D) {
   for (const l of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') add(N, l, 0.8);
   for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland']);
+  for (const t of partShow) add(N, t);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
   for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
