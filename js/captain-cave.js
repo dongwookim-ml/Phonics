@@ -782,6 +782,7 @@ function caveSparks(p, n, colors) {
 function villainGiveUp(npc) {
   const sc = state.scene;
   npc.caught = true;
+  mini.button.classList.add('hidden'); // its little game waits until it's back (js/minigame.js)
   const coins = npc.coins + Math.floor(Math.random() * (npc.coins + 1));
   caveFx.push({ kind: 'flag', t0: performance.now(), dur: 2600, npc });
   caveFx.push({ kind: 'bubble', t0: performance.now(), dur: 2400, npc, text: 'I give up!' });

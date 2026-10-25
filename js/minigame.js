@@ -108,7 +108,7 @@ function openMini(npc, g = miniGameOf(npc)) {
   if (!g || state.scene !== state.scenes[g.scene] || state.busy || guideTimeUp()) return;
   state.busy = true;
   miniClear();
-  Object.assign(mini, { game: g, npc, rounds: g.rounds(), round: -1, items: [], caught: [], anim: null, sparks: [], ripples: [], last: 0, trolley: 104, tapped: false });
+  Object.assign(mini, { game: g, npc, rounds: g.rounds(), round: -1, items: [], caught: [], anim: null, winning: false, sparks: [], ripples: [], last: 0, trolley: 104, tapped: false });
   mini.title.textContent = g.title();
   mini.end.classList.add('hidden');
   mini.el.classList.remove('hidden');
@@ -158,10 +158,12 @@ function miniSay(parts, ms, ready) {
   Sound.say(parts, voiceOf(mini.npc));
 }
 
-// 🔊 or the box at the top: the question again.
+// 🔊 or the box at the top: the question again. Not while the round is
+// being won (the last letter of a word flying in): asking again then would
+// stop the win.
 function miniReplay() {
   const r = miniRound();
-  if (!r || mini.anim || !mini.end.classList.contains('hidden')) return;
+  if (!r || mini.anim || mini.winning || !mini.end.classList.contains('hidden')) return;
   Sound.tap();
   // Still waiting for it: ask again, and the things open after it.
   if (mini.locked) miniAsk(false);
@@ -202,6 +204,7 @@ function miniCatch(it) {
   const turn = ++mini.turn;
   mini.locked = true;
   it.state = 'caught';
+  mini.winning = false;
   mini.anim = { it, t0: performance.now(), x0: it.x, y0: it.y, from: mini.trolley };
   mini.caught.push(it);
   questAdd('fish'); // today's adventures (js/quest.js): a round won in any game
@@ -290,9 +293,10 @@ function miniFrame(now) {
   if (mini.el.classList.contains('hidden')) return;
   const dt = Math.min(0.05, mini.last ? (now - mini.last) / 1000 : 0);
   mini.last = now;
+  // The next frame first: a drawing that throws mustn't stop the game.
+  mini.loop = requestAnimationFrame(miniFrame);
   miniUpdate(dt, now);
   miniDraw(now);
-  mini.loop = requestAnimationFrame(miniFrame);
 }
 
 function miniUpdate(dt, now) {
@@ -370,7 +374,7 @@ function miniDraw(now) {
   ctx.textBaseline = 'middle';
   // Where she tapped.
   for (const r of mini.ripples) {
-    const kk = (now - r.t0) / 500;
+    const kk = Math.max(0, Math.min(1, (now - r.t0) / 500));
     const q = at(r.x, r.y);
     ctx.strokeStyle = `rgba(255,255,255,${1 - kk})`;
     ctx.lineWidth = Math.max(2, k * (1 - kk));
@@ -886,4 +890,5 @@ document.getElementById('mini-replay').addEventListener('click', miniReplay);
 document.getElementById('mini-close').addEventListener('click', closeMini);
 document.getElementById('mini-bye').addEventListener('click', closeMini);
 document.getElementById('mini-again').addEventListener('click', () => { const { npc, game } = mini; Sound.tap(); closeMini(); openMini(npc, game); });
-mini.button.addEventListener('click', () => { const npc = state.talking; Sound.tap(); closeDialog(); openMini(npc); });
+// (Not a monster caught meanwhile, still doing its last magic: js/cave-magic.js.)
+mini.button.addEventListener('click', () => { const npc = state.talking; if (!miniGameOf(npc)) return; Sound.tap(); closeDialog(); openMini(npc); });

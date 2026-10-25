@@ -1142,8 +1142,9 @@ async function littleGames(browser, edition) {
         o.won.push(await winRound());
       }
       await until(() => shown('mini-end'), 3000);
-      // The end: the coins once, the quest, the pips.
-      tap({ x: 100, y: 80 });
+      // The end: the coins once, the quest, the pips. (A tap on the end card
+      // itself: one on the pond around it closes the game, js/game.js.)
+      mini.end.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
       await sleep(300);
       o.end = { card: shown('mini-end'), coins: state.coins - coins, quest: questCount('fish') - quest, pips: document.querySelectorAll('#mini-pips .pip.on').length, done: said.some(p => (key === 'fish' ? LINES.fishDone : LINES.miniDone).includes(p.text)) };
       // 🔁 plays again; 👋 closes and frees the game.
@@ -1464,11 +1465,11 @@ async function outsideTaps(browser, edition) {
     // it closes the feeding card only, and that button isn't pressed. (She
     // has everything, so there are buttons to press beside it.)
     await ev(`T.reset(); for (const { slot, items } of WARDROBE) state.owned[slot] = Object.keys(items); openWardrobe(); openFeed()`);
-    // A point on a button of hers that shows beside the card (on a small
-    // screen there may be none).
+    // A point on a thing of hers, or a tab, that shows beside the card (on a
+    // small screen there may be none).
     const chip = await ev(() => {
       const card = document.getElementById('feed').getBoundingClientRect();
-      for (const b of document.querySelectorAll('#wd-slots .chip:not(.on):not(.feed-chip):not([disabled])')) {
+      for (const b of document.querySelectorAll('#wd-slots .wd-item:not(.on):not(.locked), #wd-tabs .wd-tab:not(.on)')) {
         const r = b.getBoundingClientRect();
         for (let x = r.left + 6; x < r.right - 6; x += 8) {
           const q = { x: Math.round(x), y: Math.round(r.top + r.height / 2) };
@@ -1478,9 +1479,9 @@ async function outsideTaps(browser, edition) {
       return null;
     });
     if (chip) {
-      const outfit = await ev(() => JSON.stringify(state.outfit));
+      const outfit = await ev(() => JSON.stringify(state.outfit) + wdTab);
       await tap(chip);
-      const stacked = await ev(() => ({ feed: T.shown('feed'), wardrobe: T.shown('wardrobe'), busy: state.busy, outfit: JSON.stringify(state.outfit) }));
+      const stacked = await ev(() => ({ feed: T.shown('feed'), wardrobe: T.shown('wardrobe'), busy: state.busy, outfit: JSON.stringify(state.outfit) + wdTab }));
       note('a tap on the wardrobe beside the feeding card closes that card only, and presses nothing under it',
         !stacked.feed && stacked.wardrobe && stacked.busy && stacked.outfit === outfit, { size, chip, stacked });
       chips.push(size);

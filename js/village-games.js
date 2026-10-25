@@ -31,7 +31,7 @@ const VG_INK = '#3a2c50';
 function vgHost(scene) {
   const sc = state.scenes[scene];
   const look = VILLAGE_GAMES[scene].host;
-  return sc ? sc.npcs.find(n => n.look === look && !n.mount) || null : null;
+  return sc ? sc.npcs.find(n => n.look === look && !n.mount && !n.caught) || null : null;
 }
 
 // Her tier for a kind, capped like the village asks it.
@@ -54,9 +54,11 @@ function vgQuestions(kind, cap, cfg, ok = () => true) {
 }
 
 const vgWord = w => Quiz.words()[w] || { w, e: '❓' };
-// Pictures she names for sure (WEAK_PICTURES aren't): the rhyme cards in
-// the questions show the word too, but here there is just the picture.
-const vgClear = q => q.options.every(o => vgWord(o.wrong).pic >= 2);
+// Pictures she names for sure (WEAK_PICTURES aren't), and by one name only
+// (🐀 rat is "mouse" to her, 🧢 cap a hat that rhymes with cat): the rhyme
+// cards in the questions show the word too, but here there is just the
+// picture.
+const vgClear = q => q.options.every(o => vgWord(o.wrong).pic >= 2 && !vgWord(o.wrong).aka.length);
 // The question's own lines, without the mark for when it has been heard.
 const vgAsked = q => q.ask.filter(p => p !== Quiz.READY);
 // What to do, said by the narrator once at the start (LINES.miniRhyme...).
@@ -94,6 +96,21 @@ function vgSprite(W, H, paint, grey) {
 }
 const vgCache = new Map();
 const vgCached = (key, make) => { if (!vgCache.has(key)) vgCache.set(key, make()); return vgCache.get(key); };
+// A drawing that never changes, painted once on a canvas of its own (w x h,
+// its point (x, y) at (ox, oy) there), then copied each frame: painting it
+// pixel by pixel 60 times a second is slow on an older iPad.
+function vgStamp(g, key, x, y, [w, h, ox, oy], paint) {
+  const cv = vgCached(key, () => { const c = makeCanvas(w, h); paint(c.getContext('2d'), ox, oy); return c; });
+  g.drawImage(cv, Math.round(x) - ox, Math.round(y) - oy);
+}
+// drawCloudPuff and drawRainbowArch (js/sprites.js), copied.
+function vgCloud(g, x, y, k) {
+  const R = Math.ceil(16 * k) + 2;
+  vgStamp(g, `cloud|${k}`, x, y, [2 * R + 1, 2 * R + 1, R, R], (c, ox, oy) => drawCloudPuff(c, ox, oy, k));
+}
+function vgArch(g, x, y, R) {
+  vgStamp(g, `arch|${R}`, x, y, [2 * R + 21, R + 26, R + 10, R + 10], (c, ox, oy) => drawRainbowArch(c, ox, oy, R));
+}
 // Fills an ellipse on a sprite grid.
 function vgOval(set, cx, cy, rx, ry, col) {
   for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
@@ -447,8 +464,8 @@ const VG_UNICORN = {
   backdrop(g, LW, LH, bx, by, t) {
     const G = by + VG_GROUND;
     vgSky(g, LW, G - 10, ['#bfe4ff', '#d4ecff', '#ecdcff', '#ffdcef']);
-    drawRainbowArch(g, bx + 104, G - 4, 70);
-    for (let i = 0; i < 4; i++) drawCloudPuff(g, Math.round(((i * 83 + t * 3) % (LW + 60)) - 30), by + 10 + (i % 2) * 14, 0.8);
+    vgArch(g, bx + 104, G - 4, 70);
+    for (let i = 0; i < 4; i++) vgCloud(g, Math.round(((i * 83 + t * 3) % (LW + 60)) - 30), by + 10 + (i % 2) * 14, 0.8);
     px(g, 0, G - 10, LW, LH - G + 10, '#9ee08a');
     px(g, 0, G - 10, LW, 2, '#c4f0a8');
     for (let i = 0; i < LW; i += 7) {
@@ -467,7 +484,7 @@ const VG_UNICORN = {
     const s = unicornSprite(it.look, 0);
     g.drawImage(s.canvas, x - s.ax, y - s.ay);
     g.globalAlpha = 1;
-    drawCloudPuff(g, x - 2, y - 44 + Math.round(Math.sin(t * 2 + it.i) * 1.2), 0.85);
+    vgCloud(g, x - 2, y - 44 + Math.round(Math.sin(t * 2 + it.i) * 1.2), 0.85);
   },
   // The one she picked gallops off over the meadow, a rainbow trail behind.
   front(g, t, now) {
@@ -478,7 +495,7 @@ const VG_UNICORN = {
     const hop = k > 0 ? Math.abs(Math.sin(k * 14)) * 3 : 0;
     const s = unicornSprite(it.look, Math.floor(now / 90) % 2);
     g.drawImage(s.canvas, Math.round(it.x + run - s.ax), Math.round(it.y - hop - s.ay));
-    drawCloudPuff(g, Math.round(it.x - 2 + run), Math.round(it.y - 44 - hop), 0.85);
+    vgCloud(g, it.x - 2 + run, it.y - 44 - hop, 0.85);
   },
   update(dt, now) {
     const a = mini.anim;
@@ -875,10 +892,11 @@ function vgSpellTap(it) {
     Object.assign(it, { state: 'placed', slot: at, t0: performance.now(), from: { x: it.x, y: it.y }, glow: false });
     for (const x of mini.items) x.glow = false;
     if (at + 1 < r.q.slots.length) { Sound.say([it.sound]); return; }
-    // The last one: a moment to see it in, then the word.
+    // The last one: a moment to see it in, then the word (🔊 waits too).
     it.prize = r.e;
     const turn = ++mini.turn;
     mini.locked = true;
+    mini.winning = true;
     Sound.say([it.sound]);
     miniLater(650, () => { if (mini.turn === turn) miniCatch(it); });
     return;
@@ -897,11 +915,13 @@ function vgSpellTap(it) {
 
 // A bubble of light with the letter in it.
 function vgBubble(g, x, y, col) {
-  for (let j = -13; j <= 13; j++) for (let i = -13; i <= 13; i++) {
-    const d = i * i + j * j;
-    if (d > 169) continue;
-    px(g, Math.round(x) + i, Math.round(y) + j, 1, 1, d > 144 ? VG_INK : d > 110 ? col : i < -3 && j < -3 && d < 60 && d > 30 ? '#ffffff' : mix(col, '#ffffff', 0.72));
-  }
+  vgStamp(g, `bubble|${col}`, x, y, [27, 27, 13, 13], (c, ox, oy) => {
+    for (let j = -13; j <= 13; j++) for (let i = -13; i <= 13; i++) {
+      const d = i * i + j * j;
+      if (d > 169) continue;
+      px(c, ox + i, oy + j, 1, 1, d > 144 ? VG_INK : d > 110 ? col : i < -3 && j < -3 && d < 60 && d > 30 ? '#ffffff' : mix(col, '#ffffff', 0.72));
+    }
+  });
 }
 
 const VG_FAIRY_SKIN = {
@@ -927,11 +947,13 @@ const VG_FAIRY_SKIN = {
   },
   // A daisy round the picture.
   frame(g, x, y) {
-    for (let a = 0; a < 8; a++) {
-      const ang = (a / 8) * Math.PI * 2;
-      for (let j = -5; j <= 5; j++) for (let i = -5; i <= 5; i++) if (i * i + j * j <= 25) px(g, Math.round(x + Math.cos(ang) * 14) + i, Math.round(y + Math.sin(ang) * 14) + j, 1, 1, i * i + j * j > 18 ? '#e86fb0' : '#ffd0e8');
-    }
-    for (let j = -13; j <= 13; j++) for (let i = -13; i <= 13; i++) if (i * i + j * j <= 169) px(g, x + i, y + j, 1, 1, i * i + j * j > 150 ? '#e86fb0' : '#ffffff');
+    vgStamp(g, 'daisy', x, y, [39, 39, 19, 19], (c, x, y) => {
+      for (let a = 0; a < 8; a++) {
+        const ang = (a / 8) * Math.PI * 2;
+        for (let j = -5; j <= 5; j++) for (let i = -5; i <= 5; i++) if (i * i + j * j <= 25) px(c, Math.round(x + Math.cos(ang) * 14) + i, Math.round(y + Math.sin(ang) * 14) + j, 1, 1, i * i + j * j > 18 ? '#e86fb0' : '#ffd0e8');
+      }
+      for (let j = -13; j <= 13; j++) for (let i = -13; i <= 13; i++) if (i * i + j * j <= 169) px(c, x + i, y + j, 1, 1, i * i + j * j > 150 ? '#e86fb0' : '#ffffff');
+    });
   },
   // A rounded slot of petals, glowing when it is the next one.
   slot(g, x, y, next) {

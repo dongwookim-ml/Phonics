@@ -61,7 +61,7 @@ function monsterMiss(npc, q, o, showIt) {
   caveSayThen(parts, voiceOf(npc), () => {
     if (!live()) return;
     caveStepAside(npc);
-    later(monsterCast(npc) + MAGIC_MS.after, () => {
+    monsterCast(npc, MAGIC_MS.after, () => {
       if (!live()) return;
       caveStepBack();
       if (showIt) showAnswer(q, null);
@@ -75,6 +75,8 @@ function monsterMiss(npc, q, o, showIt) {
 // twirl, then poof() takes it away and pays the coins. If she closed the
 // dialog before that, it just goes poof.
 function monsterCaught(npc, said, poof) {
+  npc.fight = (npc.fight || 0) + 1; // a miss's spell still to come plays no more
+  mini.button.classList.add('hidden'); // its little game waits until it's back (js/minigame.js)
   const done = () => {
     npc.spell = null;
     if (caveAside === npc) caveAside = null; // the magic is over (before poof closes the dialog)
@@ -83,7 +85,7 @@ function monsterCaught(npc, said, poof) {
   caveSayThen(said, voiceOf(npc), () => {
     if (state.talking !== npc) { done(); return; }
     caveStepAside(npc);
-    later(monsterCast(npc) + 250, () => later(heroCast(npc), () => {
+    monsterCast(npc, 250, () => later(heroCast(npc), () => {
       monsterGiggle(npc);
       later(MAGIC_MS.giggle, () => {
         npc.spell = { kind: 'twirl', t0: performance.now(), dur: MAGIC_MS.twirl };
@@ -107,8 +109,10 @@ function heroChest() {
 
 // The monster's spell: it wobbles while sparkles gather in front of it,
 // hops and sends its magic at her, and the bubble that pops up around her
-// catches it in a burst of hearts. Returns the time in ms until it hits.
-function monsterCast(npc) {
+// catches it in a burst of hearts. `then` comes `after` ms after it hits.
+// Each step waits for the one before (the parent panel opened over it holds
+// them, and closing it mustn't play them all at once).
+function monsterCast(npc, after, then) {
   const m = magicOf(npc);
   const from = monsterMiddle(npc);
   const chest = heroChest();
@@ -130,12 +134,12 @@ function monsterCast(npc) {
     magicFx.push({ kind: 'bolt', t0: t1, dur: MAGIC_MS.fly, from: at, to, m, bmp });
     magicFx.push({ kind: 'bubble', t0: t1 + 150, dur: MAGIC_MS.fly - 150 + MAGIC_MS.after, hit: MAGIC_MS.fly - 150, at: chest });
     Sound.sparkle();
+    later(MAGIC_MS.fly, () => {
+      magicFx.push({ kind: 'burst', t0: performance.now(), dur: 650, at: to, m, bmp: magicBitmap('dot', HEART_PAL) });
+      Sound.tune('clink');
+      later(after, then);
+    });
   });
-  later(MAGIC_MS.windup + MAGIC_MS.fly, () => {
-    magicFx.push({ kind: 'burst', t0: performance.now(), dur: 650, at: to, m, bmp: magicBitmap('dot', HEART_PAL) });
-    Sound.tune('clink');
-  });
-  return MAGIC_MS.windup + MAGIC_MS.fly;
 }
 
 // Her magic: a twinkle at her hand, then her star flies to the monster with
