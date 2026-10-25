@@ -28,7 +28,7 @@ const TITLES = {
   princess: { ko: '공주',   en: 'Princess', icon: '👸', look: 'girl' },
   prince:   { ko: '왕자',   en: 'Prince',   icon: '🤴', look: 'boy' },
   queen:    { ko: '여왕',   en: 'Queen',    icon: '👑', look: 'girl' },
-  king:     { ko: '왕',     en: 'King',     icon: '🫅', look: 'boy' },
+  king:     { ko: '왕',     en: 'King',     icon: '🤴', look: 'boy' },
   knight:   { ko: '기사',   en: 'Knight',   icon: '🛡️' },
   fairy:    { ko: '요정',   en: 'Fairy',    icon: '🧚', look: 'girl' },
   wizard:   { ko: '마법사', en: 'Wizard',   icon: '🧙' },
@@ -55,15 +55,15 @@ const placeName = key => place(key).replace(/^[^\p{L}]+\s/u, '');
 // letter sound; short spellings like "buh" work better than IPA.
 // The first twelve letters each get a house in town (see TOWN_HOUSES).
 const LETTERS = [
-  { letter: 'A', sound: 'ah',  color: '#ff7a8a', words: [['apple', '🍎'], ['ant', '🐜'], ['alligator', '🐊'], ['ambulance', '🚑'], ['avocado', '🥑'], ['anchor', '⚓'], ['astronaut', '🧑‍🚀'], ['arrow', '🏹']] },
+  { letter: 'A', sound: 'ah',  color: '#ff7a8a', words: [['apple', '🍎'], ['ant', '🐜'], ['alligator', '🐊'], ['ambulance', '🚑'], ['avocado', '🥑'], ['anchor', '⚓'], ['astronaut', '👨‍🚀'], ['arrow', '🏹']] },
   { letter: 'B', sound: 'buh', color: '#6fa8ff', words: [['bus', '🚌'], ['ball', '⚽'], ['banana', '🍌'], ['bear', '🐻'], ['bird', '🐦'], ['book', '📖'], ['boat', '⛵'], ['butterfly', '🦋']] },
   { letter: 'C', sound: 'kuh', color: '#ffb347', words: [['cat', '🐱'], ['car', '🚗'], ['cake', '🎂'], ['cow', '🐮'], ['corn', '🌽'], ['carrot', '🥕'], ['cookie', '🍪'], ['camel', '🐫']] },
   { letter: 'D', sound: 'duh', color: '#a78bfa', words: [['dog', '🐶'], ['duck', '🦆'], ['drum', '🥁'], ['dolphin', '🐬'], ['door', '🚪'], ['dinosaur', '🦕'], ['donut', '🍩'], ['dragon', '🐉']] },
-  { letter: 'F', sound: 'fff', color: '#5cc98a', words: [['fish', '🐟'], ['frog', '🐸'], ['fox', '🦊'], ['flag', '🚩'], ['fire', '🔥'], ['foot', '🦶'], ['fork', '🍴'], ['feather', '🪶']] },
+  { letter: 'F', sound: 'fff', color: '#5cc98a', words: [['fish', '🐟'], ['frog', '🐸'], ['fox', '🦊'], ['flag', '🚩'], ['fire', '🔥'], ['foot', '🦶'], ['fork', '🍴'], ['fairy', '🧚']] },
   { letter: 'G', sound: 'guh', color: '#f59ec8', words: [['goat', '🐐'], ['grapes', '🍇'], ['gift', '🎁'], ['guitar', '🎸'], ['gorilla', '🦍'], ['ghost', '👻'], ['glasses', '👓'], ['girl', '👧']] },
   { letter: 'H', sound: 'hhh', color: '#ff9a6b', words: [['hat', '🎩'], ['horse', '🐴'], ['house', '🏠'], ['heart', '❤️'], ['hippo', '🦛'], ['hammer', '🔨'], ['honey', '🍯'], ['helicopter', '🚁']] },
   { letter: 'M', sound: 'mmm', color: '#ff6fb5', words: [['moon', '🌙'], ['monkey', '🐵'], ['milk', '🥛'], ['mouse', '🐭'], ['mushroom', '🍄'], ['map', '🗺️'], ['mango', '🥭'], ['mountain', '⛰️']] },
-  { letter: 'N', sound: 'nnn', color: '#7fd4d9', words: [['nose', '👃'], ['nut', '🥜'], ['net', '🥅'], ['nine', '9️⃣'], ['noodles', '🍜'], ['notebook', '📓'], ['needle', '🪡'], ['newspaper', '📰']] },
+  { letter: 'N', sound: 'nnn', color: '#7fd4d9', words: [['nose', '👃'], ['nut', '🥜'], ['net', '🥅'], ['nine', '9️⃣'], ['noodles', '🍜'], ['notebook', '📓'], ['newspaper', '📰']] },
   { letter: 'P', sound: 'puh', color: '#e48a5c', words: [['pig', '🐷'], ['pizza', '🍕'], ['penguin', '🐧'], ['panda', '🐼'], ['popcorn', '🍿'], ['pumpkin', '🎃'], ['pencil', '✏️'], ['pineapple', '🍍']] },
   { letter: 'S', sound: 'sss', color: '#4cc3d9', words: [['sun', '☀️'], ['snake', '🐍'], ['star', '⭐'], ['sock', '🧦'], ['spoon', '🥄'], ['strawberry', '🍓'], ['snowman', '⛄'], ['spider', '🕷️']] },
   { letter: 'T', sound: 'tuh', color: '#c39bff', words: [['tiger', '🐯'], ['tree', '🌳'], ['turtle', '🐢'], ['tomato', '🍅'], ['train', '🚂'], ['tent', '⛺'], ['tooth', '🦷'], ['taxi', '🚕']] },
@@ -106,8 +106,8 @@ const HEADWEAR = {
   flowers: { name: '꽃 화관',     icon: '🌸', girl: true },
   bow:     { name: '큰 리본',     icon: '🎀', girl: true },
   circlet: { name: '왕자 관',     icon: '💫', boy: true },
-  kingcrown: { name: '임금님 왕관', icon: '🫅', boy: true },
-  feather: { name: '깃털 모자',   icon: '🪶', boy: true },
+  kingcrown: { name: '임금님 왕관', icon: '👑', boy: true },
+  feather: { name: '깃털 모자',   icon: '🎩', boy: true },
 };
 const HAND_ITEMS = {
   none:    { name: '없음',     icon: '' },
@@ -238,19 +238,19 @@ const LINES = {
     'Wonderful!', 'You got it!', 'Brilliant, {title}!', 'That is exactly right!',
     'Wow, great listening!', 'Perfect!', 'Hooray, well done!', 'You are so clever!',
   ],
-  // Said right after the wrong answer itself, so they don't name it. She
-  // has to answer someone else's question before trying this one again.
-  retry: [
-    'Oops, not that one. Go help a friend, then come back and try again!',
-    'Almost! Answer someone else first, then come back to me.',
-    'Hmm, not quite. Visit another friend and come back later!',
-    'Good try! Help someone else, and then we can try again.',
-  ],
-  // Tapping someone she has to come back to later.
-  later: [
-    'Help a friend first, then come back to me!', 'Not yet! Answer someone else first.',
-    'Come back after you help another friend!',
-  ],
+  // After a wrong answer (choose in js/game.js). Lines never put "a" or
+  // "the" before the quiz word that follows them.
+  // First miss: what she picked, then one of these and the word again.
+  listen: ['Listen.', 'Listen again.', 'Listen one more time.'],
+  // Second miss: the right card glows and the answer is said.
+  showMe: ['Here it is!', 'Look, this one!', 'This is the one!'],
+  tapIt: ['Your turn! Tap it.', 'Can you tap it?', 'Now you tap it!'],
+  // Once she has tapped it. It comes back later.
+  soon: ["Good try! Let's practise it again later.", "Good try! I'll ask you again soon.", 'Well done for trying! We will play it again later.'],
+  // Asking a question she missed again.
+  again: ["Let's try this one again!", 'Here is that one again!', 'Remember this one? Try again!'],
+  // Before a question, after the first chat with someone that day.
+  next: ['Here is another one!', 'Ready for one more?', 'Okay, listen!', 'One more for you!'],
   gift: [
     'I have a little present for you. Would you like to try it on?', 'This is for you, {title}! Do you want to wear it?',
     'Ta-da! A present! Shall we try it?', 'You earned a gift! Would you like to put it on?',
@@ -309,27 +309,33 @@ const FOREST_STARS = 10;
 const WORD_FAMILIES = [
   [['cat', '🐱'], ['cap', '🧢'], ['can', '🥫'], ['cup', '🥤'], ['cow', '🐮']],
   [['bat', '🦇'], ['bag', '👜'], ['bed', '🛏️'], ['bus', '🚌'], ['bug', '🐛'], ['box', '📦']],
-  [['dog', '🐶'], ['dot', '⚫'], ['duck', '🦆'], ['dig', '⛏️'], ['doll', '🪆']],
-  [['hat', '🎩'], ['hen', '🐔'], ['hug', '🤗'], ['hut', '🛖'], ['ham', '🍖']],
-  [['map', '🗺️'], ['mop', '🧹'], ['man', '👨'], ['mug', '☕'], ['moon', '🌙']],
-  [['pig', '🐷'], ['pan', '🍳'], ['pen', '🖊️'], ['pin', '📌'], ['pot', '🍲']],
-  [['sun', '☀️'], ['sad', '😢'], ['six', '6️⃣'], ['sock', '🧦'], ['sit', '🪑']],
-  [['top', '🔝'], ['ten', '🔟'], ['tub', '🛁'], ['tap', '🚰'], ['tent', '⛺']],
-  [['rat', '🐀'], ['red', '🟥'], ['run', '🏃'], ['rock', '🪨'], ['ring', '💍']],
-  [['log', '🪵'], ['leg', '🦵'], ['lip', '👄'], ['lamp', '💡'], ['lock', '🔒']],
+  [['dog', '🐶'], ['duck', '🦆'], ['drum', '🥁'], ['door', '🚪']],
+  [['hat', '🎩'], ['hen', '🐔'], ['hug', '🤗'], ['horse', '🐴']],
+  [['map', '🗺️'], ['man', '👨'], ['mug', '☕'], ['moon', '🌙']],
+  [['pig', '🐷'], ['pan', '🍳'], ['pen', '🖊️'], ['pin', '📌']],
+  [['sun', '☀️'], ['sad', '😢'], ['six', '6️⃣'], ['sock', '🧦']],
+  [['ten', '🔟'], ['tub', '🛁'], ['tap', '🚰'], ['tent', '⛺']],
+  [['rat', '🐀'], ['red', '🔴'], ['run', '🏃'], ['ring', '💍']],
+  [['leg', '🦵'], ['lip', '👄'], ['lock', '🔒'], ['lion', '🦁']],
   [['net', '🥅'], ['nut', '🥜'], ['nap', '😴'], ['nose', '👃'], ['nine', '9️⃣']],
-  [['fox', '🦊'], ['fish', '🐟'], ['fork', '🍴'], ['foot', '🦶'], ['fun', '🎉']],
-  [['web', '🕸️'], ['wet', '💦'], ['win', '🏆'], ['wolf', '🐺'], ['worm', '🪱'], ['watch', '⌚']],
-  [['bun', '🍞'], ['bin', '🗑️'], ['bell', '🔔'], ['bone', '🦴'], ['boot', '👢'], ['bee', '🐝']],
-  [['cab', '🚕'], ['cut', '✂️'], ['cop', '👮'], ['cake', '🎂'], ['corn', '🌽'], ['cookie', '🍪']],
-  [['ram', '🐏'], ['rod', '🎣'], ['rice', '🍚'], ['rose', '🌹'], ['rain', '🌧️'], ['robot', '🤖']],
+  [['fox', '🦊'], ['fish', '🐟'], ['fork', '🍴'], ['foot', '🦶']],
+  [['web', '🕸️'], ['wolf', '🐺'], ['watch', '⌚'], ['whale', '🐳']],
+  [['bin', '🗑️'], ['bell', '🔔'], ['bone', '🦴'], ['boot', '👢'], ['bee', '🐝']],
+  [['cake', '🎂'], ['corn', '🌽'], ['cookie', '🍪'], ['car', '🚗']],
+  [['ram', '🐏'], ['rice', '🍚'], ['rose', '🌹'], ['rain', '🌧️'], ['robot', '🤖']],
   [['mom', '👩'], ['mad', '😠'], ['milk', '🥛'], ['mouse', '🐭'], ['mask', '😷'], ['mail', '📬']],
-  [['yes', '✅'], ['yam', '🍠'], ['yum', '😋'], ['yarn', '🧶'], ['yawn', '🥱'], ['yellow', '🟨']],
+  [['yum', '😋'], ['yarn', '🧶'], ['yawn', '🥱']],
   [['van', '🚐'], ['vest', '🦺'], ['violin', '🎻'], ['volcano', '🌋'], ['vampire', '🧛']],
   [['kid', '🧒'], ['king', '🤴'], ['kite', '🪁'], ['key', '🔑'], ['kiss', '💋'], ['koala', '🐨']],
   [['gas', '⛽'], ['gift', '🎁'], ['goat', '🐐'], ['girl', '👧'], ['ghost', '👻'], ['guitar', '🎸']],
-  [['fix', '🔧'], ['fog', '🌫️'], ['fire', '🔥'], ['flag', '🚩'], ['fly', '🪰'], ['feather', '🪶']],
+  [['fire', '🔥'], ['flag', '🚩'], ['fairy', '🧚'], ['frog', '🐸']],
 ];
+
+// Pictures a child may call something else (jet ✈️ is an airplane, mug ☕
+// a cup): fine next to a written or spoken word, but never the only clue,
+// so questions that show just the picture (read, findStart) leave them out.
+const WEAK_PICTURES = new Set(['mom', 'man', 'kid', 'pin', 'rat', 'tub', 'tap', 'mug', 'cup', 'jet', 'net', 'lip', 'pan', 'gas',
+  'run', 'nap', 'sad', 'mad', 'yum', 'yawn', 'kiss', 'hug', 'sing', 'dish', 'bin', 'mail', 'shop', 'lake', 'ram', 'red']);
 
 const FOREST_NPCS = [
   { name: '꽃요정',     look: 'fairy',  c: 12, r: 6 },
@@ -386,49 +392,64 @@ const RECENT_WORDS = 24;
 
 const RHYMES = [
   [['cat', '🐱'], ['hat', '🎩'], ['bat', '🦇'], ['rat', '🐀']],
-  [['dog', '🐶'], ['log', '🪵'], ['frog', '🐸']],
-  [['sun', '☀️'], ['bun', '🍞'], ['run', '🏃']],
+  [['dog', '🐶'], ['frog', '🐸']],
+  [['sun', '☀️'], ['run', '🏃'], ['one', '1️⃣']],
   [['cake', '🎂'], ['snake', '🐍'], ['lake', '🏞️']],
   [['star', '⭐'], ['car', '🚗'], ['guitar', '🎸']],
   [['moon', '🌙'], ['spoon', '🥄'], ['balloon', '🎈']],
   [['bee', '🐝'], ['tree', '🌳'], ['three', '3️⃣'], ['key', '🔑']],
   [['ring', '💍'], ['king', '🤴'], ['sing', '🎤']],
-  [['fox', '🦊'], ['box', '📦'], ['socks', '🧦']],
+  [['fox', '🦊'], ['box', '📦']],
   [['hen', '🐔'], ['ten', '🔟'], ['pen', '🖊️']],
   [['bug', '🐛'], ['mug', '☕'], ['hug', '🤗']],
   [['goat', '🐐'], ['boat', '⛵'], ['coat', '🧥']],
   [['mouse', '🐭'], ['house', '🏠']],
-  [['bed', '🛏️'], ['red', '🟥'], ['sled', '🛷']],
+  [['bed', '🛏️'], ['red', '🔴'], ['sled', '🛷']],
   [['kite', '🪁'], ['light', '💡'], ['night', '🌃']],
-  [['mop', '🧹'], ['top', '🔝'], ['shop', '🏪']],
+  [['stop', '🛑'], ['shop', '🏪']],
   [['bear', '🐻'], ['pear', '🍐'], ['chair', '🪑']],
   [['fish', '🐟'], ['dish', '🍽️']],
   [['can', '🥫'], ['pan', '🍳'], ['man', '👨'], ['van', '🚐']],
   [['cap', '🧢'], ['map', '🗺️'], ['tap', '🚰'], ['nap', '😴']],
-  [['pot', '🍲'], ['dot', '⚫'], ['hot', '🥵']],
-  [['net', '🥅'], ['jet', '✈️'], ['wet', '💦']],
-  [['pin', '📌'], ['bin', '🗑️'], ['win', '🏆']],
-  [['pig', '🐷'], ['dig', '⛏️']],
+  [['net', '🥅'], ['jet', '✈️']],
+  [['pin', '📌'], ['bin', '🗑️']],
   [['duck', '🦆'], ['truck', '🚚']],
-  [['clock', '🕰️'], ['rock', '🪨'], ['lock', '🔒']],
+  [['clock', '🕰️'], ['lock', '🔒']],
   [['bell', '🔔'], ['shell', '🐚']],
-  [['nose', '👃'], ['rose', '🌹'], ['toes', '🦶']],
+  [['nose', '👃'], ['rose', '🌹']],
   [['train', '🚂'], ['rain', '🌧️']],
   [['rice', '🍚'], ['dice', '🎲'], ['ice', '🧊']],
   [['drum', '🥁'], ['thumb', '👍']],
-  [['book', '📖'], ['cook', '🧑‍🍳'], ['hook', '🪝']],
+  [['book', '📖'], ['cook', '👨‍🍳']],
   [['chick', '🐤'], ['brick', '🧱'], ['sick', '🤒']],
   [['crown', '👑'], ['clown', '🤡']],
   [['ship', '🚢'], ['lip', '👄']],
 ];
 
-// Short sounds for single letters inside a word.
+// Short sounds for single letters inside a word, spelled the way lines
+// like "M says mmm." say them. A spoken "/m/" is the pure sound itself
+// (see js/audio.js); c, h and r use their LETTERS sounds.
 const PART_SOUNDS = {
   a: 'ah', e: 'eh', i: 'ih', o: 'aw', u: 'uh',
   b: 'buh', d: 'duh', g: 'guh', m: 'mmm', n: 'nnn', p: 'puh', t: 'tuh', x: 'ks', k: 'kuh', l: 'lll', s: 'sss', f: 'fff',
+  v: 'vvv', w: 'wuh', z: 'zzz', j: 'juh', y: 'yuh',
+};
+
+// Sounds a Korean five-year-old hears as the same: Korean has one sound
+// for e and ae, no f, v or z, and one for l and r. A question never puts
+// two letters (or two words that differ only in them) from one pair side
+// by side. `same` are letters that can say the same sound (c and k), and
+// `looks` letters that look alike.
+const HARD_PAIRS = {
+  vowels: [['a', 'e'], ['e', 'i'], ['a', 'u'], ['o', 'u']],
+  consonants: [['f', 'p'], ['b', 'v'], ['l', 'r'], ['b', 'p'], ['d', 't'], ['g', 'k'], ['m', 'n'], ['s', 'z'], ['j', 'z']],
+  same: [['c', 'k'], ['c', 's'], ['g', 'j'], ['x', 'z']],
+  looks: [['b', 'd'], ['p', 'q'], ['b', 'p'], ['n', 'u'], ['m', 'w']],
 };
 
 LINES.firstSound = ['Which letter does it start with?', 'What is the first letter?', 'Which letter comes first?'];
+// A wrong rhyme: listen to the end of the word.
+LINES.rhymeEnd = ['Listen to the end.', 'Listen to the end of the word.'];
 LINES.findStart = ['Which one starts with', 'Which picture starts with', 'What begins with'];
 LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
 LINES.vowel = ['Which letter goes in the middle?', 'What letter is missing in the middle?', 'Can you find the middle letter?'];
@@ -450,16 +471,16 @@ const SENTENCES = [
   { s: 'The {} can swim in the pond.',    w: ['fish', '🐟'],    alike: ['dish', 'fig'],     other: [['car', '🚗'], ['bed', '🛏️']] },
   { s: 'I wear my {} on my head.',        w: ['hat', '🎩'],     alike: ['hot', 'cat'],      other: [['shoe', '👟'], ['cake', '🎂']] },
   { s: 'The {} says woof woof.',          w: ['dog', '🐶'],     alike: ['dot', 'log'],      other: [['cat', '🐱'], ['bee', '🐝']] },
-  { s: 'I drink {} in the morning.',      w: ['milk', '🥛'],    alike: ['mix', 'silk'],     other: [['rock', '🪨'], ['sock', '🧦']] },
+  { s: 'I drink {} in the morning.',      w: ['milk', '🥛'],    alike: ['mix', 'silk'],     other: [['car', '🚗'], ['sock', '🧦']] },
   { s: 'The {} sings in the tree.',       w: ['bird', '🐦'],    alike: ['bed', 'bun'],      other: [['fish', '🐟'], ['car', '🚗']] },
   { s: 'I eat a red {}.',                 w: ['apple', '🍎'],   alike: ['ant', 'ax'],       other: [['chair', '🪑'], ['shoe', '👟']] },
   { s: 'The {} hops and says ribbit.',    w: ['frog', '🐸'],    alike: ['fog', 'fox'],      other: [['cow', '🐄'], ['fish', '🐟']] },
   { s: 'Please open the {}.',             w: ['door', '🚪'],    alike: ['dog', 'duck'],     other: [['sun', '☀️'], ['moon', '🌙']] },
-  { s: 'My birthday {} is sweet.',        w: ['cake', '🎂'],    alike: ['cape', 'lake'],    other: [['rock', '🪨'], ['frog', '🐸']] },
+  { s: 'My birthday {} is sweet.',        w: ['cake', '🎂'],    alike: ['cape', 'lake'],    other: [['shoe', '👟'], ['frog', '🐸']] },
   { s: 'I ride the {} to school.',        w: ['bus', '🚌'],     alike: ['bun', 'bug'],      other: [['bed', '🛏️'], ['apple', '🍎']] },
   { s: 'A unicorn has a shiny {}.',       w: ['horn', '🦄'],    alike: ['corn', 'horse'],   other: [['bus', '🚌'], ['fish', '🐟']] },
   { s: 'I brush my {} at night.',         w: ['teeth', '🦷'],   alike: ['tea', 'tent'],     other: [['car', '🚗'], ['tree', '🌳']] },
-  { s: 'I hug my teddy {}.',              w: ['bear', '🧸'],    alike: ['pear', 'bed'],     other: [['bus', '🚌'], ['rock', '🪨']] },
+  { s: 'I hug my teddy {}.',              w: ['bear', '🧸'],    alike: ['pear', 'bed'],     other: [['bus', '🚌'], ['spoon', '🥄']] },
   { s: 'I put on my {} and my shoes.',    w: ['socks', '🧦'],   alike: ['box', 'rocks'],    other: [['cake', '🎂'], ['moon', '🌙']] },
   { s: 'The {} shines at night.',         w: ['moon', '🌙'],    alike: ['spoon', 'man'],    other: [['pig', '🐷'], ['shoe', '👟']] },
   { s: 'The {} is big and green.',        w: ['tree', '🌳'],    alike: ['three', 'tea'],    other: [['milk', '🥛'], ['sun', '☀️']] },
@@ -470,7 +491,7 @@ const SENTENCES = [
   { s: 'The {} says quack.',              w: ['duck', '🦆'],    alike: ['truck', 'luck'],   other: [['moon', '🌙'], ['shoe', '👟']] },
   { s: 'The {} buzzes by the flower.',    w: ['bee', '🐝'],     alike: ['key', 'bean'],     other: [['car', '🚗'], ['bed', '🛏️']] },
   { s: 'The {} has a long trunk.',        w: ['elephant', '🐘'], alike: ['elf', 'egg'],     other: [['cup', '🥤'], ['sock', '🧦']] },
-  { s: 'The {} eats a carrot.',           w: ['rabbit', '🐰'],  alike: ['ribbon', 'robot'], other: [['chair', '🪑'], ['rock', '🪨']] },
+  { s: 'The {} eats a carrot.',           w: ['rabbit', '🐰'],  alike: ['ribbon', 'robot'], other: [['chair', '🪑'], ['moon', '🌙']] },
   { s: 'The {} gives a big roar.',        w: ['lion', '🦁'],    alike: ['line', 'lemon'],   other: [['spoon', '🥄'], ['cup', '🥤']] },
   { s: 'The {} lays an egg.',             w: ['hen', '🐔'],     alike: ['ten', 'pen'],      other: [['car', '🚗'], ['shoe', '👟']] },
   { s: 'The little {} likes cheese.',     w: ['mouse', '🐭'],   alike: ['house', 'mouth'],  other: [['tree', '🌳'], ['bus', '🚌']] },
@@ -483,7 +504,7 @@ const SENTENCES = [
   { s: 'I lick my ice cream {}.',         w: ['cone', '🍦'],    alike: ['bone', 'comb'],    other: [['dog', '🐶'], ['bed', '🛏️']] },
   { s: 'I put jam on my {}.',             w: ['bread', '🍞'],   alike: ['red', 'break'],    other: [['frog', '🐸'], ['moon', '🌙']] },
   { s: 'Mom makes hot {} in a pot.',      w: ['soup', '🍲'],    alike: ['soap', 'hoop'],    other: [['sock', '🧦'], ['car', '🚗']] },
-  { s: 'I eat {} with lots of cheese.',   w: ['pizza', '🍕'],   alike: ['pillow', 'piano'], other: [['rock', '🪨'], ['shoe', '👟']] },
+  { s: 'I eat {} with lots of cheese.',   w: ['pizza', '🍕'],   alike: ['pillow', 'piano'], other: [['car', '🚗'], ['shoe', '👟']] },
   { s: 'The {} is orange and crunchy.',   w: ['carrot', '🥕'],  alike: ['parrot', 'carpet'], other: [['bed', '🛏️'], ['door', '🚪']] },
   { s: 'I crack an {} for breakfast.',    w: ['egg', '🥚'],     alike: ['leg', 'peg'],      other: [['car', '🚗'], ['tree', '🌳']] },
   // Body
@@ -499,7 +520,6 @@ const SENTENCES = [
   { s: 'I wash my hands with {}.',        w: ['soap', '🧼'],    alike: ['soup', 'rope'],    other: [['car', '🚗'], ['frog', '🐸']] },
   { s: 'Grandma calls me on the {}.',     w: ['phone', '📱'],   alike: ['bone', 'foam'],    other: [['egg', '🥚'], ['bird', '🐦']] },
   { s: 'Turn on the {} so I can see.',    w: ['light', '💡'],   alike: ['kite', 'night'],   other: [['pig', '🐷'], ['cake', '🎂']] },
-  { s: 'I look out the {} at the rain.',  w: ['window', '🪟'],  alike: ['wind', 'willow'],  other: [['fish', '🐟'], ['milk', '🥛']] },
   { s: 'I eat soup with my {}.',          w: ['spoon', '🥄'],   alike: ['moon', 'spot'],    other: [['sock', '🧦'], ['dog', '🐶']] },
   // Weather and sky
   { s: 'A white {} floats in the sky.',   w: ['cloud', '☁️'],   alike: ['clown', 'loud'],   other: [['bed', '🛏️'], ['cow', '🐄']] },
@@ -510,7 +530,7 @@ const SENTENCES = [
   { s: 'The little {} twinkles in the sky.', w: ['star', '⭐'],    alike: ['jar', 'stop'],     other: [['sock', '🧦'], ['pig', '🐷']] },
   // School and play
   { s: 'I draw a picture with my {}.',    w: ['crayon', '🖍️'],  alike: ['crab', 'crow'],    other: [['milk', '🥛'], ['moon', '🌙']] },
-  { s: 'I carry my books in my {}.',      w: ['bag', '🎒'],     alike: ['bat', 'wag'],      other: [['sun', '☀️'], ['frog', '🐸']] },
+  { s: 'I carry my books in my {}.',      w: ['bag', '👜'],     alike: ['bat', 'wag'],      other: [['sun', '☀️'], ['frog', '🐸']] },
   { s: 'I write my name with my {}.',     w: ['pencil', '✏️'],  alike: ['penguin', 'pebble'], other: [['cow', '🐄'], ['egg', '🥚']] },
   { s: 'I bounce the {} on the floor.',   w: ['ball', '⚽'],    alike: ['tall', 'fall'],    other: [['moon', '🌙'], ['cloud', '☁️']] },
   { s: 'I fly my {} on a windy day.',     w: ['kite', '🪁'],    alike: ['bite', 'kit'],     other: [['egg', '🥚'], ['chair', '🪑']] },
@@ -519,7 +539,7 @@ const SENTENCES = [
   // Princesses and fairy tales
   { s: 'The princess wears a gold {}.',   w: ['crown', '👑'],   alike: ['clown', 'brown'],  other: [['cow', '🐄'], ['bus', '🚌']] },
   { s: 'The king lives in a big {}.',     w: ['castle', '🏰'],  alike: ['tassel', 'cattle'], other: [['cup', '🥤'], ['sock', '🧦']] },
-  { s: 'The fairy waves her magic {}.',   w: ['wand', '🪄'],    alike: ['pond', 'want'],    other: [['pig', '🐷'], ['cake', '🎂']] },
+  { s: 'The princess wears a pink {}.',   w: ['dress', '👗'],   alike: ['desk', 'press'],   other: [['crab', '🦀'], ['drum', '🥁']] },
   { s: 'The {} breathes fire.',           w: ['dragon', '🐉'],  alike: ['wagon', 'drum'],   other: [['milk', '🥛'], ['sock', '🧦']] },
   { s: 'The prince rides a white {}.',    w: ['horse', '🐴'],   alike: ['house', 'hose'],   other: [['cake', '🎂'], ['spoon', '🥄']] },
   { s: 'The witch flies on her {}.',      w: ['broom', '🧹'],   alike: ['room', 'bloom'],   other: [['fish', '🐟'], ['egg', '🥚']] },
@@ -531,6 +551,8 @@ QUIZ_TYPES.unicorn = ['sentence', 'meaning'];
 
 LINES.sentence = ['Listen to my sentence. Which word is missing?', 'Here is a sentence. Find the missing word!', 'Listen closely to the whole sentence.'];
 LINES.meaning = ['Which word makes sense?', 'Fill in the blank! What fits best?', 'Hmm, what word goes here?'];
+// A word that doesn't fit the sentence, before it is hummed again.
+LINES.silly = ['Hmm, that sounds silly!', 'Silly! Does that make sense?', 'Hee hee, that is silly!'];
 LINES.unicorn = ['Welcome to the Unicorn Village!', 'Look, rainbows everywhere!', 'Neigh! The unicorns are happy to see you!'];
 LINES.mount = ['Giddy up!', "Let's go, unicorn!", 'Wheee! Off we go!'];
 LINES.dismount = ['Wait here, unicorn. I will be right back!', 'Stay here, unicorn!', 'Unicorns wait outside. See you soon!'];

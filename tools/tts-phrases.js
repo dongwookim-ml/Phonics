@@ -13,7 +13,7 @@ const root = path.join(__dirname, '..');
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
-  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS'];
+  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS', 'PART_SOUNDS'];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -70,11 +70,13 @@ function collect(D) {
     const v = style.tts;
     if (!v) continue;
     for (const l of D.PERSONA[look] || []) for (const t of fills(l)) add(v, t);
-    lines(v, ['praise', 'retry', 'later', 'gift', 'yes', 'keep']);
-    if (town.has(look)) lines(v, ['ask', 'firstSound', 'findStart', 'rhyme']);
-    if (forest.has(look)) lines(v, ['ask2', 'vowel', 'ending', 'read', 'rhyme']);
+    // Praise, the hints after a miss and the answer shown after a second one
+    // (choose in js/game.js), and the present.
+    lines(v, ['praise', 'listen', 'showMe', 'tapIt', 'soon', 'again', 'next', 'gift', 'yes', 'keep']);
+    if (town.has(look)) lines(v, ['ask', 'firstSound', 'findStart', 'rhyme', 'rhymeEnd']);
+    if (forest.has(look)) lines(v, ['ask2', 'vowel', 'ending', 'read', 'rhyme', 'rhymeEnd']);
     if (unicorn.has(look)) {
-      lines(v, ['sentence', 'meaning', 'newUnicorn']);
+      lines(v, ['sentence', 'meaning', 'newUnicorn', 'silly']);
       for (const x of D.SENTENCES) {
         const [before, after] = x.s.split('{}');
         add(v, before + x.w[0] + after, 0.85);
@@ -119,8 +121,18 @@ function collect(D) {
   for (const w of D.PROP_WORDS) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
   for (const l of D.LETTERS) for (const [w] of l.words) add(N, `${w} starts with ${l.letter}.`);
-  // Letter names: spelling tiles and spelled-out answers, and a wrong letter picked.
+  // Letter names: spelled-out answers.
   for (const l of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') add(N, l, 0.8);
+  // Letter sounds (js/quiz.js): "/c/" is the pure sound on its own, for
+  // spelling tiles and sounding a word out; "C says kuh." after a wrong letter.
+  const soundOf = l => D.PART_SOUNDS[l] || (D.LETTERS.find(x => x.letter === l.toUpperCase()) || {}).sound;
+  for (const l of 'abcdefghijklmnopqrstuvwxyz') {
+    const s = soundOf(l);
+    if (!s) continue;
+    add(N, `/${l}/`, 0.8);
+    add(N, `${l.toUpperCase()} says ${s}.`);
+  }
+  lines(N, (D.CAVE_LINES && D.CAVE_LINES.narrator) || []);
   for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
   for (const t of partShow) add(N, t);

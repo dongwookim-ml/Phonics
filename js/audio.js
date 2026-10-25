@@ -53,6 +53,16 @@ const Sound = (() => {
     const speed = item.narrator ? 0.8 : 0.95;
     return { url: `${TTS_SERVER.replace(/\/$/, '')}/tts?voice=${v}&speed=${speed}&text=${encodeURIComponent(text)}`, live: true };
   }
+  // "/c/" is a letter's pure sound, recorded as a clip of just that sound.
+  // Without its clip the voice says how the sound is spelled ("kuh").
+  function pureSound(item, who) {
+    const m = /^\/([a-z]+)\/$/.exec(item.text || '');
+    const v = item.narrator || !who.tts ? TTS_NARRATOR : who.tts;
+    if (!m || (index[v] && index[v][item.text])) return item;
+    const info = typeof LETTERS !== 'undefined' && LETTERS.find(x => x.letter === m[1].toUpperCase());
+    const said = (typeof PART_SOUNDS !== 'undefined' && PART_SOUNDS[m[1]]) || (info && info.sound) || m[1];
+    return Object.assign({}, item, { text: said });
+  }
   // One audio element, reused so iPad keeps it unlocked after the first tap.
   const player = typeof Audio !== 'undefined' ? new Audio() : null;
   let unlocked = false;
@@ -64,20 +74,22 @@ const Sound = (() => {
   }
   // A live clip that hasn't started after a few seconds gives way to the
   // device voice so nobody waits on a slow server.
-  function playFile(url, done, fail, live, lift) {
+  function playFile(url, done, fail, live, lift, slow) {
     const timer = live ? setTimeout(fail, 4000) : null;
     player.onplaying = () => clearTimeout(timer);
     player.onended = () => { clearTimeout(timer); done(); };
     player.onerror = () => { clearTimeout(timer); fail(); };
     player.src = url;
-    // A lifted voice plays faster without keeping its pitch, so it sounds higher.
+    // A lifted voice plays faster without keeping its pitch, so it sounds
+    // higher. A slow part (a hint) keeps its pitch.
     player.preservesPitch = player.webkitPreservesPitch = !lift;
-    player.playbackRate = lift || 1;
+    player.playbackRate = (lift || 1) * (slow || 1);
     player.play().catch(() => { clearTimeout(timer); fail(); });
   }
 
   // Speak a list of phrases in order. Each item is a string or
-  // { text, rate, pitch, file } where `file` is an optional recording,
+  // { text, rate, pitch, file, slow } where `file` is an optional recording
+  // and `slow` plays it slower (0.8 is four fifths of the speed),
   // or { pause: ms } for a short silence, or { call: fn } to run fn when
   // the queue gets there. `who` is a profile() result.
   function say(parts, who) {
@@ -94,8 +106,9 @@ const Sound = (() => {
 
   function playNext(queue, who, gen) {
     if (gen !== generation) return; // a newer say() took over
-    const item = queue.shift();
-    if (!item) return;
+    const next0 = queue.shift();
+    if (!next0) return;
+    const item = next0.text ? pureSound(next0, who) : next0;
     const next = () => playNext(queue, who, gen);
     // Your own recordings (USE_RECORDINGS) come first, then Kokoro's.
     const own = USE_RECORDINGS && item.file && player ? { url: item.file } : null;
@@ -113,7 +126,7 @@ const Sound = (() => {
         player.onended = null;
         player.pause();
         speak(item, who, next);
-      }, file.live, item.narrator ? 0 : who.lift);
+      }, file.live, item.narrator ? 0 : who.lift, item.slow);
     } else {
       speak(item, who, next);
     }
@@ -125,7 +138,7 @@ const Sound = (() => {
     const v = who.voice || voice;
     if (v) u.voice = v;
     u.lang = v ? v.lang : 'en-US';
-    u.rate = Math.max(0.62, Math.min(1.6, (item.rate || 0.9) * (who.rate || 1)));
+    u.rate = Math.max(0.62, Math.min(1.6, (item.rate || 0.9) * (who.rate || 1) * (item.slow || 1)));
     u.pitch = Math.max(0, Math.min(2, item.pitch || who.pitch || 1.15));
     u.onend = done;
     u.onerror = done;
@@ -173,6 +186,8 @@ const Sound = (() => {
     step: () => notes([[220, 0, 0.04]], 'triangle', 0.03),
     correct: () => notes([[523, 0, 0.12], [659, 0.1, 0.12], [784, 0.2, 0.25]]),
     wrong: () => notes([[300, 0, 0.12], [250, 0.12, 0.2]], 'triangle', 0.08),
+    // A wrong answer: soft and short, so a miss is never the fun part.
+    oops: () => notes([[523, 0, 0.09], [392, 0.1, 0.18]], 'sine', 0.06),
     door: () => notes([[392, 0, 0.08], [523, 0.08, 0.08], [659, 0.16, 0.14]], 'triangle', 0.07),
     party: () => notes([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.4], [784, 0.5, 0.1], [1047, 0.6, 0.5]]),
     // Little sounds for things she taps on the map (js/touch.js).
@@ -194,5 +209,6 @@ const Sound = (() => {
       return muted;
     },
     unlock() { unlockPlayer(); return ctx(); },
+    get muted() { return muted; },
   };
 })();

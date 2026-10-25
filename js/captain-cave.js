@@ -2,16 +2,19 @@
 // Cave. Silly robot villains ask the cave's sentence questions. Tapping one
 // starts a fight of three questions in a row: every right answer is a laser
 // or rocket punch that knocks off one of its three hearts, a wrong answer
-// is a silly attack the robot blocks with its shield. At no hearts left the
+// gets a hint and a quick silly attack the robot blocks with its shield.
+// After a second miss the answer is shown and tapping it fires a little
+// punch, so a fight always ends. At no hearts left the
 // villain gives up, drops coins and runs off, and comes back later.
-// Hooks in js/game.js: openDialog, choose,
+// Hooks in js/game.js: openDialog, missed, finishShown,
 // catchMonster and drawOverlay, all behind isCaptain().
 
 // Hearts a villain starts a fight with: one question each.
 const VILLAIN_HP = 3;
 
 // LINES kinds the villains say in a fight, for tools/tts-phrases.js.
-const CAVE_LINES = { villain: ['villainHit', 'villainNext', 'villainAgain', 'villainAttack'] };
+// `narrator` ones are said by the narrator.
+const CAVE_LINES = { villain: ['villainHit', 'villainNext'], narrator: ['tapFire'] };
 
 if (isCaptain()) {
   // Who lives in the cave. `coins` is the smallest prize for beating one;
@@ -49,12 +52,10 @@ if (isCaptain()) {
     caught: ['I give up! I give up! Here, take my coins!', 'Okay, okay, you win! Bye bye!', 'No fair, you are too smart! I give up!', 'I give up! Run away, run away!'],
     // A right answer hits the villain.
     villainHit: ['Ouch! My bolts are wobbling!', 'Hey! That tickles!', 'Whoa! My gears went spinny!', 'Oof! You are strong, {title} {name}!', 'Yikes! My antenna is all bent!', 'Ow, ow! Okay, one more!'],
+    // Said by the narrator when the answer is shown after a second miss.
+    tapFire: ['Tap it to fire!', 'Tap the answer to fire!'],
     // The villain's next question in the same fight.
     villainNext: ['Round two! I am not done yet!', 'Ha! This one is super tricky!', 'You will never get this one!', 'Okay, here comes a hard one!'],
-    // The same question again after a miss.
-    villainAgain: ['Hee hee! Try that one again!', 'Missed me! Want another go?', 'Ha! Here it is again!'],
-    // A wrong answer: the villain attacks, and the shield blocks it.
-    villainAttack: ['Ha ha! Take this!', 'Sneak attack! Splat!', 'Here comes my super silly attack!', 'Gotcha! Oh no, a shield!'],
   });
 }
 
@@ -620,7 +621,7 @@ function caveLairWalls(sc, H) {
 
 // Effects playing right now, drawn over the scene by drawCaveFx().
 const caveFx = [];
-const caveMuted = () => ui.mute.textContent === '🔇';
+const caveMuted = () => Sound.muted;
 
 // Says `parts`, then runs fn once the villain has finished talking, or
 // after `ms` at the latest (the voice can be muted, slow or missing).
@@ -656,7 +657,7 @@ function villainRound(npc) {
   const round = npc.round;
   npc.round = null;
   if (!round) caveStandBack(npc);
-  return round ? line(round === 'again' ? 'villainAgain' : 'villainNext') : null;
+  return round ? line('villainNext') : null;
 }
 
 // The robot steps back a tile to face the villain from across the floor,
@@ -686,16 +687,19 @@ function caveVillainAt(npc) {
 
 // A right answer (from catchMonster): once the answer has been read out the
 // robot fires at the villain, who loses a heart. Then the next question,
-// or, with no hearts left, the villain gives up.
-function villainHit(npc) {
+// or, with no hearts left, the villain gives up. `small`: she tapped the
+// answer after it was shown (finishShown in game.js), which is a little
+// tap of a punch, so every fight still ends.
+function villainHit(npc, small) {
   state.answered++;
   const q = state.question;
   const fight = npc.fight = (npc.fight || 0) + 1;
   const live = () => npc.fight === fight && state.talking === npc;
-  caveSayThen([{ text: ui.text.textContent }, { pause: 300 }].concat(q.answer), voiceOf(npc), () => {
+  const said = small ? q.answer : [{ text: ui.text.textContent }, { pause: 300 }].concat(q.answer);
+  caveSayThen(said, voiceOf(npc), () => {
     if (!live()) return;
     ui.dialog.classList.add('hidden');
-    const kind = npc.hp === 1 ? 'mega' : npc.hp === VILLAIN_HP ? 'laser' : 'punch';
+    const kind = small ? 'tap' : npc.hp === 1 ? 'mega' : npc.hp === VILLAIN_HP ? 'laser' : 'punch';
     const impact = caveFire(kind, npc);
     later(impact, () => {
       if (!live()) return;
@@ -717,7 +721,17 @@ function caveFire(kind, npc) {
   const from = caveHeroAt(npc);
   const to = caveVillainAt(npc);
   const t0 = performance.now();
-  const hit = kind === 'punch' ? 420 : 260;
+  const hit = kind === 'punch' || kind === 'tap' ? 420 : 260;
+  if (kind === 'tap') {
+    // Just a little bonk: no shake, a few sparks.
+    caveFx.push({ kind: 'punch', t0, dur: 820, from, to, hit });
+    caveTone(300, 420, 0.2, 'triangle', 0.035);
+    later(hit, () => {
+      caveFx.push({ kind: 'pow', t0: performance.now(), dur: 700, at: { x: to.x, y: to.y - 8 }, text: 'BONK', block: true });
+      caveSparks(to, 6, ['#ffffff', '#bff4ff']);
+    });
+    return hit + 120;
+  }
   if (kind === 'punch') {
     caveFx.push({ kind: 'punch', t0, dur: 820, from, to, hit });
     caveTone(180, 520, 0.35, 'sawtooth', 0.04);
@@ -778,38 +792,39 @@ function villainGiveUp(npc) {
   }, 3600);
 }
 
-// A wrong answer (from choose): the villain throws something silly and the
-// robot's shield bounces it away. No hearts lost; the same question comes back.
-function villainMiss(npc, q, o) {
-  state.answered++;
-  npc.missed = q;
-  save(); // keeps the miss in the question history
+// A wrong answer (from missed in game.js): she hears what she picked and
+// the hint, then the villain throws something silly and the shield blocks
+// it. That is quick and plain, so a miss is never the fun part. Then the
+// same question again: the wrong card stays grey and she tries the others,
+// or after a second miss the answer is shown and tapping it fires.
+function villainMiss(npc, q, o, showIt) {
   const fight = npc.fight = (npc.fight || 0) + 1;
-  const live = () => npc.fight === fight && state.talking === npc;
-  const attack = line('villainAttack');
-  // A misspelled word that isn't a real word has nothing to say back.
-  const back = o.wrong ? [{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }] : [];
-  ui.text.textContent = o.wrong ? `${o.wrong}… ${attack}` : attack;
-  caveSayThen(back.concat({ text: attack }), voiceOf(npc), () => {
+  const live = () => npc.fight === fight && state.talking === npc && state.question === q;
+  const parts = showIt ? q.picked(o) : q.teach(o);
+  q.locked = true;
+  q.turn = (q.turn || 0) + 1; // no earlier listen() lets her answer now
+  ui.dialog.classList.add('listening');
+  ui.text.textContent = shownText(parts);
+  caveSayThen(parts, voiceOf(npc), () => {
     if (!live()) return;
     ui.dialog.classList.add('hidden');
     const t0 = performance.now();
     const from = caveVillainAt(npc);
     const to = caveHeroAt();
-    caveFx.push({ kind: 'shield', t0, dur: 1500, hit: 560 });
-    caveFx.push({ kind: 'throw', t0, dur: 1100, from, to, hit: 560, item: npc.throws });
-    caveTone(300, 900, 0.45, 'triangle', 0.05);
-    later(560, () => {
-      caveFx.push({ kind: 'pow', t0: performance.now(), dur: 800, at: { x: to.x, y: to.y - 18 }, text: 'BLOCK!', block: true });
-      caveTone(1320, 1200, 0.18, 'square', 0.05);
-      caveTone(880, 860, 0.25, 'square', 0.04, 0.03);
+    caveFx.push({ kind: 'shield', t0, dur: 1000, hit: 420 });
+    caveFx.push({ kind: 'throw', t0, dur: 800, from, to, hit: 420, item: npc.throws });
+    caveTone(300, 600, 0.3, 'triangle', 0.035);
+    later(420, () => {
+      caveFx.push({ kind: 'pow', t0: performance.now(), dur: 600, at: { x: to.x, y: to.y - 18 }, text: 'BLOCK', block: true });
+      caveTone(880, 860, 0.15, 'square', 0.03);
     });
-    later(1900, () => {
+    later(1300, () => {
       if (!live()) return;
-      npc.round = 'again';
-      openDialog(npc);
+      ui.dialog.classList.remove('hidden');
+      if (showIt) showAnswer(q, null);
+      else listen(q, [], 0);
     });
-  }, 5000);
+  }, 7000);
 }
 
 // ---- Drawing the fight -----------------------------------------------------------
