@@ -1,0 +1,311 @@
+[
+ {
+  "id": "Curtis",
+  "gender": "Male",
+  "lang": "en-AU",
+  "engines": [
+   "generative"
+  ]
+ },
+ {
+  "id": "Nicole",
+  "gender": "Female",
+  "lang": "en-AU",
+  "engines": [
+   "standard"
+  ]
+ },
+ {
+  "id": "Olivia",
+  "gender": "Female",
+  "lang": "en-AU",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ },
+ {
+  "id": "Russell",
+  "gender": "Male",
+  "lang": "en-AU",
+  "engines": [
+   "generative",
+   "standard"
+  ]
+ },
+ {
+  "id": "Amy",
+  "gender": "Female",
+  "lang": "en-GB",
+  "engines": [
+   "generative",
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Arthur",
+  "gender": "Male",
+  "lang": "en-GB",
+  "engines": [
+   "neural"
+  ]
+ },
+ {
+  "id": "Brian",
+  "gender": "Male",
+  "lang": "en-GB",
+  "engines": [
+   "generative",
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Emma",
+  "gender": "Female",
+  "lang": "en-GB",
+  "engines": [
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Geraint",
+  "gender": "Male",
+  "lang": "en-GB-WLS",
+  "engines": [
+   "standard"
+  ]
+ },
+ {
+  "id": "Niamh",
+  "gender": "Female",
+  "lang": "en-IE",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ },
+ {
+  "id": "Aditi",
+  "gender": "Female",
+  "lang": "en-IN",
+  "engines": [
+   "standard"
+  ]
+ },
+ {
+  "id": "Arjun",
+  "gender": "Male",
+  "lang": "en-IN",
+  "engines": [
+   "generative"
+  ]
+ },
+ {
+  "id": "Kajal",
+  "gender": "Female",
+  "lang": "en-IN",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ },
+ {
+  "id": "Kiara",
+  "gender": "Female",
+  "lang": "en-IN",
+  "engines": [
+   "generative"
+  ]
+ },
+ {
+  "id": "Raveena",
+  "gender": "Female",
+  "lang": "en-IN",
+  "engines": [
+   "standard"
+  ]
+ },
+ {
+  "id": "Aria",
+  "gender": "Female",
+  "lang": "en-NZ",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ },
+ {
+  "id": "Jasmine",
+  "gender": "Female",
+  "lang": "en-SG",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ },
+ {
+  "id": "Danielle",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "generative",
+   "long-form",
+   "neural"
+  ]
+ },
+ {
+  "id": "Gregory",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "long-form",
+   "neural"
+  ]
+ },
+ {
+  "id": "Ivy",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Joanna",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "generative",
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Joey",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Justin",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Kendra",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Kenneth",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "generative"
+  ]
+ },
+ {
+  "id": "Kevin",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "neural"
+  ]
+ },
+ {
+  "id": "Kimberly",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Matthew",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "generative",
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Nate",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "generative"
+  ]
+ },
+ {
+  "id": "Patrick",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "long-form"
+  ]
+ },
+ {
+  "id": "Ruth",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "generative",
+   "long-form",
+   "neural"
+  ]
+ },
+ {
+  "id": "Salli",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "generative",
+   "neural",
+   "standard"
+  ]
+ },
+ {
+  "id": "Stephen",
+  "gender": "Male",
+  "lang": "en-US",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ },
+ {
+  "id": "Tiffany",
+  "gender": "Female",
+  "lang": "en-US",
+  "engines": [
+   "generative"
+  ]
+ },
+ {
+  "id": "Ayanda",
+  "gender": "Female",
+  "lang": "en-ZA",
+  "engines": [
+   "generative",
+   "neural"
+  ]
+ }
+]
