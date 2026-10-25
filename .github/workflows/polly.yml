@@ -69,6 +69,7 @@ jobs:
           path: ~/.cache/huggingface
           key: whisper-${{ env.ASR_MODEL }}
       - run: pip install faster-whisper pronouncing
+      - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - name: Listen
         run: python tools/voice-check.py --scope ${{ needs.record.outputs.check }} --shard ${{ matrix.shard }} --shards 10 --out part-${{ matrix.shard }}.json
       - uses: actions/upload-artifact@v4

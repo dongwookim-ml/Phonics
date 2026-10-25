@@ -106,8 +106,18 @@ def model():
     return _model
 
 
+def samples(path):
+    """The clip as 16 kHz mono floats (decoded with ffmpeg, which is steadier
+    than faster-whisper's own decoder across PyAV versions)."""
+    import subprocess
+    import numpy as np
+    raw = subprocess.run(['ffmpeg', '-loglevel', 'error', '-i', path, '-ac', '1', '-ar', '16000', '-f', 's16le', '-'],
+                         capture_output=True, check=True).stdout
+    return np.frombuffer(raw, np.int16).astype(np.float32) / 32768
+
+
 def hear(path):
-    segs, _ = model().transcribe(path, language='en', beam_size=5, temperature=0.0, without_timestamps=True,
+    segs, _ = model().transcribe(samples(path), language='en', beam_size=5, temperature=0.0, without_timestamps=True,
                                  condition_on_previous_text=False, vad_filter=False)
     return ' '.join(s.text.strip() for s in segs).strip()
 
@@ -123,7 +133,7 @@ def run(shard, shards, scope, out):
     for voice, lines in sorted(index().items()):
         for text, clip_id in sorted(lines.items()):
             key = f'{voice}|{text}'
-            if scope == 'changed' and old.get(key, {}).get('id') == clip_id:
+            if scope == 'changed' and old.get(key, {}).get('id') == clip_id and old[key]['status'] != 'error':
                 continue
             if scope == 'short' and len(tokens(text)) > 4:
                 continue
