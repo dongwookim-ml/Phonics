@@ -268,6 +268,7 @@ function later(ms, fn) { state.timers.push(setTimeout(() => whenPlaying(fn), ms)
 function whenPlaying(fn) { if (state.paused) state.held.push(fn); else fn(); }
 function setPaused(on) {
   state.paused = on;
+  musicUpdate(); // the background music waits too (js/music.js)
   if (!on) for (const fn of state.held.splice(0)) fn();
 }
 
@@ -383,6 +384,7 @@ function changeScene(target, at, label) {
     snapCamera();
     ui.fade.classList.remove('on');
     state.busy = busyNow();
+    musicUpdate(); // crossfades to this place's tune (js/music.js)
     showPlace(label);
   });
 }
@@ -564,6 +566,7 @@ function openDialog(npc) {
   const q = back ? Quiz.again(npc.missed, npc) : Quiz.make(npc);
   if (back) npc.missed = null;
   state.question = q;
+  musicUpdate(); // the music stays down until the question closes (js/music.js)
   if (q.review) ui.name.insertAdjacentHTML('beforeend', ' <span class="review-tag">복습</span>');
   // A captain-edition villain shows its hearts and taunts between questions.
   // In a letter house the host skips the chat and teaches the letter instead.
@@ -769,6 +772,7 @@ function closeDialog() {
   state.question = null;
   state.talking = null;
   state.gift = null;
+  musicUpdate();
 }
 
 // The present for a right answer comes once the praise has been said. If

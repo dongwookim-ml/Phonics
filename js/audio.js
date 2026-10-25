@@ -115,6 +115,7 @@ const Sound = (() => {
   // to end, and a longer one is turned down while the voice plays.
   function say(parts, who) {
     if (muted) return;
+    hush(true);
     if ('speechSynthesis' in window) speechSynthesis.cancel();
     if (player) { player.onended = null; player.onerror = null; player.onplaying = null; player.pause(); }
     clearTimeout(pauseTimer);
@@ -128,11 +129,15 @@ const Sound = (() => {
 
   let generation = 0;
   let pauseTimer = null;
+  // The background music (js/music.js) stays down from the start of a say()
+  // until its queue is done (each item tells it the voice is still busy).
+  const hush = on => { if (typeof musicHush === 'function') musicHush(on); };
 
   function playNext(queue, who, gen) {
     if (gen !== generation) return; // a newer say() took over
     let item = queue.shift();
-    if (!item) return;
+    if (!item) { hush(false); return; }
+    hush(true);
     const next = () => playNext(queue, who, gen);
     if (item.text && PURE.test(norm(item.text)) && !clipId(item, who)) {
       item = Object.assign({}, item, { text: spelledSound(norm(item.text)), plain: true });
@@ -185,7 +190,11 @@ const Sound = (() => {
       sfxBus = audioCtx.createGain();
       sfxBus.connect(audioCtx.destination);
     }
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    // iOS 'interrupted': the tablet slept or another app played.
+    if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
+      const p = audioCtx.resume();
+      if (p && p.catch) p.catch(() => {});
+    }
     return audioCtx;
   }
   function duck(on) {
@@ -253,9 +262,17 @@ const Sound = (() => {
     toggleMute() {
       muted = !muted;
       if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); if (player) player.pause(); }
+      hush(false); // the music follows 🔊 too
       return muted;
     },
-    unlock() { unlockPlayer(); return ctx(); },
+    // A tap: the shared <audio> and the AudioContext may play from now on,
+    // and so may the background music (js/music.js).
+    unlock() {
+      unlockPlayer();
+      const ac = ctx();
+      if (typeof musicArm === 'function') musicArm(ac);
+      return ac;
+    },
     get muted() { return muted; },
   };
 })();

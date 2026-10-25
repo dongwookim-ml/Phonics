@@ -279,9 +279,10 @@ function parentClick(e) {
   }
 }
 
-// ---- Settings: play time, picture hints, the 🔊 button --------------------
+// ---- Settings: play time, picture hints, the 🔊 button, music --------------
 // Saved with the game (state.settings, state.pictures). The play-time limit
-// and the hidden 🔊 button are handled in js/guide.js.
+// and the hidden 🔊 button are handled in js/guide.js, the background music
+// (settings.music, missing means on) in js/music.js.
 
 function parentSettings(body) {
   const box = document.createElement('section');
@@ -306,6 +307,10 @@ function parentSettings(body) {
         <div class="ps-chips">${chips('mute', [[0, '보이기'], [1, '숨기기']], s.hideMute ? 1 : 0)}</div>
       </div>
       <div class="ps-row">
+        <div class="ps-name">배경 음악<small>장소마다 조용한 음악이 흘러요. 말소리가 나오거나 문제를 풀 때는 아주 작아져요.</small></div>
+        <div class="ps-chips">${chips('music', [[1, '켜기'], [0, '끄기']], s.music === false ? 0 : 1)}</div>
+      </div>
+      <div class="ps-row">
         <div class="ps-name">두 음절 철자<small>스펠링 마지막 단계에 rab·bit, rock·et 같은 두 음절 단어도 내요.</small></div>
         <div class="ps-chips">${chips('two', [[0, '끄기'], [1, '켜기']], s.twoSyllables ? 1 : 0)}</div>
       </div>`;
@@ -317,10 +322,12 @@ function parentSettings(body) {
       if (b.dataset.set !== 'pictures') s.at = Math.max(Date.now(), (Number(s.at) || 0) + 1);
       if (b.dataset.set === 'limit') s.playLimit = v;
       if (b.dataset.set === 'mute') s.hideMute = !!v;
+      if (b.dataset.set === 'music') s.music = !!v;
       if (b.dataset.set === 'two') { s.twoSyllables = !!v; Quiz.setTier('spell', Quiz.skill('spell').t); }
       if (b.dataset.set === 'pictures') setPictures(!!v); // saves
       else save();
       guideApplySettings();
+      musicUpdate(); // heard once the panel closes
       render();
     }));
   };

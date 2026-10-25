@@ -11,6 +11,7 @@
 //   else open. Only the parent password wakes it, for another stretch (a
 //   wake is counted in state.playtime.wakes, so two tablets can't undo it);
 //   a town left asleep wakes by itself the next day.
+//   The background music (js/music.js) stops while it sleeps.
 // - The parent panel can also hide the 🔊 button from the child.
 
 const guide = {
@@ -167,6 +168,7 @@ function guideSleep() {
   guide.key.classList.remove('hidden');
   guide.err.textContent = '';
   guide.el.classList.remove('hidden');
+  musicUpdate(); // the music goes quiet (js/music.js)
   Sound.say([{ pause: 600 }, { text: line('sleep'), narrator: true }]);
 }
 
@@ -180,6 +182,7 @@ function guideWake(morning) {
   state.busy = busyNow(); // js/game.js
   guide.lastTap = performance.now();
   save();
+  musicUpdate();
   if (!morning) Sound.correct();
 }
 

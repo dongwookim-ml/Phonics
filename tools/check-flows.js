@@ -19,7 +19,14 @@
 //    limit, a wake is counted, a town left asleep wakes the next morning,
 //    no village's friends in the shop before its gate, no fish she'd name
 //    with the round's sound by another name (ALIAS), a friend's growth is
-//    cheered even after 👋, feeding is counted per tablet.
+//    cheered even after 👋, feeding is counted per tablet;
+//  - the background music (js/music.js), in both editions: it starts only
+//    after the first tap, and only once the town is on screen; it drops
+//    quickly while a line is said and comes back slowly after, stays down
+//    for the whole of a question (and the fishing game), follows 🔊, the
+//    parent panel's pause, its 배경 음악 setting (stamped, saved, and the
+//    newer stamp wins from another tablet), a hidden page and the sleeping
+//    town, and a new place crossfades with a handful of voices at most.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -35,10 +42,11 @@ function check(name, ok, detail) {
   if (!ok) failed++;
 }
 
-// A page playing as a guest (or signed in, with `user`), the start screen gone.
-// `edition` picks the game; `days` lets a test move the clock on by whole
-// days (localStorage 'test-days', read as the page loads).
-async function game(browser, { seed, user, server, edition, days } = {}) {
+// A page playing as a guest (or signed in, with `user`), the start screen gone
+// (still showing with `start: false`). `edition` picks the game; `days` lets
+// a test move the clock on by whole days (localStorage 'test-days', read as
+// the page loads).
+async function game(browser, { seed, user, server, edition, days, start = true } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
   const page = await ctx.newPage();
   const errors = [];
@@ -67,7 +75,7 @@ async function game(browser, { seed, user, server, edition, days } = {}) {
   }
   await page.goto(edition ? `${URL}?edition=${edition}` : URL);
   await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
-  await page.evaluate(() => document.getElementById('start-btn').click());
+  if (start) await page.evaluate(() => document.getElementById('start-btn').click());
   return { page, ctx, errors };
 }
 
@@ -641,11 +649,216 @@ async function cards(browser, edition) {
   await ctx.close();
 }
 
+// The background music (js/music.js), watched through musicInfo, with real
+// taps and real clips.
+async function musicFlows(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition, start: false });
+  const tag = `music (${edition})`;
+  const info = () => page.evaluate(() => ({ armed: musicInfo.armed, playing: musicInfo.playing, place: musicInfo.place, notes: musicInfo.notes, ducked: musicInfo.ducked, level: musicInfo.level }));
+  await page.waitForTimeout(800);
+  const before = await info();
+  // A tap on the start screen unlocks the sound; the music waits for the town.
+  await page.click('#title-chips .chip');
+  await page.waitForTimeout(500);
+  const startScreen = await info();
+  await page.click('#start-btn', { force: true }); // it bobs, so never "stable"
+  await page.waitForTimeout(800);
+  const started = await page.evaluate(() => ({ playing: musicInfo.playing, place: musicInfo.place, notes: musicInfo.notes, sound: musicInfo.sound, ducked: musicInfo.ducked }));
+  check(`${tag}: nothing plays before the first tap`, !before.armed && !before.playing && !before.notes, before);
+  check(`${tag}: a tap on the start screen doesn't start it`, startScreen.armed && !startScreen.playing && !startScreen.notes, startScreen);
+  check(`${tag}: ▶ starts the town's tune, under the hello`, started.playing && started.place === 'town' && started.notes > 0 && started.ducked, started);
+  check(`${tag}: the edition's own sound`, started.sound === (edition === 'captain' ? 'robot' : 'box'), started.sound);
+
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const until = async (f, ms) => { const t0 = performance.now(); while (!f() && performance.now() - t0 < ms) await sleep(50); return f(); };
+    const out = {};
+    // The hello said, it comes back up.
+    await until(() => !musicInfo.ducked, 15000);
+    await sleep(4000);
+    out.up = { duck: musicInfo.duck, level: musicInfo.level };
+
+    // A line: down at once, and up again slowly once it has been said.
+    let saidAt = 0;
+    Sound.say([{ text: line('start'), pitch: 1.3 }, { call: () => { saidAt = performance.now(); } }]);
+    out.line = { at: musicInfo.ducked };
+    await sleep(250);
+    out.line.quick = musicInfo.duck;
+    let most = 0;
+    while (!saidAt && musicInfo.ducked) { most = Math.max(most, musicInfo.duck); await sleep(100); }
+    out.line.during = most;
+    out.line.said = !!saidAt;
+    await until(() => !musicInfo.ducked, 3000);
+    out.line.hold = performance.now() - saidAt;
+    await sleep(500);
+    out.line.rising = musicInfo.duck;
+    await sleep(4000);
+    out.line.back = musicInfo.duck;
+
+    // A question: down from the moment it opens until it closes, also while
+    // nobody talks.
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    openDialog(npc);
+    out.q = { open: musicInfo.ducked };
+    await sleep(300);
+    most = 0;
+    let up = 0;
+    for (let i = 0; i < 25; i++) {
+      if (i === 10) Sound.say([]); // the voice is done; the question is still open
+      most = Math.max(most, musicInfo.duck);
+      if (!musicInfo.ducked) up++;
+      await sleep(100);
+    }
+    Object.assign(out.q, { most, up, question: !!state.question });
+    closeDialog();
+    await sleep(300);
+    out.q.held = musicInfo.duck;
+    await sleep(4500);
+    out.q.after = { ducked: musicInfo.ducked, duck: musicInfo.duck };
+    // The fishing game is all listening too.
+    openMini(miniFisher());
+    await sleep(200);
+    Sound.say([]);
+    await sleep(1500);
+    out.mini = musicInfo.ducked;
+    closeMini();
+    await sleep(300);
+
+    // 🔊 off and on.
+    document.getElementById('mute').click();
+    await sleep(500);
+    out.mute = { playing: musicInfo.playing, level: musicInfo.level };
+    document.getElementById('mute').click();
+    await sleep(300);
+    out.unmute = musicInfo.playing;
+
+    // The page hidden and shown again.
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    out.hidden = musicInfo.playing;
+    delete document.hidden;
+    document.dispatchEvent(new Event('visibilitychange'));
+    out.shown = musicInfo.playing;
+
+    // New places crossfade; never more than a handful of notes at once.
+    let voices = 0;
+    const watch = setInterval(() => { voices = Math.max(voices, musicInfo.voices); }, 20);
+    await sleep(1500);
+    changeScene('forest');
+    await sleep(700);
+    out.forest = { place: musicInfo.place, fading: musicInfo.fading };
+    await sleep(1800);
+    out.forest.after = musicInfo.fading;
+    changeScene('yuna');
+    await sleep(1500);
+    out.room = musicInfo.place;
+    changeScene('castle');
+    await sleep(1500);
+    out.castle = musicInfo.place;
+    changeScene('town');
+    await sleep(1500);
+    clearInterval(watch);
+    out.voices = voices;
+
+    // The town falls asleep: quiet; a parent's wake brings it back.
+    state.settings.playLimit = 1;
+    state.playtime = { day: guideDay(), ms: 60001, wakes: 0 };
+    await until(() => guide.asleep, 3000);
+    await sleep(300);
+    out.sleep = { asleep: guide.asleep, playing: musicInfo.playing, level: musicInfo.level };
+    guideWake();
+    state.settings.playLimit = 0;
+    await sleep(300);
+    out.wake = musicInfo.playing;
+    return out;
+  });
+  check(`${tag}: it comes back up after the hello`, r.up.duck > 0.9 && r.up.level > 0.9, r.up);
+  check(`${tag}: a line: down to an eighth at once, and stays down while it is said`, r.line.at && r.line.quick < 0.2 && r.line.during < 0.15 && r.line.said, r.line);
+  check(`${tag}: a line: a moment after it ends it comes back, slowly`, r.line.hold >= 500 && r.line.rising > 0.15 && r.line.rising < 0.8 && r.line.back > 0.9, r.line);
+  check(`${tag}: a question: down the whole time it is open, also when nobody talks`, r.q.open && r.q.most < 0.15 && !r.q.up && r.q.question, r.q);
+  check(`${tag}: a question: back up once it closes`, r.q.held < 0.3 && !r.q.after.ducked && r.q.after.duck > 0.85, r.q);
+  check(`${tag}: the fishing game keeps it down`, r.mini === true, r.mini);
+  check(`${tag}: 🔊 off silences it, on brings it back`, !r.mute.playing && r.mute.level < 0.02 && r.unmute, r);
+  check(`${tag}: a hidden page pauses it`, !r.hidden && r.shown, r);
+  check(`${tag}: a new place crossfades to its tune`, r.forest.place === 'forest' && r.forest.fading && !r.forest.after && r.room === 'home' && r.castle === 'town', r);
+  check(`${tag}: a handful of notes at once at most`, r.voices > 0 && r.voices <= 6, r.voices);
+  check(`${tag}: the sleeping town is quiet, a wake brings it back`, r.sleep.asleep && !r.sleep.playing && r.sleep.level < 0.05 && r.wake, r);
+
+  // The parent panel: paused while open; 배경 음악 off, stamped and saved,
+  // stays off after it closes; on again.
+  const setMusic = async v => {
+    await page.evaluate(() => document.getElementById('parent').click());
+    await page.waitForTimeout(400);
+    const paused = await page.evaluate(() => musicInfo.playing);
+    await page.fill('.parent-pw', '0000');
+    await page.click('.parent-go');
+    await page.waitForSelector('.parent-settings [data-set="music"]');
+    const at = await page.evaluate(() => Number(state.settings.at) || 0);
+    const chips = await page.evaluate(() => [...document.querySelectorAll('.parent-settings [data-set="music"]')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')));
+    await page.click(`.parent-settings [data-set="music"][data-v="${v}"]`);
+    const set = await page.evaluate(() => ({ music: state.settings.music, at: Number(state.settings.at), saved: JSON.parse(localStorage.getItem('pixeltown-v2')).settings }));
+    await page.evaluate(() => document.querySelector('.parent-close').click());
+    await page.waitForTimeout(500);
+    return { paused, at, chips, set, after: await info() };
+  };
+  const off = await setMusic(0);
+  check(`${tag}: the parent panel pauses it`, off.paused === false, off);
+  check(`${tag}: 배경 음악 is on at first, 끄기 turns it off and stamps it`, off.chips.join() === '켜기*,끄기' && off.set.music === false && off.set.at > off.at && off.set.saved.music === false && off.set.saved.at === off.set.at, off);
+  check(`${tag}: off, it stays quiet after the panel closes`, !off.after.playing && off.after.level < 0.05, off.after);
+  const on = await setMusic(1);
+  check(`${tag}: 켜기 turns it back on, stamped again`, on.chips.join() === '켜기,끄기*' && on.set.music === true && on.set.at > off.set.at && on.after.playing, on);
+
+  // Another tablet turns it off: its newer stamp wins, and the music stops;
+  // an older one changes nothing.
+  const merged = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const mine = JSON.parse(localStorage.getItem('pixeltown-v2'));
+    const copy = (music, at) => Object.assign(JSON.parse(JSON.stringify(mine)), { settings: Object.assign({}, mine.settings, { music, at }) });
+    const older = Progress.merge(mine, copy(false, mine.settings.at - 1000), 'theirs');
+    const newer = Progress.merge(mine, copy(false, mine.settings.at + 1000), 'theirs');
+    applyProgress(newer);
+    await sleep(300);
+    const out = { older: older.settings.music, newer: newer.settings.music, playing: musicInfo.playing };
+    applyProgress(mine);
+    await sleep(300);
+    out.again = musicInfo.playing;
+    return out;
+  });
+  check(`${tag}: the newer stamp wins from another tablet, and the music follows`, merged.older === true && merged.newer === false && !merged.playing && merged.again, merged);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+
+  // A browser without Web Audio: no music, and nothing breaks.
+  const bare = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+  const p2 = await bare.newPage();
+  const errs = [];
+  p2.on('pageerror', e => errs.push(e.message));
+  await p2.route(/^https?:/, rt => rt.abort());
+  await p2.addInitScript(() => { localStorage.setItem('pixeltown-guest', '1'); delete window.AudioContext; delete window.webkitAudioContext; });
+  await p2.goto(`${URL}?edition=${edition}`);
+  await p2.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
+  await p2.click('#start-btn', { force: true });
+  const none = await p2.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    openDialog(state.scene.npcs.find(n => !n.mount && !n.shop));
+    await sleep(500);
+    closeDialog();
+    document.getElementById('mute').click();
+    document.getElementById('mute').click();
+    changeScene('forest');
+    await sleep(800);
+    return { armed: musicInfo.armed, playing: musicInfo.playing, voices: musicInfo.voices, place: state.scene.kind };
+  });
+  check(`${tag}: without Web Audio there is no music and no error`, !none.armed && !none.playing && !errs.length, { none, errs });
+  await bare.close();
+}
+
 (async () => {
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
   const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
-    cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead };
+    cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
+    music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {
