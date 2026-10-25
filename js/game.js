@@ -609,6 +609,7 @@ function openDialog(npc) {
   libraryDialog(npc);
   miniDialog(npc);
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
+  kidDrawingShow(npc); // a monster she drew shows her drawing instead (js/kid-monsters.js)
   ui.name.textContent = npc.name;
   const back = comeBack(npc);
   const q = back ? Quiz.again(npc.missed, npc) : Quiz.make(npc);
@@ -819,6 +820,7 @@ function finishShown(q, btn) {
 function closeDialog() {
   ui.dialog.classList.add('hidden');
   ui.dialog.classList.remove('listening');
+  kidDrawingShow(null);
   ui.reward.classList.add('hidden');
   state.busy = busyNow();
   state.question = null;
@@ -1947,6 +1949,8 @@ function drawCharacter(ch, now) {
     const idle = (Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0) + guideBob(n, now);
     const uni = n.mount ? state.outfit.ride : n.unicorn;
     if (uni && uni !== 'none') drawSprite(vctx, unicornSprite(uni, 0), p.x, p.y + 1 + idle, n.flip);
+    // The monsters she drew herself bob, blink and wave (js/kid-monsters.js).
+    else if (KID_MONSTERS[n.look]) drawKidMonster(vctx, n, p.x, p.y + 1, now);
     // Crystal Cave monsters float, bounce, blink and cast (js/cave-magic.js).
     else if (n.monster && !isCaptain()) drawMonster(vctx, n, p.x, p.y + 1 + guideBob(n, now), now);
     else if (!n.mount) drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
@@ -2172,7 +2176,8 @@ function drawOverlay(now) {
     for (const n of sc.npcs) {
       if (n.mount) continue;
       const w = tileCenter(sc, n.c, n.r);
-      const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
+      // Higher over the tall monsters she drew (js/kid-monsters.js).
+      const p = toScreen(w.x, w.y - 40 - kidBubbleLift(n) + Math.sin(now / 300 + n.phase) * 1.5);
       // A gold "!" when a question she missed is ready to try again.
       const back = comeBack(n);
       ctx.fillStyle = back ? '#fff4b8' : '#ffffff';
