@@ -633,10 +633,9 @@ function offerReward(npc) {
   ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
   ui.rewardNo.textContent = !gift.isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
   if (isCaptain()) captainRewardText(gift.isNew, gift.label, ride, fairy);
-  drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
-  drawPortrait(ui.pvNew, heroPortrait(next, ride || state.mounted));
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
+  showPresent(gift, next);
   Sound.party();
   state.giver = npc;
   Sound.say([{ pause: 600 }, { text: line(ride ? 'newUnicorn' : fairy ? 'newFairy' : 'gift') }], voiceOf(npc));
@@ -644,13 +643,16 @@ function offerReward(npc) {
 
 function acceptReward(yes) {
   if (yes && state.gift) {
+    const was = state.outfit;
     state.outfit = Object.assign({}, state.outfit, { [state.gift.slot]: state.gift.value });
     save();
     if (state.gift.slot === 'ride' && state.scene.outdoor) { removeParked(); state.mounted = true; }
     renderRide();
     burstAtHero(50);
     Sound.correct();
-    Sound.say([{ text: line('yes') }], voiceOf(state.giver));
+    // The robot shows its new part off and says what it does.
+    const show = isCaptain() && captainShowOff(state.gift.slot, was, state.outfit);
+    Sound.say([{ text: show || line('yes') }], voiceOf(state.giver));
   } else {
     Sound.say([{ text: line('keep') }], voiceOf(state.giver));
   }
@@ -658,9 +660,23 @@ function acceptReward(yes) {
   closeDialog();
 }
 
-function heroPortrait(outfit, riding) {
-  const sprite = riding && outfit.ride !== 'none' ? riderSprite(outfit, 0, isBoy()) : heroSprite(outfit, 0);
-  return withFairy(sprite, outfit, riding && outfit.ride !== 'none');
+// The "now" and "after" previews of a present (or something just bought).
+// She is on foot unless the present is a ride, and both leave room for a
+// fairy friend if either one has one.
+function showPresent(gift, next) {
+  const ride = gift.slot === 'ride';
+  const room = state.outfit.fairy !== 'none' || next.fairy !== 'none';
+  drawPortrait(ui.pvNow, heroPortrait(state.outfit, ride, room));
+  drawPortrait(ui.pvNew, heroPortrait(next, ride, room));
+  if (isCaptain()) captainRewardShow(gift, state.outfit, next, room);
+}
+
+// Her standing (or riding, when `riding`) picture for previews, with room
+// above for her fairy friend when `room` (by default, when she has one).
+function heroPortrait(outfit, riding, room = outfit.fairy !== 'none', frame = 0) {
+  const ride = riding && outfit.ride !== 'none';
+  const sprite = ride ? riderSprite(outfit, 0, isBoy()) : heroSprite(outfit, frame);
+  return room ? withFairy(sprite, outfit, ride) : sprite;
 }
 
 function drawPortrait(cv, sprite) {
@@ -714,15 +730,22 @@ function followLink(link) {
 
 // ---- Wardrobe ------------------------------------------------------------
 
+// The wardrobe slot tapped last: the mirror shows her riding only after a
+// unicorn is picked, so everything else is seen on foot.
+let wdShown = null;
+
 function openWardrobe() {
   state.busy = true;
+  wdShown = null;
   renderWardrobe();
   ui.wardrobe.classList.remove('hidden');
   Sound.say([{ text: line('dressup'), pitch: 1.3 }]);
 }
 
 function renderWardrobe() {
-  drawPortrait(ui.wdPreview, heroPortrait(state.outfit, true));
+  // The robot stands on a stage where its parts move (js/captain-hero.js).
+  if (isCaptain()) captainStage(ui.wdPreview, state.outfit, wdShown === 'ride');
+  else drawPortrait(ui.wdPreview, heroPortrait(state.outfit, wdShown === 'ride'));
   const { have, total } = collected();
   ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
   if (isCaptain()) ui.wdCount.textContent = CAPTAIN_TEXT.collected(have, total);
@@ -743,18 +766,24 @@ function renderWardrobe() {
       b.className = 'chip';
       b.classList.toggle('on', state.outfit[slot] === value);
       b.disabled = !owned;
+      const part = owned && isCaptain() && captainPartIcon(slot, value, state.outfit);
       if (!owned) b.innerHTML = '<span class="ic">❓</span>';
-      else if (item.c && slot === 'dress') b.innerHTML = `<span class="sw" style="background:${item.c[0]}"></span><span class="nm">${item.name}</span>`;
+      else if (item.c && slot === 'dress') b.innerHTML = `<span class="sw" style="background:${isCaptain() ? captainSwatch(item) : item.c[0]}"></span><span class="nm">${item.name}</span>`;
       else if (item.c) b.innerHTML = `<span class="sw" style="background:${item.c[0]}"></span><span class="nm">${item.name.replace(' 머리', '')}</span>`;
       else b.innerHTML = `<span class="ic">${item.icon || '✖️'}</span><span class="nm">${item.name}</span>`;
+      // Robot parts show the part itself instead of an emoji.
+      if (part) b.querySelector('.ic').replaceChildren(part);
       b.addEventListener('click', () => {
         if (state.outfit[slot] === value) return;
+        const was = state.outfit;
         state.outfit = Object.assign({}, state.outfit, { [slot]: value });
+        wdShown = slot;
         save();
         if (slot === 'ride' && value === 'none') { removeParked(); state.mounted = false; }
         Sound.tap();
         burstAtHero(16);
         renderWardrobe();
+        if (isCaptain()) captainBenchShow(slot, was, state.outfit);
       });
       chips.append(b);
     }
@@ -876,15 +905,20 @@ function renderShop() {
   const pick = state.shopPick;
   ui.shopCoins.textContent = `🪙 ${state.coins}`;
   const next = pick ? Object.assign({}, state.outfit, { [pick.slot]: pick.value }) : state.outfit;
-  drawPortrait(ui.shopPreview, heroPortrait(next, true));
+  // On foot, unless what she is looking at is a unicorn.
+  const riding = !!pick && pick.slot === 'ride';
+  if (isCaptain()) captainStage(ui.shopPreview, next, riding);
+  else drawPortrait(ui.shopPreview, heroPortrait(next, riding));
   ui.shopItems.innerHTML = '';
   for (const it of shopItems()) {
     const b = document.createElement('button');
     b.className = 'chip shop-item';
     b.classList.toggle('on', !!pick && pick.slot === it.slot && pick.value === it.value);
     b.classList.toggle('dear', it.price > state.coins);
-    const look = it.item.c ? `<span class="sw" style="background:${it.item.c[0]}"></span>` : `<span class="ic">${it.item.icon}</span>`;
+    const look = it.item.c ? `<span class="sw" style="background:${isCaptain() ? captainSwatch(it.item) : it.item.c[0]}"></span>` : `<span class="ic">${it.item.icon}</span>`;
     b.innerHTML = `${look}<span class="nm">${it.label.replace(/^\S+ /, '')}</span><span class="price"><span class="coin">🪙</span>${it.price}</span>`;
+    const part = isCaptain() && captainPartIcon(it.slot, it.value, state.outfit);
+    if (part) b.querySelector('.ic').replaceChildren(part);
     b.addEventListener('click', () => {
       Sound.tap();
       state.shopPick = it;
@@ -924,9 +958,8 @@ function buyPick() {
   ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
   ui.rewardNo.textContent = ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
   if (isCaptain()) captainRewardText(true, pick.label, ride, fairy);
-  drawPortrait(ui.pvNow, heroPortrait(state.outfit, state.mounted));
-  drawPortrait(ui.pvNew, heroPortrait(Object.assign({}, state.outfit, { [pick.slot]: pick.value }), ride || state.mounted));
   ui.reward.classList.remove('hidden');
+  showPresent(state.gift, Object.assign({}, state.outfit, { [pick.slot]: pick.value }));
   Sound.party();
   burstAtHero(30);
   Sound.say([{ pause: 400 }, { text: line('bought') }], voiceOf(npc));
@@ -1038,17 +1071,25 @@ function renderDust(pop) {
   }
 }
 
-// Portraits get room above the head for a fairy friend once she has one,
-// so "now" and "after" previews stay the same size.
+// A portrait with room above the head for a fairy friend (heroPortrait
+// asks for it when one is worn or given, so "now" and "after" stay the
+// same size), and the fairy in it if she has one on.
 const FAIRY_ROOM = 13;
 function withFairy(sprite, outfit, riding) {
-  if (!state.owned.fairy.some(v => v !== 'none')) return sprite;
   const cv = makeCanvas(sprite.canvas.width, sprite.canvas.height + FAIRY_ROOM);
   const ctx = cv.getContext('2d');
   ctx.drawImage(sprite.canvas, 0, FAIRY_ROOM);
   if (FAIRIES[outfit.fairy] && outfit.fairy !== 'none') {
     const f = fairySprite(outfit.fairy, 0);
-    ctx.drawImage(f.canvas, (riding ? 15 : 13) - f.ax, riding ? 7 : 1);
+    let x = riding ? 15 : 13;
+    let y = riding ? 7 : 1;
+    // Over the robot's head: it is wider, and sits in its car's seat.
+    if (isCaptain()) {
+      const seat = riding && captainCarSprite(outfit.ride, 0, true).seat;
+      x = sprite.ax + (seat ? captainCarSeat(outfit.ride).x : 0) + 2;
+      y = 1 + (seat ? Math.max(0, seat.y - captainHeroWaist(outfit)) : 0);
+    }
+    ctx.drawImage(f.canvas, x - f.ax, y);
   }
   return { canvas: cv, ax: sprite.ax, ay: sprite.ay + FAIRY_ROOM };
 }
@@ -1059,7 +1100,9 @@ function drawFairyFriend(p, riding, now) {
   const key = state.outfit.fairy;
   if (!FAIRIES[key] || key === 'none') return;
   const h = state.hero;
-  const goal = { x: p.x + (h.flip ? 7 : -7), y: p.y - (riding ? 41 : 39) + Math.sin(now / 320) * 2 };
+  // The robot stands 4 pixels taller than the princess.
+  const tall = isCaptain() && !riding ? 4 : 0;
+  const goal = { x: p.x + (h.flip ? 7 : -7), y: p.y - (riding ? 41 : 39) - tall + Math.sin(now / 320) * 2 };
   const f = state.fairyAt || (state.fairyAt = { x: goal.x, y: goal.y, t: now });
   const k = Math.min(1, Math.max(0, now - f.t) / 1000 * 4);
   f.t = now;
@@ -1174,7 +1217,7 @@ function toScreen(wx, wy) {
 
 // ---- Drawing -------------------------------------------------------------
 
-const heroBox = { w: 22, h: 34 };
+const heroBox = isCaptain() ? { w: ROBOT_W, h: ROBOT_H } : { w: 22, h: 34 };
 
 function overlaps(o, x, y, w, h) {
   return o.x < x + w && o.x + o.w > x && o.y < y + h && o.y + o.h > y;
@@ -1274,7 +1317,16 @@ function drawCharacter(ch, now) {
     const h = state.hero;
     const bob = h.path.length ? (h.frame ? -1 : 0) : 0;
     const riding = state.mounted && hasUnicorn();
-    drawSprite(vctx, riding ? riderSprite(state.outfit, h.frame, isBoy()) : heroSprite(state.outfit, h.frame), p.x, p.y + 1 + bob, h.flip);
+    // A robot showing off a new part is drawn over everything instead
+    // (drawCaptainShowOff), out of its car, which waits beside it.
+    if (isCaptain() && captainShowing(now)) {
+      if (riding) drawSprite(vctx, unicornSprite(state.outfit.ride, 0), p.x + (h.flip ? 9 : -9), p.y + 1, h.flip);
+    } else if (riding) drawSprite(vctx, riderSprite(state.outfit, h.frame, isBoy()), p.x, p.y + 1 + bob, h.flip);
+    else {
+      const sprite = heroSprite(state.outfit, h.frame);
+      drawSprite(vctx, sprite, p.x, p.y + 1 + bob, h.flip);
+      if (isCaptain()) drawRobotGlint(vctx, state.outfit, sprite, p.x, p.y + 1 + bob, h.flip, now);
+    }
     drawFairyFriend(p, riding, now);
   } else {
     const n = ch.npc;
@@ -1423,8 +1475,11 @@ function drawOverlay(now) {
     ctx.stroke();
   }
 
-  // Lasers, punches and shields in the Villain Cave.
-  if (isCaptain()) drawCaveFx(now);
+  // Lasers, punches and shields in the Villain Cave; a robot showing off.
+  if (isCaptain()) {
+    drawCaveFx(now);
+    drawCaptainShowOff(now);
+  }
 
   // Sparkles.
   for (const p of state.particles) {
