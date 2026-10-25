@@ -8,7 +8,7 @@ const path = require('path');
 const { chromium } = require('playwright');
 
 const root = path.join(__dirname, '..');
-const scripts = [...fs.readFileSync(path.join(root, 'index.html'), 'utf8').matchAll(/<script src="([^"]+)"/g)].map(m => m[1]);
+const scripts = [...fs.readFileSync(path.join(root, 'index.html'), 'utf8').matchAll(/<script src="([^"?]+)/g)].map(m => m[1]);
 let failed = 0;
 
 // A second top-level function or const with the same name silently replaces

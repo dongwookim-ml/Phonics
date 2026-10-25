@@ -1,7 +1,11 @@
-# Records the game's voices with Amazon Polly (tools/polly-build.py) and
+# Records the game's voices with Amazon Polly (tools/polly-build.py), listens
+# to the new clips with a speech recogniser (tools/voice-check.py) and records
+# again any lone word that came out wrong (an added "a" or "the"), then
 # commits the clips to the branch. Runs when tools/polly-run.json changes:
-# {"mode": "sample"} records a few lines in every voice, {"mode": "all"}
-# records every phrase in tools/tts-phrases.json.
+#   {"mode": "all"}     records every phrase in tools/tts-phrases.json
+#   {"mode": "sample"}  records a few lines in every voice
+#   {"mode": "voices"}  lists which voices have the generative engine
+#   "check": "changed" (default), "short", "all" or "none" picks the clips to listen to.
 # Needs the repository secrets AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
 name: Record voices with Amazon Polly
 on:
@@ -12,30 +16,90 @@ on:
 permissions:
   contents: write
 concurrency: polly
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+  ASR_MODEL: small.en
 jobs:
   record:
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    outputs:
+      mode: ${{ steps.cfg.outputs.mode }}
+      check: ${{ steps.cfg.outputs.check }}
     steps:
       - uses: actions/checkout@v4
+      - id: cfg
+        run: |
+          echo "mode=$(jq -r .mode tools/polly-run.json)" >> "$GITHUB_OUTPUT"
+          echo "check=$(jq -r '.check // "changed"' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install boto3
       - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - name: Record
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
         run: python tools/polly-build.py
       - name: Commit the clips
         if: always()
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898299+github-actions[bot]@users.noreply.github.com'
-          git add -A audio
-          git diff --cached --quiet && exit 0
-          git commit -qm "Record voices with Amazon Polly ($(jq -r .mode tools/polly-run.json))"
-          for i in 1 2 3; do git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep 5; done
-          exit 1
+        run: sh tools/push-clips.sh "Record voices with Amazon Polly (${{ steps.cfg.outputs.mode }})"
+
+  check:
+    needs: record
+    if: needs.record.outputs.mode == 'all' && needs.record.outputs.check != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}  # with the clips the record job pushed
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-${{ env.ASR_MODEL }}
+      - run: pip install faster-whisper pronouncing
+      - name: Listen
+        run: python tools/voice-check.py --scope ${{ needs.record.outputs.check }} --shard ${{ matrix.shard }} --shards 10 --out part-${{ matrix.shard }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-check-${{ matrix.shard }}
+          path: part-${{ matrix.shard }}.json
+          retention-days: 3
+
+  fix:
+    needs: [record, check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-${{ env.ASR_MODEL }}
+      - run: pip install boto3 faster-whisper pronouncing
+      - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: voice-check-*
+          path: parts
+          merge-multiple: true
+      - name: Merge the report
+        run: python tools/voice-check.py --merge 'parts/*.json'
+      - name: Record lone words again
+        run: python tools/polly-build.py --mode fix
+      - name: Commit
+        if: always()
+        run: sh tools/push-clips.sh "Check the recorded voices and record misheard words again"

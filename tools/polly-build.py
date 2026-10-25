@@ -11,6 +11,14 @@ Writes audio/tts/<voice>/<id>.mp3 and audio/tts/index.js like tts-build.py,
 so the game finds the clips by the same voice names. Phrases name Kokoro
 voices (af_heart...), and VOICES below says which Polly voice says each.
 Clips already recorded are kept. Needs boto3 and ffmpeg.
+
+    python tools/polly-build.py --mode voices   # which voices have which engines
+    python tools/polly-build.py --mode fix      # record again the lone words that
+                                                # tools/voice-check.py heard wrong
+
+tools/polly-clips.json says which engine recorded each clip (generative
+falls back to neural when a voice rejects the SSML), and
+tools/polly-variants.json which way of saying a lone word passed the check.
 """
 import argparse
 import hashlib
@@ -82,7 +90,7 @@ def phoneme(word, ipa):
     return f'<phoneme alphabet="ipa" ph="{ipa}">{word}</phoneme>'
 
 
-def ssml(text, speed, rate=True):
+def ssml(text, speed, rate=True, sentence=False):
     """The phrase as SSML: letters and letter sounds from phonemes, at its speed."""
     marks = {}
 
@@ -95,14 +103,50 @@ def ssml(text, speed, rate=True):
     t = escape(t, quote=False)
     for k, v in marks.items():
         t = t.replace(k, v)
+    if sentence:
+        t = f'<s>{t}</s>'
     if rate:
         t = f'<prosody rate="{round(speed * 100)}%">{t}</prosody>'
     return f'<speak>{t}</speak>'
 
 
-def clip_id(p):
+VARIANTS_FILE = os.path.join(ROOT, 'tools', 'polly-variants.json')
+CLIPS_FILE = os.path.join(ROOT, 'tools', 'polly-clips.json')
+
+
+def read_json(path, default):
+    try:
+        return json.load(open(path))
+    except (OSError, ValueError):
+        return default
+
+
+# "voice|text" -> which way of saying it (see spoken()); 0 when not listed.
+VARIANTS = read_json(VARIANTS_FILE, {})
+LONE = re.compile(r'^[a-z]+[!.]?$')
+LAST_VARIANT = 3
+
+
+def variant(p):
+    return VARIANTS.get(f"{p['voice']}|{p['text']}", 0)
+
+
+def clip_id(p, k=None):
     voice, engine = VOICES[p['voice']]
-    return hashlib.sha1(f"polly|{voice}|{engine}|{p['text']}|{p['speed']}".encode()).hexdigest()[:10]
+    k = variant(p) if k is None else k
+    base = f"polly|{voice}|{engine}|{p['text']}|{p['speed']}" + (f'|v{k}' if k else '')
+    return hashlib.sha1(base.encode()).hexdigest()[:10]
+
+
+def spoken(text, k):
+    """A lone word said on its own can come out as "a cat" from the
+    generative engine. Variants: 1 says "Cat." as a finished sentence, 2 also
+    wraps it in <s>, 3 uses the neural engine. Returns (text, wrap_s, engine)."""
+    if k == 0 or not LONE.match(text):
+        return text, False, None
+    word = text.rstrip('!.')
+    said = word.capitalize() + (text[len(word):] or '.')
+    return (said, k == 2, 'neural' if k >= 3 else None)
 
 
 polly = None
@@ -119,19 +163,22 @@ def client():
     return polly
 
 
-def synth(voice, engine, text, speed, path):
-    """Records one line to an mp3. Falls back to plain speed when an engine
-    doesn't take <prosody rate>, and to the neural engine when a voice
-    rejects the SSML on its own engine."""
+def synth(voice, engine, text, speed, path, k=0):
+    """Records one line to an mp3 and returns the engine that recorded it.
+    Falls back to plain speed when an engine doesn't take <prosody rate>, and
+    to the neural engine when a voice rejects the SSML on its own engine.
+    `k` is the way a lone word is said (see spoken())."""
     from botocore.exceptions import ClientError
+    said, sentence, forced = spoken(text, k)
+    engine = forced or engine
     tries = [(engine, True), (engine, False)]
     if engine != 'neural':
         tries.append(('neural', True))
     err = None
     for eng, rate in tries:
         try:
-            r = client().synthesize_speech(Text=ssml(text, speed, rate), TextType='ssml', VoiceId=voice, Engine=eng,
-                                           OutputFormat='mp3', SampleRate='24000')
+            r = client().synthesize_speech(Text=ssml(said, speed, rate, sentence), TextType='ssml', VoiceId=voice,
+                                           Engine=eng, OutputFormat='mp3', SampleRate='24000')
             break
         except ClientError as e:
             err = e
@@ -148,6 +195,7 @@ def synth(voice, engine, text, speed, path):
         subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', raw.name, '-af', TRIM,
                         '-ac', '1', '-ar', '24000', '-b:a', '48k', '-f', 'mp3', path + '.part'], check=True)
     os.replace(path + '.part', path)
+    return eng if rate else f'{eng} (no rate)'
 
 
 def synth_retrying(*args, tries=5):
@@ -171,23 +219,30 @@ def old_index():
         return {}
 
 
-def record_all():
+def load_phrases():
     phrases = json.load(open(os.path.join(ROOT, 'tools', 'tts-phrases.json')))
     missing = sorted({p['voice'] for p in phrases} - set(VOICES))
     if missing:
         sys.exit(f'No Polly voice for {missing}: add them to VOICES')
     for v in {p['voice'] for p in phrases}:
         os.makedirs(os.path.join(OUT, v), exist_ok=True)
-    todo = [p for p in phrases if not os.path.exists(os.path.join(OUT, p['voice'], clip_id(p) + '.mp3'))]
-    chars = sum(len(p['text']) for p in todo)
-    print(f'{len(phrases)} phrases, {len(todo)} to record ({chars} characters)', flush=True)
+    return phrases
 
+
+ENGINES = read_json(CLIPS_FILE, {})  # voice -> clip id -> engine that recorded it
+
+
+def record(todo, k_of=variant):
+    """Records the phrases in `todo`; returns the ones that failed."""
     failed = []
 
     def one(p):
         voice, engine = VOICES[p['voice']]
+        k = k_of(p)
+        cid = clip_id(p, k)
         try:
-            synth_retrying(voice, engine, p['text'], p['speed'], os.path.join(OUT, p['voice'], clip_id(p) + '.mp3'))
+            used = synth_retrying(voice, engine, p['text'], p['speed'], os.path.join(OUT, p['voice'], cid + '.mp3'), k)
+            ENGINES.setdefault(p['voice'], {})[cid] = used
         except Exception as e:
             failed.append(p)
             print(f'  failed {p["voice"]} {p["text"]!r}: {e}', flush=True)
@@ -195,8 +250,13 @@ def record_all():
         for i, _ in enumerate(pool.map(one, todo), 1):
             if i % 500 == 0:
                 print(f'  {i}/{len(todo)}', flush=True)
-    # Every line that has a clip: the new one, or for a line that failed, the
-    # one it had before (the next run tries it again).
+    return failed
+
+
+def finish(phrases):
+    """Writes the index (every line that has a clip: the new one, or for a line
+    that failed, the one it had before), drops clips nothing uses, and saves
+    which engine and variant made each clip."""
     before = old_index()
     index = {}
     for p in phrases:
@@ -215,7 +275,96 @@ def record_all():
     with open(os.path.join(OUT, 'index.js'), 'w') as f:
         f.write('// Generated by tools/polly-build.py: voice -> sentence -> recording id.\n')
         f.write('const TTS_INDEX = ' + json.dumps(index, ensure_ascii=False, separators=(',', ':')) + ';\n')
+    engines = {v: {i: ENGINES[v][i] for i in sorted(m.values()) if i in ENGINES.get(v, {})} for v, m in index.items()}
+    json.dump(engines, open(CLIPS_FILE, 'w'), indent=0, sort_keys=True)
+    live = {f"{p['voice']}|{p['text']}" for p in phrases}
+    json.dump({k: v for k, v in VARIANTS.items() if k in live and v}, open(VARIANTS_FILE, 'w'), indent=0, sort_keys=True)
+    counts = {}
+    for m in engines.values():
+        for e in m.values():
+            counts[e] = counts.get(e, 0) + 1
+    print('clips by engine (of those recorded since tracking began):', counts, flush=True)
+
+
+def record_all():
+    phrases = load_phrases()
+    todo = [p for p in phrases if not os.path.exists(os.path.join(OUT, p['voice'], clip_id(p) + '.mp3'))]
+    chars = sum(len(p['text']) for p in todo)
+    print(f'{len(phrases)} phrases, {len(todo)} to record ({chars} characters)', flush=True)
+    failed = record(todo)
+    finish(phrases)
     print(f'done, {len(failed)} failed' if failed else 'done', flush=True)
+
+
+def fix():
+    """Records again the lone words tools/voice-check.py heard wrong (an added
+    "a" or "the", or a different word), trying each way of saying them until
+    the recogniser hears the word alone. A word that never passes keeps the
+    clip it had."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('voice_check', os.path.join(ROOT, 'tools', 'voice-check.py'))
+    vc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(vc)
+    phrases = load_phrases()
+    by_key = {f"{p['voice']}|{p['text']}": p for p in phrases}
+    rep = vc.load_report()
+    bad = [key for key, c in rep['clips'].items()
+           if c['status'] in ('article', 'extra', 'different', 'silent') and not c.get('unfixable')
+           and key in by_key and LONE.match(by_key[key]['text'])]
+    print(f'{len(bad)} lone words to record again', flush=True)
+    tried = {key: variant(by_key[key]) for key in bad}
+    for _ in range(LAST_VARIANT):
+        todo = [key for key in bad if tried[key] < LAST_VARIANT]
+        if not todo:
+            break
+        for key in todo:
+            tried[key] += 1
+        record([by_key[key] for key in todo], lambda p: tried[f"{p['voice']}|{p['text']}"])
+        bad = []
+        for key in todo:
+            p = by_key[key]
+            cid = clip_id(p, tried[key])
+            path = os.path.join(OUT, p['voice'], cid + '.mp3')
+            if not os.path.exists(path):
+                bad.append(key)  # not recorded (network): try the next way
+                continue
+            got = vc.check_clip(p['voice'], p['text'], cid)
+            print(f"  v{tried[key]} {key}: {got['heard']!r} {got['status']}", flush=True)
+            if got['status'] == 'ok':
+                VARIANTS[key] = tried[key]
+                rep['clips'][key] = got
+            else:
+                os.remove(path)
+                bad.append(key)
+    # Nothing passed: they keep the clip they had and aren't tried again.
+    for key in bad:
+        rep['clips'][key]['unfixable'] = True
+    finish(phrases)
+    rep['summary'] = vc.summary(rep['clips'])
+    vc.write_report(rep)
+    print('report:', rep['summary'], flush=True)
+
+
+def list_voices():
+    """Every English voice and the engines it has, from Polly itself."""
+    out = []
+    token = None
+    while True:
+        kw = {'IncludeAdditionalLanguageCodes': True}
+        if token:
+            kw['NextToken'] = token
+        r = client().describe_voices(**kw)
+        for v in r['Voices']:
+            if v['LanguageCode'].startswith('en-'):
+                out.append({'id': v['Id'], 'gender': v['Gender'], 'lang': v['LanguageCode'],
+                            'engines': sorted(v.get('SupportedEngines', []))})
+        token = r.get('NextToken')
+        if not token:
+            break
+    out.sort(key=lambda v: (v['lang'], v['id']))
+    json.dump(out, open(os.path.join(ROOT, 'tools', 'polly-voices.json'), 'w'), indent=1)
+    for v in out:
+        print(v['lang'], v['id'], v['gender'], ','.join(v['engines']), flush=True)
 
 
 # A few lines in every English voice and engine, to choose voices by ear.
@@ -256,13 +405,17 @@ def record_samples():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--mode', default='', help='all or sample (default: tools/polly-run.json)')
+    ap.add_argument('--mode', default='', help='all, fix, voices or sample (default: tools/polly-run.json)')
     args = ap.parse_args()
     mode = args.mode or json.load(open(os.path.join(ROOT, 'tools', 'polly-run.json')))['mode']
     if mode == 'sample':
         record_samples()
     elif mode == 'all':
         record_all()
+    elif mode == 'fix':
+        fix()
+    elif mode == 'voices':
+        list_voices()
     else:
         sys.exit(f'unknown mode {mode!r}')
 

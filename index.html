@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="build" content="dev">
   <title>PixelTown</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Jua&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=dev">
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -145,6 +146,12 @@
     <p class="tip">마을 사람을 누르면 단어를 들려줘요 · 집을 누르면 안으로 들어가요</p>
   </div>
 
+  <!-- A newer build is out (js/update.js). -->
+  <div id="update" class="update hidden" role="alert">
+    <span class="ic">✨</span><span class="msg">새로운 버전이 나왔어요!</span>
+    <button type="button">새로고침 🔄</button>
+  </div>
+
   <!-- Login / sign-up, shown before the start screen (js/account.js). -->
   <div id="login" class="start login hidden">
     <h1><span id="login-icon">🏰</span><br><span id="login-game" class="gold">소리 마을</span></h1>
@@ -171,22 +178,23 @@
     <button id="login-guest" class="login-guest" type="button">계정 없이 할래요</button>
   </div>
 
-  <script src="js/data.js"></script>
-  <script src="js/account.js"></script>
-  <script src="audio/tts/index.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/sprites.js"></script>
-  <script src="js/world.js"></script>
-  <script src="js/quiz.js"></script>
-  <script src="js/books.js"></script>
-  <script src="js/library.js"></script>
-  <script src="js/captain-hero.js"></script>
-  <script src="js/captain-town.js"></script>
-  <script src="js/captain-dino.js"></script>
-  <script src="js/captain-drone.js"></script>
-  <script src="js/captain-car.js"></script>
-  <script src="js/captain-cave.js"></script>
-  <script src="js/game.js"></script>
-  <script src="js/parent.js"></script>
+  <script src="js/data.js?v=dev"></script>
+  <script src="js/account.js?v=dev"></script>
+  <script src="audio/tts/index.js?v=dev"></script>
+  <script src="js/audio.js?v=dev"></script>
+  <script src="js/sprites.js?v=dev"></script>
+  <script src="js/world.js?v=dev"></script>
+  <script src="js/quiz.js?v=dev"></script>
+  <script src="js/books.js?v=dev"></script>
+  <script src="js/library.js?v=dev"></script>
+  <script src="js/captain-hero.js?v=dev"></script>
+  <script src="js/captain-town.js?v=dev"></script>
+  <script src="js/captain-dino.js?v=dev"></script>
+  <script src="js/captain-drone.js?v=dev"></script>
+  <script src="js/captain-car.js?v=dev"></script>
+  <script src="js/captain-cave.js?v=dev"></script>
+  <script src="js/game.js?v=dev"></script>
+  <script src="js/parent.js?v=dev"></script>
+  <script src="js/update.js?v=dev"></script>
 </body>
 </html>
