@@ -864,6 +864,8 @@ LINES.caught = ['You caught me! Here are some shiny coins!', 'Poof! You win! Tak
 LINES.shop = ['What would you like today?', 'Pick something lovely!', 'Everything here is extra special!'];
 LINES.bought = ['Thank you! It is yours now!', 'A wonderful choice!', 'Here you go! Enjoy it!'];
 LINES.poor = ['Oh, you need a few more coins. Catch some monsters in the cave!', 'Almost! Visit the Crystal Cave for more coins.', 'Not enough coins yet. The cave monsters have lots!'];
+// Before the cave opens, coins come from the fishing game at the town pond.
+LINES.poorPond = ['Oh, you need a few more coins. Go fishing at the town pond!', 'Almost! Catch some fish at the pond for more coins.'];
 LINES.soldOut = ['Wow, you have everything already!', 'You bought all my treasures! Amazing!'];
 
 // Shop-only treasures, bought with coins. `price` is in coins; everything

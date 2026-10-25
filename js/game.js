@@ -1182,9 +1182,12 @@ function buyPick() {
   if (!pick) return;
   if (state.coins < pick.price) {
     Sound.locked();
-    ui.shopMsg.textContent = `코인이 ${pick.price - state.coins}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎`;
-    if (isCaptain()) ui.shopMsg.textContent = CAPTAIN_TEXT.poor(pick.price - state.coins);
-    Sound.say([{ text: line('poor') }], voiceOf(npc));
+    // Until the cave opens, coins come from the pond game in town (js/minigame.js).
+    const cave = state.stars >= DUNGEON_STARS;
+    const n = pick.price - state.coins;
+    ui.shopMsg.textContent = cave ? `코인이 ${n}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎` : `코인이 ${n}개 더 필요해요. 마을 연못에서 낚시를 해 봐요! 🎣`;
+    if (isCaptain()) ui.shopMsg.textContent = (cave ? CAPTAIN_TEXT.poor : CAPTAIN_TEXT.poorPond)(n);
+    Sound.say([{ text: line(cave ? 'poor' : 'poorPond') }], voiceOf(npc));
     return;
   }
   state.coins -= pick.price;
@@ -1805,6 +1808,7 @@ function drawOverlay(now) {
   for (const sg of sc.signs) {
     const m = sg.touchFx && touchMove(sg, now);
     const p = toScreen(sg.x, sg.y + (m ? m.y : 0));
+    sg.shown = null;
     if (p.x < -200 || p.y < -200 || p.x > screen.width + 200 || p.y > screen.height + 200) continue;
     const fs = (sg.big ? 22 : 11) * s;
     ctx.font = `800 ${fs}px ${font}`;
@@ -1820,6 +1824,8 @@ function drawOverlay(now) {
         p.x = Math.max(w / 2 + 4 * s, Math.min(screen.width - w / 2 - 4 * s, p.x));
         p.y = Math.max(screenBox.hud + h / 2 + 6 * s, Math.min(screen.height - h / 2 - 4 * s, p.y));
       }
+      // Where it is drawn, so a tap on it is checked there (tapOverlay).
+      sg.shown = { x: p.x, y: p.y, w, h };
       ctx.strokeStyle = '#6f4430';
       ctx.lineWidth = s;
       ctx.beginPath();
@@ -2169,9 +2175,17 @@ function tapOverlay(sc, wx, wy) {
   const font = '"Baloo 2", "Trebuchet MS", sans-serif';
   for (const sg of sc.signs) {
     if (!sg.links && !sg.poster && !sg.react) continue;
-    sctx.font = `800 ${sg.big ? 22 : 11}px ${font}`;
-    const half = sctx.measureText(sg.text).width / 2 + 4;
-    if (Math.abs(wx - sg.x) > half || Math.abs(wy - sg.y) > (sg.big ? 13 : 8)) continue;
+    if (sg.shown) {
+      // A room's sign may be drawn pulled in from the edge (drawOverlay):
+      // the tap counts where she sees it, with a little room around it.
+      const t = toScreen(wx, wy);
+      const pad = 4 * state.scale;
+      if (Math.abs(t.x - sg.shown.x) > sg.shown.w / 2 + pad || Math.abs(t.y - sg.shown.y) > sg.shown.h / 2 + pad) continue;
+    } else {
+      sctx.font = `800 ${sg.big ? 22 : 11}px ${font}`;
+      const half = sctx.measureText(sg.text).width / 2 + 4;
+      if (Math.abs(wx - sg.x) > half || Math.abs(wy - sg.y) > (sg.big ? 13 : 8)) continue;
+    }
     if (sg.links) goLink(sg.links, true);
     else if (sg.poster) touchPoster(sg);
     else touchReact(sg, sg.react, { x: sg.x, y: sg.y }, { x: sg.x, y: sg.y - 14 });

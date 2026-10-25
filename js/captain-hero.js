@@ -99,6 +99,7 @@ if (isCaptain()) {
     dressup: ["Let's build your robot!", 'Time for a robot upgrade!', 'Pick your favourite parts!'],
     shop: ['What would you like today?', 'Pick a cool part!', 'These parts are extra special!'],
     poor: ['Oh, you need a few more coins. Beat the villains in the cave!', 'Almost! Visit the Villain Cave for more coins.', 'Not enough coins yet. The cave villains drop lots of coins!'],
+    poorPond: ['Oh, you need a few more coins. Play with the magnet crane in town!', 'Almost! Load some boxes with the magnet crane for more coins.'],
     soldOut: ['Wow, you have every part already!', 'You bought all my parts! Amazing!'],
     // Said as a new part goes on and shows what it does (captainShowOff):
     // by slot, then by part. Recorded for every giver and the narrator.
@@ -156,6 +157,7 @@ const CAPTAIN_TEXT = {
   collected: (have, total) => `모은 부품 ${have} / ${total}`,
   shopOnly: '✨ 상점에만 있는 특별 부품이에요!',
   poor: n => `코인이 ${n}개 더 필요해요. 악당 동굴에서 악당을 물리쳐 봐요! 😈`,
+  poorPond: n => `코인이 ${n}개 더 필요해요. 마을의 자석 크레인 놀이를 해 봐요! 🧲`,
 };
 
 // ---- The robot's sprite ------------------------------------------------------
