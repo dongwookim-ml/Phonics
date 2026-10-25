@@ -18,7 +18,6 @@ const ui = {
   lookChips: document.getElementById('look-chips'),
   wdTitle: document.getElementById('wd-title'),
   stars: document.getElementById('stars'),
-  pictures: document.getElementById('pictures'),
   ride: document.getElementById('ride'),
   mute: document.getElementById('mute'),
   fade: document.getElementById('fade'),
@@ -135,9 +134,13 @@ function load() {
     outfit = fitOutfit(outfit);
     // Picture hints start on for a new player (a pre-reader needs them).
     const pictures = s.pictures === undefined ? true : !!s.pictures;
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {} };
+    // The first-steps pointer (js/guide.js) is for new players only.
+    const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {},
+      friends: s.friends || {}, settings: Object.assign({ playLimit: 0, hideMute: false }, s.settings), guide: firstSteps, playtime: s.playtime || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {} };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {},
+      friends: {}, settings: { playLimit: 0, hideMute: false }, guide: { step: 0 }, playtime: {} };
   }
 }
 
@@ -158,7 +161,8 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
+  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now(),
+    friends: state.friends, settings: state.settings, guide: state.guide, playtime: state.playtime };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -178,6 +182,10 @@ const state = {
   history: saved.history, // { questionId: { kind, tries, right, wrong, last } }
   books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
   pictures: saved.pictures,
+  friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: n } (js/friend.js)
+  settings: saved.settings, // from the parent panel: { playLimit, hideMute }
+  guide: saved.guide,       // first-steps pointer: { step } (js/guide.js)
+  playtime: saved.playtime, // { day, ms } played today, for the limit
   scenes: {},
   scene: null,
   hero: { c: 0, r: 0, path: [], flip: false, frame: 0, onArrive: null },
@@ -471,6 +479,7 @@ function openDialog(npc) {
   state.busy = true;
   state.talking = npc;
   libraryDialog(npc);
+  miniDialog(npc);
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
   const back = comeBack(npc);
@@ -774,6 +783,7 @@ function acceptReward(yes) {
   } else {
     Sound.say([{ text: line('keep') }], voiceOf(state.giver));
   }
+  guideGift(state.giver);
   state.gift = null;
   closeDialog();
 }
@@ -905,6 +915,8 @@ function renderWardrobe() {
       });
       chips.append(b);
     }
+    // Her fairy friend's ✨ feeding chip (js/friend.js).
+    if (slot === 'fairy') friendChip(chips);
     row.append(h, chips);
     ui.wdSlots.append(row);
   }
@@ -1184,8 +1196,8 @@ function spellKey(key) {
   if (i >= 0) spellTap(i);
 }
 
-// Fairy dust: a little for every right answer here. What it is for is not
-// decided yet; it is counted, shown and saved.
+// Fairy dust: a little for every right answer here. She feeds it to her
+// fairy friend in her room, which makes it grow (js/friend.js).
 function addDust() {
   const [lo, hi] = FAIRY_DUST;
   const n = lo + Math.floor(Math.random() * (hi - lo + 1));
@@ -1242,12 +1254,15 @@ function drawFairyFriend(p, riding, now) {
   f.t = now;
   f.x += (goal.x - f.x) * k;
   f.y += (goal.y - f.y) * k;
-  const sprite = fairySprite(key, Math.floor(now / 110) % 2);
-  drawFlying(vctx, sprite, f.x, f.y, h.flip);
+  // A friend that has grown wears a crown and loops the loop (js/friend.js).
+  const sprite = friendSprite(key, Math.floor(now / 110) % 2);
+  const d = friendFly(f, key, now);
+  drawFlying(vctx, sprite, f.x + d.x, f.y + d.y, h.flip !== d.flip);
   // A trail of sparkles while she is catching up.
   if (Math.hypot(goal.x - f.x, goal.y - f.y) > 2 && Math.random() < 0.35) {
     state.particles.push({ x: f.x + (Math.random() - 0.5) * 4, y: f.y + 3, vx: (Math.random() - 0.5) * 10, vy: -10, life: 0.6, color: FAIRIES[key].glow, star: Math.random() < 0.3 });
   }
+  friendSparkle(f, key, now);
 }
 
 // Soft light around her fairy, and twinkles in the air of the Fairy Village.
@@ -1258,8 +1273,9 @@ function drawFairyGlows(now) {
   const f = state.fairyAt;
   if (f && FAIRIES[state.outfit.fairy] && state.outfit.fairy !== 'none') {
     const p = toScreen(f.x, f.y);
-    const r = (11 + Math.sin(now / 250) * 1.5) * s;
-    ctx.globalAlpha = 0.2;
+    const g = friendGlow(state.outfit.fairy); // bigger as it grows
+    const r = (g.r + Math.sin(now / 250) * 1.5) * s;
+    ctx.globalAlpha = g.a;
     ctx.drawImage(glow(), p.x - r, p.y - r, r * 2, r * 2);
   }
   ctx.globalCompositeOperation = 'source-over';
@@ -1499,7 +1515,8 @@ function drawCharacter(ch, now) {
     drawFairyFriend(p, riding, now);
   } else {
     const n = ch.npc;
-    const idle = Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0;
+    // A villager calling her over hops (js/guide.js).
+    const idle = (Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0) + guideBob(n, now);
     const uni = n.mount ? state.outfit.ride : n.unicorn;
     if (uni && uni !== 'none') drawSprite(vctx, unicornSprite(uni, 0), p.x, p.y + 1 + idle, n.flip);
     else if (!n.mount) drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
@@ -1748,6 +1765,8 @@ function drawOverlay(now) {
   if (!state.busy) drawExitHints(now);
   drawFairyGlows(now);
   if (!state.busy) drawBookHints(now);
+  // The 🎣 over the pond, her friend's ring in her room, the first-steps 👆.
+  if (!state.busy) { drawMiniHint(now); drawFriendHint(now); drawGuide(now); }
 
   // Tap ripples.
   for (const r of state.ripples) {
@@ -1920,6 +1939,9 @@ function onPointer(e) {
   const wy = sy / state.scale + Math.round(state.cam.y);
   state.ripples.push({ x: sx, y: sy, t0: performance.now() });
 
+  // Her fairy friend and the 🎣 over the pond fly over everything.
+  if (friendTap(wx, wy) || miniTap(wx, wy)) return;
+
   // Villagers first: they are small and stand in front of things.
   for (const n of sc.npcs) {
     const p = tileCenter(sc, n.c, n.r);
@@ -1928,7 +1950,7 @@ function onPointer(e) {
       if (n.mount) {
         const isNext = (c, r) => Math.abs(c - n.c) + Math.abs(r - n.r) === 1;
         if (!walkTo(isNext, getOn)) getOn();
-      } else talkTo(n);
+      } else { guideTalked(); talkTo(n); }
       return;
     }
   }
@@ -1968,7 +1990,8 @@ function onPointer(e) {
 
   const tile = tileAt(sc, t.c, t.r);
   if (tile && tile.type === 'water') {
-    touchWater(wx, wy);
+    // The town pond is the fisherman's: a tap there goes fishing (js/minigame.js).
+    if (!miniGo()) touchWater(wx, wy);
     return;
   }
 
@@ -2098,15 +2121,16 @@ function frame(now) {
     drawFinish();
     drawOverlay(now);
     watchFrames(ms);
+    guideTick(now, ms); // the idle nudge and the play-time limit (js/guide.js)
   }
   requestAnimationFrame(frame);
 }
 
 // ---- Boot ----------------------------------------------------------------
 
+// Picture hints on the word cards, set in the parent panel (js/parent.js).
 function setPictures(on) {
   state.pictures = on;
-  ui.pictures.classList.toggle('active', on);
   ui.choices.querySelectorAll('.choice[data-words]').forEach(b => b.classList.toggle('pictures', on));
   save();
 }
@@ -2146,7 +2170,6 @@ ui.rewardNo.addEventListener('click', () => acceptReward(false));
 ui.wdDone.addEventListener('click', closeWardrobe);
 ui.shopBuy.addEventListener('click', buyPick);
 ui.shopDone.addEventListener('click', () => { Sound.tap(); closeShop(); });
-ui.pictures.addEventListener('click', () => { Sound.tap(); setPictures(!state.pictures); });
 ui.ride.addEventListener('click', toggleRide);
 ui.mute.addEventListener('click', () => {
   const muted = Sound.toggleMute();

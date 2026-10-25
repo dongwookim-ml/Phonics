@@ -23,7 +23,6 @@
     </div>
     <nav class="buttons">
       <button id="ride" class="btn hidden" title="유니콘 타기/내리기">🦄</button>
-      <button id="pictures" class="btn" title="그림 힌트 켜기/끄기">🖼️</button>
       <button id="mute" class="btn" title="소리 켜기/끄기">🔊</button>
       <button id="parent" class="btn" title="부모 패널">⚙️</button>
     </nav>
@@ -40,6 +39,7 @@
       <div id="dlg-clue" class="clue hidden"></div>
       <div id="dlg-choices" class="choices"></div>
       <button id="dlg-books" class="dlg-books hidden">📖 책 읽어주세요</button>
+      <button id="dlg-mini" class="dlg-books hidden">🎣 낚시 놀이</button>
     </div>
     <div class="side">
       <button id="dlg-replay" class="round" title="다시 듣기">🔊</button>
@@ -121,6 +121,51 @@
     </div>
   </section>
 
+  <!-- Feeding her fairy friend (js/friend.js). -->
+  <section id="feed" class="reward feed hidden">
+    <div id="fd-title" class="title"></div>
+    <canvas id="fd-friend"></canvas>
+    <div id="fd-pips" class="fd-pips"></div>
+    <div id="fd-note" class="fd-note"></div>
+    <div class="answer">
+      <button id="fd-jar" class="yes" title="주기"></button>
+      <button id="fd-done" class="no" title="다 했어요">👋</button>
+    </div>
+  </section>
+
+  <!-- The fisherman's game at the pond (js/minigame.js). -->
+  <section id="mini" class="mini hidden">
+    <div class="mini-head">
+      <div id="mini-title" class="mini-title"></div>
+      <button id="mini-letter" class="mini-letter" title="다시 듣기"></button>
+      <div id="mini-pips" class="mini-pips"></div>
+      <button id="mini-replay" class="round" title="다시 듣기">🔊</button>
+      <button id="mini-close" class="round small" title="닫기">✖</button>
+    </div>
+    <canvas id="mini-canvas"></canvas>
+    <div id="mini-end" class="mini-end hidden">
+      <div id="mini-catch" class="mini-catch"></div>
+      <div id="mini-coins" class="mini-coins"></div>
+      <div class="answer">
+        <button id="mini-again" class="yes">🔁</button>
+        <button id="mini-bye" class="no">👋</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- The play-time limit: the town sleeps until a parent wakes it (js/guide.js). -->
+  <div id="sleep" class="sleep hidden">
+    <div class="moon">🌙</div>
+    <div class="zz">💤</div>
+    <div class="msg">마을이 잠들었어요. 내일 또 만나요!</div>
+    <button id="sleep-key" class="sleep-key" type="button">🔑 부모님</button>
+    <form id="sleep-form" class="sleep-form hidden">
+      <input id="sleep-pw" type="password" class="parent-pw" autocomplete="current-password" placeholder="비밀번호">
+      <button type="submit" class="parent-go">계속 놀기</button>
+      <p id="sleep-err" class="sleep-err"></p>
+    </form>
+  </div>
+
   <div id="start" class="start">
     <div id="account-bar" class="account-bar"></div>
     <canvas id="start-preview" class="preview"></canvas>
@@ -190,6 +235,9 @@
   <script src="js/captain-drone.js?v=dev"></script>
   <script src="js/captain-car.js?v=dev"></script>
   <script src="js/captain-cave.js?v=dev"></script>
+  <script src="js/friend.js?v=dev"></script>
+  <script src="js/minigame.js?v=dev"></script>
+  <script src="js/guide.js?v=dev"></script>
   <script src="js/game.js?v=dev"></script>
   <script src="js/parent.js?v=dev"></script>
   <script src="js/update.js?v=dev"></script>

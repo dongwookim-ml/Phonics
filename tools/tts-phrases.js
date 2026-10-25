@@ -70,6 +70,8 @@ function collect(D) {
     const v = style.tts;
     if (!v) continue;
     for (const l of D.PERSONA[look] || []) for (const t of fills(l)) add(v, t);
+    // Calling her over when nothing has been tapped for a while (js/guide.js).
+    for (const l of D.LINES.nudge || []) for (const t of fills(l)) add(v, t);
     // Praise, the hints after a miss and the answer shown after a second one
     // (choose in js/game.js), and the present.
     lines(v, ['praise', 'listen', 'showMe', 'tapIt', 'soon', 'again', 'next', 'gift', 'yes', 'keep']);
@@ -109,6 +111,10 @@ function collect(D) {
     const l = D.LETTERS.find(x => x.letter === h.letter);
     add(D.VOICES[h.look].tts, `This is the ${l.letter} ${robots ? 'workshop' : 'house'}. ${l.letter} says ${l.sound}.`);
   }
+  // The fisherman's game at the pond (js/minigame.js): his lines; the pure
+  // sounds and "moon starts with M." are the narrator's, recorded below.
+  const fisher = D.TOWN_NPCS.find(n => /fisher/.test(n.look));
+  if (fisher && D.LINES.fishAsk) lines(D.VOICES[fisher.look].tts, ['fishHello', 'fishAsk', 'fishDone']);
 
   // The narrator: words, letters and lines said by nobody in particular.
   const N = D.TTS_NARRATOR;
@@ -135,6 +141,8 @@ function collect(D) {
   lines(N, (D.CAVE_LINES && D.CAVE_LINES.narrator) || []);
   for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
+  // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
+  lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
   for (const t of partShow) add(N, t);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
