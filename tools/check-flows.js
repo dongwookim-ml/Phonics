@@ -67,7 +67,13 @@
 //    for the whole of a question (and the fishing game), follows 🔊, the
 //    parent panel's pause, its 배경 음악 setting (stamped, saved, and the
 //    newer stamp wins from another tablet), a hidden page and the sleeping
-//    town, and a new place crossfades with a handful of voices at most.
+//    town, and a new place crossfades with a handful of voices at most;
+//  - the monsters she drew herself (js/kid-monsters.js), in both editions:
+//    each draws in every frame and as a villager, with its ♪ clear of it;
+//    its dialog shows her drawing (loaded) where the portrait goes, inside
+//    the dialog and off the cards at the iPad sizes and on a phone held
+//    sideways; anyone else's shows the portrait; closing hides it; a tap
+//    shows it big and any tap (or the dialog stepping aside) closes that.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -82,7 +88,7 @@ const root = path.join(__dirname, '..');
 let HOST;
 let URL;
 function serve() {
-  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp3': 'audio/mpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp3': 'audio/mpeg', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
   const server = http.createServer((req, res) => {
     const file = path.join(root, decodeURIComponent(new globalThis.URL(req.url, 'http://x').pathname));
     if (!file.startsWith(root)) { res.writeHead(403); res.end(); return; }
@@ -1889,6 +1895,172 @@ async function gameSpots(browser, edition) {
   await ctx.close();
 }
 
+// The monsters she drew herself (js/kid-monsters.js): each one draws in
+// every frame (still, eyes shut, waving) and in the town as a villager,
+// stands on its feet and is between 28 and 40 px tall with its ♪ clear of
+// it; talking to one shows her drawing in the dialog where the portrait
+// goes (the picture loaded), and at the iPad sizes and on a phone held
+// sideways it sits inside the dialog, off the cards, which stay on screen;
+// another villager's dialog shows the portrait and no drawing; closing the
+// dialog hides it; the drawing shows big with a tap and goes with any tap,
+// or as the dialog steps aside. Each speaks with a recorded voice and has
+// three hellos.
+async function kidMonsters(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const tag = `her monsters (${edition})`;
+  const looks = await page.evaluate(() => {
+    if (!Sound.muted) Sound.toggleMute();
+    return Object.keys(KID_MONSTERS);
+  });
+  const drawn = await page.evaluate(async () => {
+    const out = {};
+    const sc = state.scene;
+    const h = state.hero;
+    for (const look of Object.keys(KID_MONSTERS)) {
+      const r = out[look] = { frames: [], bad: [] };
+      try {
+        const art = kidMonsterArt(look);
+        art.rows.concat(Object.values(art.wave || {})).forEach((row, i) => { if (row.length !== art.rows[0].length) r.bad.push(`row ${i} is ${row.length} wide`); });
+        for (let f = 0; f < 4; f++) {
+          const s = kidMonsterSprite(look, f);
+          const px = s.canvas.getContext('2d').getImageData(0, 0, s.canvas.width, s.canvas.height).data;
+          let ink = 0;
+          for (let i = 3; i < px.length; i += 4) if (px[i]) ink++;
+          const feet = s.canvas.getContext('2d').getImageData(0, s.ay, s.canvas.width, 1).data.some((v, i) => i % 4 === 3 && v);
+          r.frames.push({ ink, feet, tall: s.ay, data: s.canvas.toDataURL() });
+        }
+        r.portrait = villagerSprite(look, 0) === kidMonsterSprite(look, 0);
+        r.lift = kidBubbleLift({ look });
+        // In the town as a villager, drawn over a few seconds of its idle life.
+        const npc = makeNpc({ name: KID_MONSTERS[look].name, look, c: h.c + 1, r: h.r + 1 });
+        sc.npcs.push(npc);
+        for (let t = 0; t < 9000; t += 150) drawKidMonster(vctx, npc, 100, 100, t);
+        drawScene(performance.now());
+        sc.npcs.splice(sc.npcs.indexOf(npc), 1);
+      } catch (e) {
+        r.bad.push(e.message);
+      }
+      r.waves = new Set(r.frames.map(f => f.data)).size;
+      r.frames.forEach(f => delete f.data);
+      r.voice = !!(VOICES[look] && TTS_INDEX[VOICES[look].tts]);
+      r.hellos = (PERSONA[look] || []).length;
+    }
+    out.otherLift = kidBubbleLift(sc.npcs[0]);
+    return out;
+  });
+  for (const look of looks) {
+    const r = drawn[look];
+    check(`${tag} ${look}: draws in every frame, on its feet, 28 to 40 px tall, also as a villager`, !r.bad.length && r.frames.every(f => f.ink > 150 && f.feet && f.tall >= 28 && f.tall <= 40)
+      && r.portrait && r.waves >= 2, r);
+    check(`${tag} ${look}: its ♪ goes up clear of it`, r.lift > 0 && r.frames[0].tall - r.lift <= 32, r.lift);
+    check(`${tag} ${look}: a recorded voice and three hellos`, r.voice && r.hellos === 3, r);
+  }
+  check(`${tag}: anyone else's ♪ stays where it was`, drawn.otherLift === 0, drawn.otherLift);
+
+  // Talking to each: her drawing where the portrait goes, loaded.
+  const talk = look => page.evaluate(async look => {
+    const sc = state.scene;
+    let npc = sc.npcs.find(n => n.look === look);
+    if (!npc) {
+      npc = makeNpc({ name: KID_MONSTERS[look].name, look, c: state.hero.c + 2, r: state.hero.r });
+      sc.npcs.push(npc);
+    }
+    if (state.talking) closeDialog();
+    openDialog(npc);
+    const img = document.getElementById('dlg-drawing-img');
+    for (let t = 0; t < 5000 && !(img.complete && img.naturalWidth); t += 50) await new Promise(res => setTimeout(res, 50));
+    const seen = el => !!el.offsetParent;
+    return { talking: state.talking === npc, shown: seen(document.getElementById('dlg-drawing')), portrait: seen(document.querySelector('.portrait')),
+      src: img.getAttribute('src'), want: kidMonsterArt(look).drawing, loaded: img.complete ? img.naturalWidth : 0,
+      by: document.getElementById('dlg-drawing-by').textContent };
+  }, look);
+  for (const look of looks) {
+    const r = await talk(look);
+    check(`${tag} ${look}: her drawing shows in its dialog instead of the portrait`, r.talking && r.shown && !r.portrait && r.src === r.want && r.loaded > 0 && !!r.by, r);
+  }
+  // Where it sits, at each size, in each kind of dialog (three cards, four,
+  // the letter tiles), before and after a miss.
+  const fits = [];
+  for (const [w, h] of [[844, 390], [1024, 768], [768, 1024], [1180, 820], [1024, 700]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(150);
+    fits.push(...await page.evaluate(async size => {
+      const bad = [];
+      const npc = state.scene.npcs.find(n => KID_MONSTERS[n.look]);
+      const look = () => {
+        const R = el => el.getBoundingClientRect();
+        const photo = R(document.querySelector('#dlg-drawing .photo'));
+        const box = R(ui.dialog);
+        const where = `${size} ${state.question.tiles ? 'tiles' : `${state.question.options.length} cards`}`;
+        if (photo.width < 40 || photo.top < box.top - 12 || photo.bottom > box.bottom + 2 || photo.left < box.left) bad.push(`${where}: the photo is outside the dialog`);
+        for (const c of [...ui.choices.children].map(R)) {
+          if (c.left < photo.right && c.right > photo.left && c.top < photo.bottom && c.bottom > photo.top) bad.push(`${where}: the photo covers a card`);
+          if (c.left < 0 || c.right > innerWidth || c.bottom > innerHeight) bad.push(`${where}: a card is off the screen`);
+        }
+      };
+      for (const level of [undefined, 2, 5]) {
+        npc.level = level;
+        closeDialog();
+        openDialog(npc);
+        await new Promise(res => requestAnimationFrame(res));
+        look();
+        const q = state.question;
+        q.locked = false;
+        if (q.tiles) {
+          q.picked = q.tiles.map((t, i) => i).filter(i => !q.word.includes(q.tiles[i].l)).slice(0, 1);
+          checkSpell(q);
+        } else {
+          const i = q.options.findIndex(o => !o.right);
+          choose(i, ui.choices.children[i]);
+        }
+        await new Promise(res => requestAnimationFrame(res));
+        look();
+      }
+      npc.level = undefined;
+      return bad;
+    }, `${w}x${h}`));
+  }
+  check(`${tag}: her drawing sits in the dialog, off the cards, at every size`, !fits.length, fits);
+  await page.setViewportSize({ width: 1024, height: 768 });
+
+  const r = await page.evaluate(async () => {
+    const seen = el => el.getClientRects().length > 0; // the big picture is fixed, so no offsetParent
+    const frame = document.getElementById('dlg-drawing');
+    const big = document.getElementById('drawing-big');
+    const tick = () => new Promise(res => setTimeout(res, 50));
+    const out = {};
+    // Big with a tap, gone with the next; gone too when the dialog steps aside.
+    frame.click();
+    const bigImg = document.getElementById('drawing-big-img');
+    for (let t = 0; t < 3000 && !(bigImg.complete && bigImg.naturalWidth); t += 50) await tick();
+    out.big = seen(big) && bigImg.naturalWidth > 0;
+    big.click();
+    out.bigGone = !seen(big);
+    frame.click();
+    caveStepAside(state.talking);
+    await tick();
+    out.asideGone = !seen(big);
+    caveStepBack();
+    out.back = seen(frame);
+    // Closing the dialog hides it.
+    closeDialog();
+    await tick();
+    out.closed = !seen(frame) && frame.classList.contains('hidden') && !seen(big) && !ui.dialog.classList.contains('drawn');
+    // Another villager: the portrait, no drawing.
+    const other = state.scene.npcs.find(n => !KID_MONSTERS[n.look] && !n.mount && !n.shop && !n.unicorn);
+    openDialog(other);
+    out.other = { name: other.name, drawing: seen(frame), portrait: seen(document.querySelector('.portrait')) };
+    closeDialog();
+    out.free = !state.busy;
+    return out;
+  });
+  check(`${tag}: a tap shows her drawing big and any tap closes it, as does the dialog stepping aside`, r.big && r.bigGone && r.asideGone && r.back, r);
+  check(`${tag}: closing the dialog hides her drawing`, r.closed, r);
+  check(`${tag}: another villager's dialog shows the portrait and no drawing`, !r.other.drawing && r.other.portrait && r.free, r.other);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const site = await serve();
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -1902,7 +2074,8 @@ async function gameSpots(browser, edition) {
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain'),
     shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain'),
     ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain'),
-    gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain') };
+    gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
+    kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {
