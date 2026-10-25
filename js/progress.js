@@ -199,7 +199,9 @@ const Progress = (() => {
     }
     return out;
   }
-  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill };
+  // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
+  // js/guide.js) only ever grow, so the larger wins.
+  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow };
   // The outfit, name and settings come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];

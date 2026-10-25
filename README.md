@@ -104,6 +104,19 @@ npx http-server -p 8080 .
   connection the password is checked against a copy kept on the tablet at
   login (PBKDF2, WebCrypto); otherwise it says the internet is not
   connected, or to try again later. Code in `js/parent.js`.
+- **Parent settings** (설정, at the bottom of the parent panel):
+  - 놀이 시간 off / 15 / 20 / 30 minutes a day. Once it is reached, at the
+    next quiet moment (no dialog, present, shop or game open) the town goes
+    to sleep: it dims, stars twinkle and the narrator says "Time to rest!
+    See you tomorrow." Only the parent password (🔑 부모님) wakes it, for
+    another full stretch; a reload doesn't.
+  - 그림 힌트: pictures on the word cards (easier); they start on for a new
+    player. With them off, the child has to read the first letter. This
+    used to be the 🖼️ button in the HUD.
+  - 🔊 소리 버튼: hide the child's mute button (the sound comes back on).
+  - 두 음절 철자: let the top spelling tier use two-syllable words.
+  Settings are shared by both editions.
+  The play-time clock, the limit and the sleep screen are in `js/guide.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
   colour. The child sees "now" and "after" side by side (on foot, unless
@@ -156,7 +169,34 @@ npx http-server -p 8080 .
   little fairies (each fairy villager offers her own first). Her fairy
   flies above her head and trails after her, also while riding; pick one
   in the wardrobe. Every right answer there also gives 2–4 ✨ fairy dust,
-  shown next to the stars. What dust is for is not decided yet; it is saved.
+  shown next to the stars.
+- **A friend that grows**: in her room, tap the fairy friend flying over
+  her (a ring round it shows how far it is to the next stage, and a ✨
+  bubble when she has dust), or the ✨ chip at the front of the fairy row in
+  the wardrobe. A card shows the friend big; every tap on it (or on the ✨
+  jar) feeds it one dust. At 10, 25 and 45 dust (`FRIEND_STAGES`) it grows:
+  a brighter glow, then a crown, then a little loop-the-loop dance, each
+  with a short celebration (tap to skip) and a line. A grown friend
+  sparkles now and then wherever she goes; tapped outside her room it
+  twirls. Nothing is ever taken away. In the robot edition batteries charge
+  the helper buddy, which gets an antenna. Code in `js/friend.js`.
+- **Fishing at the pond**: the fisherman (낚시 아저씨) has a 🎣 낚시 놀이
+  button in his dialog, a 🎣 bubble floats over the town pond, and tapping
+  the pond starts it too. Four fish with pictures swim by and he says
+  "Catch the fish that starts with /m/!" with the letter's pure sound (the
+  letter is shown at the top; 🔊 or the letter says it again). The fish
+  can be caught once the sound has been said. A wrong fish swims away and
+  she hears its word and the sound again; after two misses the right fish
+  glows. A catch is reeled into the bucket and the narrator says "moon
+  starts with M.". Five fish pay 3 🪙 coins (`FISHING`). Letters she can't
+  tell apart (`HARD_PAIRS`) never swim together. In the robot edition the
+  fishing robot works a 🧲 magnet crane that lifts boxes into a truck.
+  Code in `js/minigame.js`.
+- **First steps**: a new player sees a bouncing 👆 on the nearest villager
+  until she first taps one, and once more after her first present. After
+  about 20 seconds with no tap (and nothing open) the nearest villager hops
+  and calls "Princess Yuna, over here!", at most once a minute and three
+  times in a row. Code in `js/guide.js`.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
   "📖 책 읽어주세요" button, for ten short fairy tales and fables retold in
   simple English. The reader reads each sentence aloud and highlights it,
@@ -184,10 +224,10 @@ npx http-server -p 8080 .
   through it, or says how many stars it needs. Taps never give stars or
   coins. Code in `js/touch.js`; words not in the word lists are in
   `PROP_WORDS`.
-- 🖼️ toggles picture hints on the answer cards (easier); they start on for
-  a new player. With it off, the child has to read the first letter.
+- 🖼️ picture hints on the answer cards (easier) are a parent setting now
+  (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid) and the hint setting are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid), the hint setting, the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute }`), the first-steps pointer (`guide`) and today's play time (`playtime`) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -424,4 +464,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/audio.js`: speech and sound effects
 - `js/books.js`: the library's story books and their questions
 - `js/library.js`: the book list, the reader and the book quiz
+- `js/friend.js`: feeding the fairy friend (helper buddy) and how it grows
+- `js/minigame.js`: the fishing (magnet crane) game at the pond
+- `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/game.js`: game loop, camera, input, dialogs, presents

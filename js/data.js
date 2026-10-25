@@ -877,7 +877,7 @@ DEFAULT_OUTFIT.fairy = 'none';
 DEFAULT_BOY_OUTFIT.fairy = 'none';
 
 // Fairy dust: every right answer in the Fairy Village gives between these
-// two amounts. What it buys is still to be decided; for now it is saved.
+// two amounts. She feeds it to her fairy friend, who grows (FRIEND_STAGES).
 const FAIRY_DUST = [2, 4];
 
 // Fairy folk have wings. `gives` is the little fairy each one offers first.
@@ -916,6 +916,40 @@ QUIZ_TYPES.fairy = ['spell', 'read', 'spell', 'blend'];
 LINES.spell = ['Can you spell it?', 'Spell the word you hear!', 'Tap the letters in order.', 'Which letters make this word?', "Let's spell it together!"];
 LINES.fairyland = ['Welcome to the Fairy Village!', 'Look, the flowers are giant here!', 'Sparkle, sparkle! The fairies are waiting for you.'];
 LINES.newFairy = ['A little fairy wants to fly with you! Shall she come along?', 'This fairy would love to be your friend! Shall she fly with you?', 'Flutter flutter! A fairy friend for you! Shall she come now?'];
+
+// ---- A friend that grows, fishing, first steps and rest (M3) -----------------
+
+// Fairy dust (batteries in the robot edition) fed to her fairy friend makes
+// it grow: these are the totals fed for stage 1 (a brighter glow), 2 (a
+// crown, or an antenna on a buddy) and 3 (a little dance). At 2 to 4 dust a
+// right answer that is about 4, 9 and 16 answers in the Fairy Village.
+// Each tap on the friend feeds it one. Nothing ever shrinks or gets hungry.
+const FRIEND_STAGES = [10, 25, 45];
+// Said by the narrator in her room (js/friend.js). friendGrow has one line
+// per stage, in order.
+LINES.friendHello = isCaptain() ? ['Tap me! Charge me up with batteries!'] : ['Tap me! Sprinkle some fairy dust on me!'];
+LINES.friendEmpty = isCaptain() ? ["Let's get more batteries in Drone Village!"] : ["Let's get more fairy dust in the Fairy Village!"];
+LINES.friendGrow = isCaptain()
+  ? ['Beep! My lights are brighter!', 'Look! A shiny new antenna!', 'Full power! Watch me dance!']
+  : ['Yay! I am glowing brighter!', 'Look! A little crown for me!', 'I am all grown up! Watch me dance!'];
+
+// The fisherman's game at the town pond (js/minigame.js): fish with pictures
+// swim by and he says "Catch the fish that starts with /m/!" (the letter's
+// pure sound). The robot edition plays it with a magnet crane and boxes.
+// `rounds` fish to catch, `fish` in the water each time, `coins` at the end.
+const FISHING = { rounds: 5, fish: 4, coins: 3 };
+LINES.fishHello = isCaptain() ? ["Let's play with my magnet crane!"] : ["Let's go fishing together!"];
+// The pure sound follows, so these never end with a full stop.
+LINES.fishAsk = isCaptain() ? ['Pick up the box that starts with', 'Find the box that starts with'] : ['Catch the fish that starts with', 'Find the fish that starts with'];
+LINES.fishDone = isCaptain()
+  ? ['Great job! Here are some coins for you!', 'All the boxes are loaded! Coins for you!']
+  : ['What a great catch! Here are some coins for you!', 'A full bucket! These coins are for you!'];
+
+// A villager calls her over when nothing has been tapped for a while
+// (js/guide.js); recorded in every voice, like the PERSONA lines.
+LINES.nudge = ['{title} {name}, over here!'];
+// The play-time limit in the parent panel: the town goes to sleep.
+LINES.sleep = ['Time to rest! See you tomorrow.'];
 
 // ---- Village homes -----------------------------------------------------------
 

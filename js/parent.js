@@ -61,7 +61,6 @@ function parentOpen() {
     </div>`;
   el.querySelector('.parent-close').addEventListener('click', parentClose);
   el.addEventListener('click', parentClick);
-  el.addEventListener('change', parentChange);
   // Keys typed here never reach the game (1–4 would answer a question).
   el.addEventListener('keydown', e => { if (e.key === 'Escape') parentClose(); e.stopPropagation(); });
   document.body.append(el);
@@ -77,7 +76,8 @@ function parentClose() {
   // Busy again only if something is still showing (a question, a present,
   // the wardrobe, the shop, the library or a scene change).
   const shown = el => !!el && !el.classList.contains('hidden');
-  state.busy = [ui.dialog, ui.reward, ui.wardrobe, ui.shop, document.getElementById('library'), document.getElementById('reader')].some(shown) ||
+  state.busy = [ui.dialog, ui.reward, ui.wardrobe, ui.shop, document.getElementById('library'), document.getElementById('reader'),
+    document.getElementById('feed'), document.getElementById('mini'), document.getElementById('sleep')].some(shown) ||
     ui.fade.classList.contains('on');
 }
 
@@ -251,13 +251,11 @@ function parentStats() {
       <div><h3>최근 7일 활동</h3>${parentSpark()}<p class="parent-empty">그날 마지막으로 푼 문제 수예요.</p></div>
     </div>
     <h3>글자별 정답률 (한 번에 맞힌 비율)</h3>
-    <div class="parent-letters">${parentLetters()}</div>
-    <h3>설정</h3>
-    <label class="parent-setting"><input type="checkbox" class="set-two" ${state.settings && state.settings.twoSyllables ? 'checked' : ''}>
-      스펠링 마지막 단계에 두 음절 단어(rab·bit, rock·et)도 내기</label>`;
+    <div class="parent-letters">${parentLetters()}</div>`;
+  parentSettings(parentUi.panel.querySelector('.parent-body'));
 }
 
-// − / + on a tier, and the settings.
+// − / + on a tier.
 function parentClick(e) {
   const b = e.target.closest('.tier-btn');
   if (b) {
@@ -266,12 +264,49 @@ function parentClick(e) {
     parentStats();
   }
 }
-function parentChange(e) {
-  if (!e.target.classList.contains('set-two')) return;
-  state.settings = Object.assign({}, state.settings, { twoSyllables: e.target.checked });
-  Quiz.setTier('spell', Quiz.skill('spell').t);
-  save();
-  parentStats();
+
+// ---- Settings: play time, picture hints, the 🔊 button --------------------
+// Saved with the game (state.settings, state.pictures). The play-time limit
+// and the hidden 🔊 button are handled in js/guide.js.
+
+function parentSettings(body) {
+  const box = document.createElement('section');
+  box.className = 'parent-settings';
+  body.append(box);
+  const render = () => {
+    const s = state.settings;
+    const played = Math.floor(guidePlayedMs() / 60000);
+    const chips = (name, options, value) => options.map(([v, label]) =>
+      `<button type="button" class="chip${v === value ? ' on' : ''}" data-set="${name}" data-v="${v}">${label}</button>`).join('');
+    box.innerHTML = `<h3>설정</h3>
+      <div class="ps-row">
+        <div class="ps-name">놀이 시간<small>시간이 되면 대화가 끝난 뒤 마을이 잠들고, 비밀번호로만 다시 놀 수 있어요. 오늘 ${played}분 놀았어요.</small></div>
+        <div class="ps-chips">${chips('limit', [[0, '끄기'], [15, '15분'], [20, '20분'], [30, '30분']], s.playLimit | 0)}</div>
+      </div>
+      <div class="ps-row">
+        <div class="ps-name">그림 힌트<small>단어 카드에 그림을 함께 보여줘요. 끄면 첫 글자를 읽어야 해요.</small></div>
+        <div class="ps-chips">${chips('pictures', [[1, '켜기'], [0, '끄기']], state.pictures ? 1 : 0)}</div>
+      </div>
+      <div class="ps-row">
+        <div class="ps-name">🔊 소리 버튼<small>아이 화면 위쪽의 소리 끄기 버튼이에요.</small></div>
+        <div class="ps-chips">${chips('mute', [[0, '보이기'], [1, '숨기기']], s.hideMute ? 1 : 0)}</div>
+      </div>
+      <div class="ps-row">
+        <div class="ps-name">두 음절 철자<small>스펠링 마지막 단계에 rab·bit, rock·et 같은 두 음절 단어도 내요.</small></div>
+        <div class="ps-chips">${chips('two', [[0, '끄기'], [1, '켜기']], s.twoSyllables ? 1 : 0)}</div>
+      </div>`;
+    box.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
+      const v = Number(b.dataset.v);
+      if (b.dataset.set === 'limit') s.playLimit = v;
+      if (b.dataset.set === 'mute') s.hideMute = !!v;
+      if (b.dataset.set === 'two') { s.twoSyllables = !!v; Quiz.setTier('spell', Quiz.skill('spell').t); }
+      if (b.dataset.set === 'pictures') setPictures(!!v); // saves
+      else save();
+      guideApplySettings();
+      render();
+    }));
+  };
+  render();
 }
 
 parentUi.gear.addEventListener('click', parentOpen);
