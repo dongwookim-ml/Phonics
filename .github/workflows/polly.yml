@@ -32,11 +32,18 @@ jobs:
       fix: ${{ steps.cfg.outputs.fix }}
     steps:
       - uses: actions/checkout@v4
+      # The settings come from a file anyone with push access can edit: only
+      # known values go on, and they reach the shell through env, never pasted in.
       - id: cfg
         run: |
-          echo "mode=$(jq -r .mode tools/polly-run.json)" >> "$GITHUB_OUTPUT"
-          echo "check=$(jq -r '.check // "changed"' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
-          echo "fix=$(jq -r 'if .fix == false then "no" else "yes" end' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
+          mode=$(jq -r .mode tools/polly-run.json)
+          check=$(jq -r '.check // "changed"' tools/polly-run.json)
+          fix=$(jq -r 'if .fix == false then "no" else "yes" end' tools/polly-run.json)
+          case "$mode" in all|sample|voices|fix) ;; *) echo "unknown mode in tools/polly-run.json"; exit 1 ;; esac
+          case "$check" in changed|short|all|none) ;; *) echo "unknown check in tools/polly-run.json"; exit 1 ;; esac
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "check=$check" >> "$GITHUB_OUTPUT"
+          echo "fix=$fix" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -46,7 +53,9 @@ jobs:
         run: python tools/polly-build.py
       - name: Commit the clips
         if: always()
-        run: sh tools/push-clips.sh "Record voices with Amazon Polly (${{ steps.cfg.outputs.mode }})"
+        env:
+          MODE: ${{ steps.cfg.outputs.mode }}
+        run: sh tools/push-clips.sh "Record voices with Amazon Polly ($MODE)"
 
   check:
     needs: record
@@ -71,15 +80,23 @@ jobs:
       - run: pip install faster-whisper pronouncing
       - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - name: Listen
-        run: python tools/voice-check.py --scope ${{ needs.record.outputs.check }} --shard ${{ matrix.shard }} --shards 10 --out part-${{ matrix.shard }}.json
+        env:
+          CHECK: ${{ needs.record.outputs.check }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          case "$CHECK" in changed|short|all) ;; *) echo "unknown check"; exit 1 ;; esac
+          case "$SHARD" in [0-9]) ;; *) echo "unknown shard"; exit 1 ;; esac
+          python tools/voice-check.py --scope "$CHECK" --shard "$SHARD" --shards 10 --out "part-$SHARD.json"
       - uses: actions/upload-artifact@v4
         with:
           name: voice-check-${{ matrix.shard }}
           path: part-${{ matrix.shard }}.json
           retention-days: 3
 
+  # Runs with whatever check shards finished, even if some failed.
   fix:
     needs: [record, check]
+    if: always() && needs.record.result == 'success' && needs.check.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
@@ -96,6 +113,7 @@ jobs:
       - run: pip install boto3 faster-whisper pronouncing
       - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - uses: actions/download-artifact@v4
+        continue-on-error: true  # no shard finished: nothing to merge
         with:
           pattern: voice-check-*
           path: parts
