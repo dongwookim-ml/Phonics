@@ -185,15 +185,28 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   font-size: 20px;
 }
 .choice .pic { font-size: 34px; line-height: 1.1; display: none; }
-.choice.pictures .pic, .choice.right .pic { display: block; }
+.choice.pictures .pic, .choice.right .pic, .choice.wrong .pic { display: block; }
 .choice .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 36px; letter-spacing: 1px; line-height: 1.1; }
 .choice .first { color: var(--accent); }
 .choice.right { background: #fff4b8; border-color: #e0a52a; animation: pop 0.5s ease; }
-.choice.wrong { opacity: 0.4; animation: shake 0.4s ease; }
+/* A wrong pick shakes, turns grey and shows what it was; the answer, once
+   shown, glows with a finger pointing at it. */
+.choice.wrong { background: #ece6ee; border-color: #b4a6bc; box-shadow: none; filter: grayscale(0.8); opacity: 0.55; animation: nope 0.5s ease; }
+.choice .also { display: none; font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 20px; line-height: 1.1; }
+.choice.wrong .also { display: block; }
+.choice.gone { opacity: 0.22; filter: grayscale(1); box-shadow: none; }
+.choice.glow { position: relative; background: #fff4b8; border-color: #e0a52a; animation: pop 0.5s ease, glow 1.1s ease 0.5s infinite; }
+.choice.glow .pic, .choice.glow .w.hide { display: block; }
+.choice.glow::after { content: '👆'; position: absolute; right: 2px; bottom: -14px; font-size: 38px; line-height: 1; animation: float 0.9s ease infinite; pointer-events: none; }
+/* Until she has heard the word, the cards wait, dimmed, and the 🔊 glows. */
+.dialog.listening .choice { opacity: 0.5; pointer-events: none; }
+.dialog.listening .choice.glow { opacity: 1; }
+.dialog.listening .choice.wrong, .dialog.listening .choice.gone { opacity: 0.22; }
+.dialog.listening #dlg-replay { animation: breathe 0.9s ease infinite, glow 0.9s ease infinite; }
 .choice .bigpic { font-size: 54px; line-height: 1.05; }
 .choice .letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 46px; line-height: 1.1; color: var(--accent); }
 .choice .w.hide { display: none; }
-.choice.right .w.hide, .choice.wrong .w.hide { display: block; font-size: 24px; }
+.choice.right .w.hide, .choice.wrong .w.hide, .choice.glow .w.hide { display: block; font-size: 24px; }
 .choices.four { gap: 7px; }
 .choices.four .choice .w { font-size: 30px; }
 .clue {
@@ -371,6 +384,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 @keyframes pop { 40% { transform: scale(1.12); } }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes nope { 15% { transform: translateX(-12px) rotate(-4deg); } 35% { transform: translateX(11px) rotate(4deg); } 55% { transform: translateX(-8px) rotate(-2deg); } 75% { transform: translateX(5px); } }
 @keyframes breathe { 50% { transform: scale(1.08); } }
 @keyframes float { 50% { transform: translateY(-8px); } }
 @keyframes glow { 50% { box-shadow: 0 0 24px rgba(255, 200, 80, 0.9); } }
@@ -565,6 +579,9 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
   border-bottom: 5px solid #e0a52a;
 }
 .spell-word .slot.next { border-bottom-color: var(--accent); animation: breathe 1s ease infinite; }
+/* A right letter stays, green; a wrong one shakes red and hops back. */
+.spell-word .slot.ok { color: #2f9e5a; border-bottom-color: #4fbf90; }
+.spell-word .slot.bad { color: #e8344f; border-bottom-color: #e8344f; animation: nope 0.5s ease; }
 .spell-word.right .slot { color: #e0a52a; }
 .spell-word.wrong { animation: shake 0.4s ease; }
 .spell-word.wrong .slot { color: #9a8aa3; border-bottom-color: #c8b8d0; }
@@ -572,21 +589,8 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .choices.spell .tile { padding: 2px 2px 4px; }
 .choices.spell .tile .letter { font-size: 40px; }
 .choices.spell .tile:disabled { opacity: 0.3; background: #f2e8ee; transform: translateY(3px); box-shadow: none; }
-.choices.spell .erase {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 4px 4px;
-  font-size: 16px;
-  background: #ffe6f2;
-  border: 3px solid var(--ink);
-  border-radius: 16px;
-  box-shadow: 0 5px 0 rgba(74, 44, 79, 0.25);
-}
-.choices.spell .erase .ic { font-size: 24px; line-height: 1.1; }
-.choices.spell .erase:disabled { opacity: 0.4; }
-.choices.spell .erase:active:not(:disabled) { transform: translateY(3px); }
+.choices.spell .tile.wrong { opacity: 1; filter: none; background: #ffe0e6; border-color: #e8344f; }
+.choices.spell .tile.glow::after { right: -4px; bottom: -16px; font-size: 30px; }
 @media (max-width: 560px) {
   /* Stars, coins and dust wrap onto two rows so the buttons stay on screen. */
   .hud { align-items: flex-start; gap: 6px; }
@@ -921,7 +925,7 @@ body.captain .bloom {
 body.captain .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(40, 80, 140, 0.28)); }
 body.captain .dialog { background: linear-gradient(#f8fbff, #e6f0ff); }
 body.captain .portrait { background: #dcebff; }
-body.captain .round.small, body.captain .choices.spell .erase { background: #dcebff; }
+body.captain .round.small { background: #dcebff; }
 body.captain .clue { background: #f4f8ff; border-color: #9cc4f0; }
 body.captain .reward { background: radial-gradient(circle at 50% 30%, #fffdf2, #d8e8ff); }
 body.captain #wardrobe { background: radial-gradient(circle at 30% 20%, #fbfdff, #dbe7f7); }

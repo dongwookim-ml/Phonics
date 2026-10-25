@@ -133,9 +133,11 @@ function load() {
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
     outfit = fitOutfit(outfit);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures: !!s.pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {} };
+    // Picture hints start on for a new player (a pre-reader needs them).
+    const pictures = s.pictures === undefined ? true : !!s.pictures;
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: false, history: {}, books: {} };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {} };
   }
 }
 
@@ -445,12 +447,12 @@ function faceEachOther(npc) {
   if (dx !== 0) { h.flip = dx < 0; npc.flip = dx > 0; }
 }
 
-// After a wrong answer she has to answer someone else's question before
-// this person asks theirs again.
-const waiting = npc => npc.waitUntil > state.answered;
+// A question she missed comes back from the same person once she has
+// finished another one, with new options in a new order.
+const comeBack = npc => !!npc.missed && state.answered >= npc.missedDue;
 
 function openDialog(npc) {
-  if (npc.caught) return;
+  if (npc.caught || state.gift) return;
   faceEachOther(npc);
   if (npc.shop) { openShop(npc); return; }
   state.busy = true;
@@ -458,28 +460,21 @@ function openDialog(npc) {
   libraryDialog(npc);
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
   ui.name.textContent = npc.name;
-  if (waiting(npc)) {
-    const not = line('later');
-    ui.text.textContent = not;
-    ui.clue.classList.add('hidden');
-    ui.choices.innerHTML = '';
-    ui.dialog.classList.remove('hidden');
-    ui.reward.classList.add('hidden');
-    Sound.say(not, voiceOf(npc));
-    later(2800, () => { if (state.talking === npc && !state.question) closeDialog(); });
-    return;
-  }
-  // The question she missed comes back, otherwise a new one.
-  const q = npc.missed || Quiz.make(npc);
-  npc.missed = null;
-  q.done = false;
+  const back = comeBack(npc);
+  const q = back ? Quiz.again(npc.missed, npc) : Quiz.make(npc);
+  if (back) npc.missed = null;
   state.question = q;
   if (q.review) ui.name.insertAdjacentHTML('beforeend', ' <span class="review-tag">복습</span>');
   // A captain-edition villain shows its hearts and taunts between questions.
   // In a letter house the host skips the chat and teaches the letter instead.
+  // Others say their own hello the first time she talks to them, and just a
+  // short lead after that.
   const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
-  const hello = house ? houseHello(house) :
-    (isCaptain() && npc.monster && villainRound(npc)) || line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
+  const villain = isCaptain() && npc.monster && villainRound(npc);
+  const greet = !npc.greeted;
+  npc.greeted = true;
+  const hello = house ? houseHello(house) : villain ||
+    (back ? line('again') : greet ? line(`persona-${npc.look}`, {}, PERSONA[npc.look]) : line('next'));
   ui.text.textContent = `${hello} ${q.prompt}`;
   ui.clue.innerHTML = q.clue;
   ui.clue.classList.toggle('hidden', !q.clue);
@@ -498,7 +493,8 @@ function openDialog(npc) {
   if (q.tiles) renderSpell(q);
   ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
-  Sound.say([{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), voiceOf(npc));
+  // The cards wait until she has heard the word (Quiz.READY in q.ask).
+  listen(q, [{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), 9000);
   save();
 }
 
@@ -507,62 +503,168 @@ function houseHello(info) {
   return `This is the ${info.letter} ${isCaptain() ? 'workshop' : 'house'}. ${info.letter} says ${info.sound}.`;
 }
 
+// Says `parts` with the cards dimmed, and lets her answer from Quiz.READY
+// on (or at the end), or after `ms` at the latest: the voice can be muted,
+// slow or missing. Nothing happens if this dialog has gone by then.
+function listen(q, parts, ms) {
+  q.locked = true;
+  ui.dialog.classList.add('listening');
+  const turn = q.turn = (q.turn || 0) + 1;
+  const ready = () => {
+    if (state.question !== q || q.turn !== turn || !q.locked) return;
+    q.locked = false;
+    ui.dialog.classList.remove('listening');
+  };
+  if (!parts.includes(Quiz.READY)) parts = parts.concat(Quiz.READY);
+  if (Sound.muted) ready();
+  else later(ms, ready);
+  Sound.say(parts.map(p => (p === Quiz.READY ? { call: ready } : p)), voiceOf(state.talking));
+}
+
+// 🔊: the word again (once the answer is shown or given, the answer).
 function askAgain() {
   const q = state.question;
-  if (q) Sound.say(q.replay, voiceOf(state.talking));
+  if (!q) return;
+  const parts = q.done ? q.answer : q.reveal ? q.model : q.replay;
+  if (q.locked) listen(q, parts.slice(), 5000);
+  else Sound.say(parts, voiceOf(state.talking));
 }
+
+// What the dialog shows for some speech parts.
+const shownText = parts => parts.filter(p => p.text).map(p => (p.show !== undefined ? p.show : p.text)).join(' ');
 
 function choose(i, btn) {
   const q = state.question;
-  if (!q || q.done || btn.disabled) return;
+  if (!q || q.done || q.locked || q.tiles || !btn || btn.disabled) return;
   const o = q.options[i];
+  // Once the answer is shown, only that card can be tapped.
+  if (q.reveal) { if (o.right) finishShown(q, btn); return; }
   reviewRecord(q, o.right);
-  if (o.right) {
-    q.done = true;
-    btn.classList.add('right');
-    ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
-    if (q.solved) ui.clue.innerHTML = q.solved;
-    const praise = line('praise');
-    ui.text.textContent = praise;
-    Sound.correct();
-    Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(state.talking));
-    // Cave monsters pay in coins instead of a star and a present.
-    if (state.talking.monster) { catchMonster(state.talking); return; }
-    if (state.talking.level === 5) addDust();
-    state.stars++;
-    state.answered++;
-    save();
-    renderStars(true);
-    burstAtHero(30);
-    later(2600, () => offerReward(state.talking));
-  } else {
-    q.misses++;
-    q.done = true;
-    btn.classList.add('wrong');
-    ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
-    Sound.wrong();
-    // A captain-edition villain attacks instead, and asks it again.
-    if (isCaptain() && state.talking.monster) { villainMiss(state.talking, q, o); return; }
-    const npc = state.talking;
-    state.answered++;
-    npc.missed = q;
-    npc.waitUntil = state.answered + 1;
-    save(); // keeps the miss in the question history
-    const retry = line('retry');
-    // A misspelled word that isn't a real word has nothing to say back.
-    const back = o.wrong ? [{ text: o.wrong, narrator: true, rate: 0.72 }, { pause: 300 }] : [];
-    ui.text.textContent = o.wrong ? `${o.wrong}… ${retry}` : retry;
-    Sound.say(back.concat({ text: retry }), voiceOf(npc));
-    later(5200, () => { if (state.talking === npc) closeDialog(); });
+  if (o.right) answeredRight(q, btn);
+  else missed(q, o, btn);
+}
+
+// A right answer: praise and a star. Right the first time, a present too
+// (if there is one she doesn't have yet); right after a hint, no present.
+function answeredRight(q, btn) {
+  const npc = state.talking;
+  q.done = true;
+  btn.classList.add('right');
+  ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
+  if (q.solved) ui.clue.innerHTML = q.solved;
+  const praise = line('praise');
+  ui.text.textContent = praise;
+  Sound.correct();
+  // Cave monsters pay in coins instead of a star and a present.
+  if (npc.monster) {
+    Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(npc));
+    catchMonster(npc);
+    return;
   }
+  const gift = !q.misses && hasNewGift(npc);
+  const close = () => { if (state.question === q) closeDialog(); };
+  Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
+  if (npc.level === 5 && !q.misses) addDust();
+  state.stars++;
+  state.answered++;
+  save();
+  renderStars(true);
+  burstAtHero(q.misses ? 14 : 30);
+  if (gift) giftLater(q, npc);
+  else later(Sound.muted ? 1800 : 7000, close);
+}
+
+// A wrong pick. The first time she hears what she picked and a hint, and
+// tries again with the cards that are left. The second time (or when only
+// the right card is left) the answer is shown and she taps it.
+function missed(q, o, btn) {
+  const npc = state.talking;
+  q.misses++;
+  Sound.oops();
+  btn.classList.add('wrong');
+  btn.disabled = true;
+  const left = q.options.filter((x, j) => !x.right && !ui.choices.children[j].disabled).length;
+  const showIt = q.misses >= 2 || !left;
+  // A captain-edition villain throws something first (js/captain-cave.js).
+  if (isCaptain() && npc.monster) { villainMiss(npc, q, o, showIt); return; }
+  if (showIt) showAnswer(q, o);
+  else hint(q, o);
+}
+
+// First miss: what she picked, and a hint for this kind of question.
+function hint(q, o) {
+  const parts = q.teach(o);
+  ui.text.textContent = shownText(parts);
+  listen(q, parts, 7000);
+}
+
+// The answer, shown and said: the right card glows and the others fade.
+function showAnswer(q, o) {
+  q.reveal = true;
+  q.options.forEach((x, j) => {
+    const b = ui.choices.children[j];
+    if (x.right) { b.classList.add('glow', 'pictures'); b.disabled = false; } else { b.classList.add('gone'); b.disabled = true; }
+  });
+  const showMe = line('showMe');
+  const tap = isCaptain() && state.talking.monster ? { text: line('tapFire'), narrator: true } : { text: line('tapIt') };
+  const parts = (o ? q.picked(o).concat({ pause: 400 }) : []).concat({ text: showMe }, { pause: 300 }, q.model);
+  ui.text.textContent = `${shownText(parts)} ${tap.text}`;
+  listen(q, parts.concat(Quiz.READY, { pause: 300 }, tap), 8000);
+  // A nudge if she hasn't tapped it a while later.
+  later(16000, () => { if (state.question === q && !q.done && !q.locked) Sound.say([tap], voiceOf(state.talking)); });
+}
+
+// She tapped the shown answer: it is said once more, no star, and it comes
+// back later. The next question of this kind is an easier one.
+function finishShown(q, btn) {
+  const npc = state.talking;
+  q.done = true;
+  btn.classList.remove('glow');
+  btn.classList.add('right');
+  ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
+  if (q.solved) ui.clue.innerHTML = q.solved;
+  npc.missed = q;
+  npc.missedDue = state.answered + 2;
+  Sound.tap();
+  burstAtHero(8);
+  if (isCaptain() && npc.monster) { villainHit(npc, true); return; }
+  state.answered++;
+  save();
+  const soon = line('soon');
+  ui.text.textContent = soon;
+  const close = () => { if (state.question === q) closeDialog(); };
+  Sound.say(q.answer.concat({ pause: 400 }, { text: soon }, { pause: 600 }, { call: close }), voiceOf(npc));
+  later(Sound.muted ? 1500 : 9000, close);
 }
 
 function closeDialog() {
   ui.dialog.classList.add('hidden');
+  ui.dialog.classList.remove('listening');
   ui.reward.classList.add('hidden');
   state.busy = false;
   state.question = null;
   state.talking = null;
+  state.gift = null;
+}
+
+// The present for a right answer comes once the praise has been said. If
+// she closed the dialog before that, it comes when nothing else is open,
+// and it is always from the person she answered.
+function giftLater(q, npc) {
+  q.giver = npc;
+  later(2600, () => giveGift(q));
+}
+// Whether a present here would be something she doesn't have yet. An old
+// one is never handed out as a present.
+const hasNewGift = npc => rewardChoices((npc && npc.level) || 1).some(r => r.isNew);
+function giveGift(q) {
+  if (!q.giver) return;
+  const free = state.question === q || (!state.busy && !state.hero.onArrive && !state.gift);
+  if (!free) { later(1500, () => giveGift(q)); return; }
+  const npc = q.giver;
+  q.giver = null;
+  if (hasNewGift(npc)) offerReward(npc);
+  else if (state.question === q) closeDialog();
 }
 
 // ---- Rewards -------------------------------------------------------------
@@ -637,6 +739,7 @@ function offerReward(npc) {
   drawPortrait(ui.pvNew, heroPortrait(next, ride || state.mounted));
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
+  state.busy = true;
   Sound.party();
   state.giver = npc;
   Sound.say([{ pause: 600 }, { text: line(ride ? 'newUnicorn' : fairy ? 'newFairy' : 'gift') }], voiceOf(npc));
@@ -940,13 +1043,15 @@ function closeShop() {
 
 // ---- Fairy Village -------------------------------------------------------
 
-// Spelling questions: letter tiles under the blanks, and an erase key.
-// Each tap fills the next blank and says the letter's sound; when every
-// blank is full the word is checked like any other answer (see choose).
+// Spelling questions: letter tiles under the blanks. Each tile says its
+// sound when tapped and is checked as it goes in: a right one stays in its
+// blank, a wrong one hops back to the tiles with a hint. After two wrong
+// tiles for the same blank the right tile glows, and the word comes back
+// later like any answer that had to be shown.
 function renderSpell(q) {
-  q.picked = [];
-  q.checking = false;
-  q.options = [];
+  q.picked = []; // the tile in each filled blank
+  q.slotMiss = [];
+  q.glow = -1;
   ui.choices.innerHTML = '';
   q.tiles.forEach((t, i) => {
     const b = document.createElement('button');
@@ -955,12 +1060,6 @@ function renderSpell(q) {
     b.addEventListener('click', () => spellTap(i));
     ui.choices.append(b);
   });
-  const erase = document.createElement('button');
-  erase.className = 'erase';
-  erase.title = '지움';
-  erase.innerHTML = '<span class="ic">⌫</span><span>지움</span>';
-  erase.addEventListener('click', spellErase);
-  ui.choices.append(erase);
   showSpelled(q);
 }
 
@@ -968,52 +1067,72 @@ function showSpelled(q) {
   ui.clue.querySelectorAll('.spell-word .slot').forEach((s, i) => {
     const t = q.tiles[q.picked[i]];
     s.textContent = t ? t.l : '';
+    s.classList.remove('bad');
     s.classList.toggle('full', !!t);
+    s.classList.toggle('ok', !!t);
     s.classList.toggle('next', !q.done && i === q.picked.length);
   });
-  ui.choices.querySelectorAll('.tile').forEach((b, i) => { b.disabled = q.done || q.picked.includes(i); });
-  const erase = ui.choices.querySelector('.erase');
-  if (erase) erase.disabled = q.done || q.checking || !q.picked.length;
+  ui.choices.querySelectorAll('.tile').forEach((b, i) => {
+    b.disabled = q.done || q.picked.includes(i) || (q.glow >= 0 && i !== q.glow);
+    b.classList.toggle('glow', i === q.glow);
+  });
 }
 
 function spellTap(i) {
   const q = state.question;
-  if (!q || !q.tiles || q.done || q.checking || q.picked.includes(i)) return;
-  q.picked.push(i);
+  if (!q || !q.tiles || q.done || q.locked || q.picked.includes(i) || (q.glow >= 0 && i !== q.glow)) return;
+  const at = q.picked.length;
+  if (at >= q.slots.length) return;
+  const t = q.tiles[i];
   Sound.tap();
-  Sound.say([{ text: q.tiles[i].sound, narrator: true, rate: 0.8 }]);
-  if (q.picked.length === q.word.length) {
+  if (t.l === q.slots[at]) {
+    q.picked.push(i);
+    q.glow = -1;
+    showSpelled(q);
+    Sound.say([t.sound]);
     // A moment to see the last letter before the answer.
-    q.checking = true;
-    later(700, () => checkSpell(q));
+    if (q.picked.length === q.slots.length) { q.locked = true; q.turn = (q.turn || 0) + 1; later(700, () => checkSpell(q)); }
+    return;
   }
-  showSpelled(q);
-}
-
-function spellErase() {
-  const q = state.question;
-  if (!q || !q.tiles || q.done || q.checking || !q.picked.length) return;
-  q.picked.pop();
-  Sound.tap();
-  showSpelled(q);
+  // A wrong tile hops into the blank, shakes and hops back.
+  reviewRecord(q, false);
+  q.misses++;
+  q.slotMiss[at] = (q.slotMiss[at] || 0) + 1;
+  Sound.oops();
+  const slot = ui.clue.querySelectorAll('.spell-word .slot')[at];
+  const tile = ui.choices.children[i];
+  slot.textContent = t.l;
+  slot.classList.add('bad');
+  tile.classList.add('wrong');
+  const twice = q.slotMiss[at] >= 2;
+  if (twice) {
+    q.helped = true;
+    q.glow = q.tiles.findIndex((x, j) => x.l === q.slots[at] && !q.picked.includes(j));
+  }
+  later(650, () => {
+    if (state.question !== q) return;
+    tile.classList.remove('wrong');
+    showSpelled(q);
+  });
+  const parts = [t.sound, { pause: 350 }].concat(twice ? q.need(at) : q.teach());
+  ui.text.textContent = shownText(parts);
+  listen(q, parts, 6000);
 }
 
 function checkSpell(q) {
   if (state.question !== q || q.done) return;
-  q.checking = false;
-  const spelled = q.picked.map(i => q.tiles[i].l).join('');
-  q.options = [{ right: true }, { right: false, wrong: q.isWord(spelled) ? spelled : '' }];
-  choose(spelled === q.word ? 0 : 1, ui.clue.querySelector('.spell-word'));
-  q.options = [];
-  showSpelled(q);
+  q.locked = false;
+  const word = ui.clue.querySelector('.spell-word');
+  if (q.helped) { finishShown(q, word); return; }
+  reviewRecord(q, true);
+  answeredRight(q, word);
 }
 
-// Typing works too: a letter key taps its tile, Backspace erases.
+// Typing works too: a letter key taps its tile.
 function spellKey(key) {
   const q = state.question;
-  if (key === 'Backspace') { spellErase(); return; }
   if (!/^[a-z]$/i.test(key)) return;
-  const i = q.tiles.findIndex((t, j) => t.l === key.toLowerCase() && !q.picked.includes(j));
+  const i = q.tiles.findIndex((t, j) => t.l === key.toLowerCase() && !q.picked.includes(j) && (q.glow < 0 || j === q.glow));
   if (i >= 0) spellTap(i);
 }
 
@@ -1388,8 +1507,9 @@ function drawOverlay(now) {
       if (n.mount) continue;
       const w = tileCenter(sc, n.c, n.r);
       const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
-      const wait = waiting(n);
-      ctx.fillStyle = wait ? '#e4dce8' : '#ffffff';
+      // A gold "!" when a question she missed is ready to try again.
+      const back = comeBack(n);
+      ctx.fillStyle = back ? '#fff4b8' : '#ffffff';
       ctx.strokeStyle = '#4a2c4f';
       ctx.lineWidth = s * 0.8;
       roundRect(ctx, p.x - 7 * s, p.y - 5 * s, 14 * s, 10 * s, 4 * s);
@@ -1400,11 +1520,11 @@ function drawOverlay(now) {
       ctx.lineTo(p.x, p.y + 8 * s);
       ctx.lineTo(p.x + 2 * s, p.y + 5 * s - 1);
       ctx.fill();
-      ctx.fillStyle = wait ? '#9a8aa3' : '#ff6fa8';
+      ctx.fillStyle = back ? '#e0a52a' : '#ff6fa8';
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(wait ? '…' : n.badge ? n.badge : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
+      ctx.fillText(back ? '!' : n.badge ? n.badge : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
     }
   }
 

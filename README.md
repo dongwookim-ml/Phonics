@@ -44,8 +44,24 @@ npx http-server -p 8080 .
   answers **1, 2, 3**. Town folk mix three kinds: pick the word you hear,
   pick the letter a word starts with, or find the word that rhymes. House
   residents ask for the picture that starts with their house's letter
-  instead of the letter question. A wrong pick is greyed out and the
-  question is said again.
+  instead of the letter question. The cards wait (dimmed, the 🔊 glowing) until
+  the word has been said. Someone she has already talked to that day skips
+  the chat and just asks.
+- **A wrong answer** never sends her away. The picked card shakes, turns
+  grey and shows its picture; she hears what she picked and a hint for that
+  kind of question ("cap… Listen. cat", "M says mmm. Listen. cat", "dog…
+  Listen to the end. cat"), and tries again with the cards that are left.
+  Right then: praise and a star, but no present (presents are for getting it
+  right the first time, and never something she already has). A second miss,
+  or a miss with only the right card left, shows the answer: it glows with a
+  👆, the word is sounded out ("/c/ /a/ /t/… cat!") and she taps it to finish
+  (no star). That question comes back later from the same person, with new
+  cards in a new order; their bubble shows a gold **!** once it is ready.
+  The flow is `choose` → `missed` → `hint` / `showAnswer` → `finishShown`
+  in `js/game.js`; each builder in `js/quiz.js` gives its `teach`, `picked`
+  and `model` lines. Letters she can't tell apart yet (a/e, e/i, f/p, l/r,
+  b/p, d/t, m/n… in `HARD_PAIRS`) and c with k never share a question, and
+  picture-only cards leave out pictures with another name (`WEAK_PICTURES`).
 - **No repeats**: a person never asks the same kind of question twice in a
   row, and the last 24 answers are kept out of new questions (saved with the
   game). The mix lives in `QUIZ_TYPES` and the builders in `js/quiz.js`.
@@ -100,9 +116,12 @@ npx http-server -p 8080 .
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
   questions: hear "cat", see 🐱 and three blanks, and tap the letter tiles
-  c, a, t in order (each tap says the letter's sound; 지움 takes back the
-  last letter; a keyboard works too). The words are the game's own short
-  words where every letter says its sound (`spell` in `js/quiz.js`).
+  c, a, t in order (each tap says the letter's sound; a keyboard works too).
+  Every tile is checked as it goes in: a right letter stays, green; a wrong
+  one shakes and hops back while the word is said again slowly. Two wrong
+  tiles for the same blank make the right tile glow. The words are the
+  game's own short words where every letter says its sound (`spell` in
+  `js/quiz.js`).
 - **Fairy friends**: right answers in the Fairy Village give one of six
   little fairies (each fairy villager offers her own first). Her fairy
   flies above her head and trails after her, also while riding; pick one
@@ -117,8 +136,8 @@ npx http-server -p 8080 .
   re-reading is free but can't farm coins. A wrong answer gets a second try,
   then the answer is shown. Books live in `BOOKS` in `js/books.js`; the
   reader is `js/library.js`.
-- 🖼️ toggles picture hints on the answer cards (easier). With it off, the
-  child has to read the first letter.
+- 🖼️ toggles picture hints on the answer cards (easier); they start on for
+  a new player. With it off, the child has to read the first letter.
 
 The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid) and the hint setting are saved in the browser.
 
