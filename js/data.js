@@ -385,49 +385,62 @@ LINES.locked = ['Collect {stars} stars to open this gate!', 'This gate opens wit
 //   vowel      fill in the missing middle letter: c ? t
 //   ending     fill in the missing last letter: ca ?
 //   read       read a written word, pick its picture
+//   blend      hear a word's sounds ("/s/ /u/ /n/"), pick its picture
+//   spell      hear a word, tap its letters (Fairy Village)
 const QUIZ_TYPES = {
   town: ['word', 'start', 'rhyme'],
   house: ['word', 'findStart', 'rhyme'],
-  forest: ['family', 'vowel', 'ending', 'read', 'rhyme'],
+  forest: ['family', 'vowel', 'ending', 'read', 'rhyme', 'blend'],
 };
 
-// How many recent answers to keep out of new questions.
+// How many recent answers of a kind to keep out of new questions (at most
+// half of the questions the kind can ask at her tier).
 const RECENT_WORDS = 24;
 
-const RHYMES = [
-  [['cat', '🐱'], ['hat', '🎩'], ['bat', '🦇'], ['rat', '🐀']],
-  [['dog', '🐶'], ['frog', '🐸']],
-  [['sun', '☀️'], ['run', '🏃'], ['one', '1️⃣']],
-  [['cake', '🎂'], ['snake', '🐍'], ['lake', '🏞️']],
-  [['star', '⭐'], ['car', '🚗'], ['guitar', '🎸']],
-  [['moon', '🌙'], ['spoon', '🥄'], ['balloon', '🎈']],
-  [['bee', '🐝'], ['tree', '🌳'], ['three', '3️⃣'], ['key', '🔑']],
-  [['ring', '💍'], ['king', '🤴'], ['sing', '🎤']],
-  [['fox', '🦊'], ['box', '📦']],
-  [['hen', '🐔'], ['ten', '🔟'], ['pen', '🖊️']],
-  [['bug', '🐛'], ['mug', '☕'], ['hug', '🤗']],
-  [['goat', '🐐'], ['boat', '⛵'], ['coat', '🧥']],
-  [['mouse', '🐭'], ['house', '🏠']],
-  [['bed', '🛏️'], ['red', '🔴'], ['sled', '🛷']],
-  [['kite', '🪁'], ['light', '💡'], ['night', '🌃']],
-  [['stop', '🛑'], ['shop', '🏪']],
-  [['bear', '🐻'], ['pear', '🍐'], ['chair', '🪑']],
-  [['fish', '🐟'], ['dish', '🍽️']],
-  [['can', '🥫'], ['pan', '🍳'], ['man', '👨'], ['van', '🚐']],
-  [['cap', '🧢'], ['map', '🗺️'], ['tap', '🚰'], ['nap', '😴']],
-  [['net', '🥅'], ['jet', '✈️']],
-  [['pin', '📌'], ['bin', '🗑️']],
-  [['duck', '🦆'], ['truck', '🚚']],
-  [['clock', '🕰️'], ['lock', '🔒']],
-  [['bell', '🔔'], ['shell', '🐚']],
-  [['nose', '👃'], ['rose', '🌹']],
-  [['train', '🚂'], ['rain', '🌧️']],
-  [['rice', '🍚'], ['dice', '🎲'], ['ice', '🧊']],
-  [['drum', '🥁'], ['thumb', '👍']],
-  [['book', '📖'], ['cook', '👨‍🍳']],
-  [['chick', '🐤'], ['brick', '🧱'], ['sick', '🤒']],
-  [['crown', '👑'], ['clown', '🤡']],
-  [['ship', '🚢'], ['lip', '👄']],
+// Rhymes, by their vowel sound (v): easy questions take the other cards
+// from sets with another vowel, the hardest add one with the same vowel.
+const RHYME_SETS = [
+  { v: 'æ', rime: 'at', set: [['cat', '🐱'], ['hat', '🎩'], ['bat', '🦇'], ['rat', '🐀']] },
+  { v: 'æ', rime: 'an', set: [['can', '🥫'], ['man', '👨'], ['van', '🚐'], ['pan', '🍳']] },
+  { v: 'æ', rime: 'ap', set: [['cap', '🧢'], ['map', '🗺️'], ['tap', '🚰'], ['nap', '😴']] },
+  { v: 'æ', rime: 'ag', set: [['bag', '👜'], ['flag', '🚩']] },
+  { v: 'æ', rime: 'ant', set: [['ant', '🐜'], ['plant', '🌱']] },
+  { v: 'ɛ', rime: 'ed', set: [['bed', '🛏️'], ['red', '🔴'], ['sled', '🛷']] },
+  { v: 'ɛ', rime: 'en', set: [['hen', '🐔'], ['ten', '🔟'], ['pen', '🖊️']] },
+  { v: 'ɛ', rime: 'et', set: [['net', '🥅'], ['jet', '✈️']] },
+  { v: 'ɛ', rime: 'ell', set: [['bell', '🔔'], ['shell', '🐚']] },
+  { v: 'ɪ', rime: 'ing', set: [['ring', '💍'], ['king', '🤴'], ['sing', '🎤']] },
+  { v: 'ɪ', rime: 'ip', set: [['ship', '🚢'], ['lip', '👄']] },
+  { v: 'ɪ', rime: 'in', set: [['pin', '📌'], ['bin', '🗑️']] },
+  { v: 'ɪ', rime: 'ick', set: [['chick', '🐤'], ['brick', '🧱'], ['sick', '🤒']] },
+  { v: 'ɑ', rime: 'og', set: [['dog', '🐶'], ['frog', '🐸']] },
+  { v: 'ɑ', rime: 'ox', set: [['fox', '🦊'], ['box', '📦']] },
+  { v: 'ɑ', rime: 'ock', set: [['clock', '⏰'], ['lock', '🔒']] },
+  { v: 'ɑ', rime: 'op', set: [['stop', '🛑'], ['shop', '🏪']] },
+  { v: 'ʌ', rime: 'un', set: [['sun', '☀️'], ['run', '🏃'], ['one', '1️⃣']] },
+  { v: 'ʌ', rime: 'ug', set: [['bug', '🐛'], ['mug', '☕'], ['hug', '🤗'], ['plug', '🔌']] },
+  { v: 'ʌ', rime: 'uck', set: [['duck', '🦆'], ['truck', '🚚']] },
+  { v: 'ʌ', rime: 'um', set: [['drum', '🥁'], ['thumb', '👍']] },
+  { v: 'eɪ', rime: 'ake', set: [['cake', '🎂'], ['snake', '🐍'], ['lake', '🏞️']] },
+  { v: 'eɪ', rime: 'ain', set: [['train', '🚂'], ['rain', '🌧️'], ['chain', '⛓️']] },
+  { v: 'eɪ', rime: 'ate', set: [['eight', '8️⃣'], ['plate', '🍽️'], ['skate', '⛸️']] },
+  { v: 'i', rime: 'ee', set: [['bee', '🐝'], ['tree', '🌳'], ['three', '3️⃣'], ['key', '🔑']] },
+  { v: 'aɪ', rime: 'ite', set: [['kite', '🪁'], ['light', '💡'], ['night', '🌃']] },
+  { v: 'aɪ', rime: 'ice', set: [['rice', '🍚'], ['dice', '🎲'], ['ice', '🧊']] },
+  { v: 'aɪ', rime: 'ie', set: [['pie', '🥧'], ['tie', '👔'], ['butterfly', '🦋']] },
+  { v: 'oʊ', rime: 'oat', set: [['goat', '🐐'], ['boat', '⛵'], ['coat', '🧥']] },
+  { v: 'oʊ', rime: 'ose', set: [['nose', '👃'], ['rose', '🌹']] },
+  { v: 'oʊ', rime: 'one', set: [['bone', '🦴'], ['phone', '📱'], ['cone', '🍦']] },
+  { v: 'oʊ', rime: 'ow', set: [['snow', '❄️'], ['bow', '🎀']] },
+  { v: 'u', rime: 'oon', set: [['moon', '🌙'], ['spoon', '🥄'], ['balloon', '🎈'], ['raccoon', '🦝']] },
+  { v: 'u', rime: 'oo', set: [['shoe', '👟'], ['two', '2️⃣'], ['kangaroo', '🦘']] },
+  { v: 'ʊ', rime: 'ook', set: [['book', '📖'], ['cook', '👨‍🍳']] },
+  { v: 'aʊ', rime: 'ouse', set: [['mouse', '🐭'], ['house', '🏠']] },
+  { v: 'aʊ', rime: 'own', set: [['crown', '👑'], ['clown', '🤡']] },
+  { v: 'ɛr', rime: 'air', set: [['bear', '🐻'], ['pear', '🍐'], ['chair', '🪑']] },
+  { v: 'ɪr', rime: 'ear', set: [['ear', '👂'], ['deer', '🦌']] },
+  { v: 'ɑr', rime: 'ar', set: [['star', '⭐'], ['car', '🚗'], ['guitar', '🎸']] },
+  { v: 'ɔr', rime: 'oor', set: [['four', '4️⃣'], ['door', '🚪'], ['dinosaur', '🦕']] },
 ];
 
 // Short sounds for single letters inside a word, spelled the way lines
@@ -437,6 +450,8 @@ const PART_SOUNDS = {
   a: 'ah', e: 'eh', i: 'ih', o: 'aw', u: 'uh',
   b: 'buh', d: 'duh', g: 'guh', m: 'mmm', n: 'nnn', p: 'puh', t: 'tuh', x: 'ks', k: 'kuh', l: 'lll', s: 'sss', f: 'fff',
   v: 'vvv', w: 'wuh', z: 'zzz', j: 'juh', y: 'yuh',
+  // Letter pairs that say one sound, on one spelling tile.
+  sh: 'shh', ch: 'chuh', th: 'thh', ck: 'kuh', ng: 'ng', ll: 'lll', ss: 'sss',
 };
 
 // Sounds a Korean five-year-old hears as the same: Korean has one sound
@@ -459,6 +474,9 @@ LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rh
 LINES.vowel = ['Which letter goes in the middle?', 'What letter is missing in the middle?', 'Can you find the middle letter?'];
 LINES.ending = ['Which letter goes at the end?', 'What letter is missing at the end?', 'Can you find the last letter?'];
 LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'Read it all by yourself!'];
+LINES.blend = ['Listen to the sounds. Which picture is it?', 'Put the sounds together!', 'What do these sounds make?'];
+// Said by the narrator when a kind of question goes up a tier.
+LINES.levelUp = ['Level up!', 'Wow, level up!'];
 
 // ---- Unicorn Village (level 3) ----------------------------------------------
 
@@ -514,7 +532,7 @@ const SENTENCES = [
   // Body
   { s: 'I smell a flower with my {}.',    w: ['nose', '👃'],    alike: ['toes', 'note'],    other: [['cup', '🥤'], ['bus', '🚌']] },
   { s: 'I hear music with my {}.',        w: ['ears', '👂'],    alike: ['tears', 'eel'],    other: [['cake', '🎂'], ['car', '🚗']] },
-  { s: 'I clap my {} when I am happy.',   w: ['hands', '👏'],   alike: ['sand', 'hats'],    other: [['moon', '🌙'], ['milk', '🥛']] },
+  { s: 'I clap my {} when I am happy.',   w: ['hands', '✋'],   alike: ['sand', 'hats'],    other: [['moon', '🌙'], ['milk', '🥛']] },
   { s: 'I close my {} to sleep.',         w: ['eyes', '👀'],    alike: ['ice', 'pies'],     other: [['shoe', '👟'], ['cake', '🎂']] },
   { s: 'I kick the ball with my {}.',     w: ['foot', '🦶'],    alike: ['food', 'book'],    other: [['moon', '🌙'], ['cake', '🎂']] },
   // Home
@@ -543,13 +561,201 @@ const SENTENCES = [
   // Princesses and fairy tales
   { s: 'The princess wears a gold {}.',   w: ['crown', '👑'],   alike: ['clown', 'brown'],  other: [['cow', '🐄'], ['bus', '🚌']] },
   { s: 'The king lives in a big {}.',     w: ['castle', '🏰'],  alike: ['tassel', 'cattle'], other: [['cup', '🥤'], ['sock', '🧦']] },
-  { s: 'The princess wears a pink {}.',   w: ['dress', '👗'],   alike: ['desk', 'press'],   other: [['crab', '🦀'], ['drum', '🥁']] },
   { s: 'The {} breathes fire.',           w: ['dragon', '🐉'],  alike: ['wagon', 'drum'],   other: [['milk', '🥛'], ['sock', '🧦']] },
   { s: 'The prince rides a white {}.',    w: ['horse', '🐴'],   alike: ['house', 'hose'],   other: [['cake', '🎂'], ['spoon', '🥄']] },
   { s: 'The witch flies on her {}.',      w: ['broom', '🧹'],   alike: ['room', 'bloom'],   other: [['fish', '🐟'], ['egg', '🥚']] },
   { s: 'Cinderella lost her glass {}.',   w: ['shoe', '👠'],    alike: ['shop', 'two'],     other: [['cow', '🐄'], ['tree', '🌳']] },
   { s: 'The {} swims with her fish tail.', w: ['mermaid', '🧜'], alike: ['mirror', 'merry'], other: [['bus', '🚌'], ['chair', '🪑']] },
 ];
+
+// Easier and harder sentences for the tiers (TIERS below); SENTENCES above
+// are the hardest ('old'). lv 1: a 3-letter answer, the words that sound
+// alike make no sense and the other pictures are silly. lv 2: a blend or a
+// longer answer, close sounding words, and one other picture of the right
+// kind of thing.
+const SENTENCES_L1 = [
+  { lv: 1, s: 'The red {} runs in the woods.',     w: ['fox', '🦊'],  alike: ['box', 'fix'],  other: [['cup', '🥤'], ['pen', '🖊️']] },
+  { lv: 1, s: 'I put my toys in the {}.',          w: ['box', '📦'],  alike: ['fox', 'ox'],   other: [['hen', '🐔'], ['leg', '🦵']] },
+  { lv: 1, s: 'Look at the {} to find the way.',   w: ['map', '🗺️'],  alike: ['mop', 'cap'],  other: [['pig', '🐷'], ['egg', '🥚']] },
+  { lv: 1, s: 'I drink juice from my {}.',         w: ['cup', '🥤'],  alike: ['cap', 'pup'],  other: [['bed', '🛏️'], ['fox', '🦊']] },
+  { lv: 1, s: 'A bug has {} legs.',                w: ['six', '6️⃣'],  alike: ['sit', 'mix'],  other: [['hat', '🎩'], ['sun', '☀️']] },
+  { lv: 1, s: 'I have {} fingers.',                w: ['ten', '🔟'],  alike: ['tan', 'hen'],  other: [['bus', '🚌'], ['fox', '🦊']] },
+  { lv: 1, s: 'A little {} sits on the leaf.',     w: ['bug', '🐛'],  alike: ['bag', 'mug'],  other: [['bus', '🚌'], ['bed', '🛏️']] },
+  { lv: 1, s: 'I write with my {}.',               w: ['pen', '🖊️'],  alike: ['pan', 'pin'],  other: [['dog', '🐶'], ['sun', '☀️']] },
+  { lv: 1, s: 'We all ride in the {}.',            w: ['van', '🚐'],  alike: ['fan', 'man'],  other: [['cup', '🥤'], ['hat', '🎩']] },
+  { lv: 1, s: 'The {} sleeps upside down.',        w: ['bat', '🦇'],  alike: ['bag', 'hat'],  other: [['bed', '🛏️'], ['egg', '🥚']] },
+  { lv: 1, s: 'I hop on one {}.',                  w: ['leg', '🦵'],  alike: ['log', 'peg'],  other: [['cup', '🥤'], ['hat', '🎩']] },
+  { lv: 1, s: 'The squirrel eats a {}.',           w: ['nut', '🥜'],  alike: ['net', 'hut'],  other: [['bus', '🚌'], ['bed', '🛏️']] },
+  { lv: 1, s: 'A strawberry is {}.',               w: ['red', '🔴'],  alike: ['bed', 'rod'],  other: [['dog', '🐶'], ['bus', '🚌']] },
+  { lv: 1, s: 'The spider makes a {}.',            w: ['web', '🕸️'],  alike: ['wet', 'bed'],  other: [['cup', '🥤'], ['pig', '🐷']] },
+  { lv: 1, s: 'The {} flies in the sky.',          w: ['jet', '✈️'],  alike: ['net', 'jam'],  other: [['pig', '🐷'], ['bed', '🛏️']] },
+  { lv: 1, s: 'Dad cooks eggs in a {}.',           w: ['pan', '🍳'],  alike: ['pen', 'fan'],  other: [['hat', '🎩'], ['dog', '🐶']] },
+  { lv: 1, s: 'Soup comes in a {}.',               w: ['can', '🥫'],  alike: ['cat', 'fan'],  other: [['sun', '☀️'], ['leg', '🦵']] },
+  { lv: 1, s: 'The {} wags its tail.',             w: ['dog', '🐶'],  alike: ['dig', 'dot'],  other: [['cup', '🥤'], ['bus', '🚌']] },
+  { lv: 1, s: 'I put on my {} and go out.',        w: ['cap', '🧢'],  alike: ['cup', 'map'],  other: [['egg', '🥚'], ['pig', '🐷']] },
+  { lv: 1, s: 'The {} has a little chick.',        w: ['hen', '🐔'],  alike: ['ten', 'hat'],  other: [['box', '📦'], ['cup', '🥤']] },
+];
+const SENTENCES_L2 = [
+  { lv: 2, s: 'The {} jumps into the pond.',          w: ['frog', '🐸'],  alike: ['fog', 'flag'],   other: [['drum', '🥁'], ['tent', '⛺']] },
+  { lv: 2, s: 'We sleep in a {} when we go camping.', w: ['tent', '⛺'],  alike: ['ten', 'test'],   other: [['crab', '🦀'], ['house', '🏠']] },
+  { lv: 2, s: 'The {} walks sideways on the sand.',   w: ['crab', '🦀'],  alike: ['cab', 'grab'],   other: [['tent', '⛺'], ['flag', '🚩']] },
+  { lv: 2, s: 'Boom, boom! I bang my {}.',            w: ['drum', '🥁'],  alike: ['drip', 'dream'], other: [['milk', '🥛'], ['frog', '🐸']] },
+  { lv: 2, s: 'We slide down the snowy hill on a {}.', w: ['sled', '🛷'], alike: ['slid', 'bled'],  other: [['milk', '🥛'], ['hand', '✋']] },
+  { lv: 2, s: 'Cars {} at the red light.',            w: ['stop', '🛑'],  alike: ['step', 'shop'],  other: [['crab', '🦀'], ['gift', '🎁']] },
+  { lv: 2, s: 'Fish {} in the sea.',                  w: ['swim', '🏊'],  alike: ['swing', 'slim'], other: [['milk', '🥛'], ['tent', '⛺']] },
+  { lv: 2, s: 'I wave a {} at the race.',             w: ['flag', '🚩'],  alike: ['flat', 'frog'],  other: [['milk', '🥛'], ['crab', '🦀']] },
+  { lv: 2, s: 'I open my birthday {}.',               w: ['gift', '🎁'],  alike: ['lift', 'gust'],  other: [['crab', '🦀'], ['drum', '🥁']] },
+  { lv: 2, s: 'I wear a {} when I have a cold.',      w: ['mask', '😷'],  alike: ['mast', 'mass'],  other: [['frog', '🐸'], ['tent', '⛺']] },
+  { lv: 2, s: "I hold Mom's {} to cross the road.",   w: ['hand', '✋'],  alike: ['band', 'sand'],  other: [['crab', '🦀'], ['sled', '🛷']] },
+  { lv: 2, s: 'The cow gives us {}.',                 w: ['milk', '🥛'],  alike: ['silk', 'mint'],  other: [['egg', '🥚'], ['drum', '🥁']] },
+  { lv: 2, s: 'A {} is green and has spikes.',        w: ['cactus', '🌵'], alike: ['catch', 'cats'], other: [['frog', '🐸'], ['milk', '🥛']] },
+  { lv: 2, s: 'I carry apples in a {}.',              w: ['basket', '🧺'], alike: ['blanket', 'biscuit'], other: [['frog', '🐸'], ['drum', '🥁']] },
+  { lv: 2, s: 'The {} sticks to the fridge.',         w: ['magnet', '🧲'], alike: ['magic', 'market'], other: [['crab', '🦀'], ['milk', '🥛']] },
+  { lv: 2, s: 'The {} blasts off to the moon.',       w: ['rocket', '🚀'], alike: ['pocket', 'racket'], other: [['milk', '🥛'], ['bus', '🚌']] },
+  { lv: 2, s: 'We carve a {} for Halloween.',         w: ['pumpkin', '🎃'], alike: ['pumping', 'napkin'], other: [['sled', '🛷'], ['crab', '🦀']] },
+  { lv: 2, s: 'I wear a {} when I ride my bike.',     w: ['helmet', '⛑️'], alike: ['hammer', 'hello'], other: [['milk', '🥛'], ['frog', '🐸']] },
+  { lv: 2, s: 'The little {} says cheep, cheep.',     w: ['chick', '🐤'], alike: ['check', 'chin'], other: [['drum', '🥁'], ['frog', '🐸']] },
+  { lv: 2, s: 'I find a pretty {} at the beach.',     w: ['shell', '🐚'], alike: ['shelf', 'smell'], other: [['milk', '🥛'], ['sled', '🛷']] },
+  { lv: 2, s: 'The big {} carries the sand.',         w: ['truck', '🚚'], alike: ['track', 'trick'], other: [['chick', '🐤'], ['milk', '🥛']] },
+  { lv: 2, s: 'The {} says tick tock.',               w: ['clock', '⏰'], alike: ['click', 'block'], other: [['frog', '🐸'], ['bell', '🔔']] },
+  { lv: 2, s: 'I paint a picture with a {}.',         w: ['brush', '🖌️'], alike: ['bush', 'blush'], other: [['crab', '🦀'], ['milk', '🥛']] },
+  { lv: 2, s: 'The big {} sails on the sea.',         w: ['ship', '🚢'], alike: ['shop', 'chip'],  other: [['truck', '🚚'], ['drum', '🥁']] },
+  { lv: 2, s: 'The {} grows in a pot.',               w: ['plant', '🌱'], alike: ['plan', 'pants'], other: [['drum', '🥁'], ['crab', '🦀']] },
+  { lv: 2, s: 'I put on my {} and my shirt.',         w: ['pants', '👖'], alike: ['plants', 'ants'], other: [['frog', '🐸'], ['clock', '⏰']] },
+  { lv: 2, s: 'The princess wears a pink {}.',       w: ['dress', '👗'], alike: ['desk', 'press'],  other: [['crab', '🦀'], ['drum', '🥁']] },
+  { lv: 2, s: 'I ring the {}. Ding, dong!',           w: ['bell', '🔔'], alike: ['ball', 'belt'],  other: [['milk', '🥛'], ['frog', '🐸']] },
+];
+
+// ---- Word bank and difficulty (js/quiz.js) ---------------------------------
+
+// More first letters for the town's letter questions (no houses: E, O,
+// K, V, W and Z). K says the same sound as C, so no question shows both.
+const LETTERS_MORE = [
+  { letter: 'E', sound: 'eh',  color: '#7ab8ff', words: [['egg', '🥚'], ['elephant', '🐘'], ['elf', '🧝'], ['envelope', '✉️']] },
+  { letter: 'O', sound: 'aw',  color: '#ffa94d', words: [['octopus', '🐙'], ['ox', '🐂'], ['otter', '🦦']] },
+  { letter: 'K', sound: 'kuh', color: '#c78bff', words: [['king', '🤴'], ['key', '🔑'], ['kangaroo', '🦘'], ['koala', '🐨'], ['kiwi', '🥝'], ['kite', '🪁']] },
+  { letter: 'V', sound: 'vvv', color: '#6fd3a8', words: [['van', '🚐'], ['violin', '🎻'], ['volcano', '🌋'], ['vest', '🦺']] },
+  { letter: 'W', sound: 'wuh', color: '#5fb0e8', words: [['watermelon', '🍉'], ['wolf', '🐺'], ['web', '🕸️'], ['watch', '⌚'], ['whale', '🐳']] },
+  { letter: 'Z', sound: 'zzz', color: '#ff9fb0', words: [['zebra', '🦓'], ['zero', '0️⃣']] },
+];
+LETTERS.push(...LETTERS_MORE);
+
+// Other names a child may use for a picture, so a wrong card is never
+// right by her own name for it (🦍 is "monkey" to her: not a wrong M).
+const ALIAS = {
+  gorilla: ['monkey'], alligator: ['crocodile'], rabbit: ['bunny'], gift: ['present'], nut: ['peanut'], dolphin: ['fish'],
+  net: ['goal'], notebook: ['book'], boat: ['ship'], taxi: ['car'], rose: ['flower'], noodles: ['ramen'], arrow: ['bow'],
+  rooster: ['chicken', 'hen'], ladybug: ['bug'], panda: ['bear'], lollipop: ['candy'], newspaper: ['paper'], tiger: ['cat'],
+  ambulance: ['car'], mountain: ['hill'], heart: ['love'], penguin: ['bird'], duck: ['bird'], hen: ['chicken'], cap: ['hat'],
+  van: ['car', 'bus'], bug: ['worm'], web: ['spider'], mom: ['lady'], rat: ['mouse'], tub: ['bath'], tap: ['water'],
+  mug: ['cup', 'coffee'], jet: ['airplane', 'plane'], kid: ['boy', 'girl'], lip: ['mouth'], pan: ['egg'], nap: ['sleep'],
+  sad: ['cry'], ox: ['cow'], grin: ['smile'], drip: ['water'], ship: ['boat'], king: ['prince'], shop: ['store'],
+  chick: ['bird'], brick: ['wall'], helmet: ['hat'], laptop: ['computer'], tennis: ['ball'], backpack: ['bag'],
+  drumstick: ['chicken'], koala: ['bear'], otter: ['beaver'], kangaroo: ['animal'],
+};
+
+// Words for the tiers, each [word, picture, pic, parts?]. pic 2: the
+// picture alone names the word (safe where the picture is the answer:
+// read, blend, findStart); pic 1: fine beside the written or spoken word.
+// `parts` are its sounds (sh, ck... are one) or, for long words, its
+// syllables. Every letter says its usual sound.
+// First 3-letter words: very common, clear pictures.
+const CVC_A1 = [
+  ['cat', '🐱', 2], ['dog', '🐶', 2], ['pig', '🐷', 2], ['sun', '☀️', 2], ['bus', '🚌', 2], ['hat', '🎩', 2],
+  ['bed', '🛏️', 2], ['box', '📦', 2], ['fox', '🦊', 2], ['hen', '🐔', 2], ['map', '🗺️', 2], ['cup', '🥤', 1],
+  ['man', '👨', 1], ['six', '6️⃣', 2], ['ten', '🔟', 2], ['bug', '🐛', 2], ['pen', '🖊️', 2], ['van', '🚐', 2],
+];
+// The other 3-letter words.
+const CVC_A2 = [
+  ['bat', '🦇', 2], ['cap', '🧢', 2], ['bag', '👜', 2], ['can', '🥫', 2], ['leg', '🦵', 2], ['nut', '🥜', 2],
+  ['red', '🔴', 1], ['web', '🕸️', 2], ['mom', '👩', 1], ['pin', '📌', 1], ['rat', '🐀', 1], ['tub', '🛁', 1],
+  ['tap', '🚰', 1], ['mug', '☕', 1], ['jet', '✈️', 1], ['net', '🥅', 1], ['kid', '🧒', 1], ['lip', '👄', 1],
+  ['pan', '🍳', 1], ['gas', '⛽', 1], ['run', '🏃', 1], ['nap', '😴', 1], ['sad', '😢', 1], ['yum', '😋', 1],
+];
+// Blends: two letters first (frog) or last (milk).
+const CCVC = [
+  ['frog', '🐸', 2], ['flag', '🚩', 2], ['crab', '🦀', 2], ['drum', '🥁', 2], ['sled', '🛷', 2], ['stop', '🛑', 2],
+  ['swim', '🏊', 2], ['plug', '🔌', 1], ['clip', '📎', 1], ['clap', '👏', 1], ['grin', '😁', 1], ['drip', '💧', 1],
+];
+const CVCC = [
+  ['milk', '🥛', 2], ['tent', '⛺', 2], ['gift', '🎁', 2], ['hand', '✋', 2], ['mask', '😷', 2], ['golf', '🏌️', 1],
+  ['fist', '✊', 1], ['wind', '🌬️', 1], ['vest', '🦺', 1],
+];
+// Five or more letters: one syllable with blends at both ends, or two
+// short syllables (spelled one syllable at a time).
+const LONG = [
+  ['plant', '🌱', 2], ['pants', '👖', 2], ['cactus', '🌵', 2, ['cac', 'tus']], ['basket', '🧺', 2, ['bas', 'ket']],
+  ['magnet', '🧲', 2, ['mag', 'net']], ['laptop', '💻', 2, ['lap', 'top']], ['helmet', '⛑️', 1, ['hel', 'met']],
+  ['rabbit', '🐰', 2, ['rab', 'bit']], ['tennis', '🎾', 1, ['ten', 'nis']], ['sunset', '🌇', 1, ['sun', 'set']],
+  ['pumpkin', '🎃', 2, ['pump', 'kin']], ['hotdog', '🌭', 2, ['hot', 'dog']], ['trumpet', '🎺', 2, ['trum', 'pet']],
+];
+// Letter pairs that say one sound (sh, ch, ck, ll, ss, ng): one tile each.
+const DIGRAPH = [
+  ['fish', '🐟', 2, ['f', 'i', 'sh']], ['ship', '🚢', 2, ['sh', 'i', 'p']], ['duck', '🦆', 2, ['d', 'u', 'ck']],
+  ['sock', '🧦', 2, ['s', 'o', 'ck']], ['lock', '🔒', 2, ['l', 'o', 'ck']], ['bell', '🔔', 2, ['b', 'e', 'll']],
+  ['ring', '💍', 2, ['r', 'i', 'ng']], ['king', '🤴', 2, ['k', 'i', 'ng']], ['shop', '🏪', 1, ['sh', 'o', 'p']],
+  ['chick', '🐤', 2, ['ch', 'i', 'ck']], ['shell', '🐚', 2, ['sh', 'e', 'll']], ['clock', '⏰', 2, ['c', 'l', 'o', 'ck']],
+  ['truck', '🚚', 2, ['t', 'r', 'u', 'ck']], ['brick', '🧱', 2, ['b', 'r', 'i', 'ck']], ['brush', '🖌️', 1, ['b', 'r', 'u', 'sh']],
+  ['dress', '👗', 2, ['d', 'r', 'e', 'ss']], ['chess', '♟️', 1, ['ch', 'e', 'ss']],
+  ['rocket', '🚀', 2, ['r', 'o', 'ck', 'e', 't']], ['ticket', '🎫', 1, ['t', 'i', 'ck', 'e', 't']],
+  ['shrimp', '🦐', 2, ['sh', 'r', 'i', 'm', 'p']], ['sandwich', '🥪', 2, ['s', 'a', 'n', 'd', 'w', 'i', 'ch']],
+  ['backpack', '🎒', 2, ['b', 'a', 'ck', 'p', 'a', 'ck']], ['chopstick', '🥢', 2, ['ch', 'o', 'p', 's', 't', 'i', 'ck']],
+  ['lipstick', '💄', 2, ['l', 'i', 'p', 's', 't', 'i', 'ck']], ['drumstick', '🍗', 1, ['d', 'r', 'u', 'm', 's', 't', 'i', 'ck']],
+];
+// Words that differ in one sound, all with pictures, for the hardest tiers.
+const MINIMAL_SETS = [
+  ['pan', 'pen', 'pin'], ['bag', 'bug'], ['cap', 'cup'], ['net', 'nut'],
+  ['cat', 'hat', 'bat', 'rat'], ['can', 'man', 'van', 'pan'], ['hen', 'pen', 'ten'], ['box', 'fox'], ['bug', 'mug'],
+  ['map', 'cap', 'tap'], ['bed', 'red'], ['cat', 'cap', 'can'], ['bat', 'bag'], ['pin', 'pig'], ['map', 'man'],
+  ['bus', 'bug'],
+];
+
+// ---- Difficulty ---------------------------------------------------------------
+
+// Each kind of question has tiers, easiest first (js/quiz.js). A tier sets:
+//   n         how many cards
+//   pics      pictures on word cards
+//   far       other cards far from the answer (another first letter or vowel)
+//   near      one other card she finds hard to tell apart (HARD_PAIRS)
+//   sound     the letter's pure sound is said with the question ("/k/")
+//   single    first-sound words start with one consonant (no tr, sn...)
+//   lower     lower-case letter cards
+//   sameVowel a rhyme card with the same vowel (sun, drum)
+//   words     which word list (see Quiz bank in js/quiz.js)
+//   minimal   cards are words that differ in one sound (MINIMAL_SETS)
+//   lv        sentence level: 1, 2 or 'old' (SENTENCES)
+// Spelling: `extra` letter tiles beside the word's own, `vowelFoil` one of
+// them a vowel, `firstGiven` the first letter is already in, `noX` no x
+// words, `setting` only when the parent panel turns it on.
+const SPELL_TIERS = [
+  { words: 'CVC_A1', extra: 1, firstGiven: true, noX: true }, // 1: c _ _ given, 4 tiles
+  { words: 'CVC', extra: 2, vowelFoil: true },                 // 2: 3 letters, 5 tiles
+  { words: 'DIGRAPH4', extra: 3, vowelFoil: true },            // 3: fish, duck, bell: sh, ck, ll on one tile
+  { words: 'BLEND4', extra: 3, vowelFoil: true },              // 4: frog, milk: 4 letters
+  { words: 'ONE5', extra: 3, vowelFoil: true },                // 5: plant, truck, shell
+  { words: 'TWO', extra: 3, vowelFoil: true, near: true, setting: 'twoSyllables' }, // 6: rab-bit, rock-et
+];
+const TIERS = {
+  word:      [{ n: 2, pics: true, far: true }, { n: 3, pics: true }, { n: 3 }, { n: 3, near: true }],
+  start:     [{ n: 2, far: true, sound: true, single: true }, { n: 3, sound: true }, { n: 3 }, { n: 3, near: true, lower: true }],
+  findStart: [{ n: 2, far: true, sound: true, single: true }, { n: 3, sound: true }, { n: 3, near: true }],
+  rhyme:     [{ n: 2 }, { n: 3 }, { n: 3, sameVowel: true }],
+  family:    [{ n: 3, pics: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 4, words: 'FAM' }, { n: 4, minimal: true }],
+  vowel:     [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],
+  ending:    [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],
+  read:      [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
+  blend:     [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
+  sentence:  [{ n: 2, lv: 1, pics: true }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old' }],
+  meaning:   [{ n: 2, lv: 1 }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old' }],
+  spell:     SPELL_TIERS,
+};
+// The highest tier each place asks (every place starts at tier 1).
+const TIER_BAND = { town: [1, 4], house: [1, 4], forest: [1, 4], unicorn: [1, 3], dungeon: [1, 4], fairy: [1, 6] };
+// Up a tier after 5 right first tries of the last 6 at it (or the first 3
+// in a row, before her first miss of that kind); down after 2 misses in a
+// row. After a miss the next one is a tier easier, and every 4th question
+// is from the tier below; those two don't count.
+const SKILL = { window: 6, promoteAt: 5, placementRun: 3, demoteAfter: 2, reviewEvery: 4 };
 
 QUIZ_TYPES.unicorn = ['sentence', 'meaning'];
 
@@ -670,11 +876,6 @@ const FAIRIES = {
 DEFAULT_OUTFIT.fairy = 'none';
 DEFAULT_BOY_OUTFIT.fairy = 'none';
 
-// Spelling questions use short words whose letters each say their own sound
-// (c-a-t, f-r-o-g), taken from the word lists above so their recordings
-// exist. She picks from at least this many letter tiles.
-const SPELL_TILES = 6;
-
 // Fairy dust: every right answer in the Fairy Village gives between these
 // two amounts. What it buys is still to be decided; for now it is saved.
 const FAIRY_DUST = [2, 4];
@@ -709,7 +910,8 @@ Object.assign(PERSONA, {
   sunny:      ['Good morning, {title} {name}! I bring the sunshine.', 'Hello, sunshine! I have a sparkly word for you.', "Yay, a visitor! Let's spell together!"],
 });
 
-QUIZ_TYPES.fairy = ['spell'];
+// Spelling twice, so it comes up most; reading and blending are easier.
+QUIZ_TYPES.fairy = ['spell', 'read', 'spell', 'blend'];
 
 LINES.spell = ['Can you spell it?', 'Spell the word you hear!', 'Tap the letters in order.', 'Which letters make this word?', "Let's spell it together!"];
 LINES.fairyland = ['Welcome to the Fairy Village!', 'Look, the flowers are giant here!', 'Sparkle, sparkle! The fairies are waiting for you.'];

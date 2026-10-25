@@ -248,6 +248,7 @@ const Sound = (() => {
       }[name];
       if (t) notes(t[0], t[1], 0.05);
     },
+    levelUp: () => notes([[392, 0, 0.12], [523, 0.12, 0.12], [659, 0.24, 0.12], [784, 0.36, 0.2], [1047, 0.56, 0.18], [1319, 0.74, 0.6]], 'triangle', 0.08),
     toggleMute() {
       muted = !muted;
       if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); if (player) player.pause(); }

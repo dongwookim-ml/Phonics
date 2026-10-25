@@ -11,9 +11,9 @@ const root = path.join(__dirname, '..');
 // Content constants read from js/data.js (and, for the robot edition, the
 // js/captain-*.js files, which change those tables and add their own).
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
-  'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'SENTENCES', 'FOREST_STARS',
+  'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
-  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS', 'PART_SOUNDS'];
+  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS'];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -55,17 +55,32 @@ function collect(D) {
   const flat = v => (typeof v === 'string' ? partShow.push(v) : Object.values(v).forEach(flat));
   if (D.LINES.partShow) flat(D.LINES.partShow);
 
-  // Who asks what: town and house folk, forest folk, unicorn village folk
-  // and the cave monsters, who ask the same sentence questions.
+  // Who asks what: each place's people ask that place's kinds of question
+  // (QUIZ_TYPES); the cave monsters ask the Unicorn Village's.
   const town = new Set([...D.TOWN_NPCS.map(n => n.look), ...D.TOWN_HOUSES.map(h => h.look), 'king', 'queen', 'maid',
     ...D.CASTLE_UP_NPCS.map(n => n.look), ...(D.CAPTAIN_HQ_NPCS || []).map(n => n.look)]);
   const forest = new Set(D.FOREST_NPCS.map(n => n.look));
   const unicorn = new Set([...D.UNICORN_NPCS, ...D.DUNGEON_NPCS].map(n => n.look));
   const monsters = new Set(D.DUNGEON_NPCS.map(n => n.look));
   const fairies = new Set(D.FAIRY_NPCS.map(n => n.look));
-  const letterWords = D.LETTERS.flatMap(l => l.words.map(([w]) => w));
-  const rhymeWords = D.RHYMES.flat().map(([w]) => w);
-  const famWords = D.WORD_FAMILIES.flat().map(([w]) => w);
+  const kindsOf = look => new Set([].concat(town.has(look) ? D.QUIZ_TYPES.town.concat(D.QUIZ_TYPES.house) : [],
+    forest.has(look) ? D.QUIZ_TYPES.forest : [], unicorn.has(look) ? D.QUIZ_TYPES.unicorn : [], fairies.has(look) ? D.QUIZ_TYPES.fairy : []));
+  const first = list => list.map(([w]) => w);
+  const cvc = first(D.CVC_A1.concat(D.CVC_A2));
+  const sentences = D.SENTENCES.concat(D.SENTENCES_L1, D.SENTENCES_L2);
+  // The lines each kind of question says in the asker's voice (js/quiz.js),
+  // and the words it says in that voice (`voiced`).
+  const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
+    ending: ['ending'], read: ['read'], blend: ['blend'], sentence: ['sentence'], meaning: ['meaning', 'silly'], spell: ['spell'] };
+  const kindWords = {
+    word: D.LETTERS.flatMap(l => first(l.words)),
+    start: D.LETTERS.flatMap(l => first(l.words)),
+    rhyme: D.RHYME_SETS.flatMap(r => first(r.set)),
+    family: cvc.concat(first(D.WORD_FAMILIES.flat()), D.MINIMAL_SETS.flat()),
+    vowel: cvc,
+    ending: cvc,
+    spell: cvc.concat(first(D.CCVC), first(D.CVCC), first(D.LONG), first(D.DIGRAPH)),
+  };
   for (const [look, style] of Object.entries(D.VOICES)) {
     const v = style.tts;
     if (!v) continue;
@@ -73,11 +88,18 @@ function collect(D) {
     // Praise, the hints after a miss and the answer shown after a second one
     // (choose in js/game.js), and the present.
     lines(v, ['praise', 'listen', 'showMe', 'tapIt', 'soon', 'again', 'next', 'gift', 'yes', 'keep']);
-    if (town.has(look)) lines(v, ['ask', 'firstSound', 'findStart', 'rhyme', 'rhymeEnd']);
-    if (forest.has(look)) lines(v, ['ask2', 'vowel', 'ending', 'read', 'rhyme', 'rhymeEnd']);
-    if (unicorn.has(look)) {
-      lines(v, ['sentence', 'meaning', 'newUnicorn', 'silly']);
-      for (const x of D.SENTENCES) {
+    const kinds = kindsOf(look);
+    const asks = new Set();
+    for (const k of kinds) {
+      lines(v, kindLines[k]);
+      for (const w of kindWords[k] || []) asks.add(w);
+    }
+    // The word in each question, said by whoever asks it (`voiced` in quiz.js).
+    for (const w of asks) add(v, w, 0.85);
+    // "Which one starts with C?", the letter said by its name (letter houses).
+    if (kinds.has('findStart')) for (const lead of D.LINES.findStart) for (const h of D.TOWN_HOUSES) add(v, `${lead} ${h.letter}?`);
+    if (kinds.has('sentence') || kinds.has('meaning')) {
+      for (const x of sentences) {
         const [before, after] = x.s.split('{}');
         add(v, before + x.w[0] + after, 0.85);
         add(v, before, 0.85);
@@ -85,16 +107,9 @@ function collect(D) {
       }
       add(v, 'hmm, hmm', 0.85);
     }
-    // The word in each question, said by whoever asks it (`voiced` in quiz.js).
-    const asks = new Set();
-    if (town.has(look)) for (const w of letterWords.concat(rhymeWords)) asks.add(w);
-    // "Which one starts with C?", the letter said by its name.
-    if (town.has(look)) for (const lead of D.LINES.findStart) for (const l of D.LETTERS) add(v, `${lead} ${l.letter}?`);
-    if (forest.has(look)) for (const w of famWords.concat(rhymeWords)) asks.add(w);
-    if (fairies.has(look)) for (const w of letterWords.concat(famWords)) if (/^[a-z]{3,4}$/.test(w)) asks.add(w);
-    for (const w of asks) add(v, w, 0.85);
+    if (unicorn.has(look)) lines(v, ['newUnicorn']);
     if (monsters.has(look)) lines(v, ['caught'].concat(D.CAVE_LINES ? D.CAVE_LINES.villain : []));
-    if (fairies.has(look)) lines(v, ['spell', 'newFairy']);
+    if (fairies.has(look)) lines(v, ['newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'soldOut']);
     // Anyone who gives presents (not the cave villains), and the shop.
     const gives = town.has(look) || forest.has(look) || fairies.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
@@ -115,8 +130,9 @@ function collect(D) {
   const words = new Set();
   for (const l of D.LETTERS) for (const [w] of l.words) words.add(w);
   for (const f of D.WORD_FAMILIES) for (const [w] of f) words.add(w);
-  for (const r of D.RHYMES) for (const [w] of r) words.add(w);
-  for (const x of D.SENTENCES) { words.add(x.w[0]); x.alike.forEach(w => words.add(w)); x.other.forEach(([w]) => words.add(w)); }
+  for (const r of D.RHYME_SETS) for (const [w] of r.set) words.add(w);
+  for (const list of [D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH]) for (const [w] of list) words.add(w);
+  for (const x of sentences) { words.add(x.w[0]); x.alike.forEach(w => words.add(w)); x.other.forEach(([w]) => words.add(w)); }
   // Words said when she taps a thing on the map (js/touch.js).
   for (const w of D.PROP_WORDS) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
@@ -132,8 +148,10 @@ function collect(D) {
     add(N, `/${l}/`, 0.8);
     add(N, `${l.toUpperCase()} says ${s}.`);
   }
-  lines(N, (D.CAVE_LINES && D.CAVE_LINES.narrator) || []);
-  for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
+  // Letter pairs with one sound (sh, ck...) on spelling tiles.
+  for (const g of Object.keys(D.PART_SOUNDS)) if (g.length > 1) add(N, `/${g}/`, 0.8);
+  lines(N, ['levelUp'].concat((D.CAVE_LINES && D.CAVE_LINES.narrator) || []));
+  for (const r of D.RHYME_SETS) for (const [a] of r.set) for (const [b] of r.set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
   for (const t of partShow) add(N, t);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
