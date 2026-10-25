@@ -242,6 +242,7 @@ function parentStats() {
       ${tile('⭐', '별', state.stars)}${tile('🪙', '코인', state.coins | 0)}${isCaptain() ? tile('⚡', '배터리', state.dust | 0) : tile('✨', '요정의 가루', state.dust | 0)}
       ${tile('📝', '답한 횟수', answers)}${tile('✅', '맞힌 문제', solvedCount)}
     </div>
+    <p class="parent-note parent-quests">${parentEsc(questParentLine())}</p>
     <h3>문제 유형별 진행도</h3>
     <p class="parent-note">단계: 쉬운 문제부터 시작해서, 잘 맞히면 올라가고 연달아 틀리면 내려가요. − / + 로 직접 바꿀 수 있어요.</p>
     <div class="parent-legend"><span class="sw right"></span>맞힘<span class="sw wrong"></span>틀림 (아직 못 맞힘)<span class="sw untried"></span>안 해봄<span class="note">정답률 = 한 번에 맞힌 비율</span></div>

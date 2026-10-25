@@ -199,9 +199,21 @@ const Progress = (() => {
     }
     return out;
   }
+  // Today's quests (js/quest.js): the later day, whole. On the same day each
+  // tablet's counts take the larger (each tablet only adds to its own), the
+  // picks come from the copy that is preferred, and the chest is open if it
+  // was opened on either.
+  function joinQuests(a, b) {
+    const ok = x => isObj(x) && typeof x.day === 'string';
+    if (!ok(a) || !ok(b)) return ok(a) ? a : ok(b) ? b : join(a, b);
+    if (a.day !== b.day) return a.day > b.day ? a : b;
+    const got = maxMap(isObj(a.got) ? a.got : {}, isObj(b.got) ? b.got : {});
+    const picks = Array.isArray(a.picks) && a.picks.length ? a.picks : b.picks;
+    return Object.assign({}, b, a, { picks, got, chest: a.chest === true || b.chest === true });
+  }
   // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
   // js/guide.js) only ever grow, so the larger wins.
-  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow };
+  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests };
   // The outfit, name and settings come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];

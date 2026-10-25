@@ -150,10 +150,10 @@ function load(raw) {
     // Stars, coins and dust are also counted per device (js/progress.js).
     return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
       skill, settings, friends: s.friends || {}, guide: firstSteps, playtime: s.playtime || {},
-      stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0 };
+      stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
   } catch (e) {
     return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: true, history: {}, books: {},
-      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0 };
+      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0, quests: null };
   }
 }
 
@@ -182,7 +182,7 @@ function save() {
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
   const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
-    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts }, Progress.count(state));
+    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -194,7 +194,7 @@ function save() {
 function applyProgress(s) {
   const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
   Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures,
-    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts });
+    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests });
   const ride = state.outfit.ride;
   state.worn = PLAYER.look;
   state.outfit = p.outfit;
@@ -234,6 +234,7 @@ const state = {
   stickers: saved.stickers || {}, // the word album: { [word]: { e, n, at, new } } (js/album.js)
   medals: saved.medals || {}, // { 'house:C' or 'village:forest': when }
   gifts: saved.gifts | 0, // pips on the gift meter
+  quests: saved.quests, // today's adventures: { day, picks, got, chest } (js/quest.js)
   combo: 0, // answers right the first time in a row, this visit
   pictures: saved.pictures,
   friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: n } (js/friend.js)
@@ -399,6 +400,7 @@ function enterDoor(door) {
     const info = door.obj.info;
     changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? '공방' : '집'}`);
     Sound.say([{ text: line('house', { letter: info.letter }) }]);
+    questAdd('house'); // today's adventures (js/quest.js)
   } else {
     changeScene(door.target);
   }
@@ -654,12 +656,14 @@ function answeredRight(q, btn) {
     return;
   }
   const full = !q.misses && fillGiftMeter();
+  if (full) questAdd('gift');
   const gift = full && hasNewGift(npc);
   if (full && !gift) later(700, stickerPack);
   const close = () => { if (state.question === q) closeDialog(); };
   Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
   if (npc.level === 5 && !q.misses) addDust();
   const before = state.stars++;
+  questAdd('stars');
   state.answered++;
   save();
   renderStars(true);
@@ -910,10 +914,12 @@ function renderStars(pop) {
   renderCoins(false);
   renderDust(false);
   renderAlbumHud();
+  renderQuestHud();
 }
 
 function followLink(link) {
   Sound.door();
+  questVisit(link.target); // a quest to go there (js/quest.js)
   if (link.target === 'yuna') {
     changeScene('yuna', null, place('room'));
     Sound.say([{ text: line('room') }]);
@@ -1290,6 +1296,7 @@ function addDust() {
   const [lo, hi] = FAIRY_DUST;
   const n = lo + Math.floor(Math.random() * (hi - lo + 1));
   state.dust += n;
+  questAdd('dust', n);
   renderDust(true);
   showPlace(isCaptain() ? `⚡ 배터리 ${n}개!` : `✨ 요정의 가루 ${n}개!`);
 }

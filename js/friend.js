@@ -250,6 +250,7 @@ function feedOnce() {
   }
   state.dust--;
   state.friends[key] = friendFed(key) + 1;
+  questAdd('feed'); // today's adventures (js/quest.js)
   friendUi.flies.push({ t0: now, side: Math.random() < 0.5 ? -1 : 1 });
   renderDust(true);
   Sound.tune('clink');

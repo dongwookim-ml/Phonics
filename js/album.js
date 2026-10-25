@@ -162,6 +162,7 @@ function collectSticker(q, from) {
   const st = had || (state.stickers[s.w] = { e: s.e, n: 0, at: Date.now(), new: true });
   st.n++;
   if (had) { albumBump(); return; }
+  questAdd('sticker'); // a new one for today's adventures (js/quest.js)
   stickerFly([s], from && from.getBoundingClientRect());
   save();
 }

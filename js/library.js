@@ -196,6 +196,7 @@ function bookPlayButton() {
 function bookFinish() {
   const log = bookLog(library.book.id);
   log.read++;
+  questAdd('book'); // today's adventures (js/quest.js)
   save();
   library.mode = 'quiz';
   library.playing = false;

@@ -1,6 +1,7 @@
 // Unit checks of the save merge (js/progress.js), in Node, no browser:
 // two devices on the new format, an older game version (no fmt) on either
-// side, a guest's progress joining an account, editions, unknown fields.
+// side, a guest's progress joining an account, editions, today's quests,
+// unknown fields.
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -122,6 +123,24 @@ const C = device('captain', 'dC');
   check('guest → login: into an account an older version saved, also in full', A.merge(guest, oldAcct, 'foreign').stars === 52);
   const newGuest = play(A, { edition: 'princess' }, 5, 0);
   check('guest → login: a guest on this device and this device\'s own count in the account add up', A.merge(newGuest, play(A, { edition: 'princess' }, 2, 0), 'foreign').stars === 7);
+}
+
+// ---- Today's quests (js/quest.js) ------------------------------------------------
+{
+  const day = (d, x) => Object.assign({ day: d, picks: ['stars', 'fish', 'house'], got: {}, chest: false }, x);
+  const ed = quests => ({ edition: 'princess', quests });
+  const m1 = A.merge(ed(day('2026-10-24', { chest: true, got: { dA: { stars: 5 } } })), ed(day('2026-10-25')), 'mine');
+  check('quests: the later day wins whole (yesterday\'s chest and counts stay behind)', m1.quests.day === '2026-10-25' && m1.quests.chest === false && !m1.quests.got.dA, m1.quests);
+  const a = day('2026-10-25', { got: { dA: { stars: 3, fish: 1 } } });
+  const b = day('2026-10-25', { picks: ['gift', 'book', 'forest'], got: { dA: { stars: 2 }, dB: { stars: 2, fish: 2 } }, chest: true });
+  const m2 = A.merge(ed(a), ed(b), 'mine');
+  const g = m2.quests.got;
+  check('quests: same day: each tablet\'s counts take the larger, kept apart so they add up', g.dA.stars === 3 && g.dA.fish === 1 && g.dB.stars === 2 && g.dB.fish === 2, g);
+  check('quests: same day: the chest is open if it was opened on either', m2.quests.chest === true && A.merge(ed(b), ed(a), 'theirs').quests.chest === true);
+  check('quests: same day: the picks come from the copy that is preferred', m2.quests.picks.join() === 'stars,fish,house' && A.merge(ed(a), ed(b), 'theirs').quests.picks.join() === 'gift,book,forest');
+  check('quests: merging again, either way round, changes nothing', A.same(A.merge(m2, ed(b), 'mine'), m2) && A.same(A.merge(ed(b), m2, 'theirs'), m2));
+  check('quests: a copy without them (an older version of the game) keeps them', A.merge(ed(a), { edition: 'princess', stars: 1 }, 'mine').quests.got.dA.stars === 3 && A.merge({ edition: 'princess' }, ed(b), 'mine').quests.chest === true);
+  check('quests: no picks on one side: the other side\'s', A.merge(ed(day('2026-10-25', { picks: [] })), ed(b), 'mine').quests.picks.join() === 'gift,book,forest');
 }
 
 // ---- Fields this version doesn't know, and broken entries ---------------------------

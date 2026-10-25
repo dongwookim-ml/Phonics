@@ -969,6 +969,39 @@ LINES.nudge = ['{title} {name}, over here!'];
 // The play-time limit in the parent panel: the town goes to sleep.
 LINES.sleep = ['Time to rest! See you tomorrow.'];
 
+// ---- Today's adventures and the treasure chest (M3, js/quest.js) ---------------
+
+// Three little quests a day, one from each group (answering, playing,
+// going somewhere), picked among the ones she can do with what is open.
+// Each is a picture and `n` dots she fills: stars she earns, fish she
+// catches, stickers new to her album, fairy dust she earns, letter houses
+// she goes into... counted from what she does that day. `stars` keeps a
+// quest back until that many stars open its gate; a quest with `place` is
+// going through that gate, and shows the place's own picture. `word` is
+// said when she taps the picture (only once it is recorded). The robot
+// edition has boxes, batteries, workshops and its own villages.
+const QUESTS = {
+  stars:   { group: 'learn', icon: '⭐', n: 5, word: 'star' },
+  gift:    { group: 'learn', icon: '🎁', n: 1, word: 'gift' },
+  sticker: { group: 'learn', icon: '📒', n: 2 },
+  dust:    { group: 'learn', icon: isCaptain() ? '⚡' : '✨', n: 5, stars: FAIRY_STARS },
+  fish:    { group: 'play', icon: isCaptain() ? '📦' : '🐟', n: 3, word: isCaptain() ? 'box' : 'fish' },
+  book:    { group: 'play', icon: '📖', n: 1, word: 'book' },
+  feed:    { group: 'play', icon: isCaptain() ? '🤖' : '🧚', n: 1, word: isCaptain() ? 'robot' : 'fairy' }, // shows her friend itself
+  house:   { group: 'go', icon: isCaptain() ? '🔧' : '🏠', n: 1, word: isCaptain() ? null : 'house' },
+  forest:  { group: 'go', place: true, n: 1, stars: FOREST_STARS, word: isCaptain() ? 'dinosaur' : 'tree' },
+  fairy:   { group: 'go', place: true, n: 1, stars: FAIRY_STARS, word: isCaptain() ? 'drone' : 'fairy' },
+  unicorn: { group: 'go', place: true, n: 1, stars: UNICORN_STARS, word: isCaptain() ? 'car' : 'unicorn' },
+  dungeon: { group: 'go', place: true, n: 1, stars: DUNGEON_STARS, word: isCaptain() ? null : 'crystal' },
+};
+// The chest opens once a day, when all three are done. A day she doesn't
+// play changes nothing: no streak, nothing lost.
+const QUEST_CHEST = { coins: 5 };
+// The narrator: the card opens, all three are done, the chest opens.
+LINES.questHello = isCaptain() ? ["Here are today's missions!"] : ["Here are today's adventures!"];
+LINES.questReady = ['All done! Open the treasure chest!'];
+LINES.questChest = isCaptain() ? ['Mission complete! Coins for you!'] : ['You found the treasure! Coins for you!'];
+
 // ---- Village homes -----------------------------------------------------------
 
 // Every home in the villages can be entered. c, r is the home's back corner

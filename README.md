@@ -229,6 +229,20 @@ npx http-server -p 8080 .
   about 20 seconds with no tap (and nothing open) the nearest villager hops
   and calls "Princess Yuna, over here!", at most once a minute and three
   times in a row. Code in `js/guide.js`.
+- **Today's adventures and the treasure chest**: a little chest at the top
+  right (three dots under it) opens a card with three picture quests for
+  the day, one of each kind: answering (⭐ ●●●●● stars, 🎁 a full gift
+  meter, 📒 new stickers, ✨ fairy dust), playing (🐟 fish, 📖 a book, her
+  own friend fed once) and going somewhere (🏠 a letter house, or a village
+  by its picture). Only what she can do is picked: nothing behind a shut
+  gate, no feeding without a friend. What she does that day fills the dots;
+  a finished quest gets a tick and a chime once she is free, and when all
+  three are done the chest glows ("All done! Open the treasure chest!").
+  Tapping it opens it (about 2 seconds, a tap skips) and 5 🪙 coins
+  (`QUEST_CHEST`) fly into the purse, once a day. Tapping a picture says
+  its word. A day she doesn't play changes nothing: no streak, nothing
+  lost. The robot edition has missions, boxes, batteries and a blue chest.
+  The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
   "📖 책 읽어주세요" button, for ten short fairy tales and fables retold in
   simple English. The reader reads each sentence aloud and highlights it,
@@ -259,7 +273,7 @@ npx http-server -p 8080 .
 - 🖼️ picture hints on the answer cards (easier) are a parent setting now
   (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables }`), the first-steps pointer (`guide`) and today's play time (`playtime`) are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables }`), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -379,8 +393,9 @@ on a phone held sideways (844 x 390): no villager hidden behind a building,
 every word fits its answer card, the person talking stays visible above the
 dialog, the buttons a child taps are big enough (64 px), ▶ and the guest
 button show without scrolling, the HUD stays on one row with every counter
-and button showing, and the sticker album and a celebration fit the screen
-with every word fitting its sticker.
+and button showing, the sticker album and a celebration fit the screen
+with every word fitting its sticker, and today's adventures fit on one row
+without scrolling.
 
 The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add
@@ -398,7 +413,9 @@ The other checks, all run by
 - `node tools/check-reach.js`: every villager, door and way out can be
   walked to, also with the ride parked.
 - `node tools/check-flows.js`: the parent panel pauses the game, its
-  password messages, a broken save, the first tap after ▶.
+  password messages, a broken save, the first tap after ▶, and today's
+  adventures played through in both editions (picked, ticked, the chest
+  paying once, kept over a reload, new ones the next day).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), also next to the
   deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
@@ -501,5 +518,6 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/friend.js`: feeding the fairy friend (helper buddy) and how it grows
 - `js/minigame.js`: the fishing (magnet crane) game at the pond
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
+- `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents
 - `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations

@@ -5,7 +5,11 @@
 //  - the parent password: wrong, offline (with and without the check kept
 //    at login) and server busy each say the right thing;
 //  - a broken or edited save never reaches the parent panel as HTML;
-//  - the first tap after ▶ doesn't cut off the line being spoken.
+//  - the first tap after ▶ doesn't cut off the line being spoken;
+//  - today's adventures (js/quest.js), in both editions: three quests she
+//    can do are picked, doing each the way she would ticks it, the chest
+//    stays shut until all three are done and never opens over a question,
+//    it pays once, a reload keeps all of it, and the next day has new ones.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -21,7 +25,9 @@ function check(name, ok, detail) {
 }
 
 // A page playing as a guest (or signed in, with `user`), the start screen gone.
-async function game(browser, { seed, user, server, args } = {}) {
+// `edition` picks the game; `days` lets a test move the clock on by whole
+// days (localStorage 'test-days', read as the page loads).
+async function game(browser, { seed, user, server, edition, days } = {}) {
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
   const page = await ctx.newPage();
   const errors = [];
@@ -38,7 +44,14 @@ async function game(browser, { seed, user, server, args } = {}) {
     if (seed) localStorage.setItem('pixeltown-v2', JSON.stringify(seed));
   }, [seed || null, user || null, FAKE]);
   await page.addInitScript(fake => { window.ACCOUNT_SERVER = fake; }, FAKE);
-  await page.goto(URL);
+  if (days) {
+    await page.addInitScript(() => {
+      const shift = Number(localStorage.getItem('test-days') || 0) * 864e5;
+      const D = Date;
+      if (shift) window.Date = class extends D { constructor(...a) { super(...(a.length ? a : [D.now() + shift])); } static now() { return D.now() + shift; } };
+    });
+  }
+  await page.goto(edition ? `${URL}?edition=${edition}` : URL);
   await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
   await page.evaluate(() => document.getElementById('start-btn').click());
   return { page, ctx, errors };
@@ -197,10 +210,197 @@ async function audioUnlock(browser) {
   await ctx.close();
 }
 
+// Today's adventures and the chest, played through in one edition. Game
+// timers (later) wait in a queue that each step runs, as in check-tts.js,
+// so a present or a scene change happens when the step says.
+async function quests(browser, edition) {
+  // Everything open: the stars for every gate, and fairy dust.
+  const seed = { edition, stars: 40, dust: 12, coins: 2 };
+  const { page, ctx, errors } = await game(browser, { seed, edition, days: true });
+  const setup = () => page.evaluate(() => {
+    if (!Sound.muted) Sound.toggleMute();
+    window.queue = [];
+    later = (ms, fn) => { window.queue.push(fn); };
+    window.flush = () => { for (let i = 0; i < 500 && window.queue.length; i++) window.queue.shift()(); };
+    // Closes whatever a step left open: a present, a dialog, a scene change.
+    window.settle = () => {
+      for (let i = 0; i < 5; i++) {
+        flush();
+        if (!ui.reward.classList.contains('hidden')) acceptReward(false);
+        if (state.talking) closeDialog();
+      }
+    };
+    window.cardOpen = () => !document.getElementById('quests').classList.contains('hidden');
+  });
+  const reload = async () => {
+    await page.reload();
+    await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+    await page.evaluate(() => document.getElementById('start-btn').click());
+    await setup();
+  };
+  await setup();
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const out = { chestCoins: QUEST_CHEST.coins };
+    const q = questsToday();
+    out.picks = q.picks.slice();
+    out.day = q.day;
+    out.groups = new Set(q.picks.map(k => QUESTS[k].group)).size;
+    out.allOpen = q.picks.every(questOpen);
+    // A new player is only asked for what she can do: nothing behind a gate,
+    // no feeding without a friend, over a month of days.
+    const stars = state.stars;
+    state.stars = 0;
+    state.outfit = Object.assign({}, state.outfit, { fairy: 'none' });
+    const seen = new Set();
+    const locked = [];
+    for (let d = 1; d <= 31; d++) {
+      for (const k of questPick(`2026-01-${String(d).padStart(2, '0')}`)) {
+        seen.add(k);
+        if (QUESTS[k].stars || k === 'feed') locked.push(k);
+      }
+    }
+    out.newPlayer = { seen: [...seen], locked };
+    state.stars = stars;
+    // Her friend on, for the feeding quest.
+    const friend = Object.keys(FAIRIES).find(k => k !== 'none');
+    if (!state.owned.fairy.includes(friend)) state.owned.fairy.push(friend);
+    state.outfit = Object.assign({}, state.outfit, { fairy: friend });
+
+    // The card never opens over a question; the chest stays shut until all
+    // three are done.
+    const npc = sceneFor('town').npcs.find(n => !n.mount && !n.shop);
+    openDialog(npc);
+    openQuests();
+    out.overQuestion = cardOpen();
+    closeDialog();
+    openQuests();
+    out.opens = cardOpen();
+    out.tiles = document.querySelectorAll('#quests .qs-quest').length;
+    const coins0 = state.coins;
+    document.querySelector('#quests .qs-chest').click();
+    out.early = { coins: state.coins - coins0, chest: questsToday().chest };
+    closeQuests();
+    out.closed = !cardOpen() && !state.busy;
+
+    // Each kind of quest, done the way she does it: its count goes up.
+    const answer = () => {
+      changeScene('town');
+      settle();
+      const who = sceneFor('town').npcs.filter(n => !n.mount && !n.shop)[state.answered % 4];
+      Object.assign(who, { waitUntil: 0, missed: null });
+      openDialog(who);
+      const i = state.question.options.findIndex(o => o.right);
+      choose(i, ui.choices.children[i]);
+      settle();
+    };
+    const go = target => {
+      for (const n of ['town', 'forest']) {
+        const l = (sceneFor(n).links || []).find(x => x.target === target);
+        if (!l) continue;
+        changeScene(n);
+        settle();
+        followLink(l);
+        settle();
+        return;
+      }
+    };
+    const doing = {
+      stars: answer,
+      gift: answer,
+      sticker: answer,
+      dust: () => addDust(),
+      fish: () => {
+        changeScene('town');
+        settle();
+        openMini(miniFisher());
+        miniCatch(mini.items.find(x => x.right && x.state === 'swim'));
+        closeMini();
+      },
+      book: () => { openLibrary(); openBook(BOOKS[0]); bookFinish(); closeLibrary(); },
+      feed: () => { state.dust = Math.max(state.dust, 1); openFeed(); feedOnce(); closeFeed(); },
+      house: () => {
+        changeScene('town');
+        settle();
+        enterDoor(sceneFor('town').doors.find(d => d.obj && d.obj.info));
+        settle();
+      },
+    };
+    let ticks = 0;
+    new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.classList && n.classList.contains('quest-tick')) ticks++; })))
+      .observe(document.body, { childList: true });
+    out.hooks = {};
+    for (const kind of Object.keys(QUESTS)) {
+      const run = doing[kind] || (() => go(kind));
+      const before = questCount(kind);
+      for (let i = 0; i < 12 && !questDone(kind); i++) run();
+      out.hooks[kind] = [before, questCount(kind), QUESTS[kind].n];
+    }
+    changeScene('town');
+    settle();
+    // The ticks come once she is free, one after another, and are gone.
+    await sleep(3500 + 2 * 1400 + 2400 + 1500);
+    out.ticked = { shown: ticks, left: document.querySelectorAll('.quest-tick').length };
+    out.hud = { on: document.querySelectorAll('#quest-btn .pips i.on').length, ready: document.getElementById('quest-btn').classList.contains('ready') };
+    openQuests();
+    out.done = document.querySelectorAll('#quests .qs-quest.done').length;
+    out.glows = document.querySelector('#quests .qs-chest').classList.contains('ready');
+    // Opened: it pays once, a second tap pays nothing.
+    const coins1 = state.coins;
+    document.querySelector('#quests .qs-chest').click();
+    await sleep(300);
+    out.paid = state.coins - coins1;
+    document.querySelector('#quests .qs-chest').click();
+    await sleep(2500);
+    out.paidTwice = state.coins - coins1;
+    out.opened = { chest: questsToday().chest, prize: document.querySelector('#quests .prize').textContent, hud: document.getElementById('quest-btn').classList.contains('ready') };
+    closeQuests();
+    out.coins = state.coins;
+    out.saved = JSON.parse(localStorage.getItem('pixeltown-v2')).quests;
+    return out;
+  });
+  const tag = `quests (${edition})`;
+  check(`${tag}: three quests, one from each group, all she can do`, r.picks.length === 3 && r.groups === 3 && r.allOpen, r);
+  check(`${tag}: a new player is never asked for what is still locked`, !r.newPlayer.locked.length && r.newPlayer.seen.length >= 4, r.newPlayer);
+  check(`${tag}: the card doesn't open over a question`, !r.overQuestion && r.opens && r.tiles === 3, r);
+  check(`${tag}: a shut chest pays nothing before all three are done`, r.early.coins === 0 && !r.early.chest && r.closed, r);
+  const unhooked = Object.entries(r.hooks).filter(([, [, after, n]]) => after < n);
+  check(`${tag}: doing each kind of quest counts it`, !unhooked.length, r.hooks);
+  if (process.env.SHOW) console.log(JSON.stringify(r));
+  check(`${tag}: each finished quest ticks once, and the chest glows`, r.ticked.shown === 3 && !r.ticked.left && r.hud.on === 3 && r.hud.ready && r.done === 3 && r.glows, r);
+  check(`${tag}: the chest pays once`, r.paid === r.chestCoins && r.paidTwice === r.chestCoins && r.opened.chest && r.opened.prize.includes(`+${r.chestCoins}`) && !r.opened.hud, r);
+  check(`${tag}: saved`, !!r.saved && r.saved.day === r.day && r.saved.chest === true && r.saved.picks.join() === r.picks.join(), r.saved);
+
+  // A reload keeps it all; tapping the open chest pays nothing.
+  await reload();
+  const again = await page.evaluate(async () => {
+    const q = questsToday();
+    const coins = state.coins;
+    openQuests();
+    document.querySelector('#quests .qs-chest').click();
+    await new Promise(res => setTimeout(res, 300));
+    const out = { day: q.day, picks: q.picks.slice(), chest: q.chest, done: q.picks.every(questDone), coins, paid: state.coins - coins, shownOpen: document.querySelector('#quests .qs-chest').classList.contains('opened') };
+    closeQuests();
+    return out;
+  });
+  check(`${tag}: a reload keeps the day, the picks, the counts and the open chest`, again.day === r.day && again.picks.join() === r.picks.join() && again.chest && again.done && again.coins === r.coins && !again.paid && again.shownOpen, again);
+
+  // The next day: new quests and a shut chest; the coins stay.
+  await page.evaluate(() => localStorage.setItem('test-days', '1'));
+  await reload();
+  const next = await page.evaluate(() => {
+    const q = questsToday();
+    return { day: q.day, picks: q.picks.slice(), chest: q.chest, counts: q.picks.map(questCount), coins: state.coins, ready: document.getElementById('quest-btn').classList.contains('ready'), on: document.querySelectorAll('#quest-btn .pips i.on').length };
+  });
+  check(`${tag}: the next day has new quests and a shut chest`, next.day > r.day && next.picks.length === 3 && !next.chest && next.counts.every(n => n === 0) && !next.ready && !next.on && next.coins === r.coins, next);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
-  const parts = { parentPauses, parentPassword, brokenSave, audioUnlock };
+  const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

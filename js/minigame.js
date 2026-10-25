@@ -204,6 +204,7 @@ function miniCatch(it) {
   it.state = 'caught';
   mini.anim = { it, t0: performance.now(), x0: it.x, y0: it.y, from: mini.trolley };
   mini.caught.push(it);
+  questAdd('fish'); // today's adventures (js/quest.js)
   Sound.correct();
   if (!isCaptain()) { Sound.tune('splash'); miniSplash(it.x, it.y, 14); }
   miniRender();

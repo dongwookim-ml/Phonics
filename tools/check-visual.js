@@ -11,7 +11,10 @@
 // - with every counter and button showing (the next-gate and gift meters
 //   too) the HUD stays on one row and on screen; the sticker album fits the
 //   screen with big tabs and stickers and every word fits its sticker; a
-//   celebration banner fits across the screen.
+//   celebration banner fits across the screen;
+// - today's adventures (js/quest.js): the card fits without scrolling, its
+//   pictures, arrow and chest on one row, big enough to tap, nothing runs
+//   over, and the tick under the HUD chest stays on screen.
 // Run: node tools/check-visual.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -232,6 +235,44 @@ function ask(kind, scene) {
         const fb = show.el.getBoundingClientRect();
         if (fb.left < 0 || fb.right > innerWidth || fb.bottom > innerHeight) out.push('a celebration runs off the screen');
         show.stop();
+
+        // Today's adventures, one of them done: the card on screen without
+        // scrolling, one row, big pictures, chest and 👋, nothing running
+        // over, the title clear of 👋.
+        state.busy = false;
+        state.quests = null;
+        const today = questsToday();
+        questAdd(today.picks[0], QUESTS[today.picks[0]].n);
+        openQuests();
+        const card = document.getElementById('quests');
+        const cr = card.getBoundingClientRect();
+        if (cr.top < 0 || cr.left < 0 || cr.bottom > innerHeight + 0.5 || cr.right > innerWidth + 0.5) out.push(`quests: ${Math.round(cr.left)},${Math.round(cr.top)} to ${Math.round(cr.right)},${Math.round(cr.bottom)} is off the screen`);
+        if (card.scrollHeight > card.clientHeight + 1) out.push(`quests: the card scrolls (${card.scrollHeight} > ${card.clientHeight})`);
+        const row = [...card.querySelectorAll('.qs-quest, .qs-chest')].map(e => e.getBoundingClientRect());
+        if (Math.max(...row.map(x => x.top)) - Math.min(...row.map(x => x.top)) > 12) out.push('quests: the pictures and the chest are not on one row');
+        small('#quests .qs-quest', phone ? 96 : 120);
+        small('#quests .qs-chest', big);
+        small('#quests .qs-done', big);
+        for (const el of card.querySelectorAll('.qs-head, .qs-title, .qs-row')) {
+          if (el.scrollWidth > el.clientWidth + 1) out.push(`quests: ${el.className} runs over (${el.scrollWidth} > ${el.clientWidth})`);
+        }
+        // The tick on a done one may stick out of its corner; nothing else.
+        for (const t of card.querySelectorAll('.qs-quest')) {
+          const tb = t.getBoundingClientRect();
+          for (const el of t.querySelectorAll('.ic, .pips')) {
+            const b = el.getBoundingClientRect();
+            if (b.left < tb.left || b.right > tb.right || b.top < tb.top || b.bottom > tb.bottom) out.push(`quests: the ${el.className} runs out of its picture`);
+          }
+        }
+        if (card.querySelector('.qs-title').getBoundingClientRect().right > card.querySelector('.qs-done').getBoundingClientRect().left) out.push('quests: the title runs under 👋');
+        closeQuests();
+        // The tick for a finished quest, under the chest in the HUD.
+        const tick = questTick(today.picks[0]);
+        tick.el.style.animation = 'none';
+        tick.el.style.transform = 'translateX(-50%)';
+        const tr = tick.el.getBoundingClientRect();
+        if (tr.left < 0 || tr.right > innerWidth || tr.bottom > innerHeight) out.push('quests: the tick under the HUD chest runs off the screen');
+        tick.stop();
         return out;
       }, phone);
       r.forEach(fail);
