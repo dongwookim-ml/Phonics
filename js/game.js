@@ -123,11 +123,16 @@ function editionSave(s) {
   other[had] = rest;
   return Object.assign({}, mine, { edition: EDITION, other });
 }
+const PLAYER_START = Object.assign({}, PLAYER); // before a save changes it
 let otherEditions = {};
-function load() {
+let savedRest = {}; // fields of the save this version doesn't use, kept as they are
+// `raw` is a save object (from js/account.js), else the one in localStorage.
+function load(raw) {
   try {
-    const s = editionSave(JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
+    const s = editionSave(raw || JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
     otherEditions = s.other || {};
+    savedRest = Object.assign({}, s);
+    delete savedRest.other;
     let outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
@@ -136,10 +141,11 @@ function load() {
     const pictures = s.pictures === undefined ? true : !!s.pictures;
     // The first-steps pointer (js/guide.js) is for new players only.
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {},
+    // Stars, coins and dust are also counted per device (js/progress.js).
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
       friends: s.friends || {}, settings: Object.assign({ playLimit: 0, hideMute: false }, s.settings), guide: firstSteps, playtime: s.playtime || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {},
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: true, history: {}, books: {},
       friends: {}, settings: { playLimit: 0, hideMute: false }, guide: { step: 0 }, playtime: {} };
   }
 }
@@ -161,10 +167,42 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now(),
-    friends: state.friends, settings: state.settings, guide: state.guide, playtime: state.playtime };
+  // fmt 2: stars, coins and dust are also counted per device (earned /
+  // spent, js/progress.js); the totals stay for older versions of the game.
+  // Fields this version doesn't know are kept (savedRest). `ver`: the server
+  // version this was written on (js/account.js), the server's clock, so
+  // another device can tell which copy is newer.
+  const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
+    friends: state.friends, settings: state.settings, guide: state.guide, playtime: state.playtime }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
+}
+
+// A save that js/account.js put together with the account's (another
+// tablet's progress, or the account's own) goes into the running game in
+// place, without a reload: counters, presents, answers and books, and the
+// outfit and name it carries.
+function applyProgress(s) {
+  const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
+  Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures,
+    friends: p.friends, settings: p.settings, guide: p.guide, playtime: p.playtime });
+  const ride = state.outfit.ride;
+  state.worn = PLAYER.look;
+  state.outfit = p.outfit;
+  if (state.outfit.ride !== ride) {
+    if (state.outfit.ride === 'none') state.mounted = false;
+    if (!state.mounted && state.scene) parkUnicorn();
+  }
+  guideApplySettings(); // the parent may have hidden the 🔊 button
+  renderStars(false);
+  renderRide();
+  if (!ui.wardrobe.classList.contains('hidden')) renderWardrobe();
+  if (!ui.start.classList.contains('hidden')) {
+    ui.nameInput.value = PLAYER.shown;
+    ui.spokenInput.value = PLAYER.spoken;
+    spokenEdited = PLAYER.spoken !== romanize(PLAYER.shown);
+    renderStart();
+  }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -179,6 +217,7 @@ const state = {
   stars: saved.stars,
   coins: saved.coins,
   dust: saved.dust,  // fairy dust from the Fairy Village
+  tally: saved.tally, // the same three, counted per device: { earned, spent }
   history: saved.history, // { questionId: { kind, tries, right, wrong, last } }
   books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
   pictures: saved.pictures,
@@ -192,6 +231,8 @@ const state = {
   cam: { x: 0, y: 0 },
   scale: 4,
   busy: false,       // a dialog, reward or scene change is showing
+  paused: false,     // the parent panel is open: no walking, timers wait
+  held: [],          // timers that came due while paused
   question: null,
   particles: [],
   ripples: [],
@@ -203,7 +244,14 @@ const state = {
   fairyAt: null,     // where her fairy friend is flying, in world pixels
 };
 
-function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
+// Game timers. While the parent panel is open (state.paused) they wait,
+// and run when it closes.
+function later(ms, fn) { state.timers.push(setTimeout(() => whenPlaying(fn), ms)); }
+function whenPlaying(fn) { if (state.paused) state.held.push(fn); else fn(); }
+function setPaused(on) {
+  state.paused = on;
+  if (!on) for (const fn of state.held.splice(0)) fn();
+}
 
 function sceneFor(target) {
   if (!state.scenes[target]) {
@@ -380,7 +428,7 @@ function getOn() {
   removeParked();
   state.mounted = true;
   burstAtHero(24);
-  Sound.correct();
+  Sound.sparkle();
   Sound.say([{ text: line('mount'), pitch: 1.3 }]);
   renderRide();
 }
@@ -628,7 +676,7 @@ function showAnswer(q, o) {
     if (x.right) { b.classList.add('glow', 'pictures'); b.disabled = false; } else { b.classList.add('gone'); b.disabled = true; }
   });
   const showMe = line('showMe');
-  const tap = isCaptain() && state.talking.monster ? { text: line('tapFire'), narrator: true } : { text: line('tapIt') };
+  const tap = isCaptain() && state.talking.monster ? villainTapLine() : { text: line('tapIt') };
   const parts = (o ? q.picked(o).concat({ pause: 400 }) : []).concat({ text: showMe }, { pause: 300 }, q.model);
   ui.text.textContent = `${shownText(parts)} ${tap.text}`;
   listen(q, parts.concat(Quiz.READY, { pause: 300 }, tap), 8000);
@@ -774,7 +822,7 @@ function acceptReward(yes) {
     if (state.gift.slot === 'ride' && state.scene.outdoor) { removeParked(); state.mounted = true; }
     renderRide();
     burstAtHero(50);
-    Sound.correct();
+    Sound.sparkle();
     // The robot shows its new part off and says what it does (once that
     // line is recorded).
     const who = voiceOf(state.giver);
@@ -926,7 +974,7 @@ function closeWardrobe() {
   ui.wardrobe.classList.add('hidden');
   state.busy = false;
   burstAtHero(40);
-  Sound.correct();
+  Sound.sparkle();
   Sound.say([{ text: line('yes'), pitch: 1.3 }]);
 }
 
@@ -962,7 +1010,7 @@ function catchMonster(npc) {
     state.coins += coins;
     save();
     renderCoins(true);
-    Sound.party();
+    Sound.coin();
     showPlace(`🪙 코인 ${coins}개!`);
     Sound.say([{ text: line('caught') }], voiceOf(npc));
   });
@@ -1067,7 +1115,7 @@ function buyPick() {
   const npc = state.shopkeeper;
   if (!pick) return;
   if (state.coins < pick.price) {
-    Sound.wrong();
+    Sound.locked();
     ui.shopMsg.textContent = `코인이 ${pick.price - state.coins}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎`;
     if (isCaptain()) ui.shopMsg.textContent = CAPTAIN_TEXT.poor(pick.price - state.coins);
     Sound.say([{ text: line('poor') }], voiceOf(npc));
@@ -2081,7 +2129,7 @@ function linkAt(sc, t, wx, wy) {
 function goLink(group, tap) {
   const locked = group.find(l => l.needStars && state.stars < l.needStars);
   if (locked) {
-    Sound.wrong();
+    Sound.locked();
     showPlace(`🔒 별 ${locked.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
     Sound.say([{ text: line('locked', { stars: locked.needStars }) }]);
     return;
@@ -2107,7 +2155,7 @@ function frame(now) {
   const dt = Math.min(0.05, ms / 1000);
   lastTime = now;
   if (state.scene) {
-    updateHero(dt);
+    if (!state.paused) updateHero(dt);
     updateEffects(dt, now);
     const target = cameraTarget();
     const k = Math.min(1, dt * 6);

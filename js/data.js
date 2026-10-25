@@ -207,8 +207,12 @@ const TOWN_HOUSES = [
 // (the first one installed wins); otherwise a voice of the right `gender` is
 // picked for each person. Pitch and rate keep people distinct even when the
 // device has only one English voice.
-// `tts` is the Kokoro voice used for the pre-recorded lines in audio/tts
-// (see tools/); the rest describes the device voice used as a fallback.
+// `tts` names the voice of the pre-recorded lines in audio/tts (Amazon Polly;
+// tools/polly-build.py maps these names to Polly voices). `lift` plays this
+// person's chit-chat a little faster and higher (above 1) or slower and
+// deeper (below 1), so people who share a recorded voice sound apart;
+// questions, quiz words and letter sounds are never lifted. The rest
+// describes the device voice used as a fallback.
 const TTS_NARRATOR = 'af_heart';
 // Optional live speech server (server/ in this repo, e.g. on Railway) for
 // lines that were not pre-recorded, such as a custom name. Leave empty to
@@ -220,10 +224,10 @@ const VOICES = {
   granny: { gender: 'female', tts: 'bf_isabella', pitch: 1.05, rate: 0.8,  voice: ['Moira', 'Martha', 'Microsoft Hazel', 'Google UK English Female'] },
   fisher: { gender: 'male', tts: 'am_eric',   pitch: 0.85, rate: 0.95, voice: ['Fred', 'Rishi', 'Microsoft Guy', 'Aaron'] },
   baker:  { gender: 'male', tts: 'am_adam',   pitch: 1.0,  rate: 1.0,  voice: ['Alex', 'Tom', 'Microsoft Andrew', 'Google US English'] },
-  kid:    { gender: 'female', tts: 'af_sky', pitch: 1.65, rate: 1.08, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  kid:    { gender: 'female', tts: 'af_sky', lift: 1.12, pitch: 1.65, rate: 1.08, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   bard:   { gender: 'male', tts: 'bm_fable',   pitch: 1.2,  rate: 1.05, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
   farmer: { gender: 'male', tts: 'am_liam',   pitch: 0.9,  rate: 0.9,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
-  king:   { gender: 'male', tts: 'bm_george',   pitch: 0.65, rate: 0.85, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
+  king:   { gender: 'male', tts: 'bm_george', lift: 0.93, pitch: 0.65, rate: 0.85, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
   queen:  { gender: 'female', tts: 'bf_alice', pitch: 1.1,  rate: 0.88, voice: ['Serena', 'Kate', 'Google UK English Female', 'Microsoft Sonia'] },
   maid:   { gender: 'female', tts: 'bf_lily', pitch: 1.25, rate: 0.98, voice: ['Karen', 'Tessa', 'Microsoft Libby', 'Microsoft Jenny'] },
 };
@@ -348,7 +352,7 @@ const FOREST_NPCS = [
 
 Object.assign(VOICES, {
   fairy:  { gender: 'female', tts: 'af_nova', pitch: 1.75, rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
-  elf:    { gender: 'male', tts: 'am_puck',   pitch: 1.3,  rate: 1.02, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
+  elf:    { gender: 'male', tts: 'am_puck', lift: 1.1, pitch: 1.3,  rate: 1.02, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
   wizard: { gender: 'male', tts: 'bm_lewis',   pitch: 0.6,  rate: 0.8,  voice: ['Gordon', 'Arthur', 'Daniel', 'Microsoft George'] },
   gnome:  { gender: 'male', tts: 'am_santa',   pitch: 1.1,  rate: 0.85, voice: ['Ralph', 'Fred', 'Aaron'] },
   ranger: { gender: 'female', tts: 'af_river', pitch: 0.95, rate: 0.95, voice: ['Fiona', 'Tessa', 'Karen', 'Microsoft Hazel'] },
@@ -607,9 +611,9 @@ LOOKS.merchant = { hair: '#ff9a6b', shirt: '#ffd34d', pants: '#8a5a3a', hat: 'fe
 Object.assign(VOICES, {
   slime:     { gender: 'female', tts: 'af_kore',   pitch: 1.7,  rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   slimepink: { gender: 'female', tts: 'af_aoede',   pitch: 1.8,  rate: 1.05, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
-  bat:       { gender: 'male',   tts: 'am_puck',  pitch: 1.5,  rate: 1.1,  voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
-  ghost:     { gender: 'female', tts: 'bf_emma',   pitch: 1.4,  rate: 0.85, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
-  dragon:    { gender: 'male',   tts: 'am_fenrir', pitch: 0.9,  rate: 1.0,  voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
+  bat:       { gender: 'male',   tts: 'am_puck', lift: 1.1, pitch: 1.5,  rate: 1.1,  voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
+  ghost:     { gender: 'female', tts: 'bf_emma', lift: 1.06, pitch: 1.4,  rate: 0.85, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  dragon:    { gender: 'male',   tts: 'am_fenrir', lift: 1.12, pitch: 0.9,  rate: 1.0,  voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
   shroom:    { gender: 'male',   tts: 'am_michael', pitch: 1.3,  rate: 0.95, voice: ['Ralph', 'Fred', 'Aaron'] },
   merchant:  { gender: 'male',   tts: 'am_liam',  pitch: 1.05, rate: 1.0,  voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
 });
@@ -694,7 +698,7 @@ Object.assign(VOICES, {
   fairyqueen: { gender: 'female', tts: 'bf_emma',  pitch: 1.2,  rate: 0.9,  voice: ['Serena', 'Kate', 'Google UK English Female', 'Microsoft Sonia'] },
   pixie:      { gender: 'female', tts: 'af_kore',  pitch: 1.7,  rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
   dewfairy:   { gender: 'female', tts: 'af_aoede', pitch: 1.5,  rate: 0.95, voice: ['Samantha', 'Karen', 'Microsoft Aria'] },
-  sprout:     { gender: 'female', tts: 'af_sarah', pitch: 1.6,  rate: 1.05, voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
+  sprout:     { gender: 'female', tts: 'af_sarah', lift: 1.12, pitch: 1.6,  rate: 1.05, voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
   sunny:      { gender: 'female', tts: 'af_bella', pitch: 1.55, rate: 1.0,  voice: ['Samantha', 'Google US English', 'Microsoft Aria'] },
 });
 Object.assign(PERSONA, {

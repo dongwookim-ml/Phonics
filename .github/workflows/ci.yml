@@ -1,0 +1,81 @@
+# The checks in tools/ and the server's tests, on every push and pull request.
+# game:   Chromium (Playwright) plays both editions: scenes, questions,
+#         recordings, ways around, flows, and account sync against a local
+#         server, also with the deployed game (origin/main) on the same account,
+#         and against the deployed server.
+#         On main, every line said must be recorded and index.html stamped.
+# server: pytest on SQLite and on a Postgres service, like Railway's.
+name: Checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TTS_STRICT: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tools/check-sync.js plays the deployed game, origin/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm install --no-save --no-package-lock playwright@1.63.0  # as in the dev container
+      - run: npx playwright install --with-deps chromium
+      - run: pip install fastapi==0.115.6 uvicorn==0.34.0
+      - name: Build stamp (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node tools/check-build.js
+      - run: node tools/smoke.js
+      - run: node tools/check-merge.js
+      - run: node tools/quiz-test.js
+        env:
+          ROUNDS: '30'
+      - run: node tools/check-tts.js
+      - run: node tools/check-reach.js
+      - run: node tools/check-flows.js
+      - run: node tools/check-sync.js
+        env:
+          PYTHON: python
+      - name: Sync against the server still deployed (origin/main)
+        run: node tools/check-sync.js
+        env:
+          PYTHON: python
+          SYNC_SERVER_REF: origin/main
+          ONLY: Captain  # princess + captain, new and deployed: about a minute
+
+  server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pixeltown_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install fastapi==0.115.6 uvicorn==0.34.0 pytest httpx "psycopg[binary]==3.2.3"
+      - name: pytest (SQLite)
+        run: pytest server -q
+      - name: pytest (Postgres)
+        run: pytest server -q
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pixeltown_test

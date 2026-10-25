@@ -45,7 +45,8 @@ const MINI_WATER = 44;
 const MINI_CATCH_MS = () => (isCaptain() ? 1600 : 1100);
 const MINI_COLORS = ['#ff9ec4', '#ffd36b', '#8fd3ff', '#b9a0ff', '#8fe8c4', '#ffb08a'];
 
-function miniLater(ms, fn) { mini.timers.push(setTimeout(fn, ms)); }
+// Like later() in js/game.js: while the parent panel is open, timers wait.
+function miniLater(ms, fn) { mini.timers.push(setTimeout(() => whenPlaying(fn), ms)); }
 function miniClear() { mini.timers.forEach(clearTimeout); mini.timers = []; }
 
 // The fisherman in town (the fishing robot in the robot edition).
@@ -275,6 +276,7 @@ function miniFrame(now) {
 }
 
 function miniUpdate(dt, now) {
+  if (state.paused) return; // the parent panel is open: everything waits
   const v = mini.view;
   const left = -v.bx - 18;
   const right = (mini.buf ? mini.buf.width : MINI_W) - v.bx + 18;

@@ -77,7 +77,11 @@ npx http-server -p 8080 .
   without an account) and shows stars, coins, fairy dust and answers, a
   bar per question kind (right / missed / not tried, out of the pool) with
   the first-try accuracy, the most-missed questions and the last 7 days.
-  The game is paused while it is open. Code in `js/parent.js`.
+  The game is paused while it is open: she stops walking, nobody talks,
+  and timers wait until it closes. Without a connection the password is
+  checked against a copy kept on the tablet at login (PBKDF2, WebCrypto);
+  otherwise it says the internet is not connected, or to try again later.
+  Code in `js/parent.js`.
 - **Parent settings** (설정, at the bottom of the parent panel):
   - 놀이 시간 off / 15 / 20 / 30 minutes a day. Once it is reached, at the
     next quiet moment (no dialog, present, shop or game open) the town goes
@@ -199,13 +203,29 @@ npx http-server -p 8080 .
 The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid), the hint setting, the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute }`), the first-steps pointer (`guide`) and today's play time (`playtime`) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
-  (3–20 lowercase letters, digits or _) and a password (4 or more
-  characters). Signed in, the whole save is kept on the server as well, so
-  another tablet that logs into the same account gets the same progress;
-  the newer save wins. The tablet stays signed in, and the game keeps
-  working offline and uploads again later. "계정 없이 할래요" plays with the
-  browser-only save; 🔑 로그인 / 로그아웃 is at the top right of the start
-  screen. The first login carries the progress so far into the account.
+  (3–20 lowercase letters, digits or _) and a password (6 or more
+  characters; accounts made before with 4 or 5 keep working). Signed in,
+  the whole save is kept on the server as well, so another tablet that
+  logs into the same account gets the same progress.
+  Two tablets can play at once, say one the princess and one the captain
+  edition: when one saves after the other, the two saves are put together
+  in place, without a reload (`js/progress.js`). Answers, presents and books
+  are joined, and stars, coins and fairy dust are counted per device
+  (`earned` / `spent` in the save, which is marked `fmt: 2`), so both
+  tablets' stars add up. The save keeps the plain totals and any fields a
+  newer version added, so an older version of the game can still read it.
+  Totals uploaded by an older version (no `fmt`) are taken as a floor
+  under one "old client" entry, never added on top of the per-device
+  counts they already include (`node tools/check-merge.js`). The outfit
+  and name come from the tablet playing that edition, or else from the
+  copy saved on the newer server version. The tablet stays signed in, and
+  the game keeps working offline and uploads again later (one upload at a
+  time). "계정 없이 할래요" plays with the browser-only save; 🔑 로그인 /
+  로그아웃 is at the top right of the start screen. Logging in on a tablet that was played as a guest adds that
+  progress to the account (its stars count on top of the account's) and
+  says so in a short note ("이 기기의 별 42개를 계정에 합쳤어요"); a copy of
+  the tablet's old save stays in its browser as `pixeltown-v2-backup-<time>`
+  (the last three).
   The account password is also the parent password (`Account.verify` in
   `js/account.js`); without an account it is `0000`.
 
@@ -217,19 +237,70 @@ the wardrobe options, the villagers and the house positions.
 ### Voices and lines
 
 What people say comes from `LINES` and `PERSONA` in `js/data.js`. Every line
-is pre-recorded with the open-source [Kokoro](https://github.com/thewh1teagle/kokoro-onnx)
-voice model into `audio/tts/`, one natural voice per kind of villager
-(`tts` in `VOICES`) and a narrator voice for quiz words and letter sounds.
+is pre-recorded with Amazon Polly's generative voices into `audio/tts/`: one
+voice per kind of villager (`tts` in `VOICES`, which `VOICES` in
+`tools/polly-build.py` maps to a Polly voice) and a narrator (Ruth) for
+answers, letter names, letter sounds and the library's books. People who
+share a Polly voice are told apart by `lift` in `VOICES`: their chit-chat
+plays a little faster and higher (or slower and deeper). Questions, quiz
+words and letter sounds always play exactly as recorded.
 
-After changing lines, words or the default name, record again:
+How a clip is made (`tools/polly-build.py`, `tools/clipaudio.py`):
+
+- A lone word is said as a short sentence ("Cat."), so its pitch falls and
+  nothing comes before it. A word starting with b, d, g or j loses any long
+  hum before its burst (which sounded like "uh-bear").
+- Every clip is high-passed at 70 Hz and trimmed, then gets its voice's gain
+  (`tools/polly-gains.json`, set towards -20 LUFS by the normalise step) and
+  a peak limiter.
+- Pure letter sounds: a "/m/" line is the narrator's /m/ cut from its own
+  recording of a word (`tools/letter-sounds.json`: m from "ham", s from "bus"
+  and so on): continuants held about half a second with no vowel, stops
+  clipped to their burst, short vowels held 0.4 s. In "M says mmm." the
+  speaker says "M says" and the narrator's /m/ follows. The automatic checks
+  only catch a cut in the wrong place, so listen to them all on
+  `tools/letter-sounds.html` (open it from the repository or the site).
+- A clip's id (its file name) covers the voice, the text, the processing and
+  the gain, so any change gives new URLs. Clips of the deployed build
+  (`main`) are kept one more release for tabs that are still open.
+
+Recording runs in GitHub Actions (`.github/workflows/polly.yml`, with the
+AWS keys in the repository's secrets). After changing lines, words or the
+default name, change `tools/polly-run.json` on a branch and push, e.g.
+`{ "mode": "all", "run": 8, "check": "changed", "fix": true }`. The workflow
+lists every line (`node tools/tts-phrases.js`), records the new ones, checks
+every clip, records failing lines again and commits the clips to the
+branch; `"normalise": true` then evens out the voices' loudness, and
+`"mode": "check"` or `"normalise"` re-checks or re-levels without recording.
+
+The checks:
+
+- `tools/clip-check.py` (acoustic, no model) writes `tools/clip-check.json`:
+  silent clips, a lone word said twice, a clip far longer or shorter than the
+  same line in other voices, a late start (a hum or "uh" before a word), a
+  lone word rising like a question, long gaps, and true peaks over -1 dBTP.
+- `tools/voice-check.py` listens with Whisper as a second opinion, failing a
+  clip only where the acoustic measures agree (`tools/voice-check.json`).
+- The fix step records failing lines again in another way (wrapped in a
+  sentence, then after "Listen." with that cut off), never with another
+  engine, and keeps the first that passes.
+- `python tools/check-recordings.py` is the gate before deploying: every
+  line has a clip, every clip was made on its voice's engine, and both
+  reports were made for this very `audio/tts/index.js` with nothing failing.
+
+To record without the workflow (AWS keys in the environment, plus
+`pip install boto3 numpy` and ffmpeg):
 
 ```sh
-pip install kokoro-onnx soundfile        # once, plus ffmpeg
-curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx
-curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 node tools/tts-phrases.js                # lists every line the game can say
-python tools/tts-build.py --model kokoro-v1.0.int8.onnx --voices voices-v1.0.bin
+python tools/polly-build.py --mode all   # then: --mode fix, --mode normalise
+python tools/clip-check.py
+python tools/letter-sounds.py --sheet sheet.png   # try the letter-sound cutter (Pillow)
+python tools/letter-sounds.py --built --sheet sheet.png   # spectrograms of the recorded sounds
 ```
+
+`tools/tts-build.py` can still record everything with the open-source
+[Kokoro](https://github.com/thewh1teagle/kokoro-onnx) model as an offline fallback.
 
 Lines that are not recorded, such as a name typed on the start screen, come
 from the live speech server when `TTS_SERVER` is set, otherwise from the
@@ -241,6 +312,7 @@ device's own voice.
 scripts define the same global and that every scene (village homes too)
 builds without errors, for both a girl and a boy hero and the robot, and
 that every door can be reached and leads back out where it was.
+`python tools/check-recordings.py` checks the recordings (see above).
 
 `node tools/check-visual.js` checks both editions at iPad sizes
 (1024 x 768, 1180 x 820, 768 x 1024, 1024 x 700 with Safari's toolbars) and
@@ -253,6 +325,32 @@ The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add
 `?fx=2` (all), `?fx=1` (no tilt-shift) or `?fx=0` (none) to the address to
 fix the level.
+
+The other checks, all run by
+`.github/workflows/ci.yml` on every push and pull request:
+
+- `node tools/check-merge.js`: the save merge rules (no browser).
+- `ROUNDS=30 node tools/quiz-test.js`: thousands of questions from every
+  asker, under an empty, a finished and a mixed history.
+- `node tools/check-tts.js`: every recording has its file, and nothing the
+  game says while playing both editions lacks a recording.
+- `node tools/check-reach.js`: every villager, door and way out can be
+  walked to, also with the ride parked.
+- `node tools/check-flows.js`: the parent panel pauses the game, its
+  password messages, a broken save, the first tap after ▶.
+- `node tools/check-sync.js`: tablets on one account against a local
+  server (needs Python with `fastapi` and `uvicorn`), also next to the
+  deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
+  against the server still deployed.
+- `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
+
+Lines not recorded yet are listed; one the game actually says without a
+recording only fails with `TTS_STRICT=1` (CI sets it on `main`).
+
+The game is served from `main`, so stamp a build before merging there:
+`node tools/stamp.js`, then commit `index.html` and `version.json` (CI on
+`main` runs `node tools/check-build.js`, which fails on an unstamped `dev`
+build). Open tabs then see the new version.
 
 ### Live speech server (optional)
 
@@ -267,9 +365,21 @@ Amazon Polly). To run it on [Railway](https://railway.app):
 4. Put that address in `TTS_SERVER` in `js/data.js`, for example
    `const TTS_SERVER = 'https://pixeltown-tts.up.railway.app';`, and push.
 
-Optional variables: `ALLOWED_ORIGINS=https://dongwookim-ml.github.io` to
-accept calls only from the game, and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` to use Amazon Polly instead.
+Optional variables: `ALLOWED_ORIGINS` lists the sites that may call it
+(comma separated, or `*`; by default the game's site
+`https://dongwookim-ml.github.io` and `localhost` / `127.0.0.1` on any port,
+so opening `index.html` as a file needs `ALLOWED_ORIGINS=*` to use the
+accounts), and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` uses Amazon Polly instead.
+
+`/tts` takes only the game's voices (`POLLY_VOICES`), about 60 lines a
+minute per address, makes at most two lines at a time in its own threads
+(so the accounts stay quick; more than 8 waiting get a 503 and the game
+uses the device's voice) and caches 50 MB of them. Request bodies over
+1 MB are refused before they are read. Wrong passwords: 10 per id from one
+address, then 429 for that address; from many addresses an id's logins
+only slow down (doubling waits up to a minute), and the parent panel's
+check is never held up by someone else's tries.
 
 ### Accounts on Railway
 
@@ -284,6 +394,15 @@ database once:
 3. Redeploy the service. The home page should now show `"db":"postgres"`.
 
 Pushing to `main` redeploys the server, and the accounts stay in Postgres.
+The last 20 saves of each account are kept in the `save_history` table, to
+roll back by hand, for example
+`SELECT updated, length(data) FROM save_history WHERE user_id = 'yuna' ORDER BY updated DESC;`
+then `UPDATE saves SET data = (SELECT data FROM save_history WHERE user_id = 'yuna' AND updated = …), updated = <now in ms> WHERE user_id = 'yuna';`.
+A tab still running an older version of the game (its saves have no
+`fmt`) gets one 409 once the stored save is `fmt: 2`, so it reloads into
+the new version; at most once every 10 minutes, so a tab still served the
+old files never keeps reloading. `pytest server` tests it all (SQLite, or
+the Postgres at `DATABASE_URL`).
 Without `DATABASE_URL` the server uses SQLite at `$DATA_DIR/pixeltown.db`
 (default `./data`), which is fine locally or with a Railway Volume mounted
 at `DATA_DIR`. The game talks to the server at `TTS_SERVER`.
@@ -305,12 +424,13 @@ audio/letters/b.mp3   "buh"
 audio/words/bus.mp3   "bus"
 ```
 
-These win over the Kokoro recordings; any missing file falls back to them.
+These win over the Polly recordings; any missing file falls back to them.
 
 ## Files
 
 - `js/data.js`: content and settings
 - `js/account.js`: login / sign-up and the server save
+- `js/progress.js`: putting two copies of the save together (account sync)
 - `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
 - `js/world.js`: town and room layouts, pathfinding
 - `js/touch.js`: what things on the map do and say when tapped

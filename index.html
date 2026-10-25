@@ -54,6 +54,8 @@
       <figure><canvas id="pv-now"></canvas><figcaption>지금</figcaption></figure>
       <div class="arrow">➜</div>
       <figure class="new"><canvas id="pv-new"></canvas><figcaption>바꾸면</figcaption></figure>
+      <!-- The robot edition magnifies the part that changes (js/captain-hero.js). -->
+      <figure class="zoom hidden"><canvas id="pv-zoom"></canvas><figcaption>🔍</figcaption></figure>
     </div>
     <div class="answer">
       <button id="rw-yes" class="yes">바꿀래요 💖</button>
@@ -160,8 +162,8 @@
     <div class="msg">마을이 잠들었어요. 내일 또 만나요!</div>
     <button id="sleep-key" class="sleep-key" type="button">🔑 부모님</button>
     <form id="sleep-form" class="sleep-form hidden">
-      <input id="sleep-pw" type="password" class="parent-pw" autocomplete="current-password" placeholder="비밀번호">
-      <button type="submit" class="parent-go">계속 놀기</button>
+      <input id="sleep-pw" type="password" class="sleep-pw" autocomplete="current-password" placeholder="비밀번호">
+      <button type="submit" class="sleep-go">계속 놀기</button>
       <p id="sleep-err" class="sleep-err"></p>
     </form>
   </div>
@@ -220,6 +222,7 @@
   </div>
 
   <script src="js/data.js?v=dev"></script>
+  <script src="js/progress.js?v=dev"></script>
   <script src="js/account.js?v=dev"></script>
   <script src="audio/tts/index.js?v=dev"></script>
   <script src="js/audio.js?v=dev"></script>

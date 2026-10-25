@@ -15,6 +15,8 @@ const VILLAIN_HP = 3;
 // LINES kinds the villains say in a fight, for tools/tts-phrases.js.
 // `narrator` ones are said by the narrator.
 const CAVE_LINES = { villain: ['villainHit', 'villainNext'], narrator: ['tapFire'] };
+// After a second miss, the narrator asks her to tap the answer to fire.
+function villainTapLine() { return { text: line('tapFire'), narrator: true }; }
 
 if (isCaptain()) {
   // Who lives in the cave. `coins` is the smallest prize for beating one;
@@ -30,7 +32,7 @@ if (isCaptain()) {
   for (const v of DUNGEON_NPCS) LOOKS[v.look] = { monster: v.look };
 
   Object.assign(VOICES, {
-    bossbot:   { gender: 'male',   tts: 'bm_george',  pitch: 0.85, rate: 0.95, voice: ['Daniel', 'Gordon', 'Microsoft George'] },
+    bossbot:   { gender: 'male',   tts: 'bm_george',  lift: 0.93, pitch: 0.85, rate: 0.95, voice: ['Daniel', 'Gordon', 'Microsoft George'] },
     scrapbot:  { gender: 'male',   tts: 'am_eric',    pitch: 1.0,  rate: 1.0,  voice: ['Fred', 'Ralph', 'Microsoft Guy'] },
     piratebot: { gender: 'male',   tts: 'bm_fable',   pitch: 1.05, rate: 1.0,  voice: ['Arthur', 'Oliver', 'Microsoft Ryan'] },
     madbot:    { gender: 'female', tts: 'af_nova',    pitch: 1.35, rate: 1.05, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
@@ -771,7 +773,7 @@ function villainGiveUp(npc) {
     state.coins += coins;
     save();
     renderCoins(true);
-    Sound.party();
+    Sound.coin();
     showPlace(`🪙 코인 ${coins}개!`);
   });
   caveSayThen([{ text: line('caught') }], voiceOf(npc), () => {

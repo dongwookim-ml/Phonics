@@ -99,6 +99,7 @@ function guideBob(n, now) {
 
 // Every frame (js/game.js): the play-time clock and the idle nudge.
 function guideTick(now, ms) {
+  if (state.paused) return; // the parent panel is open
   guidePlayTime(ms);
   if (!guidePlaying() || state.busy || state.hero.path.length) return;
   if (now - guide.lastTap < GUIDE_IDLE_MS || now - guide.nudgedAt < GUIDE_NUDGE_GAP || guide.nudges >= GUIDE_NUDGES) return;
@@ -176,18 +177,18 @@ guide.key.addEventListener('click', () => {
   guide.pw.value = '';
   setTimeout(() => guide.pw.focus(), 50);
 });
+// The same check as the parent panel (Account.verify: { ok, reason }).
 guide.form.addEventListener('submit', async e => {
   e.preventDefault();
   guide.err.textContent = '확인하는 중…';
-  let ok = false;
+  let r = { ok: false, reason: 'busy' };
   try {
-    ok = typeof Account !== 'undefined' ? await Account.verify(guide.pw.value) : guide.pw.value === '0000';
-  } catch (x) {
-    guide.err.textContent = '서버에 연결하지 못했어요. 잠시 후 다시 해 보세요.';
-    return;
-  }
-  if (ok) guideWake();
-  else { guide.err.textContent = '비밀번호가 맞지 않아요.'; guide.pw.select(); }
+    r = typeof Account !== 'undefined' ? await Account.verify(guide.pw.value) : { ok: guide.pw.value === '0000', reason: 'wrong' };
+  } catch (x) { /* r stays 'busy' */ }
+  if (r && r.ok === true) { guideWake(); return; }
+  const errors = typeof PARENT_ERRORS !== 'undefined' ? PARENT_ERRORS : {};
+  guide.err.textContent = errors[r && r.reason] || '비밀번호가 맞지 않아요.';
+  guide.pw.select();
 });
 // Keys typed for the password never reach the game.
 guide.el.addEventListener('keydown', e => e.stopPropagation());

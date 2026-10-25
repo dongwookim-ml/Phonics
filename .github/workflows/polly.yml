@@ -1,12 +1,20 @@
-# Records the game's voices with Amazon Polly (tools/polly-build.py), listens
-# to the new clips with a speech recogniser (tools/voice-check.py) and records
-# again any lone word that came out wrong (an added "a" or "the"), then
-# commits the clips to the branch. Runs when tools/polly-run.json changes:
-#   {"mode": "all"}     records every phrase in tools/tts-phrases.json
-#   {"mode": "sample"}  records a few lines in every voice
-#   {"mode": "voices"}  lists which voices have the generative engine
-#   "check": "changed" (default), "short", "all" or "none" picks the clips to listen to,
-#   "fix": false only reports what the recogniser heard.
+# Records the game's voices with Amazon Polly (tools/polly-build.py), checks
+# every clip (tools/clip-check.py, acoustic, then tools/voice-check.py, a
+# speech recogniser as a second opinion), records again the lines that fail,
+# evens out the voices' loudness, and commits the clips to the branch. Runs
+# when tools/polly-run.json changes on a branch (never main):
+#   "mode": "all"        records every phrase that has no clip yet (lists them
+#                        first with node tools/tts-phrases.js), then checks
+#           "check"      records nothing new; checks (and fixes) what is there
+#           "normalise"  only evens out the voices' loudness
+#           "sample"     a few lines in every generative voice (audio/polly-samples)
+#           "voices"     lists which voices have which engines
+#   "check": "changed" (default), "short", "all" or "none": what the recogniser listens to
+#   "fix": false         only reports; otherwise the lines that fail are recorded
+#                        again, said another way, on the same engine
+#   "normalise": true    then sets each voice's gain towards -20 LUFS
+#   "run": a number to change, to run again with the same settings
+# Clips of the deployed build (main) are kept, for tabs still running it.
 # Needs the repository secrets AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
 name: Record voices with Amazon Polly
 on:
@@ -16,7 +24,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-concurrency: polly
+concurrency:
+  group: polly-${{ github.ref }}
+  cancel-in-progress: false
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -30,27 +40,60 @@ jobs:
       mode: ${{ steps.cfg.outputs.mode }}
       check: ${{ steps.cfg.outputs.check }}
       fix: ${{ steps.cfg.outputs.fix }}
+      normalise: ${{ steps.cfg.outputs.normalise }}
     steps:
       - uses: actions/checkout@v4
+      # The settings come from a file anyone with push access can edit: only
+      # known values go on, and they reach the shell through env, never pasted in.
       - id: cfg
+        name: Read tools/polly-run.json
         run: |
-          echo "mode=$(jq -r .mode tools/polly-run.json)" >> "$GITHUB_OUTPUT"
-          echo "check=$(jq -r '.check // "changed"' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
-          echo "fix=$(jq -r 'if .fix == false then "no" else "yes" end' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
+          mode=$(jq -r '.mode // "all"' tools/polly-run.json)
+          check=$(jq -r '.check // "changed"' tools/polly-run.json)
+          fix=$(jq -r 'if .fix == false then "no" else "yes" end' tools/polly-run.json)
+          normalise=$(jq -r 'if .normalise == true then "yes" else "no" end' tools/polly-run.json)
+          case "$mode" in all|check|normalise|sample|voices) ;; *) echo "::error::unknown mode '$mode'"; exit 1 ;; esac
+          case "$check" in changed|short|all|none) ;; *) echo "::error::unknown check '$check'"; exit 1 ;; esac
+          { echo "mode=$mode"; echo "check=$check"; echo "fix=$fix"; echo "normalise=$normalise"; } >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install boto3
+      - run: pip install boto3 numpy
       - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Fetch the deployed build, whose clips are kept
+        run: git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+      - name: List the phrases
+        if: steps.cfg.outputs.mode == 'all'
+        run: node tools/tts-phrases.js
       - name: Record
-        run: python tools/polly-build.py
+        if: steps.cfg.outputs.mode == 'all' || steps.cfg.outputs.mode == 'sample' || steps.cfg.outputs.mode == 'voices'
+        env:
+          MODE: ${{ steps.cfg.outputs.mode }}
+        run: |
+          case "$MODE" in all|sample|voices) ;; *) exit 1 ;; esac
+          python tools/polly-build.py --mode "$MODE"
+      - name: Check the clips
+        if: steps.cfg.outputs.mode == 'all' || steps.cfg.outputs.mode == 'check'
+        run: python tools/clip-check.py --scope changed
+      - name: Keep what was recorded
+        if: always()
+        run: sh tools/push-clips.sh --stage recorded
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recorded-${{ github.run_attempt }}-record
+          path: recorded
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Commit the clips
         if: always()
-        run: sh tools/push-clips.sh "Record voices with Amazon Polly (${{ steps.cfg.outputs.mode }})"
+        env:
+          MODE: ${{ steps.cfg.outputs.mode }}
+        run: sh tools/push-clips.sh "Record voices with Amazon Polly ($MODE)"
 
   check:
     needs: record
-    if: needs.record.outputs.mode == 'all' && needs.record.outputs.check != 'none'
+    if: (needs.record.outputs.mode == 'all' || needs.record.outputs.mode == 'check') && needs.record.outputs.check != 'none'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:
@@ -71,21 +114,40 @@ jobs:
       - run: pip install faster-whisper pronouncing
       - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - name: Listen
-        run: python tools/voice-check.py --scope ${{ needs.record.outputs.check }} --shard ${{ matrix.shard }} --shards 10 --out part-${{ matrix.shard }}.json
+        env:
+          SCOPE: ${{ needs.record.outputs.check }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          case "$SCOPE" in changed|short|all) ;; *) echo "::error::unknown check '$SCOPE'"; exit 1 ;; esac
+          case "$SHARD" in [0-9]) ;; *) exit 1 ;; esac
+          python tools/voice-check.py --scope "$SCOPE" --shard "$SHARD" --shards 10 --out "part-$SHARD.json"
       - uses: actions/upload-artifact@v4
         with:
           name: voice-check-${{ matrix.shard }}
           path: part-${{ matrix.shard }}.json
           retention-days: 3
 
+  # Runs with whatever check shards finished, even if some failed.
   fix:
     needs: [record, check]
+    # Runs with whatever check shards finished (or none).
+    if: always() && needs.record.result == 'success' && (needs.record.outputs.mode == 'all' || needs.record.outputs.mode == 'check' || needs.record.outputs.mode == 'normalise')
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
+    env:
+      MODE: ${{ needs.record.outputs.mode }}
+      CHECK: ${{ needs.record.outputs.check }}
+      FIX: ${{ needs.record.outputs.fix }}
+      NORMALISE: ${{ needs.record.outputs.normalise }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
+      - name: Check the settings
+        run: |
+          case "$MODE" in all|check|normalise) ;; *) echo "::error::unknown mode '$MODE'"; exit 1 ;; esac
+          case "$CHECK" in changed|short|all|none) ;; *) echo "::error::unknown check '$CHECK'"; exit 1 ;; esac
+          case "$FIX$NORMALISE" in yesyes|yesno|noyes|nono) ;; *) echo "::error::bad fix/normalise"; exit 1 ;; esac
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -93,18 +155,44 @@ jobs:
         with:
           path: ~/.cache/huggingface
           key: whisper-${{ env.ASR_MODEL }}
-      - run: pip install boto3 faster-whisper pronouncing
+      - run: pip install boto3 numpy faster-whisper pronouncing
       - run: which ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Fetch the deployed build, whose clips are kept
+        run: git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
       - uses: actions/download-artifact@v4
+        if: env.MODE != 'normalise' && env.CHECK != 'none'
+        continue-on-error: true
         with:
           pattern: voice-check-*
           path: parts
           merge-multiple: true
-      - name: Merge the report
-        run: python tools/voice-check.py --merge 'parts/*.json'
-      - name: Record lone words again
-        if: needs.record.outputs.fix == 'yes'
+      - name: Merge the recogniser's report
+        if: env.MODE != 'normalise' && env.CHECK != 'none'
+        run: |
+          echo "$(ls parts/*.json 2>/dev/null | wc -l) of 10 shards finished"
+          python tools/voice-check.py --merge 'parts/*.json'
+      - name: Record failing lines again
+        if: env.MODE != 'normalise' && env.FIX == 'yes'
         run: python tools/polly-build.py --mode fix
+      - name: Even out the loudness
+        if: env.MODE == 'normalise' || env.NORMALISE == 'yes'
+        run: python tools/polly-build.py --mode normalise
+      - name: Check the clips again
+        run: python tools/clip-check.py --scope changed
+      - name: Ready to deploy?
+        continue-on-error: true
+        shell: bash
+        run: python tools/check-recordings.py --allow-unfixable | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Keep what was recorded
+        if: always()
+        run: sh tools/push-clips.sh --stage recorded
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recorded-${{ github.run_attempt }}-fix
+          path: recorded
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Commit
         if: always()
-        run: sh tools/push-clips.sh "Check the recorded voices and record misheard words again"
+        run: sh tools/push-clips.sh "Check the recorded voices, record failing lines again, even out loudness"

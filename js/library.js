@@ -38,7 +38,7 @@ function bookSay(parts, done, who) {
   const finish = () => {
     if (token !== library.token) return;
     clearTimeout(library.watchdog);
-    if (done) done();
+    if (done) whenPlaying(done); // not under the parent panel (js/game.js)
   };
   const letters = parts.reduce((n, p) => n + (p.text ? p.text.length : 0), 0);
   const pauses = parts.reduce((n, p) => n + (p.pause || 0), 0);
@@ -203,7 +203,7 @@ function bookFinish() {
   renderBookPage();
   libraryEl('rd-q').innerHTML = `<div class="rd-end">🎉 The End! 🎉</div>`;
   libraryEl('rd-options').innerHTML = '';
-  Sound.correct();
+  Sound.sparkle();
   bookSay([{ text: bookLine('theEnd'), narrator: true }, { pause: 400 }, { text: bookLine('quiz'), narrator: true }, { pause: 500 }],
     () => bookQuestion(0));
 }
