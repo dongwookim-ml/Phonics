@@ -43,6 +43,8 @@ jobs:
       normalise: ${{ steps.cfg.outputs.normalise }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}  # the branch as it is now: a run queued behind another starts from its clips
       # The settings come from a file anyone with push access can edit: only
       # known values go on, and they reach the shell through env, never pasted in.
       - id: cfg

@@ -396,7 +396,9 @@ def donor_of(p):
     same word passed both checks, a man's for a man and a woman's for a woman
     first; (voice, path) or None. Never for the narrator, whose words the pure
     letter sounds are cut from."""
-    if p['voice'] == NARRATOR or not LONE.match(p['text']):
+    # Any one word, "The" or "Fish" too (LONE, which decides how a line is
+    # said, is for lower-case words only).
+    if p['voice'] == NARRATOR or not re.fullmatch(r'[A-Za-z]+[!.]?', p['text']):
         return None
     cc, vc = load_tool('clip-check'), load_tool('voice-check')
     crep, vrep = cc.load_report()['clips'], vc.load_report()['clips']
@@ -753,24 +755,33 @@ def fix():
     bad, tried = [], {}
     for key, p in ((f"{p['voice']}|{p['text']}", p) for p in phrases):
         cid = current(key)
-        if kind_of(p) != 'plain' or variant(p) >= LAST_VARIANT:
+        if kind_of(p) != 'plain':
             continue
         tried[key] = variant(p)
         if not cid or cid not in ENGINES.get(p['voice'], {}):
             # No clip at all (refused, or nothing audible), or one kept from
             # before clips were tracked: try the other ways.
-            bad.append(key)
+            if tried[key] < LAST_VARIANT:
+                bad.append(key)
             continue
         c, w = crep['clips'].get(key, {}), vrep['clips'].get(key, {})
         misheard = w.get('id') == cid and w.get('status') in vc.FAILS
+        failing = (c.get('id') == cid and c.get('fails')) or misheard
         if c.get('unfixable') or w.get('unfixable'):
             # Given up on after every way there was then (2 before tries 3
-            # and 4 existed): only the ways added since are left to try, and
-            # for a misheard lone word another voice's (BORROW).
+            # and 4 existed): only the ways added since are left to try.
             tried[key] = max(tried[key], c.get('tried', 2))
-            if tried[key] >= LAST_VARIANT and not (misheard and donor_of(p)):
-                continue
-        if (c.get('id') == cid and c.get('fails')) or misheard:
+        if tried[key] >= LAST_VARIANT:
+            # Every way said: a misheard lone word can still take another
+            # voice's (BORROW, once); anything else failing is given up on,
+            # so the gate lists it instead of failing on it for good.
+            if failing and misheard and tried[key] < BORROW and donor_of(p):
+                bad.append(key)
+            elif failing and not c.get('unfixable'):
+                crep['clips'].setdefault(key, {}).update(unfixable=True, tried=tried[key])
+                print(f'  unfixable, keeps its clip: {key}', flush=True)
+            continue
+        if failing:
             bad.append(key)
     by_key = {f"{p['voice']}|{p['text']}": p for p in phrases}
     print(f'{len(bad)} lines to record again' + ('' if whisper else ' (no recogniser here: acoustic checks only)'),

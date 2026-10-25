@@ -52,15 +52,16 @@ SOUNDS = re.compile(r'(?<= says )(ah|eh|ih|aw|uh|buh|kuh|duh|guh|puh|tuh|fff|hhh
 # whose name ends the same but voiced).
 LETTER = re.compile(r'^([A-Z])[.!?]?$')
 LETTER_HEARD = {
-    'A': ['a', 'ay', 'aye'], 'B': ['b', 'bee', 'be'], 'C': ['c', 'see', 'sea', 'si'], 'D': ['d', 'dee'],
+    'A': ['a', 'ay'], 'B': ['b', 'bee', 'be'], 'C': ['c', 'see', 'sea', 'si'], 'D': ['d', 'dee'],
     'E': ['e', 'ee'], 'F': ['f', 'eff', 'ef'], 'G': ['g', 'gee', 'ji'], 'H': ['h', 'aitch', 'haitch', 'age'],
-    'I': ['i', 'eye', 'aye', 'ai'], 'J': ['j', 'jay'], 'K': ['k', 'kay', 'cay', 'quay'],
+    'I': ['i', 'eye', 'aye', 'ai'], 'J': ['j', 'jay'], 'K': ['k', 'kay', 'cay'],
     'L': ['l', 'el', 'ell', 'elle'], 'M': ['m', 'em'], 'N': ['n', 'en'], 'O': ['o', 'oh', 'owe'],
     'P': ['p', 'pee', 'pea'], 'Q': ['q', 'cue', 'queue', 'kew'], 'R': ['r', 'are', 'ar'], 'S': ['s', 'ess', 'es'],
     'T': ['t', 'tee', 'tea'], 'U': ['u', 'you', 'yew', 'ewe'], 'V': ['v', 'vee'],
     'W': ['w', 'double u', 'double you', 'doubleyou'], 'X': ['x', 'ex'], 'Y': ['y', 'why', 'wye'],
     'Z': ['z', 'zee', 'zed'],
 }
+LETTER_NAMES = {n for names in LETTER_HEARD.values() for n in names}
 # Statuses that fail a clip (backed by the acoustics). "unclear" is listed only.
 FAILS = ('article', 'extra', 'silent', 'different')
 
@@ -238,6 +239,13 @@ def check_clip(voice, text, clip_id, acoustic=None):
         res['hinted'] = again
         if judge(text, again) == 'ok' and res['status'] in ('different', 'silent'):
             res['status'] = 'ok'
+    # A lone letter heard as no letter's name at all ("Bean.", "K.A."): the
+    # narrator is its only voice, so there is no other clip to measure it
+    # against; the hearing stands. One letter heard as another (B as V) is
+    # the recogniser's usual mix-up and still needs the acoustics.
+    named = lambda h: h is not None and ' '.join(tokens(h)) in LETTER_NAMES
+    if LETTER.match(text) and not named(res['heard']) and not named(res.get('hinted')):
+        return res
     if res['status'] in FAILS and acoustic is not None and not backed(res['status'], acoustic):
         res['asr'] = res['status']
         res['status'] = 'unclear'

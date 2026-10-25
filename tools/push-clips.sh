@@ -28,6 +28,7 @@ git diff --cached --quiet && exit 0
 git commit -qm "$1"
 for i in 1 2 3; do
   git pull -q --rebase origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0
+  git rebase --abort 2>/dev/null  # a rebase left half done would fail every later try
   sleep 5
 done
 exit 1
