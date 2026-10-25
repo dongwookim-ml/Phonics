@@ -1,6 +1,7 @@
 // Quick check before deploying: no two scripts define the same global, and
-// every scene builds and draws without errors, for a girl and a boy hero
-// and for the robot hero of the captain edition.
+// every scene (village homes too) builds and draws without errors, for a
+// girl and a boy hero and for the robot hero of the captain edition. Every
+// door must be reachable and lead back out where it was.
 // Run: node tools/smoke.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -36,11 +37,26 @@ for (const s of scripts) {
       document.querySelector(`[data-title="${title}"]`).click();
       document.querySelector('.start').classList.add('hidden');
       state.stars = 99;
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`),
+        ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
       const bad = [];
       for (const n of names) {
         try { changeScene(n); } catch (e) { bad.push(`${n}: ${e.message}`); }
         await new Promise(r => setTimeout(r, 120));
+      }
+      // Every door can be walked to from where she arrives, nobody stands on
+      // it, and the room behind it leads back out to the scene it is in.
+      for (const n of ['town', 'forest', 'unicorn', 'fairy']) {
+        const sc = sceneFor(n);
+        for (const d of sc.doors) {
+          const where = `${n} door ${d.c},${d.r} -> ${d.target}`;
+          if (!findPath(sc, sc.start, (c, r) => c === d.c && r === d.r)) bad.push(`${where}: can't be reached`);
+          if (sc.npcs.some(p => p.c === d.c && p.r === d.r)) bad.push(`${where}: someone stands on it`);
+          const room = sceneFor(d.target);
+          if (d.home && (!room.returnTo || room.returnTo.scene !== n)) bad.push(`${where}: leads back to ${room.returnTo && room.returnTo.scene}`);
+        }
+        const homes = VILLAGE_HOMES.filter(h => h.scene === n);
+        for (const h of homes) if (!sc.doors.some(d => d.home === h)) bad.push(`${n}: home ${h.id} has no door`);
       }
       return bad;
     }, title);
