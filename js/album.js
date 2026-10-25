@@ -378,7 +378,7 @@ function medalList() {
     out.push({ id: `house:${h.letter}`, letter: h.letter, ids: [...ids] });
   }
   const seen = new Set();
-  for (const key of ['town', 'forest', 'unicorn', 'fairy', 'dungeon']) {
+  for (const key of ['town', 'forest', 'unicorn', 'fairy', 'dungeon', 'monster']) {
     const kinds = QUIZ_TYPES[key];
     const sig = kinds && kinds.slice().sort().join();
     if (!kinds || seen.has(sig)) continue;
