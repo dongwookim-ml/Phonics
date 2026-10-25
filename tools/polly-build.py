@@ -199,6 +199,10 @@ GAINS = read_json(GAINS_FILE, {})
 LONE = re.compile(r'^[a-z]+[!.]?$')
 SENTENCES = re.compile(r'[.!?]\s+\S')
 LAST_VARIANT = 4
+# The last resort for a lone word that is heard as another word whichever
+# way it is said ("ha" for "hat"): the word as another voice said it right
+# (donor_of()). Better another voice than teaching the wrong sound.
+BORROW = LAST_VARIANT + 1
 
 PHRASES = {}  # (voice, text) -> phrase, filled by load_phrases()
 
@@ -342,10 +346,41 @@ def silence(sec):
     return np.zeros(int(sec * ca.SR))
 
 
+def donor_of(p):
+    """For a lone word no way of saying fixed: another voice whose clip of the
+    same word passed both checks, a man's for a man and a woman's for a woman
+    first; (voice, path) or None. Never for the narrator, whose words the pure
+    letter sounds are cut from."""
+    if p['voice'] == NARRATOR or not LONE.match(p['text']):
+        return None
+    cc, vc = load_tool('clip-check'), load_tool('voice-check')
+    crep, vrep = cc.load_report()['clips'], vc.load_report()['clips']
+    idx = old_index()
+    same = lambda v: v[1] == p['voice'][1]  # af_/bf_ women, am_/bm_ men
+    for v in sorted((v for v in idx if v not in (p['voice'], NARRATOR)), key=lambda v: (not same(v), v)):
+        cid = idx[v].get(p['text'])
+        key = f"{v}|{p['text']}"
+        rec = ENGINES.get(v, {}).get(cid)
+        if not cid or not isinstance(rec, dict) or rec.get('engine') == 'cut':
+            continue
+        c, w = crep.get(key, {}), vrep.get(key, {})
+        if c.get('id') == cid and not c.get('fails') and w.get('id') == cid and w.get('status') == 'ok' \
+                and os.path.exists(path_of(v, cid)):
+            return v, path_of(v, cid)
+    return None
+
+
 def make_plain(p, k, path, gain):
     if re.fullmatch(r'/[a-z]+/', p['text']):
         # Polly would read the slashes; the game says the sound's spelling instead.
         raise Refused('not a sound in tools/letter-sounds.json')
+    if k == BORROW:
+        d = donor_of(p)
+        if not d:
+            raise Refused('no other voice says it right')
+        shutil.copyfile(d[1], path + '.part')
+        os.replace(path + '.part', path)
+        return {'engine': 'cut', 'from': d[0], 'gain': gain, 'variant': k}
     y, rec = speak(p['voice'], p['text'], p['speed'], k)
     ca.encode(y, path, gain)
     return dict(rec, gain=gain, variant=k)
@@ -678,13 +713,15 @@ def fix():
             bad.append(key)
             continue
         c, w = crep['clips'].get(key, {}), vrep['clips'].get(key, {})
+        misheard = w.get('id') == cid and w.get('status') in vc.FAILS
         if c.get('unfixable') or w.get('unfixable'):
             # Given up on after every way there was then (2 before tries 3
-            # and 4 existed): only the ways added since are left to try.
+            # and 4 existed): only the ways added since are left to try, and
+            # for a misheard lone word another voice's (BORROW).
             tried[key] = max(tried[key], c.get('tried', 2))
-            if tried[key] >= LAST_VARIANT:
+            if tried[key] >= LAST_VARIANT and not (misheard and donor_of(p)):
                 continue
-        if (c.get('id') == cid and c.get('fails')) or (w.get('id') == cid and w.get('status') in vc.FAILS):
+        if (c.get('id') == cid and c.get('fails')) or misheard:
             bad.append(key)
     by_key = {f"{p['voice']}|{p['text']}": p for p in phrases}
     print(f'{len(bad)} lines to record again' + ('' if whisper else ' (no recogniser here: acoustic checks only)'),
@@ -722,6 +759,24 @@ def fix():
                 crep['clips'][key] = dict(m, id=cid, fails=[])
                 if heard:
                     vrep['clips'][key] = heard
+    # A lone word still heard as another word: another voice's, if one says it right.
+    for key in list(bad):
+        p = by_key[key]
+        w = vrep['clips'].get(key, {})
+        if not (w.get('id') == current(key) and w.get('status') in vc.FAILS) or not donor_of(p):
+            continue
+        cid = clip_id(p, BORROW)
+        try:
+            ENGINES.setdefault(p['voice'], {})[cid] = make_plain(p, BORROW, path_of(p['voice'], cid), GAINS.get(p['voice'], 0.0))
+        except Refused as e:
+            print(f'  {key}: {e}', flush=True)
+            continue
+        VARIANTS[key] = BORROW
+        crep['clips'][key] = dict(cc.measure(path_of(p['voice'], cid), p['text']), id=cid, fails=[])
+        if whisper:
+            vrep['clips'][key] = vc.check_clip(p['voice'], p['text'], cid, acoustic=crep['clips'][key])
+        bad.remove(key)
+        print(f"  {key}: borrowed from {ENGINES[p['voice']][cid]['from']}", flush=True)
     for key in bad:
         crep['clips'].setdefault(key, {}).update(unfixable=True, tried=tried[key])
         print(f'  unfixable, keeps its clip: {key}', flush=True)
