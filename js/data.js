@@ -173,12 +173,12 @@ const LOOKS = {
 // Outdoor villagers ask about any word.
 const TOWN_NPCS = [
   { name: '성문 기사님', look: 'knight', c: 18, r: 11 },
-  { name: '꽃집 언니',   look: 'flower', c: 5,  r: 19 },
+  { name: '꽃집 언니',   look: 'flower', c: 5,  r: 17 },
   { name: '할머니',     look: 'granny', c: 16, r: 18 },
   { name: '낚시 아저씨', look: 'fisher', c: 27, r: 28 },
   { name: '빵집 아저씨', look: 'baker',  c: 12, r: 16 },
   { name: '꼬마 친구',   look: 'kid',    c: 34, r: 19 },
-  { name: '음악가',     look: 'bard',   c: 23, r: 21 },
+  { name: '음악가',     look: 'bard',   c: 26, r: 20 },
   { name: '농부 아저씨', look: 'farmer', c: 9,  r: 31 },
 ];
 
@@ -335,9 +335,9 @@ const FOREST_NPCS = [
   { name: '꽃요정',     look: 'fairy',  c: 12, r: 6 },
   { name: '숲 엘프',     look: 'elf',    c: 20, r: 9 },
   { name: '별빛 마법사', look: 'wizard', c: 14, r: 15 },
-  { name: '버섯 할아버지', look: 'gnome', c: 6, r: 14 },
+  { name: '버섯 할아버지', look: 'gnome', c: 5, r: 14 },
   { name: '숲지기',     look: 'ranger', c: 22, r: 19 },
-  { name: '작은 요정',   look: 'fairy',  c: 9,  r: 22 },
+  { name: '작은 요정',   look: 'fairy',  c: 8,  r: 22 },
 ];
 
 Object.assign(VOICES, {
@@ -540,8 +540,8 @@ LOOKS.keeper = { hair: '#c04a4a', shirt: '#ff9ec4', pants: '#8fd3ff', hat: 'stra
 
 // Unicorns that talk have `unicorn` (their colour) instead of a villager look.
 const UNICORN_NPCS = [
-  { name: '무지개 유니콘', look: 'unicorn', unicorn: 'rainbow', c: 17, r: 8 },
-  { name: '목장 언니',     look: 'keeper', c: 9, r: 10 },
+  { name: '무지개 유니콘', look: 'unicorn', unicorn: 'rainbow', c: 17, r: 7 },
+  { name: '목장 언니',     look: 'keeper', c: 9, r: 9 },
   { name: '솜사탕 유니콘', look: 'unicorn', unicorn: 'pink', c: 23, r: 14 },
   { name: '무지개 요정',   look: 'fairy', c: 8, r: 19 },
   { name: '구름 유니콘',   look: 'unicorn', unicorn: 'snow', c: 23, r: 21 },

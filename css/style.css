@@ -2,11 +2,16 @@
   --ink: #4a2c4f;
   --paper: #fff8f4;
   --accent: #ff6fa8;
+  /* The accent for text (first letters, letter cards, names): dark enough to
+     read on white and on the yellow highlight (5:1). */
+  --accent-ink: #c92a72;
   --gold: #ffd34d;
   --sky-top: #ffd6ec;
   --sky-mid: #cfe8ff;
   --sky-bottom: #b8f0e0;
   --ui-font: "Jua", "Baloo 2", "Trebuchet MS", sans-serif;
+  /* Where the HUD ends; panels open below it. */
+  --hud: calc(max(10px, env(safe-area-inset-top)) + 64px);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -34,32 +39,6 @@ html, body {
 
 button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
-/* ---- HD-2D finish ---- */
-
-.fx { position: fixed; left: 0; right: 0; pointer-events: none; }
-.tilt { height: 22vh; backdrop-filter: blur(2.5px); -webkit-backdrop-filter: blur(2.5px); }
-.tilt.top {
-  top: 0;
-  -webkit-mask-image: linear-gradient(#000, transparent);
-  mask-image: linear-gradient(#000, transparent);
-}
-.tilt.bottom {
-  bottom: 0;
-  -webkit-mask-image: linear-gradient(transparent, #000);
-  mask-image: linear-gradient(transparent, #000);
-}
-.bloom {
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(255, 236, 190, 0.55), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(255, 170, 220, 0.35), transparent 60%);
-  mix-blend-mode: soft-light;
-}
-.vignette {
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 58%, rgba(90, 50, 110, 0.32));
-}
-
 /* ---- HUD ---- */
 
 .hud {
@@ -78,6 +57,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   display: flex;
   gap: 6px;
   align-items: center;
+  min-height: 52px;
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: 16px;
@@ -88,9 +68,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .stars.pop { animation: pop 0.5s ease; }
 .buttons { display: flex; gap: 8px; }
 .btn {
-  width: 52px;
-  height: 52px;
-  font-size: 26px;
+  width: 64px;
+  height: 64px;
+  font-size: 30px;
   background: var(--paper);
   border: 3px solid var(--ink);
   border-radius: 14px;
@@ -158,15 +138,19 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 }
 .portrait canvas { width: 80px; height: 136px; image-rendering: pixelated; object-fit: contain; }
 .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.name { font-size: 20px; color: var(--accent); }
-.text { font-size: 20px; line-height: 1.25; }
-.choices { display: flex; gap: 10px; margin-top: 4px; }
+.name { font-size: 20px; color: var(--accent-ink); }
+/* Two lines kept for the text, and the cards sit at the bottom with their
+   content at the bottom, so nothing moves under her finger when the line
+   changes or an answer shows its picture or word. */
+.text { font-size: 20px; line-height: 1.25; min-height: 2.5em; }
+.choices { display: flex; gap: 10px; margin-top: auto; padding-top: 4px; }
 .choice {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px;
   padding: 8px 4px 10px;
   background: #fff;
@@ -187,15 +171,24 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .choice .pic { font-size: 34px; line-height: 1.1; display: none; }
 .choice.pictures .pic, .choice.right .pic { display: block; }
 .choice .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 36px; letter-spacing: 1px; line-height: 1.1; }
-.choice .first { color: var(--accent); }
+/* A word always fits its card: 36px when there is room, smaller on narrow
+   cards and for long words (18% of a 161px iPad card is 29px, enough for
+   "strawberry"). fitWords() in js/game.js does the same where container
+   units are missing. */
+.choices .choice { container-type: inline-size; }
+.choices .choice .w { white-space: nowrap; font-size: min(36px, 30cqi); }
+.choices .choice .w.long { letter-spacing: 0; font-size: min(36px, 18cqi); }
+.choice .first { color: var(--accent-ink); }
 .choice.right { background: #fff4b8; border-color: #e0a52a; animation: pop 0.5s ease; }
 .choice.wrong { opacity: 0.4; animation: shake 0.4s ease; }
 .choice .bigpic { font-size: 54px; line-height: 1.05; }
-.choice .letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 46px; line-height: 1.1; color: var(--accent); }
-.choice .w.hide { display: none; }
-.choice.right .w.hide, .choice.wrong .w.hide { display: block; font-size: 24px; }
+.choice .letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 46px; line-height: 1.1; color: var(--accent-ink); }
+/* A picture card's word shows once answered; its room is kept from the start. */
+.choice .w.hide { visibility: hidden; font-size: 24px; font-size: min(24px, 15cqi); }
+.choice.right .w.hide, .choice.wrong .w.hide { visibility: visible; }
 .choices.four { gap: 7px; }
-.choices.four .choice .w { font-size: 30px; }
+.choices.four .choice .w { font-size: 30px; font-size: min(30px, 26cqi); }
+.choices.four .choice .w.long { font-size: min(30px, 17cqi); }
 .clue {
   display: flex;
   align-items: center;
@@ -210,22 +203,25 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .clue-pic { font-size: 46px; line-height: 1; }
 .clue-word { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 40px; letter-spacing: 3px; line-height: 1.1; }
 .clue-word.big { font-size: 52px; letter-spacing: 5px; }
-.clue-word .first { color: var(--accent); }
+.clue-word .first { color: var(--accent-ink); }
 .clue-word .blank { display: inline-block; min-width: 0.8em; color: #e0a52a; border-bottom: 4px solid #e0a52a; text-align: center; }
 .clue-sentence { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 30px; line-height: 1.25; text-align: center; }
-.clue-sentence .first { color: var(--accent); }
+.clue-sentence .first { color: var(--accent-ink); }
 .clue-sentence .blank.wide { display: inline-block; min-width: 2.6em; margin: 0 0.15em; color: #e0a52a; border-bottom: 4px solid #e0a52a; text-align: center; }
-.clue-letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 52px; color: var(--accent); line-height: 1.1; }
-.side { display: flex; flex-direction: column; gap: 8px; justify-content: space-between; }
+.clue-letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 52px; color: var(--accent-ink); line-height: 1.1; }
+/* Hear-it-again under the close button, which sits on the dialog's top
+   right corner, away from the answer cards. */
+.side { display: flex; flex-direction: column; gap: 8px; padding-top: 34px; }
 .round {
-  width: 58px;
-  height: 58px;
-  font-size: 28px;
+  width: 68px;
+  height: 68px;
+  font-size: 32px;
   border-radius: 50%;
   background: #c9f0ff;
   border: 3px solid var(--ink);
 }
-.round.small { width: 44px; height: 44px; font-size: 18px; background: #ffe6f2; align-self: center; }
+.round.small { width: 64px; height: 64px; font-size: 26px; background: #ffe6f2; align-self: center; }
+#dlg-close { position: absolute; top: -22px; right: -10px; box-shadow: 0 4px 0 rgba(74, 44, 79, 0.25); }
 
 /* ---- Reward ---- */
 
@@ -244,7 +240,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   animation: rise 0.3s ease;
 }
 .reward .title { font-size: 26px; }
-.reward .gift { font-size: 30px; color: var(--accent); margin: 4px 0 8px; }
+.reward .gift { font-size: 30px; color: var(--accent-ink); margin: 4px 0 8px; }
 .previews { display: flex; justify-content: center; align-items: center; gap: 10px; }
 .previews figure {
   margin: 0;
@@ -318,7 +314,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   border: 3px solid var(--ink);
   border-radius: 14px;
 }
-#hear-name { width: 58px; height: 58px; font-size: 26px; }
+#hear-name { width: 64px; height: 64px; font-size: 28px; }
 .field input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px #ffc8e0; }
 .title-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .title-chips.hidden { display: none; }
@@ -364,10 +360,46 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   box-shadow: 0 6px 0 rgba(74, 44, 79, 0.35);
 }
 .login-go:disabled { opacity: 0.6; }
-.login-guest { font: inherit; font-size: 19px; color: var(--ink); background: none; border: none; text-decoration: underline; opacity: 0.75; padding: 8px; }
+/* Playing without an account is the way a child gets in: a real button. */
+.login-guest {
+  min-height: 64px;
+  padding: 10px 26px;
+  font: inherit;
+  font-size: 24px;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 rgba(74, 44, 79, 0.25);
+}
 .account-bar { position: absolute; top: 10px; right: 12px; display: flex; align-items: center; gap: 6px; font-size: 18px; }
 .account-bar:empty { display: none; }
 .account-bar .who { background: rgba(255, 255, 255, 0.8); border-radius: 12px; padding: 3px 10px; }
+
+/* Landscape: the hero, the title and ▶ on the left, the form on the right,
+   so ▶ and the guest button are on screen without scrolling even with the
+   Safari toolbars (1024 x 700). */
+@media (min-aspect-ratio: 5/4) {
+  .start {
+    display: grid;
+    grid-template-columns: minmax(0, 380px) minmax(0, 580px);
+    grid-template-areas: "pv profile" "title profile" "play profile" "tip tip";
+    align-content: safe center;
+    justify-content: center;
+    justify-items: center;
+    align-items: center;
+    gap: 8px 36px;
+  }
+  .start .preview { grid-area: pv; align-self: end; }
+  .start h1 { grid-area: title; }
+  .start .profile { grid-area: profile; }
+  .start-btn { grid-area: play; align-self: start; }
+  .start .tip { grid-area: tip; }
+  .login { grid-template-areas: "title profile" "edition profile" "guest profile"; }
+  .login h1 { align-self: end; }
+  .login-edition { grid-area: edition; }
+  .login-guest { grid-area: guest; align-self: start; }
+}
 
 @keyframes pop { 40% { transform: scale(1.12); } }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
@@ -380,11 +412,26 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .stars.pop { --s: 1; }
 
 @media (max-width: 560px) {
-  .dialog { flex-wrap: wrap; }
-  .portrait { width: 64px; }
-  .portrait canvas { width: 56px; height: 95px; }
-  .choice .w { font-size: 18px; letter-spacing: 0; overflow-wrap: normal; word-break: keep-all; }
-  .choice .w.long { font-size: 13px; }
+  /* Narrow phones: the portrait and the line on top, the clue and the cards
+     across the whole dialog so the words stay big. */
+  .dialog {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "pt name side" "pt text side" "clue clue clue" "ch ch ch" "bk bk bk";
+    align-items: start;
+    gap: 6px 8px;
+  }
+  .body { display: contents; }
+  .portrait { grid-area: pt; width: 56px; }
+  .portrait canvas { width: 46px; height: 78px; }
+  .name { grid-area: name; }
+  .text { grid-area: text; }
+  .clue { grid-area: clue; }
+  .choices { grid-area: ch; }
+  .dlg-books { grid-area: bk; }
+  .side { grid-area: side; padding-top: 30px; }
+  .round { width: 56px; height: 56px; font-size: 26px; }
+  .choice .w { letter-spacing: 0; }
   .choice .bigpic { font-size: 42px; }
   .clue-pic, .clue-word, .clue-letter { font-size: 34px; }
   .clue-word.big { font-size: 40px; }
@@ -398,7 +445,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .account-bar { position: static; align-self: flex-end; }
   .choices.four { display: grid; grid-template-columns: 1fr 1fr; }
   .choices.four .choice { position: relative; padding: 4px 2px 6px; }
-  .choices.four .choice .w { font-size: 22px; }
+  .choices.four .choice .w { font-size: 22px; font-size: min(22px, 26cqi); }
   .choices.four .choice .pic { font-size: 26px; }
   .choices.four .choice .num { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; line-height: 20px; font-size: 13px; }
   .text { font-size: 18px; }
@@ -406,14 +453,15 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 /* ---- Wardrobe ---- */
 
+/* Centred in the space below the HUD, so the counters stay readable. */
 .wardrobe {
   position: fixed;
   left: 50%;
-  top: 50%;
+  top: calc(50% + (var(--hud) - 4px) / 2);
   transform: translate(-50%, -50%);
   width: min(820px, calc(100vw - 24px));
-  max-height: calc(100vh - 90px);
-  max-height: calc(100dvh - 90px);
+  max-height: calc(100vh - var(--hud) - 20px);
+  max-height: calc(100dvh - var(--hud) - 20px);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -427,7 +475,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .wardrobe.hidden { display: none; }
 .wd-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 6px; }
 .wd-name { font-size: 26px; }
-.wd-count { font-size: 18px; color: var(--accent); }
+.wd-count { font-size: 18px; color: var(--accent-ink); }
 .wd-main { display: flex; gap: 14px; min-height: 0; }
 .wd-mirror {
   flex: 0 0 auto;
@@ -445,17 +493,17 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .chip {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  min-height: 40px;
-  font-size: 16px;
+  gap: 6px;
+  padding: 6px 12px;
+  min-height: 56px;
+  font-size: 18px;
   background: #fff;
   border: 3px solid var(--ink);
   border-radius: 14px;
   box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2);
 }
-.chip .ic { font-size: 20px; }
-.chip .sw { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--ink); }
+.chip .ic { font-size: 24px; }
+.chip .sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ink); }
 .chip.on { background: #fff4b8; border-color: #e0a52a; box-shadow: 0 0 0 3px var(--gold); }
 .chip:disabled { opacity: 0.45; background: #f2e8ee; }
 .wd-done {
@@ -477,36 +525,16 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 /* ---- Starlight Forest: twilight sky and cooler light ---- */
 
 body.unicorn { background: linear-gradient(#ffd6ec, #e4d8ff 50%, #c8f0ff); }
-body.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 150, 200, 0.35)); }
 body.captain.unicorn { background: linear-gradient(#bfe6ff, #dff3ff 50%, #e4f6dc); }
-body.captain.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(90, 150, 220, 0.3)); }
 body.forest { background: linear-gradient(#2e2a6a, #6a5ab8 45%, #b8a0e8); }
-body.forest .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(160, 200, 255, 0.5), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(200, 140, 255, 0.45), transparent 60%);
-}
-body.forest .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
 
 /* ---- Dinosaur Village (captain): a sunny jungle ---- */
 
 body.dino { background: linear-gradient(#9ee4ff, #d4f6c4 50%, #fff0b0); }
-body.dino .bloom {
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(255, 240, 170, 0.6), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(255, 190, 120, 0.35), transparent 60%);
-}
-body.dino .vignette { background: radial-gradient(ellipse at center, transparent 60%, rgba(40, 110, 60, 0.25)); }
 
 /* ---- Crystal Cave and the shop ---- */
 
 body.dungeon { background: linear-gradient(#2a2050, #4f4288 50%, #7a6cb0); }
-body.dungeon .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(140, 230, 255, 0.45), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(255, 150, 240, 0.4), transparent 60%);
-}
-body.dungeon .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
 
 .counters { display: flex; gap: 8px; }
 .stars.hidden { display: none; }
@@ -514,12 +542,12 @@ body.dungeon .vignette { background: radial-gradient(ellipse at center, transpar
 
 .shop { background: radial-gradient(circle at 30% 20%, #fffdf2, #fff0c8); }
 .shop .wd-count { font-size: 24px; color: #b07a10; }
-.shop-msg { padding: 0 6px; font-size: 18px; color: var(--accent); }
-.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); align-content: start; gap: 6px; padding: 3px; }
+.shop-msg { padding: 0 6px; font-size: 18px; color: var(--accent-ink); }
+.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); align-content: start; gap: 6px; padding: 3px; }
 .shop-item { display: flex; align-items: center; gap: 6px; text-align: left; }
 .shop-item .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.shop-item .price { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 2px 8px 2px 4px; border-radius: 12px; background: #fff4b8; color: #8a5a10; font-size: 15px; line-height: 1; }
-.shop-item .price .coin { font-size: 13px; line-height: 1; }
+.shop-item .price { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 3px 8px 3px 4px; border-radius: 12px; background: #fff4b8; color: #8a5a10; font-size: 17px; line-height: 1; }
+.shop-item .price .coin { font-size: 15px; line-height: 1; }
 .shop-item.dear .price { background: #f2e8ee; color: #9a8aa3; }
 .shop .answer { margin-top: 2px; }
 .shop .answer button.hidden { display: none; }
@@ -535,20 +563,8 @@ body.dungeon .vignette { background: radial-gradient(ellipse at center, transpar
 /* ---- Fairy Village: pastel sky and the spelling question ---- */
 
 body.fairy { background: linear-gradient(#ffe0f2, #efe4ff 50%, #d8f6ec); }
-body.fairy .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(255, 220, 245, 0.6), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(200, 180, 255, 0.45), transparent 60%);
-}
-body.fairy .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(220, 150, 220, 0.3)); }
 /* The Drone Village sky in the captain edition: clear blue with a warm sun. */
 body.captain.fairy { background: linear-gradient(#bfe6ff, #e0f2ff 50%, #dff6e0); }
-body.captain.fairy .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(255, 244, 200, 0.55), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(160, 220, 255, 0.4), transparent 60%);
-}
-body.captain.fairy .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(90, 150, 220, 0.25)); }
 .dust.pop { animation: pop 0.5s ease; }
 
 .spell-word { display: flex; gap: 8px; }
@@ -561,7 +577,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
   font-weight: 800;
   font-size: 40px;
   line-height: 1;
-  color: var(--accent);
+  color: var(--accent-ink);
   border-bottom: 5px solid #e0a52a;
 }
 .spell-word .slot.next { border-bottom-color: var(--accent); animation: breathe 1s ease infinite; }
@@ -569,7 +585,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .spell-word.wrong { animation: shake 0.4s ease; }
 .spell-word.wrong .slot { color: #9a8aa3; border-bottom-color: #c8b8d0; }
 .choices.spell { display: grid; grid-template-columns: repeat(auto-fit, minmax(52px, 1fr)); gap: 7px; }
-.choices.spell .tile { padding: 2px 2px 4px; }
+.choices.spell .tile { padding: 2px 2px 4px; min-height: 68px; justify-content: center; }
 .choices.spell .tile .letter { font-size: 40px; }
 .choices.spell .tile:disabled { opacity: 0.3; background: #f2e8ee; transform: translateY(3px); box-shadow: none; }
 .choices.spell .erase {
@@ -577,8 +593,9 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 68px;
   padding: 2px 4px 4px;
-  font-size: 16px;
+  font-size: 17px;
   background: #ffe6f2;
   border: 3px solid var(--ink);
   border-radius: 16px;
@@ -765,7 +782,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .lib-book:active { transform: translateY(3px); }
 .lib-book .cv { font-size: 50px; line-height: 1.15; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.15)); }
 .lib-book .en { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 15px; line-height: 1.1; margin-top: 6px; }
-.lib-book .ko { font-size: 15px; color: var(--accent); }
+.lib-book .ko { font-size: 15px; color: var(--accent-ink); }
 .lib-book .coins { font-size: 13px; letter-spacing: 1px; min-height: 18px; }
 .lib-book .coins i { font-style: normal; color: #b8a8c8; }
 .lib-book .tick {
@@ -785,7 +802,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .reader {
   position: fixed;
   left: 50%;
-  top: max(74px, calc(env(safe-area-inset-top) + 64px));
+  top: calc(var(--hud) + 10px);
   bottom: max(12px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   width: min(900px, calc(100vw - 24px));
@@ -830,7 +847,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
   overflow-y: auto;
 }
 .rd-text .sent { padding: 0 4px; border-radius: 10px; transition: background 0.2s, color 0.2s; cursor: pointer; }
-.rd-text .sent.now { background: #fff1a8; color: var(--accent); box-shadow: 0 0 0 3px #ffe27a; }
+.rd-text .sent.now { background: #fff1a8; color: var(--accent-ink); box-shadow: 0 0 0 3px #ffe27a; }
 .rd-nav { display: flex; justify-content: center; gap: 18px; }
 .rd-nav.quiz #rd-prev, .rd-nav.quiz #rd-next { visibility: hidden; }
 .rd-nav.done { display: none; }
@@ -850,7 +867,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .rd-q { text-align: center; }
 .rd-qno { font-size: 18px; color: #4a6ab8; }
 .rd-qtext { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: clamp(26px, 4.2vh, 38px); line-height: 1.2; }
-.rd-end { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 54px; color: var(--accent); animation: pop 0.6s ease; }
+.rd-end { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 54px; color: var(--accent-ink); animation: pop 0.6s ease; }
 .rd-options { display: flex; gap: 12px; width: 100%; max-width: 780px; justify-content: center; }
 .rd-option { position: relative; padding: 12px 8px 14px; }
 .rd-option .pic { display: block; font-size: 54px; line-height: 1.1; }
@@ -872,7 +889,7 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .rd-score { font-size: 34px; }
 .rd-stars { font-size: 38px; color: #e0a52a; letter-spacing: 4px; }
 .rd-got { font-size: 36px; color: #b07a10; animation: pop 0.6s ease; }
-.rd-note { font-size: 18px; color: var(--accent); }
+.rd-note { font-size: 18px; color: var(--accent-ink); }
 .rd-wide {
   padding: 12px 22px;
   font-size: 24px;
@@ -910,15 +927,10 @@ body.captain {
   --ink: #2f2c56;
   --paper: #f4f8ff;
   --accent: #2f8cff;
+  --accent-ink: #1c66c8;
 }
 /* Town, HQ and rooms: a clear blue sky instead of the pink one. */
 html:has(body.captain), body.captain { --sky-top: #a8d8ff; --sky-mid: #d6ecff; --sky-bottom: #eaf6ff; }
-body.captain .bloom {
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(255, 244, 200, 0.5), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(140, 200, 255, 0.35), transparent 60%);
-}
-body.captain .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(40, 80, 140, 0.28)); }
 body.captain .dialog { background: linear-gradient(#f8fbff, #e6f0ff); }
 body.captain .portrait { background: #dcebff; }
 body.captain .round.small, body.captain .choices.spell .erase { background: #dcebff; }
@@ -957,7 +969,11 @@ body.captain .chip .ic { line-height: 1; }
   body.captain .wd-mirror canvas { width: 120px; height: 156px; }
 }
 body.captain .start { background: radial-gradient(circle at 50% 40%, rgba(244, 250, 255, 0.92), rgba(160, 200, 255, 0.88)); }
+/* The login screen is opaque, like the princess one. */
+body.captain .login { background: radial-gradient(circle at 50% 40%, #f4faff, #a8d0ff); }
 body.captain .field input:focus { box-shadow: 0 0 0 3px #b8d8ff; }
+body.captain .fade { background: #f4f8ff; }
+body.captain .parent-head { background: #dcebff; }
 
 /* ---- A newer build is out (js/update.js) ---- */
 
@@ -990,3 +1006,90 @@ body.captain .field input:focus { box-shadow: 0 0 0 3px #b8d8ff; }
   min-height: 48px;
 }
 @keyframes update-in { from { transform: translate(-50%, -120%); } to { transform: translate(-50%, 0); } }
+
+/* ---- Short screens: a phone held sideways (844 x 390) ---- */
+/* Everything gets a little smaller so the dialog leaves room above it for
+   the person talking, and the reward card, reader and start screen fit. */
+
+@media (max-height: 520px) {
+  :root { --hud: calc(max(6px, env(safe-area-inset-top)) + 52px); }
+  .hud { padding-top: max(6px, env(safe-area-inset-top)); }
+  .btn { width: 52px; height: 52px; font-size: 26px; }
+  .stars { min-height: 44px; padding: 2px 10px; font-size: 22px; }
+  .place { font-size: 22px; padding: 6px 18px; }
+
+  .dialog { bottom: max(6px, env(safe-area-inset-bottom)); width: min(760px, calc(100vw - 16px)); padding: 8px; gap: 8px; border-radius: 18px; }
+  .portrait { width: 60px; }
+  .portrait canvas { width: 48px; height: 82px; }
+  .body { gap: 4px; }
+  .name { font-size: 16px; }
+  .text { font-size: 16px; min-height: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .clue { padding: 0 8px; gap: 10px; border-width: 2px; }
+  .clue-pic, .clue-letter { font-size: 34px; }
+  .clue-word { font-size: 32px; }
+  .clue-word.big { font-size: 38px; }
+  .clue-sentence { font-size: 22px; }
+  .choice { padding: 3px 4px 5px; }
+  .choice .num { width: 24px; height: 24px; line-height: 24px; font-size: 16px; }
+  .choice .pic { font-size: 28px; }
+  .choice .bigpic { font-size: 40px; }
+  .choice .letter { font-size: 38px; }
+  .side { padding-top: 28px; }
+  .round { width: 56px; height: 56px; font-size: 26px; }
+  .round.small { width: 52px; height: 52px; font-size: 22px; }
+  #dlg-close { top: -18px; }
+  .spell-word .slot { font-size: 30px; }
+  .choices.spell .tile, .choices.spell .erase { min-height: 56px; }
+  .choices.spell .tile .letter { font-size: 32px; }
+
+  .reward { max-height: calc(100dvh - 12px); overflow-y: auto; padding: 8px 12px 12px; }
+  .reward .title { font-size: 20px; }
+  .reward .gift { font-size: 22px; margin: 0 0 4px; }
+  .previews canvas { width: auto; max-height: 30dvh; }
+  .previews figcaption { font-size: 15px; }
+  .answer { margin-top: 8px; }
+  .answer button { padding: 8px 14px; font-size: 20px; }
+
+  .wardrobe { padding: 8px 10px; gap: 6px; border-radius: 18px; }
+  .wd-name { font-size: 20px; }
+  .wd-mirror { width: 110px; }
+  .wd-mirror canvas { width: auto; max-height: 40dvh; }
+  .wd-done { padding: 6px 20px; font-size: 20px; }
+  .lib-books { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; padding: 6px 4px 2px; }
+  .lib-book .cv { font-size: 36px; }
+
+  .reader { top: calc(var(--hud) + 6px); bottom: 6px; padding: 6px 10px 8px; gap: 6px; border-radius: 18px; }
+  .rd-title { font-size: 18px; }
+  .rd-paper { box-shadow: inset 0 0 0 5px var(--cover); }
+  .rd-page, .rd-quiz { padding: 8px 14px; gap: 6px; }
+  .rd-pic { font-size: 48px; }
+  .rd-text { font-size: 22px; }
+  .rd-qtext { font-size: 22px; }
+  .rd-option { padding: 6px 6px 8px; }
+  .rd-option .pic { font-size: 34px; }
+  .rd-option .w { font-size: 22px; }
+  .rd-end { font-size: 40px; }
+  .rd-big { font-size: 48px; }
+  .rd-score { font-size: 26px; }
+  .rd-nav { gap: 12px; }
+  .rd-btn { width: 64px; height: 52px; font-size: 26px; }
+  .rd-btn.play { width: 80px; }
+
+  .start { padding: 8px 16px; gap: 4px 24px; }
+  .start .preview { width: 56px; height: 86px; }
+  .start h1 { font-size: 34px; }
+  .profile { padding: 8px 12px; gap: 6px; }
+  .field { font-size: 20px; }
+  .field input { font-size: 28px; padding: 2px 10px; }
+  #hear-name { width: 52px; height: 52px; font-size: 24px; }
+  .title-chips .chip { min-height: 44px; padding: 4px 8px; font-size: 16px; }
+  .start-btn { width: 84px; height: 84px; margin: 4px 0; font-size: 40px; }
+  .start .tip { display: none; }
+  .login-edition { margin: 0; }
+  .login-edition .edition { min-width: 100px; padding: 4px 14px; font-size: 18px; }
+  .login-edition .edition .ic { font-size: 30px; }
+  .login-tabs .chip { min-height: 46px; padding: 4px 8px; font-size: 20px; }
+  .login-msg { font-size: 16px; }
+  .login-go { padding: 6px 12px; font-size: 26px; }
+  .login-guest { min-height: 56px; font-size: 20px; }
+}

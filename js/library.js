@@ -70,6 +70,8 @@ function openLibrary() {
 }
 
 function renderLibrary() {
+  // The captain edition's library has its own name ("본부 도서관").
+  libraryEl('library').querySelector('.wd-name').textContent = place('library');
   const read = BOOKS.filter(b => state.books && state.books[b.id] && state.books[b.id].read > 0).length;
   libraryEl('lib-count').textContent = `읽은 책 ${read} / ${BOOKS.length}`;
   const list = libraryEl('lib-books');

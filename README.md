@@ -185,6 +185,18 @@ scripts define the same global and that every scene (village homes too)
 builds without errors, for both a girl and a boy hero and the robot, and
 that every door can be reached and leads back out where it was.
 
+`node tools/check-visual.js` checks both editions at iPad sizes
+(1024 x 768, 1180 x 820, 768 x 1024, 1024 x 700 with Safari's toolbars) and
+on a phone held sideways (844 x 390): no villager hidden behind a building,
+every word fits its answer card, the person talking stays visible above the
+dialog, the buttons a child taps are big enough (64 px), and ▶ and the guest
+button show without scrolling.
+
+The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
+under the signs and bubbles. On a slow tablet it turns itself down; add
+`?fx=2` (all), `?fx=1` (no tilt-shift) or `?fx=0` (none) to the address to
+fix the level.
+
 ### Live speech server (optional)
 
 `server/` is a small web service that speaks any line with Kokoro (or

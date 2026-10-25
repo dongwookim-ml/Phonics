@@ -7,7 +7,7 @@
 
 // Who lives in Dinosaur Village. They ask the forest questions (level 2).
 const DINO_VILLAGE_NPCS = [
-  { name: '티라노 대장',       look: 'dinoRex',    c: 18, r: 9 },
+  { name: '티라노 대장',       look: 'dinoRex',    c: 18, r: 8 },
   { name: '트리케라 아줌마',   look: 'dinoTops',   c: 12, r: 7 },
   { name: '스테고 형',         look: 'dinoStego',  c: 21, r: 14 },
   { name: '브라키오 할아버지', look: 'dinoBronto', c: 25, r: 18 },

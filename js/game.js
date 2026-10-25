@@ -1208,8 +1208,36 @@ function cameraTarget() {
   let y = p.y - vh * 0.55;
   x = sc.width <= vw ? (sc.width - vw) / 2 : Math.max(0, Math.min(sc.width - vw, x));
   y = sc.height <= vh ? (sc.height - vh) / 2 : Math.max(0, Math.min(sc.height - vh, y));
+  // In a room, look up far enough to show the name signs on the wall below
+  // the HUD, as long as she stays in the top three quarters of the screen.
+  const signs = sc.outdoor ? [] : sc.signs.filter(g => !g.plain).map(g => g.y - 12);
+  if (signs.length) y = Math.max(Math.min(y, 0), p.y - vh * 0.75, Math.min(y, Math.min(...signs) - screenBox.hud / state.scale));
+  // While she talks, keep her and the person she talks to in the space above
+  // the dialog. On an iPad they usually are already; on a phone the dialog
+  // covers most of the screen, so the picture moves up as far as needed.
+  const top = state.talking ? dialogTop() : 0;
+  if (top > 0) {
+    const n = tileCenter(sc, state.talking.c, state.talking.r);
+    const head = Math.min(p.y, n.y) - 44;
+    const feet = Math.max(p.y, n.y) + 4;
+    const y0 = y;
+    if (feet - head > top - 8) y = (head + feet - top) / 2;
+    else if (feet - y > top - 4) y = feet - top + 4;
+    else if (head - y < 4) y = head - 4;
+    // The scene's bottom edge may go up behind the dialog, but no further.
+    y = Math.max(Math.min(y0, 0), Math.min(Math.max(sc.height - vh, sc.height - top), y));
+  }
   return { x, y };
 }
+
+// The top of the open dialog in world pixels from the top of the view.
+function dialogTop() {
+  if (ui.dialog.classList.contains('hidden')) return 0;
+  return (ui.dialog.getBoundingClientRect().top - screenBox.top) * screenBox.k / state.scale;
+}
+
+// CSS pixels to canvas pixels, and where the HUD ends (for room signs).
+const screenBox = { top: 0, k: 1, hud: 0 };
 
 // The canvas fills whatever the browser actually shows. On iPad, 100vh is
 // taller than the visible area while the toolbar is up, which stretched the
@@ -1219,6 +1247,9 @@ function resize() {
   const box = screen.getBoundingClientRect();
   screen.width = Math.round(box.width * dpr);
   screen.height = Math.round(box.height * dpr);
+  screenBox.top = box.top;
+  screenBox.k = box.height ? screen.height / box.height : dpr;
+  screenBox.hud = (document.querySelector('.hud').getBoundingClientRect().bottom - box.top) * screenBox.k;
   // Integer zoom keeps the pixels square; aim for ~270 world pixels tall.
   state.scale = Math.max(2, Math.round(Math.min(screen.height / 270, screen.width / 300)));
   view.width = Math.ceil(screen.width / state.scale);
@@ -1394,6 +1425,112 @@ function firefly() {
   return fireflySprite;
 }
 
+// ---- HD-2D finish --------------------------------------------------------
+
+// Tilt-shift softness at the top and bottom, a warm bloom and a soft
+// vignette, drawn into the canvas before the signs, bubbles and arrows so
+// those stay sharp. FX.level 2 has all of it, 1 drops the tilt-shift, 0 has
+// none; it steps down by itself when frames are slow, and ?fx=0, 1 or 2 fixes it.
+const FX = { level: 2, auto: true, avg: 16.7, slow: 0, layer: null, key: '' };
+{
+  const m = /[?&]fx=([012])/.exec(location.search);
+  if (m) Object.assign(FX, { level: Number(m[1]), auto: false });
+}
+
+// Per kind of scene: two bloom lights [x %, colour, strength] at the top
+// left and bottom right, and the vignette [clear up to, colour, strength].
+const FX_LOOKS = {
+  town: { a: [18, '255,236,190', 0.55], b: [90, '255,170,220', 0.35], edge: [0.58, '90,50,110', 0.32] },
+  unicorn: { a: [18, '255,236,190', 0.55], b: [90, '255,170,220', 0.35], edge: [0.55, '255,150,200', 0.35] },
+  forest: { a: [20, '160,200,255', 0.5], b: [85, '200,140,255', 0.45], edge: [0.5, '30,20,80', 0.5] },
+  dungeon: { a: [20, '140,230,255', 0.45], b: [85, '255,150,240', 0.4], edge: [0.5, '30,20,80', 0.5] },
+  fairy: { a: [20, '255,220,245', 0.6], b: [85, '200,180,255', 0.45], edge: [0.58, '220,150,220', 0.3] },
+};
+const CAPTAIN_FX_LOOKS = {
+  town: { a: [18, '255,244,200', 0.5], b: [90, '140,200,255', 0.35], edge: [0.58, '40,80,140', 0.28] },
+  unicorn: { a: [18, '255,244,200', 0.5], b: [90, '140,200,255', 0.35], edge: [0.55, '90,150,220', 0.3] },
+  dino: { a: [18, '255,240,170', 0.6], b: [90, '255,190,120', 0.35], edge: [0.6, '40,110,60', 0.25] },
+  fairy: { a: [20, '255,244,200', 0.55], b: [85, '160,220,255', 0.4], edge: [0.58, '90,150,220', 0.25] },
+};
+
+// The bloom and vignette for this scene and screen size, drawn once at a
+// quarter of the resolution (they are soft anyway) and scaled up each frame.
+function fxLayer() {
+  const looks = isCaptain() ? CAPTAIN_FX_LOOKS : FX_LOOKS;
+  const kind = state.scene.kind;
+  const key = `${screen.width}x${screen.height} ${kind}`;
+  if (FX.key === key) return FX.layer;
+  const look = looks[kind] || looks.town;
+  const w = Math.ceil(screen.width / 4);
+  const h = Math.ceil(screen.height / 4);
+  const cv = makeCanvas(w, h);
+  const g = cv.getContext('2d');
+  // Like CSS radial-gradient(ellipse at x y): the box's proportions, reaching
+  // its farthest corner at 100%.
+  const ellipse = (xp, yp, stops) => {
+    const cx = w * xp;
+    const cy = h * yp;
+    const rx = Math.SQRT2 * Math.max(cx, w - cx);
+    const ry = Math.SQRT2 * Math.max(cy, h - cy);
+    const grad = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+    for (const [at, color] of stops) grad.addColorStop(at, color);
+    g.setTransform(1, 0, 0, ry / rx, cx, cy);
+    g.fillStyle = grad;
+    g.fillRect(-cx, -cy * rx / ry, w, h * rx / ry);
+  };
+  // The bloom used to be a soft-light blend; a plain, lighter wash costs far
+  // less and looks almost the same.
+  for (const [[x, rgb, k], y, end] of [[look.a, 0, 0.55], [look.b, 1, 0.6]]) {
+    ellipse(x / 100, y, [[0, `rgba(${rgb},${k * 0.45})`], [end, `rgba(${rgb},0)`]]);
+  }
+  const [clear, rgb, k] = look.edge;
+  ellipse(0.5, 0.5, [[0, `rgba(${rgb},0)`], [clear, `rgba(${rgb},0)`], [1, `rgba(${rgb},${k})`]]);
+  Object.assign(FX, { layer: cv, key });
+  return cv;
+}
+
+// Tilt-shift: the top and bottom of the picture drawn again with smoothing,
+// which softens it by about one world pixel, fading out toward the middle.
+function drawTiltShift() {
+  const s = state.scale;
+  const n = 6;
+  const h = Math.round(screen.height * 0.12 / n);
+  sctx.imageSmoothingEnabled = true;
+  for (let i = 0; i < n; i++) {
+    sctx.globalAlpha = 1 - i / n;
+    for (const y of [i * h, screen.height - (i + 1) * h]) sctx.drawImage(view, 0, y / s, view.width, h / s, 0, y, view.width * s, h);
+  }
+  sctx.globalAlpha = 1;
+}
+
+function drawFinish() {
+  if (FX.level >= 2) drawTiltShift();
+  // Without smoothing: the steps between 4-pixel blocks are far too small to
+  // see, and a smoothed full-screen scale-up is several times slower.
+  sctx.imageSmoothingEnabled = false;
+  if (FX.level >= 1) sctx.drawImage(fxLayer(), 0, 0, screen.width, screen.height);
+}
+
+// Older tablets: when frames stay slower than ~45 a second for two seconds,
+// drop the costliest effect that is left (stalls like a scene being built
+// don't count).
+function watchFrames(ms) {
+  if (!FX.auto || !FX.level || ms > 250 || document.hidden) return;
+  FX.avg += (ms - FX.avg) * 0.1;
+  FX.slow = FX.avg > 22 ? FX.slow + ms : 0;
+  if (FX.slow > 2000) Object.assign(FX, { level: FX.level - 1, slow: 0, avg: 16.7 });
+}
+
+// Text colours from the page's CSS, so the captain edition's blue is used too.
+let overlayInk = null;
+function inkColors() {
+  if (!overlayInk) {
+    const css = getComputedStyle(document.body);
+    overlayInk = { ink: css.getPropertyValue('--ink').trim() || '#4a2c4f', accent: css.getPropertyValue('--accent-ink').trim() || '#c92a72' };
+  }
+  return overlayInk;
+}
+
 function drawOverlay(now) {
   const sc = state.scene;
   const s = state.scale;
@@ -1424,6 +1561,12 @@ function drawOverlay(now) {
       const text = sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text;
       const w = ctx.measureText(text).width + 8 * s;
       const h = 14 * s;
+      // A room's name sign stays on screen and below the HUD, so the door
+      // it names is never labelled "-아의 방".
+      if (!sc.outdoor) {
+        p.x = Math.max(w / 2 + 4 * s, Math.min(screen.width - w / 2 - 4 * s, p.x));
+        p.y = Math.max(screenBox.hud + h / 2 + 6 * s, Math.min(screen.height - h / 2 - 4 * s, p.y));
+      }
       ctx.strokeStyle = '#6f4430';
       ctx.lineWidth = s;
       ctx.beginPath();
@@ -1463,7 +1606,7 @@ function drawOverlay(now) {
       const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
       const wait = waiting(n);
       ctx.fillStyle = wait ? '#e4dce8' : '#ffffff';
-      ctx.strokeStyle = '#4a2c4f';
+      ctx.strokeStyle = inkColors().ink;
       ctx.lineWidth = s * 0.8;
       roundRect(ctx, p.x - 7 * s, p.y - 5 * s, 14 * s, 10 * s, 4 * s);
       ctx.fill();
@@ -1473,7 +1616,7 @@ function drawOverlay(now) {
       ctx.lineTo(p.x, p.y + 8 * s);
       ctx.lineTo(p.x + 2 * s, p.y + 5 * s - 1);
       ctx.fill();
-      ctx.fillStyle = wait ? '#9a8aa3' : '#ff6fa8';
+      ctx.fillStyle = wait ? '#9a8aa3' : inkColors().accent;
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1817,7 +1960,8 @@ function worldToTile(sc, wx, wy) {
 
 let lastTime = performance.now();
 function frame(now) {
-  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  const ms = now - lastTime;
+  const dt = Math.min(0.05, ms / 1000);
   lastTime = now;
   if (state.scene) {
     updateHero(dt);
@@ -1831,7 +1975,9 @@ function frame(now) {
     sctx.clearRect(0, 0, screen.width, screen.height);
     sctx.imageSmoothingEnabled = false;
     sctx.drawImage(view, 0, 0, view.width * state.scale, view.height * state.scale);
+    drawFinish();
     drawOverlay(now);
+    watchFrames(ms);
   }
   requestAnimationFrame(frame);
 }
@@ -1844,6 +1990,22 @@ function setPictures(on) {
   ui.choices.querySelectorAll('.choice[data-words]').forEach(b => b.classList.toggle('pictures', on));
   save();
 }
+
+// Long words get smaller so they fit their card. CSS does it with container
+// query units; this covers iPads older than iPadOS 16 and a fallback font
+// that runs wider.
+function fitWords() {
+  for (const w of ui.choices.querySelectorAll('.choice .w')) {
+    w.style.fontSize = '';
+    const card = getComputedStyle(w.parentElement);
+    const room = w.parentElement.clientWidth - parseFloat(card.paddingLeft) - parseFloat(card.paddingRight);
+    let px = parseFloat(getComputedStyle(w).fontSize);
+    while (w.offsetWidth > room && px > 14) w.style.fontSize = `${px -= 2}px`;
+  }
+}
+new MutationObserver(fitWords).observe(ui.choices, { childList: true, subtree: true });
+addEventListener('resize', fitWords);
+if (document.fonts) document.fonts.addEventListener('loadingdone', fitWords);
 
 resize();
 addEventListener('resize', resize);
