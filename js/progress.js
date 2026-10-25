@@ -13,6 +13,9 @@
 // Progress.played(save)    whether a save has any progress
 // Progress.stars(save)     stars in a save, every edition
 // Progress.same(a, b)      whether two saves hold the same
+// Progress.settings(s)     the parent's settings in a save, each as set last
+// Progress.setting(e, k)   a stamped setting in an edition (the picture hints)
+// Progress.stamp(x, k, v)  a change the parent makes, stamped (js/parent.js)
 
 const Progress = (() => {
   // Save format 2 (fmt: 2): counters per edition, earned[device] and
@@ -218,14 +221,63 @@ const Progress = (() => {
     const picks = Array.isArray(a.picks) && a.picks.length ? a.picks : b.picks;
     return Object.assign({}, b, a, { picks, got, chest: a.chest === true || b.chest === true });
   }
-  // The parent's settings: whole, from the copy changed last (`at`, stamped
-  // in js/parent.js), whichever copy is preferred. One without a stamp (an
-  // older version, or never changed) never beats one with it; two without
-  // are joined as above.
+  // The parent's settings, one by one. A change in js/parent.js stamps the
+  // setting (stamp below): `stamps` beside the plain values holds, per
+  // setting, the value set and when ({ v, at }). The newer stamp wins,
+  // setting by setting, whichever copy is preferred, so changing one never
+  // reverts another; one without a stamp (never changed) never beats one
+  // with it, and two without are joined as above. The plain values stay for
+  // older versions of the game, with `at`, the newest stamp, which the
+  // previous release (M2+M3) compares whole.
+  //
+  // Older versions keep the stamps, but not always the values beside them:
+  // the first release (M1) joins key by key and keeps its own old values
+  // next to the newest stamps. So a stamp counts for the value it holds,
+  // and a plain value that differs from it is such a leftover, unless `at`
+  // is past every stamp: then the previous release changed it in its own
+  // panel (it stamps `at` only), and it counts from `at`.
+  const stamps = x => (isObj(x.stamps) ? x.stamps : {});
+  const newest = x => Object.values(stamps(x)).reduce((t, r) => Math.max(t, isObj(r) ? n(r.at) : 0), 0);
+  // One setting in a copy, { v, at }; `older` is when an older version's
+  // change in it counts from (0: never).
+  function stampOf(x, k, older) {
+    const r = stamps(x)[k];
+    const kept = isObj(r) && has(r, 'v');
+    if (kept && !(older && has(x, k) && canon(r.v) !== canon(x[k]))) return { v: r.v, at: n(r.at) };
+    return { v: x[k], at: older };
+  }
+  function joinStamped(a, b, keys, older) {
+    const out = {};
+    const st = {};
+    for (const k of keys) {
+      const x = stampOf(a, k, older(a));
+      const y = stampOf(b, k, older(b));
+      const w = y.v === undefined || (x.v !== undefined && x.at >= y.at) ? x : y;
+      if (w.v === undefined) continue;
+      out[k] = w.v;
+      if (w.at) st[k] = { v: w.v, at: w.at };
+    }
+    if (Object.keys(st).length) out.stamps = st;
+    return out;
+  }
+  // Also with one copy (`b` missing): its leftovers put right.
   function joinSettings(a, b) {
-    if (!isObj(a) || !isObj(b)) return isObj(a) || b === undefined ? a : b;
-    if (n(a.at) !== n(b.at)) return n(b.at) > n(a.at) ? b : a;
-    return join(a, b);
+    if (!isObj(a) && !isObj(b)) return a === undefined ? b : a;
+    const [x, y] = [a, b].map(s => (isObj(s) ? s : {}));
+    const keys = new Set([x, y, stamps(x), stamps(y)].flatMap(Object.keys));
+    keys.delete('at');
+    keys.delete('stamps');
+    const out = joinStamped(x, y, keys, s => (n(s.at) > newest(s) ? n(s.at) : 0));
+    if (newest(out)) out.at = newest(out);
+    return out;
+  }
+  // A change the parent makes: the value, stamped at least one past every
+  // stamp in the copy, whatever this device's clock says. Returns the time.
+  function stamp(x, k, v) {
+    const at = Math.max(Date.now(), newest(x) + 1);
+    x[k] = v;
+    x.stamps = Object.assign({}, stamps(x), { [k]: { v, at } });
+    return at;
   }
   // Play time today (js/guide.js): the later day, whole; on the same day the
   // most played and the most wakes, so neither the count nor a parent's
@@ -275,9 +327,14 @@ const Progress = (() => {
   // The first-steps pointer (js/guide.js) only ever grows, so the larger wins.
   const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, settings: joinSettings,
     friends: joinFriends, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers };
-  // The outfit, name and picture hints come whole from one copy.
-  const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
+  // The outfit and name come whole from one copy.
+  const WHOLE = ['outfit', 'player', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];
+  // The picture hints are per edition, stamped like the settings (`stamps`
+  // in the edition). Older versions change them without a stamp, which
+  // can't be told from a leftover: a value beside a stamp that differs from
+  // it counts as one.
+  const STAMPED = ['pictures'];
 
   // One edition from two copies; `mineFirst` says whose outfit and name win.
   function joinEdition(l, s, mineFirst, foreign) {
@@ -285,10 +342,15 @@ const Progress = (() => {
     const [a, b] = mineFirst ? [l, s] : [s, l];
     const out = {};
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
-      if (COUNTED.includes(k) || k === 'other') continue;
+      if (COUNTED.includes(k) || STAMPED.includes(k) || k === 'other' || k === 'stamps') continue;
       if (WHOLE.includes(k)) out[k] = a[k] !== undefined ? a[k] : b[k];
       else out[k] = (JOIN[k] || join)(a[k], b[k]);
     }
+    const hints = joinStamped(a, b, STAMPED, () => 0);
+    const st = Object.assign({}, join(stamps(a), stamps(b)), hints.stamps);
+    delete hints.stamps;
+    Object.assign(out, hints);
+    if (Object.keys(st).length) out.stamps = st;
     const t = counters(l, s, foreign);
     const sums = totals(t);
     for (const f of FIELDS) out[f] = Math.max(0, sums[f]);
@@ -389,5 +451,6 @@ const Progress = (() => {
   }
   const same = (a, b) => canon(editions(a)) === canon(editions(b));
 
-  return { FMT, device, tally, count, merge, history, played, stars, same, editions };
+  return { FMT, device, tally, count, merge, history, played, stars, same, editions, stamp,
+    settings: s => joinSettings(s), setting: (x, k) => stampOf(x, k, 0).v };
 })();

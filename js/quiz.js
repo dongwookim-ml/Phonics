@@ -700,11 +700,13 @@ const Quiz = (() => {
     tierMax,
     // A parent sets a tier by hand (parent.js); it doesn't count as a level-up.
     // A change is stamped (`set`, at least one past the last), so it wins
-    // over the other tablet's tier when the saves are joined (js/progress.js).
+    // over the other tablet's tier when the saves are joined (js/progress.js),
+    // and counts as one more answer (`n`): the first release (M1), which
+    // keeps the entry with more answers, then keeps it too.
     setTier(kind, t) {
       const k = skill(kind);
       const to = Math.max(1, Math.min(tierMax(kind), t));
-      if (to !== k.t) k.set = Math.max(Date.now(), (Number(k.set) || 0) + 1);
+      if (to !== k.t) Object.assign(k, { set: Math.max(Date.now(), (Number(k.set) || 0) + 1), n: (k.n | 0) + 1 });
       Object.assign(k, { t: to, w: [], placed: true, easy: false });
     },
     kinds: Object.keys(pools),

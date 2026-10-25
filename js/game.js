@@ -137,20 +137,22 @@ function load(raw) {
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
     outfit = fitOutfit(outfit);
-    // Picture hints start on for a new player (a pre-reader needs them).
-    const pictures = s.pictures === undefined ? true : !!s.pictures;
+    // Picture hints start on for a new player (a pre-reader needs them);
+    // the parent's change is stamped (`stamps`, js/progress.js).
+    const shown = Progress.setting(s, 'pictures');
+    const pictures = shown === undefined ? true : !!shown;
     // Her level per kind of question and the parent's settings describe her,
     // so both editions share them; a save from before levels gets them from
     // its answers.
     const others = Object.values(otherEditions);
     const skill = s.skill || (others.find(o => o && o.skill) || {}).skill || Quiz.migrate([s.history].concat(others.map(o => o && o.history)));
-    const settings = Object.assign({ playLimit: 0, hideMute: false }, s.settings || (others.find(o => o && o.settings) || {}).settings);
+    const settings = Object.assign({ playLimit: 0, hideMute: false }, Progress.settings(s.settings || (others.find(o => o && o.settings) || {}).settings));
     // Today's play time too: the limit is for her, whichever game she plays.
     const playtime = s.playtime || (others.find(o => o && o.playtime) || {}).playtime || {};
     // The first-steps pointer (js/guide.js) is for new players only.
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
     // Stars, coins and dust are also counted per device (js/progress.js).
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
       skill, settings, friends: s.friends || {}, guide: firstSteps, playtime,
       stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
   } catch (e) {
@@ -183,7 +185,7 @@ function save() {
   // Fields this version doesn't know are kept (savedRest). `ver`: the server
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
-  const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
+  const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, stamps: state.stamps, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
     friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
@@ -195,7 +197,7 @@ function save() {
 // outfit and name it carries.
 function applyProgress(s) {
   const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
-  Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures,
+  Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures, stamps: p.stamps,
     skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests });
   const ride = state.outfit.ride;
   state.worn = PLAYER.look;
@@ -205,6 +207,7 @@ function applyProgress(s) {
     if (!state.mounted && state.scene) parkUnicorn();
   }
   guideApplySettings(); // the parent may have hidden the 🔊 button
+  if (typeof parentRefresh === 'function') parentRefresh(); // and an open parent panel shows it (js/parent.js)
   renderStars(false);
   renderRide();
   if (!ui.wardrobe.classList.contains('hidden')) renderWardrobe();
@@ -239,8 +242,9 @@ const state = {
   quests: saved.quests, // today's adventures: { day, picks, got, chest } (js/quest.js)
   combo: 0, // answers right the first time in a row, this visit
   pictures: saved.pictures,
+  stamps: saved.stamps,     // when the parent set the picture hints: { pictures: { v, at } } (js/progress.js)
   friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: { [device]: n } } (js/friend.js)
-  settings: saved.settings, // from the parent panel: { playLimit, hideMute }
+  settings: saved.settings, // from the parent panel: { playLimit, hideMute, stamps } (js/progress.js)
   guide: saved.guide,       // first-steps pointer: { step } (js/guide.js)
   playtime: saved.playtime, // { day, ms, wakes } played today, for the limit (js/guide.js)
   scenes: {},

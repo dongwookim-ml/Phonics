@@ -8,14 +8,19 @@
 //    and a note), someone else's synced save is replaced, unsent kept;
 //  - a guest who played the other edition joins: her level and the
 //    parent's settings stay, in both editions;
-//  - a setting and a tier the parent changes on one tablet stay when the
-//    other tablet's open tab saves next;
+//  - a setting, a tier and the picture hints the parent changes on one
+//    tablet stay when the other tablet's open tab saves next; the parent
+//    panel of a tab open a while shows the other tablet's changes, a change
+//    there to one setting keeps the other tablet's to another, and a tap
+//    right after a sync came in counts;
 //  - a newer save on the server goes into the game on boot, in place;
 //  - the deployed game (OLD_REF, default origin/main) next to this one: one
 //    tablet each on one account (both editions, both ways round), a guest
 //    tablet updated to this version then logging in, a signed-in tablet
 //    updated to this version, and answers the deployed game drops put back
-//    when this version signs out.
+//    when this version signs out;
+//  - a tab still on the first release (FIRST_REF, default eee606ec) next to
+//    the parent's settings: they stay.
 // Run: node tools/check-sync.js  (needs the playwright package and Chromium,
 // git, and Python with fastapi and uvicorn; PYTHON picks the interpreter).
 // SYNC_SERVER_REF=origin/main plays against that version of server/app.py
@@ -321,6 +326,78 @@ async function parentChanges(browser) {
   await B.ctx.close();
 }
 
+// The settings and her spelling tier, live or in a save's edition.
+const settingsView = t => t.page.evaluate(() => ({ limit: state.settings.playLimit, mute: state.settings.hideMute, pictures: state.pictures, spell: Quiz.skill('spell').t }));
+const settingsSaved = e => ({ limit: (e.settings || {}).playLimit, mute: (e.settings || {}).hideMute, pictures: e.pictures, spell: ((e.skill || {}).spell || {}).t });
+const reloaded = async t => {
+  await t.page.reload();
+  await t.page.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
+};
+
+async function stalePanel(browser) {
+  // Two tablets in step. On A the parent sets 15 minutes and turns the
+  // picture hints off, and the child's spelling climbs to tier 4. Later the
+  // parent opens the panel on B, whose tab has been open since before.
+  const acct = await newAccount();
+  const A = await tablet(browser);
+  await login(A, acct);
+  await A.page.evaluate(() => document.getElementById('start-btn').click());
+  await settle(A);
+  const B = await tablet(browser);
+  await login(B, acct);
+  await B.page.evaluate(() => document.getElementById('start-btn').click());
+  await parentPanel(A, acct, async page => { await page.click('[data-set="limit"][data-v="15"]'); await page.click('[data-set="pictures"][data-v="0"]'); });
+  await A.page.evaluate(() => { Object.assign(Quiz.skill('spell'), { t: 4, best: 4, n: 40, placed: true }); save(); });
+  await settle(A);
+  let shown;
+  await parentPanel(B, acct, async page => {
+    shown = await page.evaluate(() => ({ limit: document.querySelector('[data-set="limit"].on').textContent, pictures: document.querySelector('[data-set="pictures"].on').textContent,
+      spell: document.querySelector('.tier-btn[data-kind="spell"]').parentElement.querySelector('.tier-n b').textContent }));
+    await page.click('[data-set="mute"][data-v="1"]');
+    await spellTier(page, 1);
+  });
+  await settle(B);
+  check('a panel open a while: it shows the other tablet\'s changes', shown.limit === '15분' && shown.pictures === '끄기' && shown.spell === '4', shown);
+  // The child answers on A's open tab, on its old copy: one save.
+  await earn(A, 1, 'a');
+  await settle(A);
+  const s = settingsSaved((await serverSave(acct)).save);
+  const b = await settingsView(B);
+  await reloaded(A);
+  const a = await settingsView(A);
+  const want = v => v.limit === 15 && v.mute === true && v.pictures === false && v.spell === 5;
+  check('a panel open a while: a change there keeps the other tablet\'s, and the next save there keeps both', want(s) && want(a) && want(b), { server: s, A: a, B: b });
+  check('a panel open a while: no page errors', !A.errors.length && !B.errors.length, A.errors.concat(B.errors));
+  await A.ctx.close();
+  await B.ctx.close();
+}
+
+async function panelAfterSync(browser) {
+  // The panel is open on A while the child saves on B; the parent sets 15
+  // minutes (A's save is refused, and the two are put together), then hides
+  // the 🔊 button: once is enough.
+  const acct = await newAccount();
+  const A = await tablet(browser);
+  await login(A, acct);
+  await A.page.evaluate(() => document.getElementById('start-btn').click());
+  await settle(A);
+  const B = await tablet(browser);
+  await login(B, acct);
+  await B.page.evaluate(() => document.getElementById('start-btn').click());
+  let after;
+  await parentPanel(A, acct, async page => {
+    await earn(B, 1, 'b');
+    await settle(B);
+    await page.click('[data-set="limit"][data-v="15"]');
+    await page.evaluate(async () => { for (let i = 0; i < 3 && Account._dirty; i++) await Account._upload(); });
+    await page.click('[data-set="mute"][data-v="1"]');
+    after = await page.evaluate(() => ({ mute: state.settings.hideMute, on: document.querySelector('[data-set="mute"].on').textContent, stars: state.stars }));
+  });
+  check('a tap in the panel right after a sync came in counts', A.n409 > 0 && after.mute === true && after.on === '숨기기' && after.stars === 1, Object.assign(after, { n409: A.n409 }));
+  await A.ctx.close();
+  await B.ctx.close();
+}
+
 async function newerOnBoot(browser) {
   // This tablet was signed in and in sync at version 1; another device has
   // saved since. On boot the newer save goes into the game without a reload.
@@ -340,14 +417,16 @@ async function newerOnBoot(browser) {
 // ---- The deployed game next to this one --------------------------------------
 
 // The game as deployed (OLD_REF, default origin/main) in a folder of its own,
-// with this checkout's recordings. null when that ref isn't here.
+// with this checkout's recordings. null when that ref isn't here. Tabs on
+// the first release (FIRST_REF) may still share an account too.
 const OLD_REF = process.env.OLD_REF || 'origin/main';
-function deployedGame() {
-  if (spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', `${OLD_REF}^{commit}`]).status !== 0) return null;
+const FIRST_REF = process.env.FIRST_REF || 'eee606ec';
+function deployedGame(ref = OLD_REF) {
+  if (spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', `${ref}^{commit}`]).status !== 0) return null;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-deployed-'));
   temp.push(dir);
-  const tar = spawnSync('git', ['-C', root, 'archive', '--format=tar', OLD_REF, 'index.html', 'js', 'css'], { maxBuffer: 1 << 28 });
-  if (tar.status !== 0 || spawnSync('tar', ['-x', '-C', dir], { input: tar.stdout }).status !== 0) throw new Error(`git archive ${OLD_REF} failed`);
+  const tar = spawnSync('git', ['-C', root, 'archive', '--format=tar', ref, 'index.html', 'js', 'css'], { maxBuffer: 1 << 28 });
+  if (tar.status !== 0 || spawnSync('tar', ['-x', '-C', dir], { input: tar.stdout }).status !== 0) throw new Error(`git archive ${ref} failed`);
   fs.symlinkSync(path.join(root, 'audio'), path.join(dir, 'audio'));
   return dir;
 }
@@ -483,6 +562,40 @@ async function deployedLogout(browser, deployed) {
   await N.ctx.close();
 }
 
+async function firstRelease(browser, first) {
+  // A tab on the first release (which knows no settings) loaded the save
+  // before the parent set anything. She sets 15 minutes and hides the 🔊
+  // button on this version's tablet; then the child answers on the old tab,
+  // which puts its own old values back beside her stamps.
+  const acct = await newAccount();
+  const N = await tablet(browser);
+  await login(N, acct);
+  await N.page.evaluate(() => document.getElementById('start-btn').click());
+  await earn(N, 1, 'n');
+  await settle(N);
+  const O = await tablet(browser, { dir: first });
+  await login(O, acct);
+  await O.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
+  await parentPanel(N, acct, async page => { await page.click('[data-set="limit"][data-v="15"]'); await page.click('[data-set="mute"][data-v="1"]'); });
+  await settle(N);
+  await earnOld(O, 'o');
+  for (let i = 0; i < 8 && !tagged((await serverSave(acct)).save, 'princess', 'o').answers; i++) {
+    await sleep(1000);
+    await settle(O).catch(() => {});
+  }
+  const left = settingsSaved((await serverSave(acct)).save);
+  await reloaded(N);
+  const n = await settingsView(N);
+  const F = await tablet(browser);
+  await login(F, acct);
+  const f = await settingsView(F);
+  const want = v => v.limit === 15 && v.mute === true;
+  check('first release next to the parent\'s settings: it put its old values back', left.limit === 0, left);
+  check('first release next to the parent\'s settings: they stay, on this tablet and on a new one', want(n) && want(f), { N: n, new: f });
+  check('first release next to the parent\'s settings: no page errors here', !N.errors.length && !F.errors.length, N.errors.concat(F.errors));
+  for (const t of [N, O, F]) await t.ctx.close();
+}
+
 (async () => {
   let server = null;
   let browser = null;
@@ -497,8 +610,12 @@ async function deployedLogout(browser, deployed) {
   let deployed = null;
   try { deployed = deployedGame(); } catch (e) { check('the deployed game could be unpacked', false, e.message); }
   if (!deployed) check(`the deployed game (${OLD_REF}) is here`, !process.env.CI, `git has no ${OLD_REF}; fetch it (CI checks out with fetch-depth 0)`);
+  let first = null;
+  try { first = deployedGame(FIRST_REF); } catch (e) { check('the first release could be unpacked', false, e.message); }
+  if (!first) check(`the first release (${FIRST_REF}) is here`, !process.env.CI, `git has no ${FIRST_REF}; fetch it (CI checks out with fetch-depth 0)`);
   // ONLY=guest node tools/check-sync.js runs the parts whose name has "guest".
-  const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, guestOtherEdition, parentChanges, newerOnBoot };
+  const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, guestOtherEdition, parentChanges,
+    stalePanel, panelAfterSync, newerOnBoot };
   if (deployed) {
     Object.assign(parts, {
       deployedPrincess: b => withDeployed(b, deployed, 'princess'),
@@ -508,6 +625,7 @@ async function deployedLogout(browser, deployed) {
       deployedLogout: b => deployedLogout(b, deployed),
     });
   }
+  if (first) parts.firstRelease = b => firstRelease(b, first);
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {
