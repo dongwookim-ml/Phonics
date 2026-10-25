@@ -217,6 +217,8 @@ const state = {
   cam: { x: 0, y: 0 },
   scale: 4,
   busy: false,       // a dialog, reward or scene change is showing
+  paused: false,     // the parent panel is open: no walking, timers wait
+  held: [],          // timers that came due while paused
   question: null,
   particles: [],
   ripples: [],
@@ -228,7 +230,14 @@ const state = {
   fairyAt: null,     // where her fairy friend is flying, in world pixels
 };
 
-function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
+// Game timers. While the parent panel is open (state.paused) they wait,
+// and run when it closes.
+function later(ms, fn) { state.timers.push(setTimeout(() => whenPlaying(fn), ms)); }
+function whenPlaying(fn) { if (state.paused) state.held.push(fn); else fn(); }
+function setPaused(on) {
+  state.paused = on;
+  if (!on) for (const fn of state.held.splice(0)) fn();
+}
 
 function sceneFor(target) {
   if (!state.scenes[target]) {
@@ -1708,7 +1717,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
   if (state.scene) {
-    updateHero(dt);
+    if (!state.paused) updateHero(dt);
     updateEffects(dt, now);
     const target = cameraTarget();
     const k = Math.min(1, dt * 6);

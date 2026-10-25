@@ -17,20 +17,37 @@ const PARENT_KINDS = [
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 
+const PARENT_ERRORS = {
+  wrong: '비밀번호가 맞지 않아요.',
+  offline: '인터넷에 연결되지 않았어요.',
+  busy: '잠시 후 다시 해 보세요.',
+};
+
 const parentUi = {
   gear: document.getElementById('parent'),
   panel: null,
-  wasBusy: false,
 };
 
 function parentHasAccount() {
   return typeof Account !== 'undefined' && !!Account.user;
 }
 
+// The game stands still underneath: she stops after the step she is on
+// (and doesn't arrive anywhere), nobody talks, and game timers wait.
 function parentOpen() {
+  if (parentUi.panel) return;
   Sound.tap();
-  parentUi.wasBusy = state.busy;
+  setPaused(true);
   state.busy = true;
+  state.hero.path = state.hero.path.slice(0, 1);
+  state.hero.onArrive = null;
+  // A book being read aloud stops as with its ⏸ button.
+  if (typeof library !== 'undefined' && library.playing && library.mode === 'read') {
+    library.playing = false;
+    bookHush();
+    renderBookHighlight();
+  }
+  Sound.say([]);
   const el = document.createElement('section');
   el.className = 'parent-panel';
   el.innerHTML = `
@@ -53,8 +70,12 @@ function parentClose() {
   if (!parentUi.panel) return;
   parentUi.panel.remove();
   parentUi.panel = null;
-  // Something else that was open keeps the game paused itself.
-  if (!parentUi.wasBusy) state.busy = false;
+  setPaused(false);
+  // Busy again only if something is still showing (a question, a present,
+  // the wardrobe, the shop, the library or a scene change).
+  const shown = el => !!el && !el.classList.contains('hidden');
+  state.busy = [ui.dialog, ui.reward, ui.wardrobe, ui.shop, document.getElementById('library'), document.getElementById('reader')].some(shown) ||
+    ui.fade.classList.contains('on');
 }
 
 function parentLock() {
@@ -75,16 +96,14 @@ function parentLock() {
   form.addEventListener('submit', async e => {
     e.preventDefault();
     err.textContent = '확인하는 중…';
-    let ok = false;
+    // { ok, reason }: a wrong password, no connection, or the server busy.
+    let r = { ok: false, reason: 'busy' };
     try {
-      ok = typeof Account !== 'undefined' ? await Account.verify(input.value) : input.value === PARENT_PASSWORD;
-    } catch (x) {
-      err.textContent = '서버에 연결하지 못했어요. 잠시 후 다시 해 보세요.';
-      return;
-    }
+      r = typeof Account !== 'undefined' ? await Account.verify(input.value) : { ok: input.value === PARENT_PASSWORD, reason: 'wrong' };
+    } catch (x) { /* r stays 'busy' */ }
     if (!parentUi.panel) return;
-    if (ok) parentStats();
-    else { err.textContent = '비밀번호가 맞지 않아요.'; input.select(); }
+    if (r.ok) parentStats();
+    else { err.textContent = PARENT_ERRORS[r.reason] || PARENT_ERRORS.wrong; input.select(); }
   });
   setTimeout(() => input.focus(), 50);
 }
@@ -98,8 +117,8 @@ function parentKindStats(kind) {
   for (const id of pool) {
     const h = hist[id];
     if (!h) continue;
-    tries += h.tries;
-    firstRight += h.right;
+    tries += h.tries | 0;
+    firstRight += h.right | 0;
     if (h.right > 0) right++;
     else wrong++;
   }
@@ -119,7 +138,8 @@ function parentLabel(id) {
   return hit ? `${hit[1]} ${key}` : key;
 }
 
-const parentEsc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Everything the panel puts in as HTML is a number or goes through parentEsc.
+const parentEsc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function parentBar(s) {
   const seg = (n, cls, label) => (n ? `<span class="seg ${cls}" style="flex:${n}" title="${label} ${n}"></span>` : '');
@@ -160,9 +180,9 @@ function parentSpark() {
 function parentStats() {
   const hist = state.history || {};
   const entries = Object.entries(hist);
-  const answers = entries.reduce((a, [, h]) => a + h.tries, 0);
+  const answers = entries.reduce((a, [, h]) => a + (h.tries | 0), 0);
   const solvedCount = entries.filter(([, h]) => h.right > 0).length;
-  const tile = (icon, label, n) => `<div class="parent-tile"><span class="ic">${icon}</span><b>${n}</b><span>${label}</span></div>`;
+  const tile = (icon, label, n) => `<div class="parent-tile"><span class="ic">${icon}</span><b>${n | 0}</b><span>${parentEsc(label)}</span></div>`;
   const rows = PARENT_KINDS.map(([kind, ko, where]) => {
     const s = parentKindStats(kind);
     const acc = s.tries ? `${Math.round((100 * s.firstRight) / s.tries)}%` : '—';
@@ -177,7 +197,7 @@ function parentStats() {
   const kindName = k => (PARENT_KINDS.find(x => x[0] === k) || [k, k])[1];
   const missed = entries.filter(([, h]) => h.wrong > 0)
     .sort((a, b) => b[1].wrong - a[1].wrong || b[1].last - a[1].last).slice(0, 6)
-    .map(([id, h]) => `<li><span class="m-kind">${kindName(h.kind)}</span><span class="m-what">${parentEsc(parentLabel(id))}</span><span class="m-n">${h.wrong}번 틀림${h.right ? ' · 지금은 맞힘' : ''}</span></li>`)
+    .map(([id, h]) => `<li><span class="m-kind">${parentEsc(kindName(h.kind))}</span><span class="m-what">${parentEsc(parentLabel(id))}</span><span class="m-n">${h.wrong | 0}번 틀림${h.right ? ' · 지금은 맞힘' : ''}</span></li>`)
     .join('');
   parentUi.panel.querySelector('.parent-body').innerHTML = `
     <div class="parent-tiles">

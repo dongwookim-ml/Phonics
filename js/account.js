@@ -4,7 +4,7 @@
 //
 // Account.user    the signed-in id, or null
 // Account.ready   resolves once the login screen is done
-// Account.verify  checks the account password (the parent panel)
+// Account.verify  checks the account password (the parent panel), offline too
 // Account.push    uploads the save, 2 s after the last change (one at a time)
 // Account.pull    the server's save, or null
 
@@ -12,11 +12,13 @@
 // the login screen with ?guest or window.ACCOUNT_SKIP.
 const ACCOUNT_SERVER = (window.ACCOUNT_SERVER || TTS_SERVER || '').replace(/\/$/, '');
 const ACCOUNT_SAVE_KEY = 'pixeltown-v2'; // the game's own save (SAVE_KEY in game.js)
-const ACCOUNT_KEYS = { token: 'pixeltown-token', user: 'pixeltown-user', guest: 'pixeltown-guest', updated: 'pixeltown-updated', snap: 'pixeltown-synced', dirty: 'pixeltown-dirty', owner: 'pixeltown-owner', join: 'pixeltown-join' };
+const ACCOUNT_KEYS = { token: 'pixeltown-token', user: 'pixeltown-user', guest: 'pixeltown-guest', updated: 'pixeltown-updated', snap: 'pixeltown-synced', dirty: 'pixeltown-dirty', owner: 'pixeltown-owner', join: 'pixeltown-join', pwcheck: 'pixeltown-pwcheck' };
 // updated: the server version the local save builds on (the server's clock).
 // dirty:   the local save has changes the server has not seen.
 // owner:   whose progress the local save is; empty for a guest or an old save.
 // join:    a login whose first sync has not happened yet (it was offline).
+// pwcheck: a check of the password kept on this device, for the parent
+//          panel offline: { id, salt, iter, hash } (PBKDF2-SHA-256).
 const ACCOUNT_GUEST_PW = '0000'; // parent password when playing without an account
 
 const accountUi = {
@@ -52,7 +54,33 @@ function accountBackup(json) {
   } catch (e) { /* storage full or private mode */ }
 }
 
-// A short note for the parent at the bottom of the screen.
+// The password check kept on this device. WebCrypto needs https, localhost
+// or a file; elsewhere there is none and the panel needs the server.
+const accountHex = bytes => [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
+async function accountPwHash(pw, salt, iter) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  return accountHex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, key, 256));
+}
+async function accountRemember(id, pw) {
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iter = 150000;
+    accountSet('pwcheck', JSON.stringify({ id, salt: accountHex(salt), iter, hash: await accountPwHash(pw, salt, iter) }));
+  } catch (e) { /* no WebCrypto here */ }
+}
+// true or false, or null when this device has no check for that account.
+async function accountCheckPw(id, pw) {
+  try {
+    const v = JSON.parse(accountGet('pwcheck'));
+    if (!v || v.id !== id) return null;
+    const salt = new Uint8Array(v.salt.match(/../g).map(h => parseInt(h, 16)));
+    return (await accountPwHash(pw, salt, v.iter)) === v.hash;
+  } catch (e) {
+    return null;
+  }
+}
+
+// A short note for the parent at the top of the screen.
 function accountToast(text) {
   const el = document.createElement('div');
   el.className = 'account-toast';
@@ -100,10 +128,21 @@ const Account = {
   // The server version the local save builds on.
   get base() { return Number(accountGet('updated')) || 0; },
 
+  // The parent password: { ok, reason }, reason 'wrong', 'offline' (no
+  // connection, or the server down) or 'busy' (too many tries, try later).
+  // When the server can't be reached the check kept at login answers.
   async verify(pw) {
-    if (!this.user) return pw === ACCOUNT_GUEST_PW;
+    if (!this.user) return { ok: pw === ACCOUNT_GUEST_PW, reason: 'wrong' };
     const r = await accountFetch('POST', '/auth/verify', { pw });
-    return r.status === 200 && !!(r.data && r.data.ok);
+    if (r.status === 200 && r.data) {
+      // Signed in before this check existed: keep one now.
+      if (r.data.ok && !accountGet('pwcheck')) accountRemember(this.user, pw);
+      return { ok: !!r.data.ok, reason: 'wrong' };
+    }
+    if (r.status === 429) return { ok: false, reason: 'busy' };
+    const here = await accountCheckPw(this.user, pw);
+    if (here !== null) return { ok: here, reason: 'wrong' };
+    return { ok: false, reason: r.status === 0 || r.status >= 500 ? 'offline' : 'busy' };
   },
 
   async pull() {
@@ -270,7 +309,7 @@ const Account = {
       try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { /* private mode */ }
       ['snap', 'updated', 'owner'].forEach(k => accountSet(k, null));
     }
-    ['token', 'user', 'guest', 'join'].forEach(k => accountSet(k, null));
+    ['token', 'user', 'guest', 'join', 'pwcheck'].forEach(k => accountSet(k, null));
     location.reload();
   },
 };
@@ -343,6 +382,7 @@ async function accountSubmit() {
     accountSet('guest', null);
     accountSet('join', '1'); // until the first sync, even if it waits for the next visit
     Account.user = r.data.id;
+    await accountRemember(r.data.id, pw);
     accountSay('불러오는 중…', true);
     await Account._sync();
     accountUi.go.disabled = false;

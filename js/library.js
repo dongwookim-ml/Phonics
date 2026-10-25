@@ -38,7 +38,7 @@ function bookSay(parts, done, who) {
   const finish = () => {
     if (token !== library.token) return;
     clearTimeout(library.watchdog);
-    if (done) done();
+    if (done) whenPlaying(done); // not under the parent panel (js/game.js)
   };
   const letters = parts.reduce((n, p) => n + (p.text ? p.text.length : 0), 0);
   const pauses = parts.reduce((n, p) => n + (p.pause || 0), 0);

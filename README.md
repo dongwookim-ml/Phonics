@@ -61,7 +61,11 @@ npx http-server -p 8080 .
   without an account) and shows stars, coins, fairy dust and answers, a
   bar per question kind (right / missed / not tried, out of the pool) with
   the first-try accuracy, the most-missed questions and the last 7 days.
-  The game is paused while it is open. Code in `js/parent.js`.
+  The game is paused while it is open: she stops walking, nobody talks,
+  and timers wait until it closes. Without a connection the password is
+  checked against a copy kept on the tablet at login (PBKDF2, WebCrypto);
+  otherwise it says the internet is not connected, or to try again later.
+  Code in `js/parent.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
   colour. The child sees "now" and "after" side by side and chooses to
