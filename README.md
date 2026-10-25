@@ -128,8 +128,9 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, re
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
-  characters; accounts made before with 4 or 5 keep working). Signed in, the whole save is kept on the server as well, so
-  another tablet that logs into the same account gets the same progress.
+  characters; accounts made before with 4 or 5 keep working). Signed in,
+  the whole save is kept on the server as well, so another tablet that
+  logs into the same account gets the same progress.
   Two tablets can play at once, say one the princess and one the captain
   edition: when one saves after the other, the two saves are put together
   in place, without a reload (`js/progress.js`). Answers, presents and books
@@ -139,13 +140,12 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, re
   newer version added, so an older version of the game can still read it.
   Totals uploaded by an older version (no `fmt`) are taken as a floor
   under one "old client" entry, never added on top of the per-device
-  counts they already include (`node tools/check-merge.js`). The
-  outfit and name come from the tablet playing that edition, or else from
-  the copy saved on the newer server version. The tablet stays signed in,
-  and the game keeps working offline and uploads again later (one upload
-  at a time). "계정 없이 할래요" plays with the
-  browser-only save; 🔑 로그인 / 로그아웃 is at the top right of the start
-  screen. Logging in on a tablet that was played as a guest adds that
+  counts they already include (`node tools/check-merge.js`). The outfit
+  and name come from the tablet playing that edition, or else from the
+  copy saved on the newer server version. The tablet stays signed in, and
+  the game keeps working offline and uploads again later (one upload at a
+  time). "계정 없이 할래요" plays with the browser-only save; 🔑 로그인 /
+  로그아웃 is at the top right of the start screen. Logging in on a tablet that was played as a guest adds that
   progress to the account (its stars count on top of the account's) and
   says so in a short note ("이 기기의 별 42개를 계정에 합쳤어요"); a copy of
   the tablet's old save stays in its browser as `pixeltown-v2-backup-<time>`
@@ -201,10 +201,12 @@ for both a girl and a boy hero. The other checks, all run by
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 
 Lines not recorded yet are listed; one the game actually says without a
-recording only fails with `TTS_STRICT=1` (CI sets it on `main`). The game is served from `main`, so stamp a build
-before merging there: `node tools/stamp.js`, then commit `index.html` and
-`version.json` (CI on `main` runs `node tools/check-build.js`, which fails
-on an unstamped `dev` build). Open tabs then see the new version.
+recording only fails with `TTS_STRICT=1` (CI sets it on `main`).
+
+The game is served from `main`, so stamp a build before merging there:
+`node tools/stamp.js`, then commit `index.html` and `version.json` (CI on
+`main` runs `node tools/check-build.js`, which fails on an unstamped `dev`
+build). Open tabs then see the new version.
 
 ### Live speech server (optional)
 
