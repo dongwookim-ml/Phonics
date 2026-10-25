@@ -7480,7 +7480,7 @@ const TTS_INDEX = {
 "nap": "598b3a2b24",
 "net": "24901253a6",
 "newspaper": "2741d9a06b",
-"night": "6faec606e0",
+"night": "571b963261",
 "nine": "9aa5a1df2a",
 "noodles": "71c14b7b98",
 "nose": "1be1ab7b75",
