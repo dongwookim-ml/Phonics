@@ -629,7 +629,8 @@ const caveMuted = () => Sound.muted;
 // goes on without it: busyNow (js/game.js) counts that as showing, so
 // closing the parent panel over it never frees the game. It is over when
 // the dialog comes back (caveStepBack, or the next round's openDialog) or
-// the villain gives up.
+// the villain gives up. The Crystal Cave's monsters step it aside the same
+// way for their magic (js/cave-magic.js).
 let caveAside = null; // the villain fighting with the dialog stepped aside
 function caveStepAside(npc) {
   caveAside = npc;

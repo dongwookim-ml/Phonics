@@ -221,6 +221,22 @@ npx http-server -p 8080 .
   goes poof and drops 1–3 🪙 coins instead of a star and a present. Caught
   monsters come back after a minute or when she walks in again. Monsters
   live in `DUNGEON_NPCS` in `js/data.js`.
+- **Monster magic** (princess edition): the monsters float or bounce and
+  blink while they wait, and she steps back a tile to face the one she
+  talks to. After a wrong answer and its hint, the dialog steps aside: the
+  monster wobbles while sparkles gather, hops and sends its magic at her (the
+  slimes a bubble or a heart, the bat a moon, the ghost and the baby dragon
+  a star, the mushroom a glowing bubble); a soap bubble pops up around her
+  and the magic bursts into hearts on it, never hurting her. It is short,
+  so a miss is never the fun part, then the same question comes back.
+  After a right answer (once the praise and the answer have been said) the
+  monster tries one last spell, her bubble catches it, and her golden star
+  flies back with a rainbow tail: the monster giggles in a ring of hearts,
+  twirls and goes poof. While the dialog is aside the game stays busy, as
+  in the robot's cave fight; ✕ during the praise skips the magic, and the
+  monster still goes poof and pays. Sounds are the game's own effects; no
+  new lines are said. Code in `js/cave-magic.js` (`MONSTER_MAGIC` sets each
+  monster's magic and colours).
 - **Starlight Shop**: the golden cottage on the forest's cross path. Tap it
   or the shopkeeper (🪙 bubble) to buy anything she doesn't own yet with
   coins, including a few shop-only treasures (crystal dress, silver hair,
@@ -575,7 +591,8 @@ The other checks, all run by
   paying once, kept over a reload, new ones the next day) and at their
   edges (a pick she can no longer do swapped when the account's copy
   comes in, a card left open overnight, a chest an older tab says is
-  shut), the robot's cave fight with the parent panel over it, reading one
+  shut), the robot's cave fight and the Crystal Cave monsters' magic with
+  the parent panel over them, reading one
   of her own books to the end (a star once, a locked one stays locked),
   every little game in both editions with real taps (its button only in
   its host's dialog, what to do said and the finger on the first round, a
@@ -701,3 +718,4 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
 - `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations
+- `js/cave-magic.js`: the Crystal Cave monsters' idle moves and their magic, and hers (princess edition)

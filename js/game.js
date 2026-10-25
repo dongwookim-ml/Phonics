@@ -292,8 +292,9 @@ function setPaused(on) {
 
 // Whether anything that stops the game is still showing: a question, a
 // present, a card (js/album.js, friend.js, minigame.js, quest.js), the
-// parent panel, the sleeping town, a scene change or the robot's cave fight
-// with its dialog stepped aside (js/captain-cave.js). Every close sets
+// parent panel, the sleeping town, a scene change, or the robot's cave fight
+// or a Crystal Cave monster's magic with its dialog stepped aside
+// (js/captain-cave.js, js/cave-magic.js). Every close sets
 // state.busy from this, so closing one thing never frees the game under
 // another, nor leaves it stuck with nothing open.
 const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests'];
@@ -593,6 +594,8 @@ function openDialog(npc) {
   // short lead after that.
   const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
   const villain = isCaptain() && npc.monster && villainRound(npc);
+  // A Crystal Cave monster: she steps back to give its magic room (js/cave-magic.js).
+  if (!isCaptain() && npc.monster) monsterFaceOff(npc);
   const greet = !npc.greeted;
   npc.greeted = true;
   const hello = house ? houseHello(house) : villain ||
@@ -686,8 +689,9 @@ function answeredRight(q, btn) {
   checkMedals();
   // Cave monsters pay in coins instead of a star and a present.
   if (npc.monster) {
-    Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp), voiceOf(npc));
-    catchMonster(npc);
+    const said = [{ text: praise }, { pause: 300 }].concat(q.answer, levelUp);
+    Sound.say(said, voiceOf(npc));
+    catchMonster(npc, said);
     return;
   }
   const full = !q.misses && fillGiftMeter();
@@ -719,8 +723,9 @@ function missed(q, o, btn) {
   btn.disabled = true;
   const left = q.options.filter((x, j) => !x.right && !ui.choices.children[j].disabled).length;
   const showIt = q.misses >= 2 || !left;
-  // A captain-edition villain throws something first (js/captain-cave.js).
-  if (isCaptain() && npc.monster) { villainMiss(npc, q, o, showIt); return; }
+  // A captain-edition villain throws something first (js/captain-cave.js),
+  // a Crystal Cave monster casts a spell (js/cave-magic.js).
+  if (npc.monster) { (isCaptain() ? villainMiss : monsterMiss)(npc, q, o, showIt); return; }
   if (showIt) showAnswer(q, o);
   else hint(q, o);
 }
@@ -1302,15 +1307,16 @@ function renderCoins(pop) {
   }
 }
 
-// A right answer catches the monster: after the praise it goes poof,
-// leaves coins and comes back a while later.
-function catchMonster(npc) {
+// A right answer catches the monster: once `said` (the praise and the
+// answer) has been said, its last spell and her star (js/cave-magic.js),
+// then it goes poof, leaves coins and comes back a while later.
+function catchMonster(npc, said) {
   // In the captain edition it's a fight: see villainHit in js/captain-cave.js.
   if (isCaptain()) { villainHit(npc); return; }
   state.answered++;
   npc.caught = true;
   const coins = 1 + Math.floor(Math.random() * npc.coins);
-  later(2400, () => {
+  monsterCaught(npc, said, () => {
     const sc = sceneFor('dungeon');
     if (state.talking === npc) closeDialog();
     if (state.scene === sc) poofAt(tileCenter(sc, npc.c, npc.r));
@@ -1904,6 +1910,8 @@ function drawCharacter(ch, now) {
     const idle = (Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0) + guideBob(n, now);
     const uni = n.mount ? state.outfit.ride : n.unicorn;
     if (uni && uni !== 'none') drawSprite(vctx, unicornSprite(uni, 0), p.x, p.y + 1 + idle, n.flip);
+    // Crystal Cave monsters float, bounce, blink and cast (js/cave-magic.js).
+    else if (n.monster && !isCaptain()) drawMonster(vctx, n, p.x, p.y + 1 + guideBob(n, now), now);
     else if (!n.mount) drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
   }
 }
@@ -2170,10 +2178,11 @@ function drawOverlay(now) {
   }
 
   // Lasers, punches and shields in the Villain Cave; a robot showing off.
+  // The monsters' magic and hers in the Crystal Cave (js/cave-magic.js).
   if (isCaptain()) {
     drawCaveFx(now);
     drawCaptainShowOff(now);
-  }
+  } else drawMagicFx(now);
 
   // Sparkles.
   for (const p of state.particles) {
