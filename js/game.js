@@ -198,6 +198,8 @@ function later(ms, fn) { state.timers.push(setTimeout(fn, ms)); }
 function sceneFor(target) {
   if (!state.scenes[target]) {
     const captain = isCaptain() && CAPTAIN_SCENES[target];
+    const home = VILLAGE_HOMES.find(h => `home-${h.id}` === target);
+    const house = TOWN_HOUSES.find(h => `house-${h.letter}` === target);
     if (captain) state.scenes[target] = captain();
     else if (target === 'town') state.scenes[target] = buildTown();
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
@@ -207,7 +209,10 @@ function sceneFor(target) {
     else if (target === 'unicorn') state.scenes[target] = buildUnicornVillage();
     else if (target === 'dungeon') state.scenes[target] = buildDungeon();
     else if (target === 'fairy') state.scenes[target] = buildFairyVillage();
-    else state.scenes[target] = buildHouseInterior(TOWN_HOUSES.find(h => `house-${h.letter}` === target));
+    else if (home) state.scenes[target] = buildHomeInterior(home);
+    else if (house) state.scenes[target] = buildHouseInterior(house);
+    // A place that doesn't exist takes her to the town instead of breaking.
+    else return sceneFor('town');
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
   }
@@ -309,22 +314,30 @@ function enterDoor(door) {
   if (door.target === 'castle') {
     changeScene('castle', null, place('castle'));
     Sound.say([{ text: line('castle'), pitch: 1.3 }]);
-  } else {
+  } else if (door.home) {
+    // A village home: a knock, then the resident says hello from inside.
+    // She comes back out on the door tile she went in by.
+    const room = sceneFor(door.target);
+    const theme = door.home.theme;
+    room.returnTo = { scene: door.home.scene, at: { c: door.c, r: door.r } };
+    changeScene(door.target, null, room.label);
+    Sound.say([{ text: line('knock'), narrator: true }, { pause: 500 }, { text: line(`home-${theme}`, {}, HOME_HELLO[theme]) }], voiceOf(room.npcs[0]));
+  } else if (door.obj.info) {
     const info = door.obj.info;
     changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? '공방' : '집'}`);
     Sound.say([{ text: line('house', { letter: info.letter }) }]);
+  } else {
+    changeScene(door.target);
   }
 }
 
+// Out through a room's exit mat: back to the door she came in by. Letter
+// houses go back to their door in town, the castle to its gate.
 function leaveRoom() {
   const sc = state.scene;
   Sound.door();
-  if (sc.house) {
-    const h = sc.house;
-    changeScene('town', { c: h.c + 1, r: h.r + 3 }, place('town'));
-  } else {
-    changeScene('town', { c: 19, r: 10 }, place('town'));
-  }
+  const back = sc.returnTo || { scene: 'town', at: sc.house ? { c: sc.house.c + 1, r: sc.house.r + 3 } : { c: 19, r: 10 } };
+  changeScene(back.scene, back.at, place(back.scene));
 }
 
 // ---- Riding --------------------------------------------------------------
@@ -1254,8 +1267,12 @@ function drawScene(now) {
     const over = heroDrawn && !o.background && overlaps(o, hx, hy, heroBox.w, heroBox.h) && (!o.canvas || hitObject(o, hp.x, hp.y - 14) || hitObject(o, hp.x, hp.y - 4));
     o.fade = Math.max(0.45, Math.min(1, (o.fade || 1) + (over ? -0.08 : 0.08)));
     vctx.globalAlpha = o.fade;
+    // A thing she just tapped shakes or hops (js/touch.js).
+    const m = o.touchFx && touchMove(o, now);
+    if (m) vctx.translate(m.x, m.y);
     if (o.animated) o.animated(vctx, t);
     else vctx.drawImage(o.canvas, o.x, o.y);
+    if (m) vctx.translate(-m.x, -m.y);
     vctx.globalAlpha = 1;
   }
 
@@ -1340,9 +1357,10 @@ function drawOverlay(now) {
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
 
-  // House signs and room posters.
+  // House signs and room posters. A tapped one hops.
   for (const sg of sc.signs) {
-    const p = toScreen(sg.x, sg.y);
+    const m = sg.touchFx && touchMove(sg, now);
+    const p = toScreen(sg.x, sg.y + (m ? m.y : 0));
     if (p.x < -200 || p.y < -200 || p.x > screen.width + 200 || p.y > screen.height + 200) continue;
     const fs = (sg.big ? 22 : 11) * s;
     ctx.font = `800 ${fs}px ${font}`;
@@ -1371,7 +1389,8 @@ function drawOverlay(now) {
     ctx.fillText(sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text, p.x, p.y + 0.5 * s);
   }
   for (const d of sc.decor) {
-    const p = toScreen(d.x, d.y);
+    const m = d.touchFx && touchMove(d, now);
+    const p = toScreen(d.x, d.y + (m ? m.y : 0));
     ctx.fillStyle = '#b07a50';
     ctx.fillRect(p.x - 9 * s, p.y - 9 * s, 18 * s, 18 * s);
     ctx.fillStyle = '#fffaf0';
@@ -1415,7 +1434,8 @@ function drawOverlay(now) {
 
   // Tap ripples.
   for (const r of state.ripples) {
-    const k = (now - r.t0) / 500;
+    // A frame's clock can start a little before the tap was handled.
+    const k = Math.max(0, (now - r.t0) / 500);
     ctx.strokeStyle = `rgba(255,255,255,${1 - k})`;
     ctx.lineWidth = 2 * s * (1 - k) + 1;
     ctx.beginPath();
@@ -1438,6 +1458,9 @@ function drawOverlay(now) {
     } else ctx.fillRect(q.x, q.y, z, z);
   }
   ctx.globalAlpha = 1;
+
+  // Words and emoji over things she tapped.
+  drawTouchShows(now);
 
   // Light motes.
   ctx.globalCompositeOperation = 'lighter';
@@ -1590,20 +1613,29 @@ function onPointer(e) {
     }
   }
 
+  // Pictures, signs and the hints over ways out are drawn on top of everything.
+  if (tapOverlay(sc, wx, wy)) return;
+
+  // Things on the map, the front-most first: the first one that knows what
+  // to do with a tap takes it, so a gate in front of a house is the gate.
+  // Only the front-most one may just say its word; one behind it can only
+  // take her somewhere. Shadows on the ground (faint pixels) don't count.
+  const hits = sc.objects.filter(o => !o.background && o.canvas && hitObject(o, wx, wy, 64));
+  for (let i = hits.length - 1; i >= 0; i--) if (tapObject(hits[i], wx, wy, i === hits.length - 1)) return;
+  // Scenery with nothing to do wiggles; the tap never walks her to a
+  // hidden tile behind it.
+  if (hits.length) {
+    touchNudge(hits[hits.length - 1]);
+    return;
+  }
+
   const t = worldToTile(sc, wx, wy);
 
-  // Doors between rooms, such as the castle to the princess's room.
-  // Wall doors can also be tapped on the door itself.
-  const link = (sc.links || []).find(l => l.c === t.c && l.r === t.r) ||
-    (sc.links || []).find(l => l.door && Math.abs(wx - l.door.x) < 14 && wy > l.door.y - 32 && wy < l.door.y + 30);
-  if (link) {
-    if (link.needStars && state.stars < link.needStars) {
-      Sound.wrong();
-      showPlace(`🔒 별 ${link.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
-      Sound.say([{ text: line('locked', { stars: link.needStars }) }]);
-      return;
-    }
-    walkTo((c, r) => c === link.c && r === link.r, () => followLink(link));
+  // Ways to other places: a link tile, a wall door (tapped on the door
+  // itself, such as the castle to the princess's room) or a gate's mat.
+  const group = linkAt(sc, t, wx, wy);
+  if (group) {
+    goLink(group);
     return;
   }
 
@@ -1614,50 +1646,108 @@ function onPointer(e) {
     return;
   }
 
-  // Buildings with doors: walk to the door and go in.
-  const hits = sc.objects.filter(o => !o.background && o.canvas && hitObject(o, wx, wy));
-  // A staircase walks her to its foot and up (or down).
-  const stairs = hits.find(o => o.stairs);
-  if (stairs) {
-    Sound.tap();
-    walkTo((c, r) => stairs.stairs.some(l => l.c === c && l.r === r), () => {
-      const here = heroTile();
-      followLink(stairs.stairs.find(l => l.c === here.c && l.r === here.r) || stairs.stairs[0]);
-    });
+  const tile = tileAt(sc, t.c, t.r);
+  if (tile && tile.type === 'water') {
+    touchWater(wx, wy);
     return;
-  }
-  const shop = hits.find(o => o.kind === 'shop');
-  if (shop) {
-    Sound.tap();
-    talkTo(shop.keeper);
-    return;
-  }
-  // The library's bookcases open the book list.
-  const shelf = hits.find(o => o.kind === 'bookcase');
-  if (shelf) {
-    Sound.tap();
-    walkTo((c, r) => shelf.front.some(f => f.c === c && f.r === r), openLibrary);
-    return;
-  }
-  const robe = hits.find(o => o.kind === 'wardrobe');
-  if (robe) {
-    Sound.tap();
-    walkTo((c, r) => robe.front.some(f => f.c === c && f.r === r), openWardrobe);
-    return;
-  }
-  for (let i = hits.length - 1; i >= 0; i--) {
-    const doors = sc.doors.filter(d => d.obj === hits[i]);
-    if (doors.length) {
-      Sound.tap();
-      walkTo((c, r) => doors.some(d => d.c === c && d.r === r), () => {
-        const here = heroTile();
-        enterDoor(doors.find(d => d.c === here.c && d.r === here.r) || doors[0]);
-      });
-      return;
-    }
   }
 
   if (walkable(sc, t.c, t.r)) walkTo((c, r) => c === t.c && r === t.r);
+}
+
+// What a tapped object does. True when it took the tap.
+function tapObject(o, wx, wy, front) {
+  const sc = state.scene;
+  // A staircase walks her to its foot and up (or down); any part of a
+  // gate or the cave goes through it.
+  if (o.stairs || o.links) {
+    goLink(o.stairs || o.links, true);
+    return true;
+  }
+  if (o.kind === 'shop') {
+    Sound.tap();
+    talkTo(o.keeper);
+    return true;
+  }
+  // The library's bookcases open the book list, the wardrobe and mirror the wardrobe.
+  if (o.kind === 'bookcase' || o.kind === 'wardrobe') {
+    Sound.tap();
+    walkTo((c, r) => o.front.some(f => f.c === c && f.r === r), o.kind === 'bookcase' ? openLibrary : openWardrobe);
+    return true;
+  }
+  // Buildings with doors: walk to the door and go in.
+  const doors = sc.doors.filter(d => d.obj === o);
+  if (doors.length) {
+    Sound.tap();
+    walkTo((c, r) => doors.some(d => d.c === c && d.r === r), () => {
+      const here = heroTile();
+      enterDoor(doors.find(d => d.c === here.c && d.r === here.r) || doors[0]);
+    });
+    return true;
+  }
+  // Everything else says its word (js/touch.js).
+  return front && touchObject(o, wx, wy);
+}
+
+// Taps on things drawn over the map: wall pictures, signs (a gate's sign
+// goes through the gate, a letter poster says its letter) and the padlock
+// or bouncing arrow over a way out. True when one took the tap.
+function tapOverlay(sc, wx, wy) {
+  const d = sc.decor.find(x => Math.abs(wx - x.x) < 10 && Math.abs(wy - x.y) < 10);
+  if (d) {
+    touchPicture(d);
+    return true;
+  }
+  const font = '"Baloo 2", "Trebuchet MS", sans-serif';
+  for (const sg of sc.signs) {
+    if (!sg.links && !sg.poster && !sg.react) continue;
+    sctx.font = `800 ${sg.big ? 22 : 11}px ${font}`;
+    const half = sctx.measureText(sg.text).width / 2 + 4;
+    if (Math.abs(wx - sg.x) > half || Math.abs(wy - sg.y) > (sg.big ? 13 : 8)) continue;
+    if (sg.links) goLink(sg.links, true);
+    else if (sg.poster) touchPoster(sg);
+    else touchReact(sg, sg.react, { x: sg.x, y: sg.y }, { x: sg.x, y: sg.y - 14 });
+    return true;
+  }
+  for (const sp of exitSpots(sc)) {
+    const locked = sp.link && sp.link.needStars && state.stars < sp.link.needStars;
+    if (!locked && sp.dir) continue; // arrows on the ground: the tiles themselves
+    const w = tileCenter(sc, sp.c, sp.r);
+    if (Math.abs(wx - w.x) > 8 || wy < w.y - 27 || wy > w.y - 6) continue;
+    if (sp.link) goLink(sp.tiles, true);
+    else walkTo((c, r) => sp.tiles.some(x => x.c === c && x.r === r), leaveRoom);
+    return true;
+  }
+  return false;
+}
+
+// The way out a tap on tile t means: a link on that tile, a wall door
+// around the tap, or the mat of the gate next to it.
+function linkAt(sc, t, wx, wy) {
+  const links = sc.links || [];
+  const link = links.find(l => l.c === t.c && l.r === t.r) ||
+    links.find(l => l.door && Math.abs(wx - l.door.x) < 14 && wy > l.door.y - 32 && wy < l.door.y + 30);
+  if (link) return [link];
+  const tile = tileAt(sc, t.c, t.r);
+  const gate = tile && tile.mat && exitSpots(sc).find(sp => sp.link && sp.tiles.some(l => Math.abs(l.c - t.c) + Math.abs(l.r - t.r) <= 2));
+  return gate ? gate.tiles : null;
+}
+
+// Goes another way out: a locked one says how many stars it needs, an open
+// one walks her to it (whichever of its tiles is nearest) and through.
+function goLink(group, tap) {
+  const locked = group.find(l => l.needStars && state.stars < l.needStars);
+  if (locked) {
+    Sound.wrong();
+    showPlace(`🔒 별 ${locked.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
+    Sound.say([{ text: line('locked', { stars: locked.needStars }) }]);
+    return;
+  }
+  if (tap) Sound.tap();
+  walkTo((c, r) => group.some(l => l.c === c && l.r === r), () => {
+    const here = heroTile();
+    followLink(group.find(l => l.c === here.c && l.r === here.r) || group[0]);
+  });
 }
 
 function worldToTile(sc, wx, wy) {
