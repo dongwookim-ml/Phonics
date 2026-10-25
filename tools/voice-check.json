@@ -1,9 +1,9 @@
 {
 "calibration": {"prompt": null, "rates": {"'Um... uh, the.'": "3/40", "'Umm, uh, a, the... Uh, so, um, like, the... a'": "2/40", "None": "4/40"}, "words": 40},
-"index": "e421e5c304e6",
+"index": "dc67933d0a3c",
 "model": "small.en",
 "shards": 10,
-"summary": {"different": 4, "extra": 1, "ok": 13331, "phonetic": 1064, "unclear": 910},
+"summary": {"different": 3, "extra": 1, "ok": 13332, "phonetic": 1064, "unclear": 910},
 "unchecked": 0,
 "clips": {
 "af_aoede|. Ding, dong!": {"asr": "different", "heard": "dot ding dong.", "id": "7849a1b159", "status": "unclear"},
@@ -10042,7 +10042,7 @@
 "am_michael|has a shell on its back.": {"heard": "has a shell on its back.", "id": "58a30889db", "status": "ok"},
 "am_michael|has a very long neck.": {"heard": "has a very long neck.", "id": "457b35433b", "status": "ok"},
 "am_michael|has black and white stripes.": {"heard": "has black and white stripes.", "id": "bb014de033", "status": "ok"},
-"am_michael|hat": {"heard": "HA!", "hinted": "Ha!", "id": "dce3a70334", "status": "different", "words": [["HA!", 0.0, 0.2, 0.22]]},
+"am_michael|hat": {"heard": "Hat", "id": "07132a0161", "status": "ok", "words": [["Hat", 0.0, 0.28, 0.49]]},
 "am_michael|heart": {"heard": "heart.", "id": "4a458be9b6", "status": "ok", "words": [["heart.", 0.0, 0.3, 0.44]]},
 "am_michael|helicopter": {"heard": "helicopter.", "id": "90160ced45", "status": "ok", "words": [["helicopter.", 0.0, 0.46, 0.22]]},
 "am_michael|hen": {"asr": "extra", "heard": "HEN in.", "hinted": "hen", "id": "636ab987aa", "status": "unclear", "words": [["HEN", 0.0, 0.32, 0.53], ["in.", 0.32, 0.38, 0.02]]},

@@ -10065,7 +10065,7 @@ const TTS_INDEX = {
 "has a shell on its back.": "58a30889db",
 "has a very long neck.": "457b35433b",
 "has black and white stripes.": "bb014de033",
-"hat": "dce3a70334",
+"hat": "07132a0161",
 "heart": "4a458be9b6",
 "helicopter": "90160ced45",
 "hen": "636ab987aa",
