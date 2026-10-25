@@ -11,41 +11,41 @@ const TTS_SOUNDS = {
 "b": {
 "anchor": "bus",
 "anchorClip": "de08be0585",
-"clip": "6168e32d07",
+"clip": "af0b0ea444",
 "kind": "vstop",
-"ms": 65,
+"ms": 101,
 "where": "initial"
 },
 "c": {
 "anchor": "cat",
 "anchorClip": "320d54fcad",
-"clip": "5809fc1e0a",
+"clip": "1a1ddbd945",
 "kind": "stop",
-"ms": 65,
+"ms": 130,
 "where": "initial"
 },
 "ch": {
 "anchor": "chick",
 "anchorClip": "9c68d4cf55",
-"clip": "bfde921dfd",
+"clip": "9aedd6b1df",
 "kind": "affricate",
-"ms": 145,
+"ms": 200,
 "where": "initial"
 },
 "ck": {
 "anchor": "cat",
 "anchorClip": "320d54fcad",
-"clip": "82a0e2df83",
+"clip": "a217d54f93",
 "kind": "stop",
-"ms": 65,
+"ms": 130,
 "where": "initial"
 },
 "d": {
 "anchor": "dog",
 "anchorClip": "7758bbe68f",
-"clip": "bc756274d9",
+"clip": "198ff38ac6",
 "kind": "vstop",
-"ms": 65,
+"ms": 112,
 "where": "initial"
 },
 "e": {
@@ -65,11 +65,11 @@ const TTS_SOUNDS = {
 "where": "final"
 },
 "g": {
-"anchor": "goat",
-"anchorClip": "6bb66006c3",
-"clip": "d41c50e4b3",
+"anchor": "gas",
+"anchorClip": "4117baf0db",
+"clip": "6547c7ce72",
 "kind": "vstop",
-"ms": 65,
+"ms": 98,
 "where": "initial"
 },
 "h": {
@@ -91,17 +91,17 @@ const TTS_SOUNDS = {
 "j": {
 "anchor": "jet",
 "anchorClip": "6506af3065",
-"clip": "490eaca116",
+"clip": "88ac29b9ff",
 "kind": "vaffricate",
-"ms": 125,
+"ms": 177,
 "where": "initial"
 },
 "k": {
 "anchor": "cat",
 "anchorClip": "320d54fcad",
-"clip": "f865e1559b",
+"clip": "c5bd2de15b",
 "kind": "stop",
-"ms": 65,
+"ms": 130,
 "where": "initial"
 },
 "l": {
@@ -147,17 +147,17 @@ const TTS_SOUNDS = {
 "p": {
 "anchor": "pig",
 "anchorClip": "533ec974da",
-"clip": "87429fd628",
+"clip": "5200bde453",
 "kind": "stop",
-"ms": 65,
+"ms": 130,
 "where": "initial"
 },
 "q": {
 "anchor": "queen",
 "anchorClip": "ba0eeacd20",
-"clip": "487ff32945",
-"kind": "glide",
-"ms": 82,
+"clip": "10b3a5ea48",
+"kind": "kw",
+"ms": 190,
 "where": "initial"
 },
 "r": {
@@ -187,9 +187,9 @@ const TTS_SOUNDS = {
 "t": {
 "anchor": "top",
 "anchorClip": "409d998f2a",
-"clip": "cc138e5154",
+"clip": "0e9bbf09dc",
 "kind": "stop",
-"ms": 65,
+"ms": 130,
 "where": "initial"
 },
 "th": {
@@ -219,9 +219,9 @@ const TTS_SOUNDS = {
 "w": {
 "anchor": "web",
 "anchorClip": "13fcab5702",
-"clip": "50460826c6",
+"clip": "5f7f0ec3a2",
 "kind": "glide",
-"ms": 122,
+"ms": 190,
 "where": "initial"
 },
 "x": {
@@ -235,9 +235,9 @@ const TTS_SOUNDS = {
 "y": {
 "anchor": "yes",
 "anchorClip": "bd99071ede",
-"clip": "63571ea630",
+"clip": "3fb2b53570",
 "kind": "glide",
-"ms": 132,
+"ms": 190,
 "where": "initial"
 },
 "z": {
