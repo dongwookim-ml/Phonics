@@ -268,7 +268,10 @@ function parentClick(e) {
 }
 function parentChange(e) {
   if (!e.target.classList.contains('set-two')) return;
-  state.settings = Object.assign({}, state.settings, { twoSyllables: e.target.checked });
+  // Stamped (at least one past the copy it replaces, whatever this device's
+  // clock says), so the newest change wins on the other tablet (js/progress.js).
+  const at = Math.max(Date.now(), (Number((state.settings || {}).at) || 0) + 1);
+  state.settings = Object.assign({}, state.settings, { twoSyllables: e.target.checked, at });
   Quiz.setTier('spell', Quiz.skill('spell').t);
   save();
   parentStats();

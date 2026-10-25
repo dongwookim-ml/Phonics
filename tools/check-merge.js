@@ -124,6 +124,58 @@ const C = device('captain', 'dC');
   check('guest → login: a guest on this device and this device\'s own count in the account add up', A.merge(newGuest, play(A, { edition: 'princess' }, 2, 0), 'foreign').stars === 7);
 }
 
+// ---- Her level and the parent's settings ---------------------------------------
+const sk = (t, n, extra) => Object.assign({ t, best: t, w: [], n }, extra);
+const kind = (e, k) => (e.skill || {})[k] || {};
+{
+  // The account has princess progress only: spelling at 4, family at 3, and
+  // two-syllable spelling on. A guest played the captain game on another
+  // tablet (save() wrote her level into its empty princess edition too).
+  const acct = play(B, { edition: 'princess' }, 5, 0, { skill: { spell: sk(4, 60), family: sk(3, 80), start: sk(2, 1) }, settings: { twoSyllables: true } });
+  const gs = { start: sk(1, 3), word: sk(1, 2) };
+  const guest = play(C, { edition: 'captain', other: { princess: { edition: 'princess', skill: gs, settings: {} } } }, 1, 0, { skill: gs, settings: {} });
+  const m = C.merge(guest, acct, 'foreign');
+  const eds = [m, m.other.princess];
+  check('guest in the other edition → login: her level is joined per kind, in every edition', eds.every(e => kind(e, 'spell').t === 4 && kind(e, 'family').t === 3 && kind(e, 'start').n === 3 && kind(e, 'word').n === 2), eds.map(e => e.skill));
+  check('guest in the other edition → login: the account\'s settings, in every edition', eds.every(e => e.settings.twoSyllables === true), eds.map(e => e.settings));
+  const g2 = Object.assign({}, guest, { settings: { twoSyllables: false, at: 2000 } });
+  const a2 = Object.assign({}, acct, { settings: { twoSyllables: true, at: 1000 } });
+  check('guest → login: the settings changed last win', C.merge(g2, a2, 'foreign').other.princess.settings.twoSyllables === false && C.merge(guest, a2, 'foreign').settings.twoSyllables === true);
+}
+{
+  // Two tablets on one account, in step, two-syllable spelling on. The
+  // parent turns it off on A (stamped, js/parent.js) and A sends it; B's
+  // open tab then answers once, on its old copy.
+  const base = play(A, { edition: 'princess' }, 2, 0, { settings: { twoSyllables: true, at: 1000 } });
+  const phone = Object.assign({}, base, { settings: { twoSyllables: false, at: 2000 } });
+  const tab = play(B, base, 1, 0);
+  check('settings: the change wins when the other tablet merges as mine', B.merge(tab, phone, 'mine').settings.twoSyllables === false);
+  check('settings: and when a stale copy is the server\'s', A.merge(phone, tab, 'theirs').settings.twoSyllables === false && A.merge(tab, phone, 'theirs').settings.twoSyllables === false);
+  const onC = C.merge({ edition: 'captain', other: { princess: tab } }, phone, 'mine');
+  check('settings: and in the other edition', [onC, onC.other.princess].every(e => (e.settings || {}).twoSyllables === false), onC.settings);
+  // An older version keeps the settings it loaded, without a stamp.
+  const old = Object.assign(playOld(base, 1, 0), { settings: { twoSyllables: true } });
+  check('settings: a copy without a stamp never beats one with it', B.merge(old, phone, 'mine').settings.twoSyllables === false && A.merge(phone, old, 'theirs').settings.twoSyllables === false);
+  check('settings: two copies without a stamp are joined as before', A.merge({ edition: 'princess', settings: {} }, { edition: 'princess', settings: { twoSyllables: true } }, 'mine').settings.twoSyllables === true);
+}
+{
+  // Both tablets have spelling at 4. The parent lowers it to 2 on A
+  // (Quiz.setTier stamps it, `set`) and A sends it; B's open tab then asks
+  // one more spelling question (n 41) and a word question.
+  const synced = play(A, { edition: 'princess' }, 1, 0, { skill: { spell: sk(4, 40), word: sk(2, 10) } });
+  const phone = Object.assign({}, synced, { skill: { spell: sk(2, 40, { best: 4, set: 5000 }), word: sk(2, 10) } });
+  const tab = Object.assign(play(B, synced, 1, 0), { skill: { spell: sk(5, 41), word: sk(2, 11) } });
+  const m = B.merge(tab, phone, 'mine');
+  check('tier set by the parent: kept when the other tablet merges as mine', kind(m, 'spell').t === 2 && kind(m, 'spell').set === 5000, m.skill.spell);
+  check('tier set by the parent: answers and the best tier never go back', kind(m, 'spell').n === 41 && kind(m, 'spell').best === 5 && kind(m, 'word').n === 11, m.skill);
+  check('tier set by the parent: from the parent\'s side too', kind(A.merge(phone, tab, 'mine'), 'spell').t === 2 && kind(A.merge(tab, phone, 'theirs'), 'spell').t === 2);
+  // Once both copies have it, the entry with more answers wins again.
+  const later = Object.assign({}, m, { skill: Object.assign({}, m.skill, { spell: Object.assign({}, m.skill.spell, { t: 3, n: 50 }) }) });
+  check('tier set by the parent: after that, more answers win again', kind(A.merge(phone, later, 'theirs'), 'spell').t === 3 && kind(A.merge(phone, later, 'mine'), 'spell').t === 3);
+  const again = Object.assign({}, phone, { skill: { spell: sk(1, 40, { best: 4, set: 6000 }) } });
+  check('tier set by the parent: the newer change wins', kind(B.merge(later, again, 'mine'), 'spell').t === 1 && kind(B.merge(again, later, 'theirs'), 'spell').t === 1);
+}
+
 // ---- Fields this version doesn't know, and broken entries ---------------------------
 {
   const mu = A.merge({ edition: 'princess', stickers: ['cat'], skill: { word: { t: 2, n: 10 }, rhyme: { t: 1, n: 2 } }, x: { a: 1 } },
