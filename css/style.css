@@ -34,32 +34,6 @@ html, body {
 
 button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
-/* ---- HD-2D finish ---- */
-
-.fx { position: fixed; left: 0; right: 0; pointer-events: none; }
-.tilt { height: 22vh; backdrop-filter: blur(2.5px); -webkit-backdrop-filter: blur(2.5px); }
-.tilt.top {
-  top: 0;
-  -webkit-mask-image: linear-gradient(#000, transparent);
-  mask-image: linear-gradient(#000, transparent);
-}
-.tilt.bottom {
-  bottom: 0;
-  -webkit-mask-image: linear-gradient(transparent, #000);
-  mask-image: linear-gradient(transparent, #000);
-}
-.bloom {
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(255, 236, 190, 0.55), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(255, 170, 220, 0.35), transparent 60%);
-  mix-blend-mode: soft-light;
-}
-.vignette {
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 58%, rgba(90, 50, 110, 0.32));
-}
-
 /* ---- HUD ---- */
 
 .hud {
@@ -477,36 +451,16 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 /* ---- Starlight Forest: twilight sky and cooler light ---- */
 
 body.unicorn { background: linear-gradient(#ffd6ec, #e4d8ff 50%, #c8f0ff); }
-body.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 150, 200, 0.35)); }
 body.captain.unicorn { background: linear-gradient(#bfe6ff, #dff3ff 50%, #e4f6dc); }
-body.captain.unicorn .vignette { background: radial-gradient(ellipse at center, transparent 55%, rgba(90, 150, 220, 0.3)); }
 body.forest { background: linear-gradient(#2e2a6a, #6a5ab8 45%, #b8a0e8); }
-body.forest .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(160, 200, 255, 0.5), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(200, 140, 255, 0.45), transparent 60%);
-}
-body.forest .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
 
 /* ---- Dinosaur Village (captain): a sunny jungle ---- */
 
 body.dino { background: linear-gradient(#9ee4ff, #d4f6c4 50%, #fff0b0); }
-body.dino .bloom {
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(255, 240, 170, 0.6), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(255, 190, 120, 0.35), transparent 60%);
-}
-body.dino .vignette { background: radial-gradient(ellipse at center, transparent 60%, rgba(40, 110, 60, 0.25)); }
 
 /* ---- Crystal Cave and the shop ---- */
 
 body.dungeon { background: linear-gradient(#2a2050, #4f4288 50%, #7a6cb0); }
-body.dungeon .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(140, 230, 255, 0.45), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(255, 150, 240, 0.4), transparent 60%);
-}
-body.dungeon .vignette { background: radial-gradient(ellipse at center, transparent 50%, rgba(30, 20, 80, 0.5)); }
 
 .counters { display: flex; gap: 8px; }
 .stars.hidden { display: none; }
@@ -535,20 +489,8 @@ body.dungeon .vignette { background: radial-gradient(ellipse at center, transpar
 /* ---- Fairy Village: pastel sky and the spelling question ---- */
 
 body.fairy { background: linear-gradient(#ffe0f2, #efe4ff 50%, #d8f6ec); }
-body.fairy .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(255, 220, 245, 0.6), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(200, 180, 255, 0.45), transparent 60%);
-}
-body.fairy .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(220, 150, 220, 0.3)); }
 /* The Drone Village sky in the captain edition: clear blue with a warm sun. */
 body.captain.fairy { background: linear-gradient(#bfe6ff, #e0f2ff 50%, #dff6e0); }
-body.captain.fairy .bloom {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(255, 244, 200, 0.55), transparent 55%),
-    radial-gradient(ellipse at 85% 100%, rgba(160, 220, 255, 0.4), transparent 60%);
-}
-body.captain.fairy .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(90, 150, 220, 0.25)); }
 .dust.pop { animation: pop 0.5s ease; }
 
 .spell-word { display: flex; gap: 8px; }
@@ -913,12 +855,6 @@ body.captain {
 }
 /* Town, HQ and rooms: a clear blue sky instead of the pink one. */
 html:has(body.captain), body.captain { --sky-top: #a8d8ff; --sky-mid: #d6ecff; --sky-bottom: #eaf6ff; }
-body.captain .bloom {
-  background:
-    radial-gradient(ellipse at 18% 0%, rgba(255, 244, 200, 0.5), transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(140, 200, 255, 0.35), transparent 60%);
-}
-body.captain .vignette { background: radial-gradient(ellipse at center, transparent 58%, rgba(40, 80, 140, 0.28)); }
 body.captain .dialog { background: linear-gradient(#f8fbff, #e6f0ff); }
 body.captain .portrait { background: #dcebff; }
 body.captain .round.small, body.captain .choices.spell .erase { background: #dcebff; }
