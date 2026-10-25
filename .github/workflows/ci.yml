@@ -1,8 +1,9 @@
 # The checks in tools/ and the server's tests, on every push and pull request.
 # game:   Chromium (Playwright) plays both editions: scenes, questions,
 #         recordings, ways around, flows, and account sync against a local
-#         server, also with the deployed game (origin/main) on the same account.
-#         On main, every line must be recorded and index.html must be stamped.
+#         server, also with the deployed game (origin/main) on the same account,
+#         and against the deployed server.
+#         On main, every line said must be recorded and index.html stamped.
 # server: pytest on SQLite and on a Postgres service, like Railway's.
 name: Checks
 on:
@@ -46,6 +47,12 @@ jobs:
       - run: node tools/check-sync.js
         env:
           PYTHON: python
+      - name: Sync against the server still deployed (origin/main)
+        run: node tools/check-sync.js
+        env:
+          PYTHON: python
+          SYNC_SERVER_REF: origin/main
+          ONLY: Captain  # princess + captain, new and deployed: about a minute
 
   server:
     runs-on: ubuntu-latest

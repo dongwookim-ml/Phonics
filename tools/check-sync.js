@@ -12,7 +12,9 @@
 //    tablet updated to this version then logging in, and a signed-in
 //    tablet updated to this version.
 // Run: node tools/check-sync.js  (needs the playwright package and Chromium,
-// git, and Python with fastapi and uvicorn; PYTHON picks the interpreter)
+// git, and Python with fastapi and uvicorn; PYTHON picks the interpreter).
+// SYNC_SERVER_REF=origin/main plays against that version of server/app.py
+// instead (this game must work with the server still deployed).
 
 const fs = require('fs');
 const os = require('os');
@@ -33,12 +35,24 @@ function check(name, ok, detail) {
 
 // ---- The server --------------------------------------------------------------
 
+// server/app.py from this checkout, or from git at SYNC_SERVER_REF.
+function serverDir() {
+  const ref = process.env.SYNC_SERVER_REF;
+  if (!ref) return path.join(root, 'server');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-server-'));
+  temp.push(dir);
+  const src = spawnSync('git', ['-C', root, 'show', `${ref}:server/app.py`], { maxBuffer: 1 << 26 });
+  if (src.status !== 0) throw new Error(`no server/app.py at ${ref}`);
+  fs.writeFileSync(path.join(dir, 'app.py'), src.stdout);
+  return dir;
+}
+
 async function startServer() {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-sync-'));
   temp.push(data);
   const env = Object.assign({}, process.env, { DATA_DIR: data, ALLOWED_ORIGINS: '*', DATABASE_URL: '' });
   const proc = spawn(process.env.PYTHON || 'python3', ['-m', 'uvicorn', 'app:app', '--host', '127.0.0.1', '--port', String(PORT)],
-    { cwd: path.join(root, 'server'), env, stdio: ['ignore', 'ignore', 'pipe'] });
+    { cwd: serverDir(), env, stdio: ['ignore', 'ignore', 'pipe'] });
   let log = '';
   proc.stderr.on('data', d => { log += d; });
   // Up when it says so itself (not some other server already on the port).
@@ -308,7 +322,7 @@ async function withDeployed(browser, deployed, oldEdition) {
   check(`${name}: the deployed tablet's stars are all there`, o.stars === o.answers && o.answers >= rounds, o);
   check(`${name}: the new tablet never reloads`, N.loads === loads[1] && !(await live(N)).start, N.loads - loads[1]);
   check(`${name}: the deployed tablet doesn't keep reloading`, O.loads - loads[0] <= 2 * rounds + 2, O.loads - loads[0]);
-  check(`${name}: the save on the server is fmt 2`, s.fmt === 2 || editionOf(s, newEdition).fmt === 2, s.fmt);
+  check(`${name}: the new tablet's edition is fmt 2 on the server`, editionOf(s, newEdition).fmt === 2, editionOf(s, newEdition).fmt);
   check(`${name}: no page errors on the new tablet`, !N.errors.length, N.errors);
   await O.ctx.close();
   await N.ctx.close();

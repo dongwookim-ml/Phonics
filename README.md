@@ -197,7 +197,8 @@ for both a girl and a boy hero. The other checks, all run by
   password messages, a broken save, the first tap after ▶.
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), also next to the
-  deployed game (`origin/main`).
+  deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
+  against the server still deployed.
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 
 Lines not recorded yet are listed; one the game actually says without a
