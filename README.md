@@ -200,8 +200,8 @@ for both a girl and a boy hero. The other checks, all run by
   deployed game (`origin/main`).
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 
-Lines not recorded yet are listed and only fail with `TTS_STRICT=1` (CI
-sets it on `main`). The game is served from `main`, so stamp a build
+Lines not recorded yet are listed; one the game actually says without a
+recording only fails with `TTS_STRICT=1` (CI sets it on `main`). The game is served from `main`, so stamp a build
 before merging there: `node tools/stamp.js`, then commit `index.html` and
 `version.json` (CI on `main` runs `node tools/check-build.js`, which fails
 on an unstamped `dev` build). Open tabs then see the new version.

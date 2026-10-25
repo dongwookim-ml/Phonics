@@ -6,9 +6,11 @@
 //    shop, the cave, doors and links, riding, the wardrobe, the library) with
 //    the default name, nothing is said that has no recording (it would come
 //    from the live server, or the device's own voice).
-// A missing file or a page error always fails. Lines not recorded yet (new
-// lines wait for .github/workflows/polly.yml) are listed, and fail only with
-// TTS_STRICT=1 (CI sets it on main).
+// A missing file or a page error always fails. Lines listed but not
+// recorded yet (new lines wait for .github/workflows/polly.yml; the game
+// may hold them back until then, see Sound.hasClip) are a to-do list. A
+// line actually said without a recording fails with TTS_STRICT=1 (CI sets
+// it on main), and is listed otherwise.
 // Run: node tools/check-tts.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -21,8 +23,10 @@ const STRICT = process.env.TTS_STRICT === '1';
 const norm = t => String(t).trim().replace(/\s+/g, ' ');
 let failed = 0;
 let waiting = 0;
+let todo = 0;
 const fail = msg => { console.log(`FAIL ${msg}`); failed++; };
 const notYet = msg => { console.log(`${STRICT ? 'FAIL' : 'todo'} ${msg}`); waiting++; };
+const toRecord = msg => { console.log(`todo ${msg}`); todo++; };
 
 function staticCheck() {
   const index = vm.runInNewContext(`${fs.readFileSync(path.join(root, 'audio/tts/index.js'), 'utf8')};TTS_INDEX`);
@@ -39,13 +43,13 @@ function staticCheck() {
   const src = fs.readFileSync(path.join(__dirname, 'tts-phrases.js'), 'utf8');
   new Function('require', '__dirname', 'console', src)(m => (m === 'fs' ? quietFs : require(m)), __dirname, { log() {} });
   const now = listed.filter(p => !(index[p.voice] && index[p.voice][norm(p.text)]));
-  for (const p of now.slice(0, 30)) notYet(`not recorded: ${p.voice} "${p.text}"`);
-  if (now.length > 30) notYet(`... ${now.length - 30} more lines not recorded`);
+  for (const p of now.slice(0, 30)) toRecord(`not recorded: ${p.voice} "${p.text}"`);
+  if (now.length > 30) toRecord(`... ${now.length - 30} more lines not recorded`);
   const saved = JSON.parse(fs.readFileSync(path.join(__dirname, 'tts-phrases.json'), 'utf8'));
   const key = p => `${p.voice}|${norm(p.text)}`;
   const savedKeys = new Set(saved.map(key));
   const fresh = listed.filter(p => !savedKeys.has(key(p)));
-  if (fresh.length) notYet(`tools/tts-phrases.json is missing ${fresh.length} line(s), e.g. ${fresh[0].voice} "${fresh[0].text}": run node tools/tts-phrases.js`);
+  if (fresh.length) toRecord(`tools/tts-phrases.json is missing ${fresh.length} line(s), e.g. ${fresh[0].voice} "${fresh[0].text}": run node tools/tts-phrases.js`);
   console.log(`static: ${entries} recordings, ${listed.length} lines listed, ${now.length} not recorded`);
 }
 
@@ -154,6 +158,7 @@ async function play(browser, edition) {
     await browser.close();
   }
   if (STRICT) failed += waiting;
-  console.log(failed ? `${failed} problem(s)` : waiting ? `recordings OK (${waiting} line(s) still to record)` : 'recordings OK');
+  const left = waiting + todo;
+  console.log(failed ? `${failed} problem(s)` : left ? `recordings OK (${left} line(s) still to record)` : 'recordings OK');
   process.exit(failed ? 1 : 0);
 })();
