@@ -571,10 +571,11 @@ async function signedInUpdated(browser, deployed) {
 
 async function deployedLogout(browser, deployed) {
   // This version answers questions of a kind the deployed game doesn't know
-  // (blend, before M2), and the parent changes a setting and a tier here; a
-  // deployed tab on the same account and edition drops the answers from the
-  // server's copy when it saves, and puts back its older tier. This tablet
-  // then signs out while in step: its copy goes back up first.
+  // (longBlend, the Monster Village's long vowels), and the parent changes a
+  // setting and a tier here; a deployed tab on the same account and edition
+  // drops the answers from the server's copy when it saves, and puts back
+  // its older tier. This tablet then signs out while in step: its copy goes
+  // back up first.
   const acct = await newAccount();
   const N = await tablet(browser);
   const O = await tablet(browser, { dir: deployed });
@@ -583,7 +584,7 @@ async function deployedLogout(browser, deployed) {
   for (const t of [N, O]) await t.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
   await parentPanel(N, acct, async page => { await page.click('[data-set="two"]:not(.on)'); await spellTier(page, 1); });
   await N.page.evaluate(() => {
-    for (const w of ['sun', 'hat']) state.history[`blend:${w}`] = { kind: 'blend', tries: 1, right: 1, wrong: 0, last: Date.now() };
+    for (const w of ['cake', 'bee']) state.history[`longBlend:${w}`] = { kind: 'longBlend', tries: 1, right: 1, wrong: 0, last: Date.now() };
     save();
   });
   await settle(N);
@@ -591,7 +592,7 @@ async function deployedLogout(browser, deployed) {
     await earnOld(O, 'o');
     await settle(O).catch(() => {});
   }
-  const blends = save => Object.keys(editionOf(save, 'princess').history || {}).filter(k => k.startsWith('blend:')).length;
+  const blends = save => Object.keys(editionOf(save, 'princess').history || {}).filter(k => k.startsWith('longBlend:')).length;
   const before = blends((await serverSave(acct)).save);
   await Promise.all([N.page.waitForNavigation({ timeout: 15000 }), N.page.evaluate(() => Account.logout())]).catch(() => {});
   const s = (await serverSave(acct)).save;

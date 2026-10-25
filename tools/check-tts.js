@@ -3,7 +3,8 @@
 //  - every line tools/tts-phrases.js lists today is recorded, and
 //    tools/tts-phrases.json (what the recording workflow reads) is up to date;
 //  - while playing both editions (dialogs right and wrong, presents, the
-//    shop, the cave, doors and links, riding, the wardrobe, the library, and
+//    shop, the cave, the Monster Village and its tower once they are in,
+//    doors and links, riding, the wardrobe, the library, and
 //    every little game with two misses and to the end) with the default
 //    name, nothing is said that has no recording (it would come from the
 //    live server, or the device's own voice).
@@ -109,6 +110,18 @@ async function play(browser, edition) {
       }
     };
     const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+    // The Monster Village and its tower (level 6, the long vowels), wherever
+    // the ways out of town and the doors lead.
+    const seen = new Set();
+    const todo = ['town'];
+    while (todo.length) {
+      const n = todo.shift();
+      if (seen.has(n)) continue;
+      seen.add(n);
+      const sc = sceneFor(n);
+      for (const x of (sc.links || []).concat(sc.doors || [])) if (x.target) todo.push(x.target);
+      if (sc.npcs.some(p => p.level === 6) && !names.includes(n)) names.push(n);
+    }
     for (const n of names) {
       step(`go to ${n}`, () => changeScene(n));
       const sc = state.scene;

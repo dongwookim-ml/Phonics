@@ -2,9 +2,9 @@
 // two devices on the new format, an older game version (no fmt) on either
 // side, a guest's progress joining an account, editions, today's quests
 // and the day's chest, play time and a parent's wake, stickers, dust fed to
-// a friend, unknown fields, and the parent's settings, tiers and picture
-// hints, also next to tabs still on the two older releases (their own merge
-// code, from git).
+// a friend, unknown fields, the parent's settings, tiers and picture hints,
+// and the kinds of question this version adds (the long vowels), also next
+// to tabs still on the two older releases (their own merge code, from git).
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -420,6 +420,39 @@ if (M1 && M23) {
       check(`${name} tab, then this version: coins once, the wake kept`, back.coins === 5 && back.playtime.woke.ms === 2400000 && back.stars === 41,
         [back.coins, back.stars, back.playtime]);
     }
+  }
+}
+
+// ---- Kinds of question this version adds (the Monster Village's long vowels) ----------
+// Her answers and her tier in them join like any other kind's. A tab still on
+// an older release drops answers of a kind it doesn't know when it loads a
+// save (it saves its copy without them), but its merge keeps the ones in
+// the other copy, and so does this version's next merge.
+{
+  const LONG_IDS = ['longRead:cake', 'longWord:kite'];
+  const answer = (k, right) => ({ kind: k, tries: 1, right: right ? 1 : 0, wrong: right ? 0 : 1, last: 9 });
+  const a = play(A, { edition: 'princess' }, 2, 0, { history: { 'word:cat': answer('word', 1), 'longRead:cake': answer('longRead', 0), 'longWord:kite': answer('longWord', 1) },
+    skill: { longRead: sk(2, 9), longWord: sk(3, 4, { set: 5000 }), word: sk(2, 5) } });
+  const b = play(B, { edition: 'princess' }, 1, 0, { history: { 'word:cat': answer('word', 1), 'word:dog': answer('word', 0) }, skill: { word: sk(1, 7) } });
+  const has = (m, ids) => ids.every(id => !!(m.history || {})[id]);
+  const tiers = m => kind(m, 'longRead').t === 2 && kind(m, 'longWord').t === 3;
+  const both = [B.merge(b, a, 'mine'), B.merge(b, a, 'theirs'), A.merge(a, b, 'mine'), A.merge(a, b, 'theirs')];
+  check('new kinds: their answers and tiers are joined like any other kind\'s', both.every(m => has(m, LONG_IDS.concat('word:dog')) && tiers(m) && kind(m, 'word').n === 7), both[0]);
+  // load() keeps only answers of kinds the game knows (Quiz.kinds, js/quiz.js).
+  const quiz = vm.runInNewContext(`${['js/data.js', 'js/quiz.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n')}\nQuiz`,
+    { location: { search: '' }, localStorage: { getItem: () => null, setItem() {} } });
+  const P = vm.runInNewContext(`${fs.readFileSync(path.join(root, 'js/progress.js'), 'utf8')}\nProgress`,
+    { EDITION: 'princess', crypto: require('crypto').webcrypto, Quiz: quiz, localStorage: { getItem: () => null, setItem() {} } });
+  check('new kinds: this version keeps their answers when it loads a save', has({ history: P.history(a.history) }, LONG_IDS), Object.keys(P.history(a.history)));
+  for (const [name, Old] of [['first release', M1], ['previous release', M23]]) {
+    if (!Old) continue;
+    // The old tab's copy as its game saves it after loading this version's:
+    // without the new kinds' answers, and one more answer of its own.
+    const old = play(Old, Object.assign({}, a, { history: { 'word:cat': answer('word', 1), 'word:sun': answer('word', 1) } }), 1, 0);
+    const o = Old.merge(old, a, 'mine');
+    check(`new kinds: a tab on the ${name} keeps their answers and tiers through its merge`, has(o, LONG_IDS.concat('word:sun')) && tiers(o), o);
+    const next = [A.merge(b, o, 'mine'), A.merge(o, b, 'theirs')];
+    check(`new kinds: and this version's next merge after it has them`, next.every(m => has(m, LONG_IDS.concat('word:sun', 'word:dog')) && tiers(m)), next[0]);
   }
 }
 
