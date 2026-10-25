@@ -578,7 +578,7 @@ function openAlbum() {
 function closeAlbum() {
   albumUi.box.classList.add('hidden');
   for (const s of Object.values(state.stickers)) delete s.new;
-  state.busy = false;
+  state.busy = busyNow(); // js/game.js
   Sound.tap();
   renderAlbumButton();
   save();

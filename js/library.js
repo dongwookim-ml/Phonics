@@ -98,7 +98,7 @@ function closeLibrary() {
   libraryEl('reader').classList.add('hidden');
   library.book = null;
   library.playing = false;
-  state.busy = false;
+  state.busy = busyNow(); // js/game.js
 }
 
 // ---- Reader --------------------------------------------------------------

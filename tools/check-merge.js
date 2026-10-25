@@ -143,6 +143,18 @@ const C = device('captain', 'dC');
   check('quests: no picks on one side: the other side\'s', A.merge(ed(day('2026-10-25', { picks: [] })), ed(b), 'mine').quests.picks.join() === 'gift,book,forest');
 }
 
+// ---- Play time today (js/guide.js) -----------------------------------------------
+{
+  const ed = playtime => ({ edition: 'princess', playtime });
+  const pt = (day, ms, wakes) => ({ day, ms, wakes });
+  const m1 = A.merge(ed(pt('2026-9-30', 800000, 2)), ed(pt('2026-10-1', 5000, 0)), 'mine');
+  check('playtime: the later day wins whole, as numbers (10-1 after 9-30)', m1.playtime.day === '2026-10-1' && m1.playtime.ms === 5000 && m1.playtime.wakes === 0, m1.playtime);
+  const m2 = A.merge(ed(pt('2026-10-25', 180000, 0)), ed(pt('2026-10-25', 900000, 1)), 'mine');
+  check('playtime: same day: the most played and the most wakes, whichever is preferred', m2.playtime.ms === 900000 && m2.playtime.wakes === 1 &&
+    A.same(A.merge(ed(pt('2026-10-25', 900000, 1)), ed(pt('2026-10-25', 180000, 0)), 'theirs'), m2), m2.playtime);
+  check('playtime: a copy without it (an older version of the game) keeps it', A.merge({ edition: 'princess', stars: 1 }, ed(pt('2026-10-25', 5, 0)), 'mine').playtime.ms === 5);
+}
+
 // ---- Fields this version doesn't know, and broken entries ---------------------------
 {
   const mu = A.merge({ edition: 'princess', stickers: ['cat'], skill: { word: { t: 2, n: 10 }, rhyme: { t: 1, n: 2 } }, x: { a: 1 } },

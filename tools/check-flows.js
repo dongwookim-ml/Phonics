@@ -9,7 +9,13 @@
 //  - today's adventures (js/quest.js), in both editions: three quests she
 //    can do are picked, doing each the way she would ticks it, the chest
 //    stays shut until all three are done and never opens over a question,
-//    it pays once, a reload keeps all of it, and the next day has new ones.
+//    it pays once, a reload keeps all of it, and the next day has new ones;
+//  - the M3 cards, in both editions: closing one (or the parent panel over
+//    it) never frees the game under another or leaves it stuck, the
+//    feeding card stops her walk, 🔁 at the pond can't outrun the play
+//    limit, a wake is counted, a town left asleep wakes the next morning,
+//    no village's friends in the shop before its gate, no fish she'd name
+//    with the round's sound by another name (ALIAS).
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -397,10 +403,120 @@ async function quests(browser, edition) {
   await ctx.close();
 }
 
+// The M3 cards (album, feeding, fishing, quests) with each other and with
+// the parent panel: closing one never frees the game under another or
+// leaves it stuck; the feeding card stops her walk; the play limit and the
+// next morning; the shop before a village opens; fish she'd call by
+// another name.
+async function cards(browser, edition) {
+  const other = edition === 'captain' ? 'princess' : 'captain';
+  const seed = { edition, stars: 12, dust: 12, coins: 60, other: { [other]: { edition: other } } };
+  const { page, ctx, errors } = await game(browser, { seed, edition });
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    if (!Sound.muted) Sound.toggleMute();
+    const out = {};
+    const panel = () => { document.getElementById('parent').click(); document.querySelector('.parent-close').click(); return state.busy; };
+    const friend = Object.keys(FAIRIES).find(k => k !== 'none');
+    if (!state.owned.fairy.includes(friend)) state.owned.fairy.push(friend);
+    state.outfit = Object.assign({}, state.outfit, { fairy: friend });
+
+    // The feeding card over the wardrobe, the wardrobe closed first.
+    openWardrobe();
+    openFeed();
+    closeWardrobe();
+    out.feedOverWardrobe = { underFeed: state.busy, panel: panel() };
+    closeFeed();
+    out.feedOverWardrobe.after = state.busy;
+    // The parent panel over the album and over the quest card.
+    openAlbum();
+    out.album = { panel: panel() };
+    closeAlbum();
+    out.album.after = state.busy;
+    openQuests();
+    out.quests = { panel: panel() };
+    closeQuests();
+    out.quests.after = state.busy;
+
+    // In her room, walking: the feeding card stops her where she is.
+    changeScene('yuna');
+    await sleep(500);
+    let arrived = false;
+    const h = state.hero;
+    walkTo((c, r) => Math.hypot(c - h.c, r - h.r) > 3, () => { arrived = true; });
+    const steps = h.path.length;
+    openFeed();
+    out.walk = { steps, left: h.path.length, onArrive: !!h.onArrive };
+    await sleep(1500);
+    out.walk.arrived = arrived;
+    closeFeed();
+    changeScene('town');
+    await sleep(500);
+
+    // The play limit while she keeps pressing 🔁 at the pond.
+    state.settings.playLimit = 1;
+    state.playtime = { day: guideDay(), ms: 0, wakes: 0 };
+    openMini(miniFisher());
+    state.playtime.ms = 60001;
+    document.getElementById('mini-again').click();
+    await sleep(300);
+    out.again = { mini: !document.getElementById('mini').classList.contains('hidden'), asleep: guide.asleep };
+    // A wake by the password is counted, not a reset: a merge can't undo it.
+    guideWake();
+    out.wake = { ms: state.playtime.ms, wakes: state.playtime.wakes, up: guideTimeUp(), busy: state.busy };
+    // Asleep, and the tab stays open overnight: the town wakes in the morning.
+    state.playtime.ms = 120001;
+    await sleep(300);
+    out.night = guide.asleep;
+    const D = Date;
+    window.Date = class extends D { constructor(...a) { super(...(a.length ? a : [D.now() + 864e5])); } static now() { return D.now() + 864e5; } };
+    await sleep(400);
+    out.morning = { asleep: guide.asleep, shown: !document.getElementById('sleep').classList.contains('hidden'), busy: state.busy, day: state.playtime.day === guideDay(), wakes: state.playtime.wakes | 0 };
+    window.Date = D;
+    state.settings.playLimit = 0;
+    // Today's play time goes with both editions, like her level.
+    save();
+    const saved = JSON.parse(localStorage.getItem('pixeltown-v2'));
+    out.shared = Object.values(saved.other).every(o => JSON.stringify(o.playtime) === JSON.stringify(saved.playtime));
+
+    // The shop: no village's own friends before its gate opens.
+    const village = list => list.filter(x => x.item.fairy || x.item.unicorn).map(x => x.value);
+    out.shop = { early: village(shopItems()) };
+    state.stars = 40;
+    out.shop.open = village(shopItems()).length;
+
+    // Fish: no wrong one she'd call by a name that starts with the sound.
+    const same = (a, b) => a === b || HARD_PAIRS.same.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+    const bad = [];
+    for (let i = 0; i < 600; i++) {
+      for (const round of miniRounds()) {
+        const L = round.info.letter.toLowerCase();
+        for (const f of round.fish) if (!f.right && [f.w].concat(ALIAS[f.w] || []).some(m => same(m[0], L))) bad.push(`${L}: ${f.w}`);
+      }
+    }
+    out.fish = [...new Set(bad)];
+    return out;
+  });
+  const tag = `cards (${edition})`;
+  const f = r.feedOverWardrobe;
+  check(`${tag}: the feeding card over the wardrobe, the wardrobe closed first: busy until the card closes`, f.underFeed && f.panel && f.after === false, f);
+  check(`${tag}: the parent panel over the album or the quest card keeps the game busy`, r.album.panel && r.album.after === false && r.quests.panel && r.quests.after === false, r);
+  check(`${tag}: the feeding card stops her walk`, r.walk.steps > 1 && r.walk.left <= 1 && !r.walk.onArrive && !r.walk.arrived, r.walk);
+  check(`${tag}: 🔁 at the pond past the play limit: the town sleeps`, !r.again.mini && r.again.asleep, r.again);
+  check(`${tag}: a parent's wake keeps the minutes and counts the wake`, r.wake.ms >= 60001 && r.wake.wakes === 1 && !r.wake.up && r.wake.busy === false, r.wake);
+  check(`${tag}: left asleep overnight, the town wakes in the morning`, r.night && !r.morning.asleep && !r.morning.shown && r.morning.busy === false && r.morning.day && r.morning.wakes === 0, r);
+  check(`${tag}: today's play time is saved with both editions`, r.shared);
+  check(`${tag}: no fairy or unicorn in the shop before its village opens`, !r.shop.early.length && r.shop.open > 0, r.shop);
+  check(`${tag}: no wrong fish she'd name with the round's sound (ALIAS)`, !r.fish.length, r.fish);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
-  const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain') };
+  const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
+    cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

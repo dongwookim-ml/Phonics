@@ -145,11 +145,13 @@ function load(raw) {
     const others = Object.values(otherEditions);
     const skill = s.skill || (others.find(o => o && o.skill) || {}).skill || Quiz.migrate([s.history].concat(others.map(o => o && o.history)));
     const settings = Object.assign({ playLimit: 0, hideMute: false }, s.settings || (others.find(o => o && o.settings) || {}).settings);
+    // Today's play time too: the limit is for her, whichever game she plays.
+    const playtime = s.playtime || (others.find(o => o && o.playtime) || {}).playtime || {};
     // The first-steps pointer (js/guide.js) is for new players only.
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
     // Stars, coins and dust are also counted per device (js/progress.js).
     return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
-      skill, settings, friends: s.friends || {}, guide: firstSteps, playtime: s.playtime || {},
+      skill, settings, friends: s.friends || {}, guide: firstSteps, playtime,
       stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
   } catch (e) {
     return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: true, history: {}, books: {},
@@ -174,8 +176,8 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  // Her level and the parent's settings go with both editions.
-  for (const o of Object.values(otherEditions)) if (o) Object.assign(o, { skill: state.skill, settings: state.settings });
+  // Her level, the parent's settings and today's play time go with both editions.
+  for (const o of Object.values(otherEditions)) if (o) Object.assign(o, { skill: state.skill, settings: state.settings, playtime: state.playtime });
   // fmt 2: stars, coins and dust are also counted per device (earned /
   // spent, js/progress.js); the totals stay for older versions of the game.
   // Fields this version doesn't know are kept (savedRest). `ver`: the server
@@ -240,7 +242,7 @@ const state = {
   friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: n } (js/friend.js)
   settings: saved.settings, // from the parent panel: { playLimit, hideMute }
   guide: saved.guide,       // first-steps pointer: { step } (js/guide.js)
-  playtime: saved.playtime, // { day, ms } played today, for the limit
+  playtime: saved.playtime, // { day, ms, wakes } played today, for the limit (js/guide.js)
   scenes: {},
   scene: null,
   hero: { c: 0, r: 0, path: [], flip: false, frame: 0, onArrive: null },
@@ -267,6 +269,17 @@ function whenPlaying(fn) { if (state.paused) state.held.push(fn); else fn(); }
 function setPaused(on) {
   state.paused = on;
   if (!on) for (const fn of state.held.splice(0)) fn();
+}
+
+// Whether anything that stops the game is still showing: a question, a
+// present, a card (js/album.js, friend.js, minigame.js, quest.js), the
+// parent panel, the sleeping town or a scene change. Every close sets
+// state.busy from this, so closing one thing never frees the game under
+// another, nor leaves it stuck with nothing open.
+const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests'];
+function busyNow() {
+  const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
+  return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep;
 }
 
 function sceneFor(target) {
@@ -369,7 +382,7 @@ function changeScene(target, at, label) {
     else if (!state.mounted) parkUnicorn();
     snapCamera();
     ui.fade.classList.remove('on');
-    state.busy = false;
+    state.busy = busyNow();
     showPlace(label);
   });
 }
@@ -752,7 +765,7 @@ function closeDialog() {
   ui.dialog.classList.add('hidden');
   ui.dialog.classList.remove('listening');
   ui.reward.classList.add('hidden');
-  state.busy = false;
+  state.busy = busyNow();
   state.question = null;
   state.talking = null;
   state.gift = null;
@@ -1016,7 +1029,7 @@ function renderWardrobe() {
 
 function closeWardrobe() {
   ui.wardrobe.classList.add('hidden');
-  state.busy = false;
+  state.busy = busyNow(); // the feeding card may be open over it
   burstAtHero(40);
   Sound.sparkle();
   Sound.say([{ text: line('yes'), pitch: 1.3 }]);
@@ -1099,12 +1112,17 @@ function shopPrice(slot, item) {
   return slot === 'head' || slot === 'hand' ? 6 : 4;
 }
 
+// A village's own friends and treasures wait for her there until its gate
+// is open: fishing coins come long before, and the village gives them first.
+const VILLAGE_STARS = { forest: FOREST_STARS, unicorn: UNICORN_STARS, fairy: FAIRY_STARS };
+const notYet = item => Object.entries(VILLAGE_STARS).some(([k, stars]) => item[k] && state.stars < stars);
+
 // Everything she doesn't own yet, shop treasures first.
 function shopItems() {
   const list = [];
   for (const { slot, items } of WARDROBE) {
     for (const [value, item] of Object.entries(items)) {
-      if (value === 'none' || !suits(item) || state.owned[slot].includes(value)) continue;
+      if (value === 'none' || !suits(item) || notYet(item) || state.owned[slot].includes(value)) continue;
       list.push({ slot, value, item, label: itemLabel(slot, value), price: shopPrice(slot, item) });
     }
   }
@@ -1189,7 +1207,7 @@ function buyPick() {
 
 function closeShop() {
   ui.shop.classList.add('hidden');
-  state.busy = false;
+  state.busy = busyNow();
   state.shopkeeper = null;
 }
 

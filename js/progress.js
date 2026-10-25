@@ -211,9 +211,20 @@ const Progress = (() => {
     const picks = Array.isArray(a.picks) && a.picks.length ? a.picks : b.picks;
     return Object.assign({}, b, a, { picks, got, chest: a.chest === true || b.chest === true });
   }
+  // Play time today (js/guide.js): the later day, whole; on the same day the
+  // most played and the most wakes, so neither the count nor a parent's
+  // wake is undone. Days are 2026-9-30, so they compare as numbers.
+  function joinPlaytime(a, b) {
+    const ok = x => isObj(x) && typeof x.day === 'string';
+    if (!ok(a) || !ok(b)) return ok(a) ? a : ok(b) ? b : join(a, b);
+    const [x, y] = [a, b].map(p => p.day.split('-').map(n));
+    const later = x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+    if (later) return later > 0 ? a : b;
+    return Object.assign({}, b, a, { ms: Math.max(n(a.ms), n(b.ms)), wakes: Math.max(n(a.wakes), n(b.wakes)) });
+  }
   // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
   // js/guide.js) only ever grow, so the larger wins.
-  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests };
+  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests, playtime: joinPlaytime };
   // The outfit, name and settings come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];

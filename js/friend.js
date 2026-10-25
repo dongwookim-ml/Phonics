@@ -24,7 +24,6 @@ const friendUi = {
   nom: 0,        // when the last bite landed
   last: 0,
   loop: 0,
-  wasBusy: false,
   saidEmpty: false,
 };
 const FRIEND_PARTY_MS = 1800;
@@ -187,8 +186,11 @@ function openFeed() {
   const key = friendWorn();
   if (!key) return;
   if (!state.friends) state.friends = {};
-  friendUi.wasBusy = state.busy; // the wardrobe may be open under it
-  state.busy = true;
+  state.busy = true; // the wardrobe may be open under it too
+  // She stops where she is: she doesn't walk out of the room under the card.
+  const h = state.hero;
+  h.onArrive = null;
+  h.path = h.path.slice(0, 1);
   Object.assign(friendUi, { key, shown: friendProgressOf(friendFed(key)), flies: [], burst: [], party: null, saidEmpty: false, last: 0 });
   const info = FAIRIES[key];
   friendUi.title.textContent = `${info.icon} ${info.name}`;
@@ -211,7 +213,7 @@ function closeFeed() {
   friendUi.card.classList.add('hidden');
   friendUi.flies = [];
   friendUi.party = null;
-  state.busy = friendUi.wasBusy;
+  state.busy = busyNow(); // js/game.js
   save();
   if (!ui.wardrobe.classList.contains('hidden')) renderWardrobe();
 }
