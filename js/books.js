@@ -192,9 +192,9 @@ const BOOKS = [
 // Little books she reads herself (their own shelf in the library, above the
 // stories): one short sentence per page with a big picture, every word one
 // she can sound out at the book's level or one of the few SIGHT_WORDS.
-// Tapping a word sounds it out ("/c/ /a/ /t/… cat!"). A book opens once her
-// tier in reading words (the `read` questions) reaches its level; level 1
-// always is. tools/check-books.js checks every word against decodeLevel below.
+// Tapping a word says it whole ("cat!"). A book opens once her tier in
+// reading words (the `read` questions) reaches its level; level 1 always
+// is. tools/check-books.js checks every word against decodeLevel below.
 //   level 1  short a: cat, had      level 3  sh ch th ck ll ss ng: fish, duck
 //   level 2  any short vowel: pig   level 4  blends: frog, jump, splash
 
@@ -307,10 +307,10 @@ const DECODE = {
   irregular: ['put', 'push', 'pull', 'full', 'bull', 'bush', 'puss', 'of', 'son', 'ton', 'from', 'front', 'month',
     'roll', 'toll', 'poll', 'troll', 'scroll', 'stroll', 'kind', 'mind', 'find', 'bind', 'hind', 'rind', 'blind', 'grind',
     'wild', 'mild', 'child', 'gem', 'gel', 'gin', 'gym', 'gist'],
-  // And words with a sound she would hear wrong sounded out: an s that says
-  // /z/ (has: the /s/ she hears is the one in bus) or a voiced th (then: the
-  // /th/ she hears is the one in tooth). A book says them whole, as sight
-  // words, or not at all.
+  // And words she would sound out wrong with the sounds she has learned: an
+  // s that says /z/ (has: the /s/ she knows is the one in bus) or a voiced
+  // th (then: the /th/ she knows is the one in tooth). A book has them only
+  // as sight words, or not at all.
   voiced: ['as', 'has', 'his', 'is', 'then', 'this', 'that', 'them', 'than', 'thus'],
   // A pair that says the sound of one of its letters is sounded out as that letter.
   sound: { ll: 'l', ss: 's' },
@@ -344,7 +344,8 @@ function decodeParts(word) {
   return out;
 }
 
-// The pure sounds that say it, one per part: b-e-ll is /b/ /e/ /l/.
+// The pure sounds that say it, one per part: b-e-ll is /b/ /e/ /l/. Each
+// is one the game teaches (tools/check-books.js).
 const decodeSounds = word => decodeParts(word).map(p => DECODE.sound[p] || p);
 
 // A page's words as tiles: { text (shown), word (said), sight, level }.

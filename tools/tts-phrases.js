@@ -196,9 +196,8 @@ function collect(D) {
       for (const o of q.options) add(N, B.bookSpoken(o), 0.85);
     }
   }
-  // The books she reads herself: a word she taps is sounded out (its pure
-  // sounds, listed below) and said ("cat!"), a sight word just said, and ▶
-  // reads the page slowly (js/library.js).
+  // The books she reads herself: a word she taps is said whole ("cat!"), a
+  // sight word as it is ("the"), and ▶ reads the page slowly (js/library.js).
   for (const k of ['selfStart', 'selfLocked', 'selfDone']) for (const l of B.BOOK_LINES[k]) for (const t of fills(l)) add(N, t);
   for (const b of B.DECODABLE_BOOKS) {
     for (const p of b.pages) {

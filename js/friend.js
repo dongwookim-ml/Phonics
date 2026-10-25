@@ -244,12 +244,21 @@ function friendRender() {
   friendUi.note.textContent = grown ? '다 컸어요! 💖' : state.dust ? `눌러서 ${isCaptain() ? '배터리를' : '가루를'} 주세요` : where;
 }
 
+// A celebration on the card ends at a tap: on the friend, or outside the
+// card, which then doesn't close it yet (outsideTap in js/game.js). True
+// when there was one.
+function friendSkip() {
+  if (!friendUi.party) return false;
+  friendUi.party = null;
+  return true;
+}
+
 // One tap: one dust flies into the friend. A tap during a celebration skips it.
 function feedOnce() {
   const key = friendUi.key;
   if (!key || friendUi.card.classList.contains('hidden')) return;
   const now = performance.now();
-  if (friendUi.party) { friendUi.party = null; return; }
+  if (friendSkip()) return;
   if (friendGrown(key)) {
     friendUi.party = { t0: now, stage: FRIEND_STAGES.length, dance: true };
     Sound.tune('chime');

@@ -357,27 +357,28 @@ npx http-server -p 8080 .
   my, we, said, you). Level 1 is short a (The Cat, I Can!), 2 any short
   vowel (The Big Pig, The Bug in the Cup), 3 sh, ch, th, ck, ll, ss, ng
   (The Fish Wish, Chuck the Duck), 4 blends (Jump, Frog, Jump!, The Best
-  Gift). Each word is a big tile: a tap sounds it out with the narrator's
-  pure sounds, its letters lighting up in turn, then says it ("/c/ /a/ /t/…
-  cat!"); a sight word is just said. ▶ reads the page slowly, but only
-  shows once she has tapped every word on it, or after 8 seconds, so she
-  tries first; ➡ turns the page. The end is a short party (a tap ends it),
-  ⭐ 1 star the first time she reads that book to the end (never again for
-  it), and a ✓ on its cover; every time counts for today's 📖 quest, and
-  the star for the ⭐ one. A book opens once her tier in reading words
-  (the forest's and fairies' `read` questions: read a word with no voice,
-  pick its picture, the very skill these books use) reaches the book's
-  level, or a parent sets it there; level 1 is always open, and a 🔒 cover
-  says "읽기 3단계". The robot edition's HQ library calls it a reading
-  mission (🚀). The parent panel lists which ones she has read. Books live
-  in `DECODABLE_BOOKS` in `js/books.js`, with the rule for what each level
-  can sound out (`decodeLevel`). A word she would hear wrong sounded out
-  is not one of them: an s that says /z/ (has, his, as) or a voiced th
-  (then, this, that), since the pure sounds are the /s/ of bus and the /th/
-  of tooth. `node tools/check-books.js` (also run by `tools/quiz-test.js`)
-  checks every word against it, the rule against the word bank in
-  `js/data.js`, and that every picture is an emoji an older iPad has
-  (Unicode 13 or before).
+  Gift). Each word is a big tile: a tap says the whole word, the
+  narrator's "cat!" (a sight word as it is, "the"), the tile and its word
+  lit while it does; never letter by letter, as she sounds it out herself.
+  ▶ reads the page slowly, but only shows once she has tapped every word
+  on it, or after 8 seconds, so she tries first; ➡ turns the page. The end
+  is a short party (a tap ends it), ⭐ 1 star the first time she reads that
+  book to the end (never again for it), and a ✓ on its cover; every time
+  counts for today's 📖 quest, and the star for the ⭐ one. A book opens
+  once her tier in reading words (the forest's and fairies' `read`
+  questions: read a word with no voice, pick its picture, the very skill
+  these books use) reaches the book's level, or a parent sets it there;
+  level 1 is always open, and a 🔒 cover says "읽기 3단계". The robot
+  edition's HQ library calls it a reading mission (🚀). The parent panel
+  lists which ones she has read. Books live in `DECODABLE_BOOKS` in
+  `js/books.js`, with the rule for what each level can sound out
+  (`decodeLevel`). A word she would sound out wrong is not one of them:
+  an s that says /z/ (has, his, as) or a voiced th (then, this, that),
+  since the sounds she learns are the /s/ of bus and the /th/ of tooth.
+  `node tools/check-books.js` (also run by `tools/quiz-test.js`) checks
+  every word against it, the rule against the word bank in `js/data.js`,
+  that every sound in it is one the game teaches, and that every picture
+  is an emoji an older iPad has (Unicode 13 or before).
 - **Village homes**: every home in the villages opens too: the forest's
   mushroom houses, the unicorn homes and stable, and the fairies' teacup
   and tulip cottages (🍄 🦄 🫖 🌷 over their doors). Tap one to walk to its
@@ -396,6 +397,18 @@ npx http-server -p 8080 .
   through it, or says how many stars it needs. Taps never give stars or
   coins. Code in `js/touch.js`; words not in the word lists are in
   `PROP_WORDS`.
+- **Closing a card with a tap outside it**: a tap on the town around a
+  card she only looks at, or on the counters at the top, closes it the way
+  its 👋 does: the sticker album, today's adventures, the library's shelf,
+  the wardrobe, the shop, the feeding card (over the wardrobe it closes
+  first) and the fishing game's end card. A question, a present, a book
+  being read, the fishing game itself, the sleeping town and anything
+  under the parent panel stay until she uses them. A tap while the chest
+  opens, stickers fly in or her friend celebrates only ends that, so she
+  sees the coins land; the next one closes the card. The tap that closes a
+  card does nothing else: she doesn't walk, nobody under it is tapped and
+  no button of a card under it is pressed; the buttons at the top (📒, the
+  chest, 🔊, ⚙️) keep their own job. `OUTSIDE_CARDS` in `js/game.js`.
 - **Background music**: a short, calm loop in a major key for each kind of
   place: the town and the castle, the forest, the fairy village, the unicorn
   village, the cave, and inside a house or her room. Each is eight bars of
@@ -593,7 +606,12 @@ The other checks, all run by
   comes in, a card left open overnight, a chest an older tab says is
   shut), the robot's cave fight and the Crystal Cave monsters' magic with
   the parent panel over them, reading one
-  of her own books to the end (a star once, a locked one stays locked),
+  of her own books to the end (a tapped word said whole, a star once, a
+  locked one stays locked), a tap outside each card in both editions at
+  the iPad sizes and on a phone held sideways, with a finger and the mouse
+  (it closes the ones she only looks at and never a question, a present or
+  a book being read, the game is free afterwards, she doesn't walk and
+  nothing under it is pressed),
   every little game in both editions with real taps (its button only in
   its host's dialog, what to do said and the finger on the first round, a
   hint after a miss and the answer after two, five rounds won paying the

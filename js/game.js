@@ -2512,6 +2512,61 @@ function worldToTile(sc, wx, wy) {
   return { c: Math.round((u + v) / 2), r: Math.round((v - u) / 2) };
 }
 
+// A tap outside a card she only looks at (on the town around it, or the
+// counters at the top) closes it, as its own 👋 does. The cards, the top
+// one first: the feeding card opens over the wardrobe, the fishing game's
+// end card over the pond. One without `close` stays: a question to answer,
+// a present to choose, the book being read, fish still to catch, the
+// sleeping town. `skip` says the tap ended something still playing on the
+// card (the chest opening, stickers flying in, her friend's party): that is
+// all it does, and the next tap outside closes it.
+const OUTSIDE_CARDS = [
+  { id: 'sleep' },
+  { id: 'reward' },
+  { id: 'dialog' },
+  { id: 'feed', close: closeFeed, skip: friendSkip },
+  { id: 'mini-end', close: closeMini },
+  { id: 'mini' },
+  { id: 'reader' },
+  { id: 'wardrobe', close: closeWardrobe },
+  { id: 'shop', close: () => { Sound.tap(); closeShop(); } },
+  { id: 'library', close: () => { Sound.tap(); closeLibrary(); } },
+  { id: 'album', close: closeAlbum, skip: e => albumUi.skipped === e },
+  { id: 'quests', close: closeQuests, skip: e => questUi.skipped === e },
+];
+let outsideAt = -Infinity; // when the last tap outside a card came (its click presses nothing)
+
+const outsideShown = id => { const el = document.getElementById(id); return !!el && !el.closest('.hidden'); };
+const outsideIn = (id, t) => { const el = document.getElementById(id); return !!el && el.contains(t); };
+// A button outside every card keeps its own job: 📒, the chest, 🔊 and ⚙️
+// at the top, or a new version's 새로고침.
+const outsideKeeps = t => !!t.closest('button, input, a, label') && !OUTSIDE_CARDS.some(c => outsideIn(c.id, t));
+
+// As the tap starts, before the town or a card sees it: once it closes a
+// card (or ends what plays on it) it goes no further, so she doesn't walk
+// and nobody under the card is tapped. Nothing closes under the parent
+// panel or during a scene change.
+function outsideTap(e) {
+  outsideAt = -Infinity;
+  if (document.querySelector('.parent-panel') || ui.fade.classList.contains('on') || !ui.start.classList.contains('hidden')) return;
+  const card = OUTSIDE_CARDS.find(c => outsideShown(c.id));
+  const t = e.target;
+  if (!card || !card.close || !t.closest || outsideIn(card.id, t) || outsideKeeps(t)) return;
+  e.stopPropagation();
+  outsideAt = performance.now();
+  if (card.skip && card.skip(e)) return;
+  card.close();
+}
+// Nor does the click that follows it: a button under the card isn't pressed.
+function outsideClick(e) {
+  if (performance.now() - outsideAt > 2000) return;
+  outsideAt = -Infinity;
+  e.stopPropagation();
+  e.preventDefault();
+}
+addEventListener('pointerdown', outsideTap, true);
+addEventListener('click', outsideClick, true);
+
 // ---- Loop ----------------------------------------------------------------
 
 let lastTime = performance.now();
