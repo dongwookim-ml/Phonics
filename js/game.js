@@ -39,6 +39,7 @@ const ui = {
   rewardNo: document.getElementById('rw-no'),
   wardrobe: document.getElementById('wardrobe'),
   wdPreview: document.getElementById('wd-preview'),
+  wdTabs: document.getElementById('wd-tabs'),
   wdSlots: document.getElementById('wd-slots'),
   wdCount: document.getElementById('wd-count'),
   wdDone: document.getElementById('wd-done'),
@@ -48,23 +49,30 @@ const ui = {
   shopCoins: document.getElementById('shop-coins'),
   shopMsg: document.getElementById('shop-msg'),
   shopPreview: document.getElementById('shop-preview'),
+  shopTabs: document.getElementById('shop-tabs'),
   shopItems: document.getElementById('shop-items'),
   shopBuy: document.getElementById('shop-buy'),
   shopDone: document.getElementById('shop-done'),
 };
 
-// Everything that can be worn, by slot, in wardrobe order.
+// Everything she collects, by slot, in wardrobe order: one tab each, with a
+// picture for the tab (`icon`, and `boyIcon` / `boyTitle` for a boy). The
+// treasure shelf comes last: treasures are kept, not worn (`shelf`).
 const WARDROBE = [
-  { slot: 'dress', title: '드레스 색', items: DRESS_COLORS },
-  { slot: 'shape', title: '드레스 모양', items: DRESS_SHAPES },
-  { slot: 'head', title: '머리 장식', items: HEADWEAR },
-  { slot: 'hand', title: '손에 드는 것', items: HAND_ITEMS },
-  { slot: 'hair', title: '머리 색', items: HAIR_COLORS },
-  { slot: 'back', title: '등에 다는 것 (별빛 숲)', items: BACK_ITEMS },
-  { slot: 'ride', title: '유니콘 (유니콘 마을)', items: UNICORNS },
-  { slot: 'fairy', title: '요정 친구 (요정 마을)', items: FAIRIES },
+  { slot: 'shape', title: '드레스 모양', boyTitle: '옷 모양', icon: '👗', boyIcon: '👕', items: DRESS_SHAPES },
+  { slot: 'dress', title: '드레스 색', boyTitle: '옷 색', icon: '🎨', items: DRESS_COLORS },
+  { slot: 'hair', title: '머리 색', icon: '💇‍♀️', boyIcon: '💇‍♂️', items: HAIR_COLORS },
+  { slot: 'head', title: '머리 장식', boyTitle: '모자와 왕관', icon: '👑', items: HEADWEAR },
+  { slot: 'hand', title: '손에 드는 것', icon: '🪄', boyIcon: '🗡️', items: HAND_ITEMS },
+  { slot: 'back', title: '날개와 망토', boyTitle: '망토와 날개', icon: '🦋', boyIcon: '🦸', items: BACK_ITEMS },
+  { slot: 'fairy', title: '요정 친구 (요정 마을)', icon: '🧚', items: FAIRIES },
+  { slot: 'ride', title: '유니콘 (유니콘 마을)', icon: '🦄', items: UNICORNS },
+  { slot: 'treasure', title: '보물 선반', icon: '💎', items: TREASURES, shelf: true },
 ];
 if (isCaptain()) captainWardrobe(WARDROBE); // robot parts, js/captain-hero.js
+// The slots that are worn (all but the treasure shelf).
+const WORN_SLOTS = WARDROBE.filter(w => !w.shelf);
+const isShelf = slot => WARDROBE.some(w => w.slot === slot && w.shelf);
 
 // ---- Saved progress ------------------------------------------------------
 
@@ -85,7 +93,7 @@ const defaultOutfit = () => (isBoy() ? DEFAULT_BOY_OUTFIT : DEFAULT_OUTFIT);
 // Swaps anything that doesn't suit the hero's look for the starting item.
 function fitOutfit(outfit) {
   const fit = Object.assign({}, outfit);
-  for (const { slot, items } of WARDROBE) if (!suits(items[fit[slot]])) fit[slot] = defaultOutfit()[slot];
+  for (const { slot, items } of WORN_SLOTS) if (!suits(items[fit[slot]])) fit[slot] = defaultOutfit()[slot];
   return fit;
 }
 // The hero's standing sprite: a princess or a boy, by look.
@@ -161,17 +169,23 @@ function load(raw) {
 
 // Presents she has collected, by slot. The starting outfit, "none" and
 // whatever she is wearing (from before the wardrobe existed) always count.
+// Things this version doesn't know (a newer version's) stay in the lists,
+// and a slot it doesn't know stays as it is.
 function ownedFrom(saved, outfit) {
   const owned = {};
-  for (const { slot } of WARDROBE) {
-    const set = new Set((saved && saved[slot]) || []);
-    set.add(DEFAULT_OUTFIT[slot]);
-    // Boy-only starting clothes, so switching looks never leaves her bare.
-    if (WARDROBE.find(w => w.slot === slot).items[DEFAULT_BOY_OUTFIT[slot]].boy) set.add(DEFAULT_BOY_OUTFIT[slot]);
-    set.add(outfit[slot]);
-    if (slot === 'head' || slot === 'hand' || slot === 'back' || slot === 'ride') set.add('none');
+  const list = slot => (saved && Array.isArray(saved[slot]) ? saved[slot] : []);
+  for (const { slot, items, shelf } of WARDROBE) {
+    const set = new Set(list(slot));
+    if (!shelf) {
+      set.add(DEFAULT_OUTFIT[slot]);
+      // Boy-only starting clothes, so switching looks never leaves her bare.
+      if (items[DEFAULT_BOY_OUTFIT[slot]].boy) set.add(DEFAULT_BOY_OUTFIT[slot]);
+      set.add(outfit[slot]);
+      if (slot === 'head' || slot === 'hand' || slot === 'back' || slot === 'ride') set.add('none');
+    }
     owned[slot] = [...set];
   }
+  for (const slot of Object.keys((saved && typeof saved === 'object' && saved) || {})) if (!owned[slot]) owned[slot] = list(slot).slice();
   return owned;
 }
 function save() {
@@ -803,7 +817,12 @@ function itemLabel(slot, value) {
   return slot === 'dress' ? `${v.icon} ${v.name} ${isBoy() ? '옷' : '드레스'}` : `${v.icon} ${v.name}`;
 }
 
-// New presents first; once everything is collected, anything not being worn.
+// What someone at `level` can give: everything new that suits the hero and
+// isn't sold only in the shop, or once nothing is new, anything not being
+// worn (isNew false; hasNewGift keeps those from being given). A village's
+// own treasures come only from there (the forest's also from the villages
+// past it, the fairies' only from the Fairy Village), before anything else;
+// everyday clothes and treasures come from anyone.
 function rewardChoices(level) {
   const o = state.outfit;
   const fresh = [];
@@ -855,37 +874,65 @@ function offerReward(npc) {
     state.owned[gift.slot].push(gift.value);
     save();
   }
-  const next = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
-  ui.rewardTitle.textContent = `🎁 ${npc ? npc.name : ''}의 선물!`;
-  const ride = gift.slot === 'ride';
-  const fairy = gift.slot === 'fairy';
-  ui.rewardName.textContent = !gift.isNew ? gift.label : ride || fairy ? `${gift.label} · 새 친구가 생겼어요!` : `${gift.label} · 옷장에 쏙!`;
-  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
-  ui.rewardNo.textContent = !gift.isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
-  if (isCaptain()) captainRewardText(gift.isNew, gift.label, ride, fairy);
+  rewardText(gift, `🎁 ${npc ? npc.name : ''}의 선물!`);
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
-  showPresent(gift, next);
+  showPresent(gift, wearing(gift));
   state.busy = true;
   Sound.party();
   state.giver = npc;
-  Sound.say([{ pause: 600 }, { text: line(ride ? 'newUnicorn' : fairy ? 'newFairy' : 'gift') }], voiceOf(npc));
+  Sound.say([{ pause: 600 }, { text: giftLine(gift.slot, npc) }], voiceOf(npc));
+}
+
+// The outfit with a present on (a treasure isn't worn).
+const wearing = gift => Object.assign({}, state.outfit, isShelf(gift.slot) ? {} : { [gift.slot]: gift.value });
+
+// The reward card's words for a present or something just bought: what it
+// is and the two buttons. A treasure has the one: onto the shelf.
+function rewardText(gift, title) {
+  const { slot, label, isNew } = gift;
+  const ride = slot === 'ride';
+  const fairy = slot === 'fairy';
+  const shelf = isShelf(slot);
+  ui.rewardTitle.textContent = title;
+  ui.rewardName.textContent = !isNew ? label : ride || fairy ? `${label} · 새 친구가 생겼어요!` : shelf ? `${label} · 보물 선반에 쏙!` : `${label} · 옷장에 쏙!`;
+  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : shelf ? '보물 선반에 둘래요 💎' : '지금 입을래요 💖';
+  ui.rewardNo.textContent = !isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
+  if (isCaptain()) captainRewardText(isNew, label, ride, fairy, shelf);
+  ui.rewardNo.classList.toggle('hidden', shelf);
+}
+
+// What the giver says: a unicorn or a fairy asks to come along, a treasure
+// has its own line once that is recorded in this voice.
+function giftLine(slot, npc) {
+  if (slot === 'ride') return line('newUnicorn');
+  if (slot === 'fairy') return line('newFairy');
+  const treasure = isShelf(slot) && line('treasure');
+  return treasure && Sound.hasClip(treasure, voiceOf(npc) || undefined) ? treasure : line('gift');
 }
 
 function acceptReward(yes) {
-  if (yes && state.gift) {
+  const gift = state.gift;
+  // The wardrobe opens where it went, and it sparkles there.
+  if (gift) wdNew = { slot: gift.slot, value: gift.value };
+  if (gift && isShelf(gift.slot)) {
+    // A treasure goes on the shelf.
+    burstAtHero(30);
+    Sound.sparkle();
+    Sound.say([{ text: line('keep') }], voiceOf(state.giver));
+  } else if (yes && gift) {
     const was = state.outfit;
-    state.outfit = Object.assign({}, state.outfit, { [state.gift.slot]: state.gift.value });
+    state.outfit = Object.assign({}, state.outfit, { [gift.slot]: gift.value });
     save();
-    if (state.gift.slot === 'ride' && state.scene.outdoor) { removeParked(); state.mounted = true; }
+    if (gift.slot === 'ride' && state.scene.outdoor) { removeParked(); state.mounted = true; }
     renderRide();
     burstAtHero(50);
     Sound.sparkle();
     // The robot shows its new part off and says what it does (once that
     // line is recorded).
     const who = voiceOf(state.giver);
-    const show = isCaptain() && captainShowOff(state.gift.slot, was, state.outfit);
-    Sound.say([{ text: show && Sound.hasClip(show, who) ? show : line('yes') }], who);
+    const show = isCaptain() && captainShowOff(gift.slot, was, state.outfit);
+    Sound.say([{ text: show && Sound.hasClip(show, who || undefined) ? show : line('yes') }], who);
   } else {
     Sound.say([{ text: line('keep') }], voiceOf(state.giver));
   }
@@ -896,10 +943,19 @@ function acceptReward(yes) {
 
 // The "now" and "after" previews of a present (or something just bought).
 // She is on foot unless the present is a ride, and both leave room for a
-// fairy friend if either one has one.
+// fairy friend if either one has one. A treasure shows on its own.
 function showPresent(gift, next) {
+  const shelf = isShelf(gift.slot);
+  ui.reward.classList.toggle('treasure', shelf);
+  ui.pvNew.nextElementSibling.textContent = shelf ? '새 보물' : '바꾸면';
+  if (shelf) {
+    if (isCaptain()) captainRewardShow(gift, state.outfit, state.outfit, false);
+    drawTreasure(ui.pvNew, gift.value);
+    return;
+  }
   const ride = gift.slot === 'ride';
   const room = state.outfit.fairy !== 'none' || next.fairy !== 'none';
+  plainCanvas(ui.pvNew);
   drawPortrait(ui.pvNow, heroPortrait(state.outfit, ride, room));
   drawPortrait(ui.pvNew, heroPortrait(next, ride, room));
   if (isCaptain()) captainRewardShow(gift, state.outfit, next, room);
@@ -966,18 +1022,29 @@ function followLink(link) {
 }
 
 // ---- Wardrobe ------------------------------------------------------------
+// A tab for each kind of thing (WARDROBE), with a picture on it since she
+// can't read yet, and every thing of that kind as a picture: her wearing it,
+// or the unicorn, fairy, car or treasure itself. Things not hers yet are a
+// grey shape with a ❓. The treasure shelf is the last tab.
 
 // The wardrobe slot tapped last: the mirror shows her riding only after a
 // unicorn is picked, so everything else is seen on foot.
 let wdShown = null;
+let wdTab = null; // the tab showing
+// The last present or buy: the wardrobe opens on its tab, and it sparkles.
+let wdNew = null;
 
 function openWardrobe() {
   state.busy = true;
   wdShown = null;
+  if (wdNew) wdTab = wdNew.slot;
   renderWardrobe();
   ui.wardrobe.classList.remove('hidden');
   Sound.say([{ text: line('dressup'), pitch: 1.3 }]);
 }
+
+// Every kind with something that suits the hero.
+const wardrobeTabs = () => WARDROBE.filter(w => Object.values(w.items).some(item => suits(item)));
 
 function renderWardrobe() {
   // The robot stands on a stage where its parts move (js/captain-hero.js).
@@ -986,57 +1053,235 @@ function renderWardrobe() {
   const { have, total } = collected();
   ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
   if (isCaptain()) ui.wdCount.textContent = CAPTAIN_TEXT.collected(have, total);
-  ui.wdSlots.innerHTML = '';
-  for (const { slot, title, items } of WARDROBE) {
-    const boyTitle = { dress: '옷 색', shape: '옷 모양' }[slot];
-    const row = document.createElement('div');
-    row.className = 'wd-row';
-    const h = document.createElement('div');
-    h.className = 'wd-title';
-    h.textContent = (isBoy() && boyTitle) || title;
-    const chips = document.createElement('div');
-    chips.className = 'wd-chips';
-    for (const [value, item] of Object.entries(items)) {
-      if (!suits(item)) continue;
-      const owned = state.owned[slot].includes(value);
-      const b = document.createElement('button');
-      b.className = 'chip';
-      b.classList.toggle('on', state.outfit[slot] === value);
-      b.disabled = !owned;
-      const part = owned && isCaptain() && captainPartIcon(slot, value, state.outfit);
-      if (!owned) b.innerHTML = '<span class="ic">❓</span>';
-      else if (item.c && slot === 'dress') b.innerHTML = `<span class="sw" style="background:${isCaptain() ? captainSwatch(item) : item.c[0]}"></span><span class="nm">${item.name}</span>`;
-      else if (item.c) b.innerHTML = `<span class="sw" style="background:${item.c[0]}"></span><span class="nm">${item.name.replace(' 머리', '')}</span>`;
-      else b.innerHTML = `<span class="ic">${item.icon || '✖️'}</span><span class="nm">${item.name}</span>`;
-      // Robot parts show the part itself instead of an emoji.
-      if (part) b.querySelector('.ic').replaceChildren(part);
-      b.addEventListener('click', () => {
-        if (state.outfit[slot] === value) return;
-        const was = state.outfit;
-        state.outfit = Object.assign({}, state.outfit, { [slot]: value });
-        wdShown = slot;
-        save();
-        if (slot === 'ride' && value === 'none') { removeParked(); state.mounted = false; }
-        Sound.tap();
-        burstAtHero(16);
-        renderWardrobe();
-        if (isCaptain()) captainBenchShow(slot, was, state.outfit);
-      });
-      chips.append(b);
+  const tabs = wardrobeTabs();
+  const w = tabs.find(t => t.slot === wdTab) || tabs[0];
+  wdTab = w.slot;
+  renderTabs(ui.wdTabs, tabs, w.slot, slot => { wdTab = slot; renderWardrobe(); });
+  const grid = tabGrid(ui.wdSlots, w);
+  for (const [value, item] of Object.entries(w.items)) if (suits(item)) grid.append(wardrobeItem(w, value, item));
+  // Her fairy friend's ✨ feeding chip (js/friend.js).
+  if (w.slot === 'fairy') friendChip(grid);
+}
+
+// One thing in the wardrobe: tapping it puts it on (a treasure hops).
+function wardrobeItem(w, value, item) {
+  const { slot } = w;
+  const owned = state.owned[slot].includes(value);
+  const b = pictureButton(slot, value, owned);
+  b.classList.toggle('on', !w.shelf && state.outfit[slot] === value);
+  b.classList.toggle('new', !!wdNew && wdNew.slot === slot && wdNew.value === value);
+  b.addEventListener('click', () => {
+    if (!owned) { Sound.locked(); replay(b, 'nope'); return; }
+    if (w.shelf) {
+      Sound.tap();
+      Sound.sparkle();
+      replay(b, 'hop');
+      ui.wdSlots.querySelector('.wd-title .nm').textContent = `${item.icon} ${item.name}`;
+      return;
     }
-    // Her fairy friend's ✨ feeding chip (js/friend.js).
-    if (slot === 'fairy') friendChip(chips);
-    row.append(h, chips);
-    ui.wdSlots.append(row);
-  }
+    if (state.outfit[slot] === value) return;
+    const was = state.outfit;
+    state.outfit = Object.assign({}, state.outfit, { [slot]: value });
+    wdShown = slot;
+    save();
+    if (slot === 'ride' && value === 'none') { removeParked(); state.mounted = false; }
+    Sound.tap();
+    burstAtHero(16);
+    renderWardrobe();
+    if (isCaptain()) captainBenchShow(slot, was, state.outfit);
+  });
+  return b;
+}
+
+// Plays a CSS animation (a class) on `el` again from the start.
+function replay(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
 }
 
 function closeWardrobe() {
   ui.wardrobe.classList.add('hidden');
   state.busy = busyNow(); // the feeding card may be open over it
+  wdNew = null;
   burstAtHero(40);
   Sound.sparkle();
   Sound.say([{ text: line('yes'), pitch: 1.3 }]);
+}
+
+// ---- Tabs and pictures (the wardrobe and the shop) --------------------------
+
+const tabTitle = w => (isBoy() && w.boyTitle) || w.title;
+
+// A row of picture tabs in `box`; `onPick(slot)` when another is tapped.
+function renderTabs(box, tabs, current, onPick) {
+  box.replaceChildren(...tabs.map(w => {
+    const b = document.createElement('button');
+    b.className = 'wd-tab';
+    b.classList.toggle('on', w.slot === current);
+    b.title = tabTitle(w);
+    b.setAttribute('aria-label', tabTitle(w));
+    // The robot's head, body, arm and leg tabs show the ones it has on.
+    const part = isCaptain() && w.part && captainPartIcon(w.slot, state.outfit[w.slot], state.outfit);
+    b.append(part || pictureText((isBoy() && w.boyIcon) || w.icon));
+    b.addEventListener('click', () => {
+      if (w.slot === current) return;
+      Sound.tap();
+      onPick(w.slot);
+    });
+    return b;
+  }));
+}
+
+// Empties `box` for a tab's pictures: its name and how many of its things
+// she has on top, then the grid, which is returned.
+function tabGrid(box, w) {
+  const all = Object.entries(w.items).filter(([v, item]) => v !== 'none' && !item.shop && suits(item));
+  const got = all.filter(([v]) => state.owned[w.slot].includes(v)).length;
+  box.innerHTML = '<div class="wd-title"><span class="nm"></span><span class="n"></span></div><div class="wd-grid"></div>';
+  box.querySelector('.nm').textContent = tabTitle(w);
+  box.querySelector('.n').textContent = `${got} / ${all.length}`;
+  return box.querySelector('.wd-grid');
+}
+
+// A button showing a thing: a grey shape with a ❓ when it isn't hers yet.
+// Its name is there for screen readers and a parent's long press.
+function pictureButton(slot, value, owned) {
+  const b = document.createElement('button');
+  b.className = 'wd-item';
+  b.classList.toggle('locked', !owned);
+  b.classList.toggle('treasure', isShelf(slot));
+  const name = owned ? itemLabel(slot, value).replace(/^\S*\s/, '') : '❓';
+  b.title = name;
+  b.setAttribute('aria-label', name);
+  b.append(itemPicture(slot, value));
+  if (!owned) b.insertAdjacentHTML('beforeend', '<span class="q">❓</span>');
+  return b;
+}
+
+const pictureText = text => Object.assign(document.createElement('span'), { className: 'ic', textContent: text });
+
+// The picture of a thing, as big as fits a tile (smaller on a phone held
+// sideways): her wearing it, cut to where it is, or the thing itself.
+function itemPicture(slot, value) {
+  const item = WARDROBE.find(w => w.slot === slot).items[value];
+  if (value === 'none') return pictureText('✖️');
+  if (isShelf(slot)) return pictureText(item.icon);
+  const small = matchMedia('(max-height: 520px)').matches;
+  // Robot parts are cut from the robot (js/captain-hero.js).
+  const part = isCaptain() && captainPartIcon(slot, value, state.outfit, small ? 42 : 56);
+  if (part) return part;
+  const [src, box] = pictureSource(slot, value);
+  // Clothes and colours show all of her: those pictures are taller.
+  const tall = box[3] > 30;
+  return crispCopy(src, box, small ? 44 : 64, small ? (tall ? 52 : 46) : (tall ? 88 : 70));
+}
+
+// What a picture is cut from: [canvas, [x, y, w, h]].
+function pictureSource(slot, value) {
+  if (slot === 'ride' || slot === 'fairy') {
+    const s = slot === 'fairy' ? fairySprite(value, 0) : isCaptain() ? captainCarSprite(value, 0) : unicornSprite(value, 0);
+    return [s.canvas, trimBox(s.canvas)];
+  }
+  const o = Object.assign({}, state.outfit, { [slot]: value });
+  const cv = heroSprite(o, 0).canvas;
+  // Paint: the robot's head and body.
+  if (isCaptain()) return [cv, [3, 1, 22, 28]];
+  // Wings and capes on their own (a dress hides most of a cape): a pair of
+  // wings side by side.
+  if (slot === 'back') {
+    const wings = HERO_WINGS[value];
+    const w = wings ? wings[0][0].length * 2 + 2 : cv.width;
+    const back = makeCanvas(w, cv.height);
+    if (wings) drawWingPair(back.getContext('2d'), value, 0, w, 0);
+    else drawHeroBack(back.getContext('2d'), value, 2, 5, w);
+    return [back, trimBox(back)];
+  }
+  if (slot === 'head' || slot === 'hair') return [cv, [2, 0, 18, 18]];
+  // Something in her hand: just the thing, without her.
+  if (slot === 'hand') {
+    const thing = changedPixels(cv, heroSprite(Object.assign({}, o, { hand: 'none' }), 0).canvas);
+    return [thing, trimBox(thing)];
+  }
+  return [cv, [0, 0, cv.width, cv.height]];
+}
+
+// A canvas with just the pixels of `a` that differ from `b`.
+function changedPixels(a, b) {
+  const cv = makeCanvas(a.width, a.height);
+  const ctx = cv.getContext('2d');
+  const img = a.getContext('2d').getImageData(0, 0, a.width, a.height);
+  const pb = b.getContext('2d').getImageData(0, 0, a.width, a.height).data;
+  const pa = img.data;
+  for (let i = 0; i < pa.length; i += 4) {
+    if (pa[i] === pb[i] && pa[i + 1] === pb[i + 1] && pa[i + 2] === pb[i + 2] && pa[i + 3] === pb[i + 3]) pa[i + 3] = 0;
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv;
+}
+
+// The box round the pixels of `cv` that are not see-through, with a pixel
+// of room.
+function trimBox(cv) {
+  const w = cv.width;
+  const h = cv.height;
+  const px = cv.getContext('2d').getImageData(0, 0, w, h).data;
+  let [x0, y0, x1, y1] = [w, h, -1, -1];
+  for (let i = 3; i < px.length; i += 4) {
+    if (!px[i]) continue;
+    const x = ((i - 3) / 4) % w;
+    const y = Math.floor((i - 3) / 4 / w);
+    x0 = Math.min(x0, x);
+    y0 = Math.min(y0, y);
+    x1 = Math.max(x1, x);
+    y1 = Math.max(y1, y);
+  }
+  if (x1 < 0) return [0, 0, w, h];
+  x0 = Math.max(0, x0 - 1);
+  y0 = Math.max(0, y0 - 1);
+  return [x0, y0, Math.min(w - 1, x1 + 1) - x0 + 1, Math.min(h - 1, y1 + 1) - y0 + 1];
+}
+
+// A crisp copy of `box` of `src`, scaled by whole device pixels to fit
+// maxW x maxH CSS pixels, at most 6 to a pixel (a tiny wand stays a wand).
+function crispCopy(src, [x, y, w, h], maxW, maxH) {
+  const dpr = Math.min(3, Math.round(window.devicePixelRatio || 1));
+  const k = Math.max(1, Math.min(6 * dpr, Math.floor(Math.min(maxW * dpr / w, maxH * dpr / h))));
+  const cv = makeCanvas(w * k, h * k);
+  cv.className = 'pic';
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(src, x, y, w, h, 0, 0, w * k, h * k);
+  cv.style.width = `${(w * k) / dpr}px`;
+  cv.style.height = `${(h * k) / dpr}px`;
+  return cv;
+}
+
+// A treasure on its own, big, with a glow behind it: the reward card and
+// the shop's mirror (`smooth`: not drawn in pixels).
+function drawTreasure(cv, value) {
+  const item = TREASURES[value];
+  const S = 160;
+  cv.width = S;
+  cv.height = S;
+  const ctx = cv.getContext('2d');
+  const g = ctx.createRadialGradient(S / 2, S / 2, 8, S / 2, S / 2, S / 2);
+  g.addColorStop(0, 'rgba(255, 244, 168, 0.95)');
+  g.addColorStop(1, 'rgba(255, 244, 168, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, S, S);
+  ctx.font = `${S * 0.6}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(item ? item.icon : '❓', S / 2, S * 0.54);
+  cv.classList.add('smooth');
+  cv.style.width = '';
+  cv.style.height = '';
+}
+
+// Back to a pixel picture after drawTreasure.
+function plainCanvas(cv) {
+  cv.classList.remove('smooth');
 }
 
 // ---- Crystal Cave monsters -------------------------------------------------
@@ -1108,11 +1353,13 @@ function respawnMonsters(sc) {
 
 // ---- Shop ----------------------------------------------------------------
 
-// Prices in coins. Shop treasures carry their own price.
+// Prices in coins. Shop treasures carry their own price; the treasure
+// shelf's are cheap, a village's a little dearer.
 function shopPrice(slot, item) {
   if (item.price) return item.price;
+  if (isShelf(slot)) return item.forest || item.unicorn || item.fairy ? 5 : 3;
   if (item.unicorn) return 12;
-  if (item.forest) return 8;
+  if (item.forest || item.fairy) return 8;
   return slot === 'head' || slot === 'hand' ? 6 : 4;
 }
 
@@ -1138,6 +1385,7 @@ function openShop(npc) {
   state.shopkeeper = npc;
   const items = shopItems();
   state.shopPick = items[0] || null;
+  state.shopTab = state.shopPick && state.shopPick.slot;
   ui.shopMsg.textContent = items.length ? '갖고 싶은 걸 골라 보세요!' : '와! 벌써 다 모았어요 ✨';
   renderShop();
   ui.shop.classList.remove('hidden');
@@ -1145,24 +1393,27 @@ function openShop(npc) {
   Sound.say([{ text: hello }, { pause: 300 }, { text: line(items.length ? 'shop' : 'soldOut') }], voiceOf(npc));
 }
 
+// The shop: a tab for each kind she can still buy, its things as pictures
+// with their price (✨ on the shop's own treasures), and the one picked on
+// her in the mirror (a treasure on its own).
 function renderShop() {
   const pick = state.shopPick;
   ui.shopCoins.textContent = `🪙 ${state.coins}`;
-  const next = pick ? Object.assign({}, state.outfit, { [pick.slot]: pick.value }) : state.outfit;
-  // On foot, unless what she is looking at is a unicorn.
-  const riding = !!pick && pick.slot === 'ride';
-  if (isCaptain()) captainStage(ui.shopPreview, next, riding);
-  else drawPortrait(ui.shopPreview, heroPortrait(next, riding));
+  showInMirror(ui.shopPreview, pick);
+  const list = shopItems();
+  const tabs = WARDROBE.filter(w => list.some(it => it.slot === w.slot));
+  if (!tabs.some(w => w.slot === state.shopTab)) state.shopTab = tabs.length ? tabs[0].slot : null;
+  ui.shopTabs.classList.toggle('hidden', !tabs.length);
+  renderTabs(ui.shopTabs, tabs, state.shopTab, slot => { state.shopTab = slot; renderShop(); });
   ui.shopItems.innerHTML = '';
-  for (const it of shopItems()) {
-    const b = document.createElement('button');
-    b.className = 'chip shop-item';
+  for (const it of list) {
+    if (it.slot !== state.shopTab) continue;
+    const b = pictureButton(it.slot, it.value, true);
+    b.classList.add('shop-item');
     b.classList.toggle('on', !!pick && pick.slot === it.slot && pick.value === it.value);
     b.classList.toggle('dear', it.price > state.coins);
-    const look = it.item.c ? `<span class="sw" style="background:${isCaptain() ? captainSwatch(it.item) : it.item.c[0]}"></span>` : `<span class="ic">${it.item.icon}</span>`;
-    b.innerHTML = `${look}<span class="nm">${it.label.replace(/^\S+ /, '')}</span><span class="price"><span class="coin">🪙</span>${it.price}</span>`;
-    const part = isCaptain() && captainPartIcon(it.slot, it.value, state.outfit);
-    if (part) b.querySelector('.ic').replaceChildren(part);
+    b.classList.toggle('special', !!it.item.shop);
+    b.insertAdjacentHTML('beforeend', `<span class="price"><span class="coin">🪙</span>${it.price}</span>`);
     b.addEventListener('click', () => {
       Sound.tap();
       state.shopPick = it;
@@ -1174,6 +1425,21 @@ function renderShop() {
   }
   ui.shopBuy.classList.toggle('hidden', !pick);
   if (pick) ui.shopBuy.textContent = `🪙 ${pick.price}개로 살래요`;
+}
+
+// The shop's mirror: her with `pick` on (riding, if it is a unicorn), or a
+// treasure on its own.
+function showInMirror(cv, pick) {
+  if (pick && isShelf(pick.slot)) {
+    if (isCaptain()) captainStageStop(cv);
+    drawTreasure(cv, pick.value);
+    return;
+  }
+  const next = pick ? wearing(pick) : state.outfit;
+  const riding = !!pick && pick.slot === 'ride';
+  plainCanvas(cv);
+  if (isCaptain()) captainStage(cv, next, riding);
+  else drawPortrait(cv, heroPortrait(next, riding));
 }
 
 function buyPick() {
@@ -1196,17 +1462,11 @@ function buyPick() {
   renderCoins(true);
   ui.shop.classList.add('hidden');
   // The same "wear it now?" card as a present.
-  const ride = pick.slot === 'ride';
-  const fairy = pick.slot === 'fairy';
   state.gift = { slot: pick.slot, value: pick.value, label: pick.label, isNew: true };
   state.giver = npc;
-  ui.rewardTitle.textContent = '🛍️ 샀어요!';
-  ui.rewardName.textContent = ride || fairy ? `${pick.label} · 새 친구가 생겼어요!` : `${pick.label} · 옷장에 쏙!`;
-  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : '지금 입을래요 💖';
-  ui.rewardNo.textContent = ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
-  if (isCaptain()) captainRewardText(true, pick.label, ride, fairy);
+  rewardText(state.gift, '🛍️ 샀어요!');
   ui.reward.classList.remove('hidden');
-  showPresent(state.gift, Object.assign({}, state.outfit, { [pick.slot]: pick.value }));
+  showPresent(state.gift, wearing(state.gift));
   Sound.party();
   burstAtHero(30);
   Sound.say([{ pause: 400 }, { text: line('bought') }], voiceOf(npc));
@@ -2334,7 +2594,7 @@ function wearLook() {
   }
   state.outfit = fitOutfit(state.outfit);
   // The starting clothes of a look she just switched to are hers.
-  for (const { slot } of WARDROBE) if (!state.owned[slot].includes(state.outfit[slot])) state.owned[slot].push(state.outfit[slot]);
+  for (const { slot } of WORN_SLOTS) if (!state.owned[slot].includes(state.outfit[slot])) state.owned[slot].push(state.outfit[slot]);
 }
 function renderStart() {
   ui.startTitle.textContent = isCaptain() ? `${titleKo()} ${PLAYER.shown}의` : `${PLAYER.shown} ${titleKo()}의`;

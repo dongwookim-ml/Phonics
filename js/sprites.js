@@ -1949,20 +1949,204 @@ const PRINCESS_SKIRTS = {
     '......os..so......',
     '......ff..ff......',
   ],
+  // Knee length with a lace hem, white tights.
+  party: [
+    '.....oddddddo.....',
+    '....oLddddddDo....',
+    '...oLLddddddDDo...',
+    '...oLdddddddDDo...',
+    '..oLLdddddddDDDo..',
+    '..oLddddddddDDDo..',
+    '..otwtwtwtwtwtwo..',
+    '......ow..wo......',
+    '......ow..wo......',
+    '......ff..ff......',
+  ],
+  // Three tiers like a cake, each with a lace edge.
+  cake: [
+    '.....oddddddo.....',
+    '.....oLddddDo.....',
+    '....owtwtwtwto....',
+    '....oLdddddDDo....',
+    '...oLddddddDDDo...',
+    '...owtwtwtwtwto...',
+    '..oLdddddddddDDo..',
+    '.oLddddddddddDDDo.',
+    'owtwtwtwtwtwtwtwto',
+    '......ff..ff......',
+  ],
+  // Narrow and scaly to the knee, then a tail fin.
+  mermaid: [
+    '......oddddo......',
+    '......oLdLDo......',
+    '......odLdDo......',
+    '......oLdLDo......',
+    '......odLdDo......',
+    '.......oddo.......',
+    '......oLddDo......',
+    '.....oLLddDDo.....',
+    '...ooLLddddDDoo...',
+    '.otttto....otttto.',
+  ],
+  // A chima from the chest to the floor, gold along the hem (the top is
+  // PRINCESS_TOPS.hanbok); the ribbon hangs down the front.
+  hanbok: [
+    '....oLddDdddDo....',
+    '...oLdddDddddDo...',
+    '...oLdddddddDDo...',
+    '..oLddddddddDDDo..',
+    '..oLddddddddDDDo..',
+    '.oLdddddddddDDDDo.',
+    '.oLdddddddddDDDDo.',
+    'oLddddddddddDDDDDo',
+    'oyyyyyyyyyyyyyyyyo',
+    '......ff..ff......',
+  ],
+  // Petals that end in points, on a belt of leaves (PRINCESS_TOPS.petal).
+  petal: [
+    '.....oddddddo.....',
+    '....oLddLdddDo....',
+    '...oLdddLddddDo...',
+    '..oLddddLdddddDo..',
+    '..oLdddLddddLdDo..',
+    '.oLddddLddddLdDDo.',
+    '.oLdddLddLdddLDDo.',
+    '.oLdooLdooddooDdo.',
+    '..oo..oo..oo..oo..',
+    '......ff..ff......',
+  ],
 };
 // Feet for the second walking frame.
 const PRINCESS_FEET_B = '.....ff....ff.....';
 const PRINCESS_TUTU_LEGS_B = '.....os....so.....';
+// Other rows of the second frame, by shape: { row: pixels }.
+const PRINCESS_WALK = {
+  tutu: { 6: PRINCESS_TUTU_LEGS_B, 8: PRINCESS_TUTU_LEGS_B },
+  party: { 7: '.....ow....wo.....', 8: '.....ow....wo.....' },
+  mermaid: { 8: '...ooLLddddDDoo...', 9: '..otttoo..ootttto.' },
+};
+// Bodices that differ from PRINCESS_TOP, rows 13 to 17 (null keeps a row).
+const PRINCESS_TOPS = {
+  // A short jeogori in the light colour with rainbow-striped sleeves
+  // (saekdong), a white collar and a bow; the chima starts under it.
+  hanbok: [
+    '..oheeoLwwLoeeho..',
+    '..oyyyLLDDLLyyyo..',
+    '...oBoddDdddoBo...',
+    '...os.odDddo.so...',
+    '.....oddDdddo.....',
+  ],
+  petal: [null, null, null, null, '......oqQqqo......'],
+};
 
+// Colours of the newer clothes and things, the same for a girl and a boy
+// (merged into both palettes): metal a A M, black x X, red e E, cream and
+// khaki i I S, purple u U, blue B N, green q Q, wood K J, orange O, pale
+// glow z, ice Z, grey-white W, pink P, deep red v, cyan c.
+const HERO_EXTRA = {
+  a: '#c8d2e4', A: '#8a96b4', M: '#f4f8ff', x: '#3a3450', X: '#6a6488', e: '#e8485a', E: '#ff9aa8',
+  i: '#fff4dc', I: '#dcc088', S: '#b89660', u: '#b98cff', U: '#8a5ad8', B: '#6fb7ff', N: '#3f74c8',
+  q: '#62c46a', Q: '#3a8a48', K: '#c08850', J: '#7a4a2e', O: '#ff9a3c', z: '#fff6c0', Z: '#c8f6ff',
+  W: '#dde4f2', P: '#ff7fb6', v: '#c8303f', c: '#9fe8ff',
+};
+
+// Head things, by grid position (x, y from the top left of the head).
 const HEAD_ITEMS = {
   tiara:   { x: 5, y: -3, rows: ['...gg...', 'y..yy..y', 'yyyyyyyy'] },
   crown:   { x: 5, y: -5, rows: ['y..yy..y', 'yy.yy.yy', 'yyyyyyyy', 'yrygbyry', 'YYYYYYYY'] },
   flowers: { x: 3, y: -2, rows: ['.p..w..p..w.', 'pyp.wyw.pypw', 'GpGGwGGpGGwG'] },
   bow:     { x: 11, y: -3, rows: ['rr..rr', 'rrrrrr', 'rrRRrr', '.r..r.'] },
+  // A pink band with a big red heart on one side.
+  heartband: { x: 2, y: -4, rows: [
+    '..ee.ee.......',
+    '.eEeeeee......',
+    '.eEeeeee......',
+    '..eeeee.......',
+    '...eePPPPPP...',
+    '..PPP......PP.',
+    '.PP.........P.',
+  ] },
+  // White bunny ears, pink inside.
+  bunny: { x: 4, y: -5, rows: [
+    '.oo....oo.',
+    'owwo..owwo',
+    'owEo..oEwo',
+    'owEo..oEwo',
+    'owwo..owwo',
+    '.oPPPPPPo.',
+  ] },
+  // Cat ears in her hair colour on a black band.
+  kitty: { x: 2, y: -3, rows: [
+    'o............o',
+    'oho........oho',
+    'oEho......ohEo',
+    'oEhho....ohhEo',
+    '.oxxxxxxxxxxo.',
+  ] },
+  // A purple butterfly clip over one ear.
+  butterfly: { x: 12, y: 0, rows: [
+    'UU.UU.',
+    'uuxuu.',
+    'uPxPu.',
+    '.uxu..',
+    'uu.uu.',
+  ] },
+  // A gold star on each side of her parting.
+  starpins: { x: 2, y: 0, rows: [
+    '..y........y..',
+    '.yzy......yzy.',
+    'yyzyy....yyzyy',
+    '.y.y......y.y.',
+  ] },
+  // A wide straw hat with a pink ribbon and a flower.
+  sunhat: { x: 0, y: -4, rows: [
+    '......oooooo......',
+    '.....oiiiiIIo.....',
+    '.....oiIIIIIo.....',
+    '.....oPPPPePo.....',
+    '..oooiiiiiiIIooo..',
+    '.oiiIIIIIIIIIIISo.',
+    'oiiIIIIIIIIIIIISSo',
+    '.ooooooooooooooo..',
+  ] },
+  // The Unicorn Village's golden horn, with little ears.
+  horn: { x: 3, y: -5, rows: [
+    '.....oo.....',
+    '....oyzo....',
+    '....oYyo....',
+    '...oyzyYo...',
+    'oo.oYyYyo.oo',
+    'oEo.oyyo.oEo',
+    '.oEo....oEo.',
+  ] },
 };
+// Things in her hand, by grid position (at her side, on the right).
 const HAND_BITMAPS = {
   wand:    { x: 15, y: 9, rows: ['.y.', 'yyy', '.y.', '.w.', '.w.', '.w.', '.w.'] },
   bouquet: { x: 14, y: 12, rows: ['pwp.', 'wpyp', 'GpwG', '.GG.', '.GG.'] },
+  heartwand: { x: 14, y: 7, rows: ['.e.e.', 'eEeee', 'eeeee', '.eee.', '..e..', '..y..', '..w..', '..w..', '..w..'] },
+  moonwand:  { x: 14, y: 7, rows: ['.yy..', 'yz...', 'yz..y', 'yzz.y', '.yyy.', '..y..', '..w..', '..w..', '..w..'] },
+  // A lace parasol over her shoulder, its handle down to her hand.
+  parasol: { x: 10, y: 0, rows: [
+    '...oooo...',
+    '.ooPPPPoo.',
+    'oPPEPPEPPo',
+    'oPEPPPPEPo',
+    'owowowowow',
+    '....J.....',
+    '....J.....',
+    '....J.....',
+    '....J.....',
+    '...J......',
+    '...J......',
+    '...J......',
+    '...J......',
+    '...J......',
+  ] },
+  // A round fan with the red and blue taegeuk.
+  fan: { x: 12, y: 9, rows: ['.ooo.', 'oeeeo', 'oeeBo', 'oeBBo', 'oBBBo', '.ooo.', '..K..', '..K..'] },
+  teddy: { x: 13, y: 10, rows: ['oo.oo', 'oKKKo', 'KxKxK', 'KKiKK', '.KKK.', 'KKKKK', '.K.K.'] },
+  balloon: { x: 14, y: -2, rows: ['.ooo.', 'oeeeo', 'oEeeo', 'oeeeo', 'oeeeo', '.oeo.', '..o..', '..w..', '...w.', '..w..', '.w...', '..w..', '..w..', '..w..'] },
 };
 
 const WING = [
@@ -1977,6 +2161,103 @@ const WING = [
   '.ww..',
 ];
 
+// Feathered angel wings, the left one (mirrored for the right): only the
+// outer three columns show beside her, so they rise up by her head.
+const ANGEL_WING = [
+  '..AA.',
+  '.AwwA',
+  'AwwwA',
+  'AwWwA',
+  'AwwWA',
+  'AWwwA',
+  'AwWwA',
+  '.AwWA',
+  'AwwWA',
+  '.AWwA',
+  'AwwWA',
+  '.AwWA',
+  '..AwA',
+  '.AwA.',
+  '..A..',
+];
+// A butterfly's left wings: a big one above, a small one below.
+const BUTTERFLY_WING = [
+  'oo.....',
+  'oPPo...',
+  'oPyPoo.',
+  'oPPPuPo',
+  '.oPuuPo',
+  '..ouuPo',
+  '...oPPo',
+  '...ouuo',
+  '..ouyuo',
+  '.oUuuuo',
+  '..oUUo.',
+  '...oo..',
+];
+// A dragon's left wing: green skin between dark ribs, a claw on top.
+const DRAGON_WING = [
+  'o......',
+  'oQo....',
+  'oqQo...',
+  'oqqQoo.',
+  'oqqqQQo',
+  'oQqqqqo',
+  'oqQqqQo',
+  '.oqQqqo',
+  '.oqoQqo',
+  '..o.oqo',
+  '.....oo',
+];
+// Capes: the cloth's colour (or a function of the row), its edge's, and
+// gold stars or gold clasps at the shoulders.
+const CAPES = {
+  cape: { cloth: '#4a3a9a', edge: '#2e2466', stars: true },
+  redcape: { cloth: '#e0404f', edge: '#9a2030', clasp: true },
+  rainbow: { cloth: y => RAINBOW[Math.min(5, Math.floor((y - 12) / 2.7))], edge: '#7a5ab8' },
+};
+
+// Wings: [the left wing, its colours, rows down from the top of her head].
+const HERO_WINGS = {
+  wings: [WING, { w: '#6fb4e8', W: '#e8f8ff', s: '#fff6a8' }, 10],
+  angel: [ANGEL_WING, Object.assign({}, HERO_EXTRA, { w: '#ffffff', A: '#a8b4d8' }), 6],
+  butterfly: [BUTTERFLY_WING, Object.assign({ o: '#4a2c4f' }, HERO_EXTRA), 9],
+  dragon: [DRAGON_WING, Object.assign({}, HERO_EXTRA, { o: '#2e3a30' }), 7],
+};
+
+// A pair of wings: the left one from x `left`, the right one (mirrored)
+// ending at x `right`, from row y.
+function drawWingPair(ctx, back, left, right, y) {
+  const [rows, pal] = HERO_WINGS[back];
+  drawBitmap(ctx, rows, pal, left, y);
+  drawBitmap(ctx, rows, pal, right - rows[0].length, y, true);
+}
+
+// What she wears on her back, behind everything else: wings or a cape.
+// Shared by the girl and the boy (the same canvas and grid).
+function drawHeroBack(ctx, back, OXp, OYp, W) {
+  if (HERO_WINGS[back]) {
+    drawWingPair(ctx, back, 0, W, OYp + HERO_WINGS[back][2]);
+    return;
+  }
+  const cape = CAPES[back];
+  if (!cape) return;
+  for (let y = 12; y < 28; y++) {
+    const spread = Math.min(3, Math.floor((y - 12) / 4));
+    const x0 = OXp + 2 - spread;
+    const x1 = OXp + 16 + spread;
+    const cloth = typeof cape.cloth === 'function' ? cape.cloth(y) : cape.cloth;
+    px(ctx, x0, OYp + y, x1 - x0, 1, y === 27 ? cape.edge : cloth);
+    px(ctx, x0, OYp + y, 1, 1, cape.edge);
+    px(ctx, x1 - 1, OYp + y, 1, 1, cape.edge);
+    if (!cape.stars) continue;
+    if ((y * 7) % 5 === 0) px(ctx, x0 + 1 + (y % 3), OYp + y, 1, 1, '#ffd34d');
+    if ((y * 3) % 7 === 0) px(ctx, x1 - 3, OYp + y, 1, 1, '#ffd34d');
+  }
+  // A knight's cape is pinned at each shoulder with gold.
+  if (cape.clasp) for (const x of [OXp + 3, OXp + 13]) { px(ctx, x, OYp + 12, 2, 2, '#ffd34d'); px(ctx, x + 1, OYp + 13, 1, 1, '#e0a52a'); }
+}
+
 const princessCache = new Map();
 
 // Returns { canvas, ax, ay } for an outfit and walk frame.
@@ -1989,39 +2270,26 @@ function princessSprite(outfit, frame) {
   const OYp = 5;
   const cv = makeCanvas(W, H);
   const ctx = cv.getContext('2d');
-  const dress = DRESS_COLORS[outfit.dress].c;
-  const hair = HAIR_COLORS[outfit.hair].c;
-  const pal = {
+  const dress = (DRESS_COLORS[outfit.dress] || DRESS_COLORS.pink).c;
+  const hair = (HAIR_COLORS[outfit.hair] || HAIR_COLORS.brown).c;
+  const pal = Object.assign({}, HERO_EXTRA, {
     o: '#4a2c4f', h: hair[0], H: hair[1], s: '#ffe3d0', k: '#3a2340', p: '#ffadbc', m: '#e0707a',
     d: dress[0], D: dress[1], L: dress[2], t: dress[3], f: '#c0507a',
     y: '#ffd34d', Y: '#e0a52a', g: '#ff5fa0', b: '#6fb7ff', r: '#ff6fa8', R: '#e04a8a', w: '#ffffff', G: '#5fc46a',
-  };
-  const skirt = PRINCESS_SKIRTS[outfit.shape].slice();
+  });
+  const shape = PRINCESS_SKIRTS[outfit.shape] ? outfit.shape : 'ballgown';
+  const skirt = PRINCESS_SKIRTS[shape].slice();
   if (frame === 1) {
-    skirt[9] = PRINCESS_FEET_B;
-    if (outfit.shape === 'tutu') { skirt[6] = PRINCESS_TUTU_LEGS_B; skirt[8] = PRINCESS_TUTU_LEGS_B; }
+    if (skirt[9] === PRINCESS_SKIRTS.ballgown[9]) skirt[9] = PRINCESS_FEET_B;
+    Object.assign(skirt, PRINCESS_WALK[shape]);
   }
-  // Wings or a cape go behind everything else.
-  if (outfit.back === 'wings') {
-    const wp = { w: '#6fb4e8', W: '#e8f8ff', s: '#fff6a8' };
-    drawBitmap(ctx, WING, wp, 0, OYp + 10);
-    drawBitmap(ctx, WING, wp, W - WING[0].length, OYp + 10, true);
-  } else if (outfit.back === 'cape') {
-    for (let y = 12; y < 28; y++) {
-      const spread = Math.min(3, Math.floor((y - 12) / 4));
-      const x0 = OXp + 2 - spread;
-      const x1 = OXp + 16 + spread;
-      px(ctx, x0, OYp + y, x1 - x0, 1, y === 27 ? '#2e2466' : '#4a3a9a');
-      px(ctx, x0, OYp + y, 1, 1, '#2e2466');
-      px(ctx, x1 - 1, OYp + y, 1, 1, '#2e2466');
-      if ((y * 7) % 5 === 0) px(ctx, x0 + 1 + (y % 3), OYp + y, 1, 1, '#ffd34d');
-      if ((y * 3) % 7 === 0) px(ctx, x1 - 3, OYp + y, 1, 1, '#ffd34d');
-    }
-  }
+  const tops = PRINCESS_TOPS[shape] || [];
+  const top = PRINCESS_TOP.map((row, i) => tops[i - 13] || row);
+  drawHeroBack(ctx, outfit.back, OXp, OYp, W);
   // Long hair behind the dress.
   for (let y = 13; y < 20; y++) { px(ctx, OXp + 1, OYp + y, 2, 1, pal.h); px(ctx, OXp + 15, OYp + y, 2, 1, pal.h); }
-  drawBitmap(ctx, PRINCESS_TOP, pal, OXp, OYp);
-  drawBitmap(ctx, skirt, pal, OXp, OYp + PRINCESS_TOP.length);
+  drawBitmap(ctx, top, pal, OXp, OYp);
+  drawBitmap(ctx, skirt, pal, OXp, OYp + top.length);
   const head = HEAD_ITEMS[outfit.head];
   if (head) drawBitmap(ctx, head.rows, pal, OXp + head.x, OYp + head.y);
   const hand = HAND_BITMAPS[outfit.hand];
@@ -2093,27 +2361,274 @@ const BOY_BOTTOMS = {
     '.oooooooooooooooo.',
     '......ff..ff......',
   ],
+  // A suit: the jacket's hem, then trousers and black shoes.
+  suit: [
+    '....oLdddyddDo....',
+    '....oLddooddDo....',
+    '.....oDdooDdo.....',
+    '.....oDdooDdo.....',
+    '.....oDdooDdo.....',
+    '.....oDdooDdo.....',
+    '.....oDdooDdo.....',
+    '.....oxxooxxo.....',
+    '.....oxXooxXo.....',
+    '.....oooooooo.....',
+  ],
+  // Armour: steel plates over the hips, the tabard's hem, steel legs.
+  armour: [
+    '....oMaddddaAo....',
+    '....oaAddddAAo....',
+    '....oMAttttAAo....',
+    '.....oaAooaAo.....',
+    '.....oMaooMao.....',
+    '.....oaAooaAo.....',
+    '.....oaAooaAo.....',
+    '.....oAAooAAo.....',
+    '.....oMAooMAo.....',
+    '.....oooooooo.....',
+  ],
+  // A sailor suit: shorts, white socks, black shoes.
+  sailor: [
+    '....oddddddddo....',
+    '....oLddddddDo....',
+    '....oLddooddDo....',
+    '.....oddooddo.....',
+    '.....ossoosso.....',
+    '.....owwoowwo.....',
+    '.....owwoowwo.....',
+    '.....owWoowWo.....',
+    '.....oxxooxxo.....',
+    '.....oooooooo.....',
+  ],
+  // Hanbok: wide light baji trousers tied at the ankle, white socks.
+  dopo: [
+    '....oLLLLLLLdo....',
+    '...oLLLLooLLLdo...',
+    '...oLLLdooLLLdo...',
+    '...oLLLdooLLLdo...',
+    '....oLLdooLLdo....',
+    '.....oDDooDDo.....',
+    '.....owwoowwo.....',
+    '.....owwoowwo.....',
+    '.....oxxooxxo.....',
+    '.....oooooooo.....',
+  ],
+  // An explorer: khaki shorts, socks and tall brown boots.
+  explorer: [
+    '....oIIIIIIIIo....',
+    '....oIIIIIIISo....',
+    '....oIISooISSo....',
+    '.....oIIooISo.....',
+    '.....ossoosso.....',
+    '.....owwoowwo.....',
+    '.....oKKooKKo.....',
+    '.....oKKooKKo.....',
+    '.....oJJooJJo.....',
+    '.....oooooooo.....',
+  ],
+  // A wizard's long starry robe.
+  wizard: [
+    '....oddddddddo....',
+    '...oLddddddddDo...',
+    '...oLdydddddDDo...',
+    '..oLddddddydDDDo..',
+    '..oLddydddddDDDo..',
+    '..oLddddddyddDDo..',
+    '.oLdddddydddddDDo.',
+    '.oLddydddddddyDDo.',
+    'otttttttttttttttto',
+    '......ff..ff......',
+  ],
+  // The Fairy Village's leaf tunic: a pointed hem, green leggings.
+  leaf: [
+    '....oddddddddo....',
+    '...oLddddddddDo...',
+    '...oLdddddddDDo...',
+    '...oddoddoddoDo...',
+    '....o..oQQo..o....',
+    '.....oQQooQQo.....',
+    '.....oqQooqQo.....',
+    '.....oqQooqQo.....',
+    '.....oJJooJJo.....',
+    '.....oooooooo.....',
+  ],
 };
-// Second walking frame: legs apart.
-const BOY_LEGS_B = ['....offo..offo....', '....offo..offo....', '....oooo..oooo....'];
+// Tops that differ from BOY_TOP's tunic, rows 13 to 17 (null keeps a row).
+const BOY_TOPS = {
+  // A jacket open over a white shirt and a red tie, with lapels.
+  suit: [
+    '...oLdwweewwdDo...',
+    '..oLLdDweewDdDDo..',
+    '..oLoddDeeDdDoDo..',
+    '..osodddeDddDoso..',
+    '...oodddDydDDoo...',
+  ],
+  // Steel shoulders and gauntlets, a tabard with a gold badge.
+  armour: [
+    '..oMMaaddddaAAAo..',
+    '..oMaAadyYdaAaAo..',
+    '..oaoMadYydaAoAo..',
+    '..oAoMaddddaAoAo..',
+    '...oobbbyybbboo...',
+  ],
+  // A white top with a big collar and a red scarf.
+  sailor: [
+    '...owddweewddWo...',
+    '..owwwdDeeDdWWWo..',
+    '..odowwdeedWWodo..',
+    '..osowwwwewWWoso..',
+    '...oodddddddDoo...',
+  ],
+  // A jeogori with a white collar across and a long ribbon.
+  dopo: [
+    '...oLddwwddddDo...',
+    '..oLLdddwwdddDDo..',
+    '..oLoddddwttDoDo..',
+    '..osodddddtdDoso..',
+    '...ooLddddtdDoo...',
+  ],
+  // A vest with pockets over a cream shirt, and a belt.
+  explorer: [
+    '...oiddiiiiddIo...',
+    '..oiiddiiiiddIIo..',
+    '..oiodDdiidDdoIo..',
+    '..osodddiiddDoso..',
+    '...oobbbyybbboo...',
+  ],
+  // Gold cuffs and a gold rope belt.
+  wizard: [
+    '...oLdddttdddDo...',
+    '..oLLdydttdddDDo..',
+    '..otodddttdyDoto..',
+    '..osodddttddDoso..',
+    '...ooyyyYYyyyoo...',
+  ],
+  // A collar of leaves and a belt of vines with a flower.
+  leaf: [
+    '...oLqQqqqqQqDo...',
+    '..oLLddqddqddDDo..',
+    null,
+    null,
+    '...ooQQQeQQQQoo...',
+  ],
+};
+// Second walking frame: the shoes (rows 7 and 8 below the belt) step apart,
+// or under a long robe the feet do.
+const boyStep = row => `....o${row.slice(6, 8)}o..o${row.slice(10, 12)}o....`;
 const BOY_FEET_B = '.....ff....ff.....';
 
 const BOY_HEAD_ITEMS = {
   crown:     HEAD_ITEMS.crown,
+  horn:      HEAD_ITEMS.horn,
   circlet:   { x: 5, y: -2, rows: ['y..yy..y', 'Yyybbyyy'] },
   kingcrown: { x: 4, y: -6, rows: ['....yy....', '.y..yy..y.', '.yyvvvvyy.', 'yyvvvvvvyy', 'ybyyryybyy', 'YYYYYYYYYY'] },
   feather:   { x: 3, y: -4, rows: ['..........ww', '.oooooooowWo', 'oDDDDDDDDDwo', 'oDDDDDDDDDDo', 'oyyyyyyyyyyo'] },
+  // A steel helmet with cheek guards and a red plume.
+  helmet: { x: 2, y: -5, rows: [
+    '......ee......',
+    '.....eEee.....',
+    '......ee......',
+    '....oooooo....',
+    '...oMaaaaAo...',
+    '..oMaaaaaaAo..',
+    '.oMaaaaaaaaAo.',
+    'oMaaaaaaaaaaAo',
+    'oAAAAAAAAAAAAo',
+    'oMo........oAo',
+    'oao........oAo',
+    '.o..........o.',
+  ] },
+  // A black pirate hat with a gold edge and a little skull.
+  pirate: { x: 1, y: -4, rows: [
+    '...xx......xx...',
+    '..xXxxxxxxxxXx..',
+    '.xXxxxxwwxxxxXx.',
+    '.xxxxxwxxwxxxxx.',
+    'xxxxxxxwwxxxxxxx',
+    'yyyyyyyyyyyyyyyy',
+    '.oooooooooooooo.',
+  ] },
+  // A tall pointed hat in his colour, with stars.
+  wizardhat: { x: 2, y: -5, rows: [
+    '..........oo..',
+    '.........oDDo.',
+    '.......ooddo..',
+    '......oDdydo..',
+    '.....oDddddo..',
+    '....oDdyddddo.',
+    '...oDdddddyddo',
+    'ooooyyyyyyyyyo',
+    'oDDDDDDDDDDDDo',
+    '.oooooooooooo.',
+  ] },
+  // An explorer's sun helmet with a brown band.
+  safari: { x: 1, y: -4, rows: [
+    '.....oooooo.....',
+    '....oiiiiIIo....',
+    '...oiiiiIIIIo...',
+    '...oIIIIIIIIo...',
+    '...oJJJJJJJJo...',
+    '.ooiiiiiiiIISoo.',
+    'oiiIIIIIIIIIISSo',
+    '.oooooooooooooo.',
+  ] },
+  // A baseball cap in his colour, the peak to one side.
+  cap: { x: 2, y: -2, rows: [
+    '.....oooo.......',
+    '...ooddwddoo....',
+    '..oLddddddDDo...',
+    '.oLdddddddDDDo..',
+    '.oDDDDDDDDDDDDoo',
+    '..ooooooooDDDDDo',
+    '..........ooooo.',
+  ] },
+  // A gat: a see-through black hat with a wide brim and a bead string.
+  gat: { x: 1, y: -5, rows: [
+    '.....oooooo.....',
+    '.....oxxxXo.....',
+    '.....oxxxXo.....',
+    '.....oxxxXo.....',
+    'oooooxxxxXxooooo',
+    'XXXXXXXXXXXXXXXX',
+    '.oooooooooooooo.',
+    '..K..........K..',
+    '..K..........K..',
+    '...K........K...',
+  ] },
 };
 const BOY_HAND_BITMAPS = {
   sword:     { x: 13, y: 4, rows: ['..o..', '.oao.', '.oao.', '.oao.', '.oao.', '.oao.', '.oao.', '.oao.', 'oyYyo', '.ofo.', '.ofo.', '..y..'] },
   sceptre:   { x: 13, y: 5, rows: ['.oyo.', 'oyryo', 'oyyyo', '.oYo.', '.oyo.', '.oYo.', '.oyo.', '.oYo.', '.oyo.', '.oYo.', '..y..'] },
   starsword: { x: 13, y: 2, rows: ['..y..', '.yyy.', 'yyyyy', '.yyy.', '.ycy.', '.oco.', '.oco.', '.oco.', '.oco.', '.oco.', 'oyYyo', '.ofo.', '.ofo.', '..y..'] },
+  teddy:     HAND_BITMAPS.teddy,
+  balloon:   HAND_BITMAPS.balloon,
+  // A shield in his colour with a gold cross, in the other hand.
+  shield: { x: -1, y: 11, rows: ['ooooooo', 'oAdddAo', 'oAdydAo', 'oAyyyAo', 'oAdydAo', 'oAdddAo', '.oAdAo.', '..oAo..', '...o...'] },
+  // A wooden bow, its string straight.
+  bow: { x: 14, y: 8, rows: ['wJ..', 'w.K.', 'w..K', 'w..K', 'w..K', 'w..K', 'wyyK', 'w..K', 'w..K', 'w..K', 'w..K', 'w.K.', 'wJ..'] },
+  // A wizard's staff with a glowing ball on top.
+  staff: { x: 14, y: -1, rows: ['.ooo.', 'ocZco', 'oZcco', 'occco', '.oJo.', '..K..', '..J..', '..K..', '..J..', '..K..', '..J..', '..K..', '..J..', '..K..', '..J..', '..K..', '..J..', '..K..', '..J..'] },
+  // A brass telescope held up to look far away.
+  telescope: { x: 13, y: 9, rows: ['.....oo', '....oyz', '...oyYo', '..oyYo.', '.oJYo..', 'oJJo...', '.oo....'] },
+  // A flag in his colour on a pole.
+  flag: { x: 14, y: 0, rows: ['.y....', 'oJdddd', 'oJdLdd', 'oJdddd', 'oJdddD', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....', 'oJ....'] },
 };
+
+// The boy's colours for an outfit (his sprite and his leg on a unicorn).
+function boyPalette(outfit) {
+  const dress = (DRESS_COLORS[outfit.dress] || DRESS_COLORS.sky).c;
+  const hair = (HAIR_COLORS[outfit.hair] || HAIR_COLORS.brown).c;
+  return Object.assign({}, HERO_EXTRA, {
+    o: '#4a2c4f', h: hair[0], H: hair[1], s: '#ffe3d0', k: '#3a2340', p: '#ffadbc', m: '#e0707a',
+    d: dress[0], D: dress[1], L: dress[2], t: dress[3], b: '#6b4a3a', n: '#4a4a7a', f: '#7a4a2e',
+    y: '#ffd34d', Y: '#e0a52a', r: '#ff6f8a', v: '#c8303f', w: '#ffffff', a: '#c8d2e4', c: '#9fe8ff',
+  });
+}
 
 const boyCache = new Map();
 
 // The boy hero, on the princess's canvas size and anchor. Wings never
-// reach a boy (see suits() in game.js); a cape does.
+// reach a boy (see suits() in game.js); capes and dragon wings do.
 function boySprite(outfit, frame) {
   const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.back}|${frame}`;
   if (boyCache.has(key)) return boyCache.get(key);
@@ -2123,32 +2638,18 @@ function boySprite(outfit, frame) {
   const OYp = 5;
   const cv = makeCanvas(W, H);
   const ctx = cv.getContext('2d');
-  const dress = DRESS_COLORS[outfit.dress].c;
-  const hair = HAIR_COLORS[outfit.hair].c;
-  const pal = {
-    o: '#4a2c4f', h: hair[0], H: hair[1], s: '#ffe3d0', k: '#3a2340', p: '#ffadbc', m: '#e0707a',
-    d: dress[0], D: dress[1], L: dress[2], t: dress[3], b: '#6b4a3a', n: '#4a4a7a', f: '#7a4a2e',
-    y: '#ffd34d', Y: '#e0a52a', r: '#ff6f8a', v: '#c8303f', w: '#ffffff', a: '#c8d2e4', c: '#9fe8ff',
-  };
-  const bottom = (BOY_BOTTOMS[outfit.shape] || BOY_BOTTOMS.tunic).slice();
+  const pal = boyPalette(outfit);
+  const shape = BOY_BOTTOMS[outfit.shape] ? outfit.shape : 'tunic';
+  const bottom = BOY_BOTTOMS[shape].slice();
   if (frame === 1) {
-    if (outfit.shape === 'robe') bottom[9] = BOY_FEET_B;
-    else bottom.splice(7, 3, ...BOY_LEGS_B);
+    if (bottom[9] === BOY_BOTTOMS.robe[9]) bottom[9] = BOY_FEET_B;
+    else bottom.splice(7, 3, boyStep(bottom[7]), boyStep(bottom[8]), '....oooo..oooo....');
   }
-  if (outfit.back === 'cape') {
-    for (let y = 12; y < 28; y++) {
-      const spread = Math.min(3, Math.floor((y - 12) / 4));
-      const x0 = OXp + 2 - spread;
-      const x1 = OXp + 16 + spread;
-      px(ctx, x0, OYp + y, x1 - x0, 1, y === 27 ? '#2e2466' : '#4a3a9a');
-      px(ctx, x0, OYp + y, 1, 1, '#2e2466');
-      px(ctx, x1 - 1, OYp + y, 1, 1, '#2e2466');
-      if ((y * 7) % 5 === 0) px(ctx, x0 + 1 + (y % 3), OYp + y, 1, 1, '#ffd34d');
-      if ((y * 3) % 7 === 0) px(ctx, x1 - 3, OYp + y, 1, 1, '#ffd34d');
-    }
-  }
-  drawBitmap(ctx, BOY_TOP, pal, OXp, OYp);
-  drawBitmap(ctx, bottom, pal, OXp, OYp + BOY_TOP.length);
+  const tops = BOY_TOPS[shape] || [];
+  const top = BOY_TOP.map((row, i) => tops[i - 13] || row);
+  drawHeroBack(ctx, outfit.back, OXp, OYp, W);
+  drawBitmap(ctx, top, pal, OXp, OYp);
+  drawBitmap(ctx, bottom, pal, OXp, OYp + top.length);
   const head = BOY_HEAD_ITEMS[outfit.head];
   if (head) drawBitmap(ctx, head.rows, pal, OXp + head.x, OYp + head.y);
   const hand = BOY_HAND_BITMAPS[outfit.hand];
@@ -2469,7 +2970,7 @@ function riderSprite(outfit, frame, boy) {
   const sx = ux + 7;
   const sy = uy + 13;
   if (boy) {
-    drawBoyLeg(ctx, sx, sy, outfit, dress);
+    drawBoyLeg(ctx, sx, sy, outfit);
     const sprite = { canvas: cv, ax: ux + uni.ax, ay: uy + uni.ay };
     riderCache.set(key, sprite);
     return sprite;
@@ -2483,8 +2984,8 @@ function riderSprite(outfit, frame, boy) {
   }
   px(ctx, sx - 2, sy + 5, 14, 1, '#4a2c4f');
   px(ctx, sx + 2, sy + 1, 2, 1, dress[2]);
-  // A little foot peeking out under the skirt.
-  px(ctx, sx + 6, sy + 6, 2, 2, '#c0507a');
+  // A little foot peeking out under the skirt (a mermaid's tail fin).
+  px(ctx, sx + 6, sy + 6, 2, 2, outfit.shape === 'mermaid' ? dress[3] : '#c0507a');
   px(ctx, sx + 5, sy + 6, 1, 2, '#4a2c4f');
   px(ctx, sx + 8, sy + 6, 1, 2, '#4a2c4f');
   px(ctx, sx + 6, sy + 8, 2, 1, '#4a2c4f');
@@ -2493,27 +2994,45 @@ function riderSprite(outfit, frame, boy) {
   return sprite;
 }
 
-// A boy's tunic or coat over the unicorn's side, with his leg and boot below.
-function drawBoyLeg(ctx, sx, sy, outfit, dress) {
-  const flap = outfit.shape === 'tunic' ? 3 : 5;
+// How a boy's clothes hang over a unicorn's side, by shape: rows of cloth
+// (`flap`), its main and shade colour (`cloth`) and its hem, then his leg,
+// sock and boot. Letters are boyPalette's.
+const BOY_RIDE = {
+  tunic: { flap: 3 },
+  coat: { flap: 5 },
+  robe: { flap: 5, hem: 'w' },
+  wizard: { flap: 6 },
+  suit: { flap: 2, hem: 'd', leg: 'D', boot: 'x' },
+  armour: { flap: 3, cloth: 'aA', leg: 'a', boot: 'A' },
+  sailor: { flap: 2, hem: 'D', leg: 's', sock: 'w', boot: 'x' },
+  dopo: { flap: 2, cloth: 'Ld', hem: 'L', leg: 'L', sock: 'w', boot: 'x' },
+  explorer: { flap: 2, cloth: 'IS', hem: 'S', leg: 's', sock: 'w', boot: 'K' },
+  leaf: { flap: 3, hem: 'D', leg: 'Q', boot: 'J' },
+};
+
+// A boy's clothes over the unicorn's side, with his leg and boot below.
+function drawBoyLeg(ctx, sx, sy, outfit) {
+  const pal = boyPalette(outfit);
+  const r = Object.assign({ cloth: 'dD', hem: 't', leg: 'n', boot: 'f' }, BOY_RIDE[outfit.shape] || BOY_RIDE.tunic);
+  const flap = r.flap;
   for (let y = 0; y < flap; y++) {
     const w = 10 + Math.min(y, 1) * 2;
     const x0 = sx - Math.min(y, 1);
-    px(ctx, x0, sy + y, w, 1, y === flap - 1 ? (outfit.shape === 'robe' ? '#ffffff' : dress[3]) : y > flap - 3 ? dress[1] : dress[0]);
+    px(ctx, x0, sy + y, w, 1, pal[y === flap - 1 ? r.hem : y > flap - 3 ? r.cloth[1] : r.cloth[0]]);
     px(ctx, x0 - 1, sy + y, 1, 1, '#4a2c4f');
     px(ctx, x0 + w, sy + y, 1, 1, '#4a2c4f');
   }
   px(ctx, sx - 1, sy + flap, 12, 1, '#4a2c4f');
-  px(ctx, sx + 2, sy + 1, 2, 1, dress[2]);
-  // Trousers down to a brown boot.
+  px(ctx, sx + 2, sy + 1, 2, 1, r.cloth === 'aA' ? pal.M : pal.L);
+  // His leg down to a boot.
   for (let y = sy + flap + 1; y < sy + 9; y++) {
-    const boot = y >= sy + 6;
-    px(ctx, sx + 5, y, 3, 1, boot ? '#7a4a2e' : '#4a4a7a');
+    const c = y >= sy + 6 ? r.boot : r.sock && y === sy + 5 ? r.sock : r.leg;
+    px(ctx, sx + 5, y, 3, 1, pal[c]);
     px(ctx, sx + 4, y, 1, 1, '#4a2c4f');
     px(ctx, sx + 8, y, 1, 1, '#4a2c4f');
   }
   px(ctx, sx + 4, sy + 9, 6, 1, '#4a2c4f');
-  px(ctx, sx + 8, sy + 8, 1, 1, '#7a4a2e');
+  px(ctx, sx + 8, sy + 8, 1, 1, pal[r.boot]);
   px(ctx, sx + 9, sy + 8, 1, 1, '#4a2c4f');
 }
 
@@ -2711,13 +3230,18 @@ function monsterSprite(key, frame) {
   return sprite;
 }
 
-// Shop treasures worn by the princess.
+// Shop treasures worn by the princess, and by the boy (in his palette's
+// letters).
 Object.assign(HEAD_ITEMS, {
   gemband: { x: 4, y: -1, rows: ['...b.g.b..', '..bybgbyb.', 'yyyyyyyyyy'] },
 });
 Object.assign(HAND_BITMAPS, {
   lantern: { x: 15, y: 10, rows: ['.o..', 'oooo', 'oyyo', 'oywo', 'oyyo', 'oooo'] },
 });
+Object.assign(BOY_HEAD_ITEMS, {
+  gemband: { x: 4, y: -1, rows: ['...B.P.B..', '..ByBPByB.', 'yyyyyyyyyy'] },
+});
+Object.assign(BOY_HAND_BITMAPS, { lantern: HAND_BITMAPS.lantern });
 
 // Lavender stone floor with tiny crystal specks.
 function drawCaveFloor(ctx, ox, oy) {

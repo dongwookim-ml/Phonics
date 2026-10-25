@@ -67,6 +67,22 @@ const C = device('captain', 'dC');
   check('two new devices: the next star counts once', B.merge(m, play(A, m, 1, 0), 'mine').stars === 16);
 }
 
+// ---- The treasure shelf and new clothes ------------------------------------------
+{
+  // This version keeps treasures in a slot older versions don't know; an
+  // older tablet saves only the slots it knows (and keeps unknown values in
+  // them). Joined, nothing is lost; two tablets' treasures add up.
+  const start = { edition: 'princess', stars: 5, owned: { shape: ['ballgown'], head: ['none', 'tiara'] } };
+  const a = play(A, start, 2, 0, { owned: { shape: ['ballgown', 'mermaid'], head: ['none', 'tiara', 'bunny'], treasure: ['shell', 'kite'] } });
+  const known = Object.assign({}, a.owned, { head: a.owned.head.concat('crown') });
+  delete known.treasure;
+  const old = playOld(a, 1, 0, { owned: known });
+  const m = A.merge(a, old, 'theirs');
+  check('treasures: a slot an older tablet drops is kept from the other copy', m.owned.treasure.join() === 'shell,kite' && m.owned.head.includes('bunny') && m.owned.head.includes('crown') && m.owned.shape.includes('mermaid'), m.owned);
+  const b = play(B, m, 1, 0, { owned: Object.assign({}, m.owned, { treasure: ['gem'] }) });
+  check('treasures: two tablets\' treasures are joined', A.merge(m, b, 'mine').owned.treasure.sort().join() === 'gem,kite,shell', A.merge(m, b, 'mine').owned);
+}
+
 // ---- The books she reads herself (js/library.js, `self:<id>` in books) ------------
 {
   // Each tablet finished a different book (its star counted on that tablet);

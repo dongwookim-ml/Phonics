@@ -6,8 +6,11 @@
 // - the person she talks to stays visible above the dialog,
 // - what a child taps is big enough: HUD, hear-again and close, the album's
 //   tabs and done, the feeding card, the 🎣 button and the pond game's
-//   buttons 64 px, spelling tiles 68 px tall, wardrobe chips 56 px (on a
-//   phone a bit less),
+//   buttons 64 px, spelling tiles 68 px tall (on a phone a bit less),
+// - the wardrobe and the shop on every tab, for a girl, a boy and the
+//   robot: on screen, the picture tabs on one row, tabs and pictures 64 px
+//   (52 on a phone), every picture inside its tile, a row of them showing,
+//   the mirror showing her, and the buttons on screen,
 // - ▶ on the start screen and the guest button on the login screen show
 //   without scrolling, also with Safari's toolbars (1024 x 700),
 // - with every counter and button showing (the next-gate and gift meters
@@ -183,10 +186,58 @@ function ask(kind, scene) {
         small('.choices.spell .tile', phone ? 56 : 68, true);
         small('.choices.spell .erase', phone ? 56 : 68, true);
         closeDialog();
+        // The wardrobe (and the shop) on every tab, for a girl and a boy:
+        // on screen, the tabs on one row, tabs and pictures big enough to
+        // tap, every picture inside its tile, nothing wider than its box, a
+        // whole row of pictures showing, and the mirror showing her.
+        const inBox = (el, box) => { const r = el.getBoundingClientRect(); return r.left >= box.left - 0.5 && r.right <= box.right + 0.5 && r.top >= box.top - 0.5 && r.bottom <= box.bottom + 0.5; };
+        const onScreen = el => inBox(el, { left: 0, top: 0, right: innerWidth, bottom: innerHeight });
+        const fits = (what, panel, tabsSel, gridSel, mirror, buttons) => {
+          const p = document.getElementById(panel);
+          p.style.animation = 'none'; // it rises into place as it opens
+          if (!onScreen(p)) out.push(`${what}: off the screen`);
+          const tabs = [...document.querySelectorAll(tabsSel)];
+          if (new Set(tabs.map(t => Math.round(t.getBoundingClientRect().top))).size > 1) out.push(`${what}: the tabs take more than one row`);
+          small(tabsSel, big);
+          small(`${gridSel} .wd-item`, big);
+          const grid = document.querySelector(gridSel);
+          if (grid.scrollWidth > grid.clientWidth + 1) out.push(`${what}: the pictures are wider than their box (${grid.scrollWidth} > ${grid.clientWidth})`);
+          const tiles = [...grid.querySelectorAll('.wd-item')];
+          const out_ = tiles.filter(t => [...t.querySelectorAll('canvas, .ic')].some(pic => !inBox(pic, t.getBoundingClientRect())));
+          if (out_.length) out.push(`${what}: ${out_.length} picture(s) run out of their tile, e.g. ${out_[0].title}`);
+          const first = tiles[0] && tiles[0].getBoundingClientRect();
+          const box = grid.getBoundingClientRect();
+          if (first && box.bottom - first.top < first.height - 1) out.push(`${what}: less than a row of pictures shows`);
+          const m = document.getElementById(mirror).getBoundingClientRect();
+          if (m.width < 40 || m.height < 40 || !inBox(document.getElementById(mirror), p.getBoundingClientRect())) out.push(`${what}: the mirror is ${Math.round(m.width)}x${Math.round(m.height)} or outside the box`);
+          for (const b of buttons) if (!onScreen(document.querySelector(b))) out.push(`${what}: ${b} is off the screen`);
+        };
+        for (const look of isCaptain() ? ['robot'] : ['girl', 'boy']) {
+          if (look !== 'robot') { setPlayer({ title: look === 'boy' ? 'prince' : 'princess', look }); wearLook(); }
+          // Half of everything hers, so there are pictures and ❓ shapes.
+          let n = 0;
+          for (const w of WARDROBE) for (const v of Object.keys(w.items)) if (n++ % 2 && !state.owned[w.slot].includes(v)) state.owned[w.slot].push(v);
+          state.scene = sceneFor('yuna');
+          state.busy = false;
+          openWardrobe();
+          for (const w of wardrobeTabs()) {
+            wdTab = w.slot;
+            renderWardrobe();
+            fits(`wardrobe ${look} ${w.slot}`, 'wardrobe', '#wd-tabs .wd-tab', '#wd-slots .wd-grid', 'wd-preview', ['#wd-done']);
+          }
+          closeWardrobe();
+          state.coins = 5;
+          openShop(sceneFor('forest').npcs.find(x => x.shop));
+          for (const slot of new Set(shopItems().map(it => it.slot))) {
+            state.shopTab = slot;
+            state.shopPick = shopItems().find(it => it.slot === slot);
+            renderShop();
+            fits(`shop ${look} ${slot}`, 'shop', '#shop-tabs .wd-tab', '#shop-items', 'shop-preview', ['#shop-buy', '#shop-done']);
+          }
+          closeShop();
+        }
+        if (!isCaptain()) { setPlayer({ title: 'princess', look: 'girl' }); wearLook(); }
         state.scene = sceneFor('yuna');
-        openWardrobe();
-        small('#wd-slots .chip', 56, true);
-        closeWardrobe();
         // Her friend's feeding card, and the fisherman's 🎣 and his game.
         const friend = Object.keys(FAIRIES).find(k => k !== 'none');
         state.owned.fairy.push(friend);

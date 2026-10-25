@@ -299,6 +299,10 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .previews canvas { width: 110px; height: 170px; image-rendering: pixelated; object-fit: contain; }
 .previews figcaption { font-size: 18px; }
 .previews .arrow { font-size: 34px; }
+/* A treasure: just the treasure, big and smooth, and one button. */
+.reward.treasure .previews > :not(.new) { display: none; }
+.previews canvas.smooth { width: 150px; height: 150px; image-rendering: auto; }
+.reward .answer button.hidden { display: none; }
 .answer { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
 .answer button {
   padding: 12px 18px;
@@ -557,9 +561,61 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   background: linear-gradient(#e6f7ff, #fff);
 }
 .wd-mirror canvas { width: 132px; height: 204px; image-rendering: pixelated; object-fit: contain; }
+/* A treasure in the shop's mirror is drawn smooth, as wide as the mirror. */
+.wd-mirror canvas.smooth { width: 100%; height: auto; image-rendering: auto; }
 .wd-slots { flex: 1; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .wd-title { font-size: 17px; margin-bottom: 3px; }
-.wd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* The wardrobe and the shop keep one size while she flips through tabs. */
+#wardrobe, #shop { height: min(660px, calc(100dvh - var(--hud) - 20px)); }
+#wardrobe .wd-main, #shop .wd-main { flex: 1 1 auto; }
+/* A picture tab for each kind of thing. */
+.wd-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; flex: none; }
+.wd-tabs.hidden { display: none; }
+.wd-tab {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2);
+}
+.wd-tab .ic { font-size: 34px; line-height: 1; }
+.wd-tab canvas.part { image-rendering: pixelated; display: block; max-width: 48px; max-height: 48px; object-fit: contain; }
+.wd-tab.on { background: #fff4b8; border-color: #e0a52a; box-shadow: 0 0 0 3px var(--gold); }
+/* A tab's name over its pictures, with how many she has. */
+.wd-slots .wd-title { display: flex; justify-content: space-between; gap: 8px; padding: 0 4px; }
+.wd-slots .wd-title .n { color: var(--accent-ink); white-space: nowrap; }
+.wd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; align-content: start; padding: 10px 3px 3px; }
+/* One thing: its picture; a grey shape with ❓ if it isn't hers yet. */
+.wd-item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 96px;
+  padding: 4px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2);
+}
+.wd-item canvas { image-rendering: pixelated; display: block; }
+.wd-item .ic { font-size: 40px; line-height: 1; }
+.wd-item.on { background: #fff4b8; border-color: #e0a52a; box-shadow: 0 0 0 3px var(--gold); }
+.wd-item.locked { background: #f2e8ee; box-shadow: none; }
+.wd-item.locked canvas, .wd-item.locked .ic { filter: brightness(0) opacity(0.16); }
+.wd-item .q { position: absolute; right: 5px; bottom: 3px; font-size: 18px; line-height: 1; }
+.wd-item.new::after { content: '✨'; position: absolute; top: -10px; right: -8px; font-size: 24px; animation: breathe 1s ease-in-out infinite; }
+.wd-item.hop { animation: chest-hop 0.5s ease; }
+.wd-item.nope { animation: nope 0.4s ease; }
+/* The treasure shelf: each treasure stands on a little wooden shelf. */
+.wd-item.treasure { border-bottom: 9px solid #c08850; }
+.wd-item.treasure.locked { border-bottom-color: #d8c4b4; }
+/* Her fairy friend's feeding chip (js/friend.js) as one of the pictures. */
+.wd-grid .feed-chip { flex-direction: column; justify-content: center; gap: 0; padding: 4px; min-height: 96px; }
 .chip {
   display: flex;
   align-items: center;
@@ -573,7 +629,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2);
 }
 .chip .ic { font-size: 24px; }
-.chip .sw { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ink); }
 .chip.on { background: #fff4b8; border-color: #e0a52a; box-shadow: 0 0 0 3px var(--gold); }
 .chip:disabled { opacity: 0.45; background: #f2e8ee; }
 .wd-done {
@@ -927,17 +982,18 @@ body.dungeon { background: linear-gradient(#2a2050, #4f4288 50%, #7a6cb0); }
 .shop { background: radial-gradient(circle at 30% 20%, #fffdf2, #fff0c8); }
 .shop .wd-count { font-size: 24px; color: #b07a10; }
 .shop-msg { padding: 0 6px; font-size: 18px; color: var(--accent-ink); }
-.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); align-content: start; gap: 6px; padding: 3px; }
-.shop-item { display: flex; align-items: center; gap: 6px; text-align: left; }
-.shop-item .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.shop-item .price { flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 3px 8px 3px 4px; border-radius: 12px; background: #fff4b8; color: #8a5a10; font-size: 17px; line-height: 1; }
+.shop-items { flex: 1; min-width: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); align-content: start; gap: 8px; padding: 10px 3px 3px; }
+/* A thing for sale: its picture with its price under it, ✨ if only the shop has it. */
+.wd-item.shop-item { grid-template-rows: 1fr auto; gap: 3px; min-height: 104px; padding: 4px 4px 5px; }
+.shop-item .price { display: inline-flex; align-items: center; gap: 2px; padding: 3px 8px 3px 4px; border-radius: 12px; background: #fff4b8; color: #8a5a10; font-size: 17px; line-height: 1; }
 .shop-item .price .coin { font-size: 15px; line-height: 1; }
 .shop-item.dear .price { background: #f2e8ee; color: #9a8aa3; }
+.shop-item.special::before { content: '✨'; position: absolute; top: -10px; left: -8px; font-size: 22px; }
+.wd-item.treasure.shop-item { border-bottom-width: 3px; }
 .shop .answer { margin-top: 2px; }
 .shop .answer button.hidden { display: none; }
 @media (max-width: 560px) {
-  .shop-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .shop-item { padding: 6px 6px; font-size: 14px; gap: 4px; }
+  .shop-items { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
   .shop-item .price { font-size: 13px; padding: 2px 6px 2px 3px; }
   .counters { gap: 4px; }
   .counters .stars { padding: 4px 10px; font-size: 22px; }
@@ -1605,7 +1661,7 @@ body.captain .wd-mirror {
     linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px) 0 0 / 12px 12px,
     linear-gradient(#3f78c8, #2a5aa0);
 }
-body.captain .chip:disabled { background: #e4eaf4; }
+body.captain .chip:disabled, body.captain .wd-item.locked { background: #e4eaf4; }
 /* The robot is 28 x 38 pixels: previews keep whole screen pixels per robot
    pixel (js/captain-hero.js sizes the reward card's), and the workbench and
    shop mirror is a 40 x 52 stage with room to jump and punch. */
@@ -1712,7 +1768,21 @@ body.captain .parent-head { background: #dcebff; }
   .wd-name { font-size: 20px; }
   .wd-mirror { width: 110px; }
   .wd-mirror canvas { width: auto; max-height: 40dvh; }
+  .wd-mirror canvas.smooth { width: 100%; height: auto; }
+  .shop .wd-mirror canvas { max-height: 30dvh; }
   .wd-done { padding: 6px 20px; font-size: 20px; }
+  .wd-tab { width: 52px; height: 52px; border-radius: 14px; }
+  .wd-tab .ic { font-size: 28px; }
+  .wd-tab canvas.part { max-width: 40px; max-height: 40px; }
+  .wd-slots { gap: 4px; }
+  .wd-slots .wd-title { font-size: 15px; margin-bottom: 0; }
+  .wd-grid { grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
+  .wd-item { min-height: 60px; padding: 3px; border-radius: 14px; }
+  .wd-item .ic { font-size: 32px; }
+  .wd-grid .feed-chip { min-height: 60px; }
+  .shop-items { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; padding-top: 8px; }
+  .wd-item.shop-item { min-height: 78px; }
+  .shop-msg { font-size: 15px; }
   .lib-books { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; padding: 6px 4px 2px; }
   .lib-book .cv { font-size: 36px; }
 

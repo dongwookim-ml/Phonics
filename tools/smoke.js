@@ -1,7 +1,9 @@
 // Quick check before deploying: no two scripts define the same global, and
 // every scene (village homes too) builds and draws without errors, for a
 // girl and a boy hero and for the robot hero of the captain edition. Every
-// door must be reachable and lead back out where it was.
+// door must be reachable and lead back out where it was. Every wardrobe
+// thing that suits the hero draws (walking, riding, in a portrait and as its
+// wardrobe picture) and shows on the hero.
 // Run: node tools/smoke.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -60,7 +62,46 @@ for (const s of scripts) {
       }
       return bad;
     }, title);
-    for (const e of scenes.concat(errors)) { console.log(`${look}: ${e}`); failed++; }
+    // Everything in the wardrobe that suits this look draws: on foot (both
+    // walking frames), riding, in a portrait with room for a fairy, and as
+    // its wardrobe picture. Something worn changes the hero's picture (from
+    // the same slot's next thing), so nothing is given that doesn't show.
+    const items = await page.evaluate(() => {
+      const bad = [];
+      const data = o => heroSprite(o, 0).canvas.getContext('2d').getImageData(0, 0, 40, 40).data.join();
+      const ride = Object.keys(UNICORNS).find(k => k !== 'none');
+      let n = 0;
+      for (const w of WARDROBE) {
+        const fits = Object.keys(w.items).filter(v => suits(w.items[v]));
+        for (const [v, item] of Object.entries(w.items)) {
+          if (!suits(item)) continue;
+          n++;
+          const o = Object.assign({}, defaultOutfit(), w.shelf ? {} : { [w.slot]: v });
+          try {
+            heroSprite(o, 0);
+            heroSprite(o, 1);
+            riderSprite(Object.assign({}, o, { ride: w.slot === 'ride' && v !== 'none' ? v : ride }), 1, isBoy());
+            drawPortrait(document.createElement('canvas'), heroPortrait(o, w.slot === 'ride', true));
+            if (!itemPicture(w.slot, v)) bad.push(`${w.slot} ${v}: no picture`);
+          } catch (e) {
+            bad.push(`${w.slot} ${v}: ${e.message}`);
+            continue;
+          }
+          if (w.shelf || w.slot === 'ride' || w.slot === 'fairy') continue;
+          const other = fits.find(k => k !== v);
+          if (other && data(o) === data(Object.assign({}, o, { [w.slot]: other }))) bad.push(`${w.slot} ${v} looks the same as ${other}`);
+        }
+      }
+      // Every row of a body bitmap is 18 pixels, and an item's rows as wide
+      // as its first (a row off by one shifts the rest of the picture).
+      const width = (name, rows, w) => rows.forEach((r, i) => { if (r && r.length !== w) bad.push(`${name} row ${i} is ${r.length} wide, not ${w}`); });
+      for (const [table, w] of [[PRINCESS_SKIRTS, 18], [PRINCESS_TOPS, 18], [BOY_BOTTOMS, 18], [BOY_TOPS, 18]]) for (const [k, rows] of Object.entries(table)) width(k, rows, w);
+      for (const table of [HEAD_ITEMS, HAND_BITMAPS, BOY_HEAD_ITEMS, BOY_HAND_BITMAPS]) for (const [k, v] of Object.entries(table)) width(k, v.rows, v.rows[0].length);
+      for (const [k, [rows]] of Object.entries(HERO_WINGS)) width(k, rows, rows[0].length);
+      return { bad, n };
+    });
+    if (!items.n) items.bad.push('no wardrobe items');
+    for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}: ${e}`); failed++; }
     await page.close();
   }
   await browser.close();

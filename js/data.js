@@ -79,6 +79,10 @@ const USE_RECORDINGS = false;
 
 // ---- Princess wardrobe ---------------------------------------------------
 // Items marked `girl` or `boy` only suit that look; the rest suit both.
+// `forest`, `unicorn` and `fairy` items are that village's own treasures:
+// its folk give them before anything else, and nobody in town does (the
+// forest's also come from the villages past it; rewardChoices in
+// js/game.js). Every item is drawn in js/sprites.js.
 
 // [main, shade, light, trim]
 const DRESS_COLORS = {
@@ -89,15 +93,37 @@ const DRESS_COLORS = {
   gold:     { name: '황금',   icon: '💛', c: ['#ffd66b', '#e0a83a', '#fff2b8', '#ffffff'] },
   snow:     { name: '하얀',   icon: '🤍', c: ['#ffffff', '#d4d4f0', '#ffffff', '#9fd4ff'] },
   rose:     { name: '빨간',   icon: '❤️', c: ['#ff6b7f', '#cf3f57', '#ffb4c0', '#ffd34d'] },
+  peach:    { name: '복숭아', icon: '🍑', c: ['#ffb89a', '#e8866a', '#ffe0d2', '#ffffff'] },
+  orange:   { name: '주황',   icon: '🧡', c: ['#ffa04a', '#e0702a', '#ffd4a8', '#ffffff'] },
+  green:    { name: '초록',   icon: '🌿', c: ['#6fcf6a', '#3f9a4a', '#c4f4b8', '#ffd34d'] },
+  aqua:     { name: '바다',   icon: '🌊', c: ['#4fd0d8', '#2a9cb0', '#c0f4f8', '#ffffff'] },
+  navy:     { name: '남색',   icon: '💙', c: ['#4a68d0', '#2e449c', '#9ab2ff', '#ffd34d'] },
+  berry:    { name: '자두',   icon: '🍇', c: ['#c860c0', '#963a94', '#f0b4ec', '#ffd34d'] },
+  choco:    { name: '초코',   icon: '🍫', c: ['#a8704a', '#7a4a30', '#e0b48a', '#ffd34d'] },
+  black:    { name: '까만',   icon: '🖤', c: ['#4a4560', '#2e2a40', '#7a7494', '#ffd34d'] },
   night:    { name: '밤하늘', icon: '🌌', c: ['#5a5ab8', '#3a3a86', '#9a9ae8', '#ffd34d'], forest: true },
 };
+// Dresses for a girl; tunics, coats, suits, armour and robes for a boy,
+// in the colour above.
 const DRESS_SHAPES = {
   ballgown: { name: '풍성한 드레스', icon: '👗', girl: true },
   long:     { name: '긴 드레스',     icon: '👘', girl: true },
   tutu:     { name: '발레 드레스',   icon: '🩰', girl: true },
+  party:    { name: '파티 원피스',   icon: '🎀', girl: true },
+  cake:     { name: '층층 드레스',   icon: '🧁', girl: true },
+  mermaid:  { name: '인어 드레스',   icon: '🧜', girl: true },
+  hanbok:   { name: '꽃 한복',       icon: '🎎', girl: true },
+  petal:    { name: '꽃잎 드레스',   icon: '🌷', girl: true, fairy: true },
   tunic:    { name: '기사 튜닉',     icon: '👕', boy: true },
   coat:     { name: '왕자 코트',     icon: '🧥', boy: true },
   robe:     { name: '임금님 옷',     icon: '🥻', boy: true },
+  suit:     { name: '멋진 정장',     icon: '🤵', boy: true },
+  armour:   { name: '기사 갑옷',     icon: '🛡️', boy: true },
+  sailor:   { name: '세일러복',      icon: '⚓', boy: true },
+  dopo:     { name: '도령 한복',     icon: '🎎', boy: true },
+  explorer: { name: '탐험가 옷',     icon: '🧭', boy: true },
+  wizard:   { name: '마법사 로브',   icon: '🧙', boy: true },
+  leaf:     { name: '나뭇잎 옷',     icon: '🍃', boy: true, fairy: true },
 };
 const HEADWEAR = {
   none:    { name: '없음',       icon: '' },
@@ -105,29 +131,93 @@ const HEADWEAR = {
   crown:   { name: '황금 왕관',   icon: '👑' },
   flowers: { name: '꽃 화관',     icon: '🌸', girl: true },
   bow:     { name: '큰 리본',     icon: '🎀', girl: true },
+  heartband: { name: '하트 머리띠', icon: '💖', girl: true },
+  bunny:   { name: '토끼 머리띠', icon: '🐰', girl: true },
+  kitty:   { name: '고양이 머리띠', icon: '🐱', girl: true },
+  butterfly: { name: '나비 핀',   icon: '🦋', girl: true },
+  starpins: { name: '별 머리핀',  icon: '⭐', girl: true },
+  sunhat:  { name: '밀짚모자',    icon: '👒', girl: true },
   circlet: { name: '왕자 관',     icon: '💫', boy: true },
   kingcrown: { name: '임금님 왕관', icon: '👑', boy: true },
   feather: { name: '깃털 모자',   icon: '🎩', boy: true },
+  helmet:  { name: '기사 투구',   icon: '⛑️', boy: true },
+  pirate:  { name: '해적 모자',   icon: '🏴‍☠️', boy: true },
+  wizardhat: { name: '마법사 모자', icon: '🧙', boy: true },
+  safari:  { name: '탐험가 모자', icon: '🤠', boy: true },
+  cap:     { name: '야구 모자',   icon: '🧢', boy: true },
+  gat:     { name: '선비 갓',     icon: '🎩', boy: true },
+  horn:    { name: '유니콘 뿔',   icon: '🦄', unicorn: true },
 };
 const HAND_ITEMS = {
   none:    { name: '없음',     icon: '' },
   wand:    { name: '별 요술봉', icon: '🪄', girl: true },
   bouquet: { name: '꽃다발',   icon: '💐', girl: true },
+  heartwand: { name: '하트 요술봉', icon: '💗', girl: true },
+  moonwand: { name: '달 요술봉', icon: '🌙', girl: true },
+  parasol: { name: '레이스 양산', icon: '⛱️', girl: true },
+  fan:     { name: '태극 부채', icon: '🪭', girl: true },
+  teddy:   { name: '곰 인형',   icon: '🧸' },
+  balloon: { name: '빨간 풍선', icon: '🎈' },
   sword:   { name: '용감한 칼', icon: '🗡️', boy: true },
   sceptre: { name: '황금 홀',   icon: '🔱', boy: true },
   starsword: { name: '별빛 검', icon: '🌟', boy: true, forest: true },
+  shield:  { name: '기사 방패', icon: '🛡️', boy: true },
+  bow:     { name: '나무 활',   icon: '🏹', boy: true },
+  staff:   { name: '마법 지팡이', icon: '🔮', boy: true },
+  telescope: { name: '망원경',  icon: '🔭', boy: true },
+  flag:    { name: '깃발',      icon: '🚩', boy: true },
 };
-// Things worn on the back. These only come from the Starlight Forest.
+// Things worn on the back.
 const BACK_ITEMS = {
   none:  { name: '없음',       icon: '' },
   wings: { name: '요정 날개',   icon: '🧚', forest: true, girl: true },
   cape:  { name: '별빛 망토',   icon: '✨', forest: true },
+  angel: { name: '천사 날개',   icon: '🪽', girl: true },
+  butterfly: { name: '나비 날개', icon: '🦋', fairy: true, girl: true },
+  redcape: { name: '기사 망토', icon: '🦸', boy: true },
+  dragon: { name: '용 날개',    icon: '🐉', forest: true, boy: true },
+  rainbow: { name: '무지개 망토', icon: '🌈', unicorn: true },
 };
 const HAIR_COLORS = {
   brown: { name: '갈색 머리', icon: '🤎', c: ['#7a4a2e', '#a8703f'] },
   black: { name: '까만 머리', icon: '🖤', c: ['#2e2433', '#5a4663'] },
   gold:  { name: '금발 머리', icon: '💛', c: ['#f0bb45', '#ffe08a'] },
   pink:  { name: '분홍 머리', icon: '🌷', c: ['#ff94c4', '#ffd0e6'] },
+  red:   { name: '빨강 머리', icon: '🍎', c: ['#d0583a', '#f4905e'] },
+  blue:  { name: '파랑 머리', icon: '💙', c: ['#4a72d8', '#8ab0ff'] },
+  purple: { name: '보라 머리', icon: '💜', c: ['#8a5ad0', '#c4a2ff'] },
+  mint:  { name: '민트 머리', icon: '🌱', c: ['#3fb498', '#9aecd4'] },
+};
+
+// Treasures are not worn: they stand on the treasure shelf, the wardrobe's
+// last tab. Each one is a present like the clothes.
+const TREASURES = {
+  shell:    { name: '조개껍데기', icon: '🐚' },
+  gem:      { name: '반짝 보석',  icon: '💎' },
+  orb:      { name: '수정 구슬',  icon: '🔮' },
+  yoyo:     { name: '요요',       icon: '🪀' },
+  kite:     { name: '방패연',     icon: '🪁' },
+  puzzle:   { name: '퍼즐',       icon: '🧩' },
+  doll:     { name: '나무 인형',  icon: '🪆' },
+  carousel: { name: '회전목마',   icon: '🎠' },
+  piano:    { name: '꼬마 피아노', icon: '🎹' },
+  violin:   { name: '바이올린',   icon: '🎻' },
+  trumpet:  { name: '트럼펫',     icon: '🎺' },
+  drum:     { name: '작은 북',    icon: '🥁' },
+  paints:   { name: '물감',       icon: '🎨' },
+  clover:   { name: '네잎클로버', icon: '🍀' },
+  key:      { name: '황금 열쇠',  icon: '🗝️' },
+  compass:  { name: '나침반',     icon: '🧭' },
+  bell:     { name: '은방울',     icon: '🔔' },
+  boat:     { name: '장난감 배',  icon: '⛵' },
+  mirror:   { name: '손거울',     icon: '🪞' },
+  cupcake:  { name: '컵케이크',   icon: '🧁' },
+  shroom:   { name: '반짝 버섯',  icon: '🍄', forest: true },
+  acorn:    { name: '도토리',     icon: '🌰', forest: true },
+  marble:   { name: '무지개 구슬', icon: '🌈', unicorn: true },
+  plush:    { name: '유니콘 인형', icon: '🦄', unicorn: true },
+  teapot:   { name: '요정 찻주전자', icon: '🫖', fairy: true },
+  tulip:    { name: '튤립 화분',  icon: '🌷', fairy: true },
 };
 
 // Unicorns to ride. These only come from the Unicorn Village.
@@ -261,7 +351,10 @@ const LINES = {
   ],
   yes: ['You look lovely!', 'So pretty!', 'That suits you perfectly!', 'Beautiful, {title}!', 'Wow, look at you!'],
   keep: ["Okay! I'll put it in your wardrobe.", 'Into the wardrobe it goes!', 'Lovely! You can try it on in your room later.'],
-  room: ['Here is your room, {title}!', 'Welcome to your own room!', 'Your wardrobe is waiting for you!'],
+  // A treasure for her shelf (giftLine in game.js says the present line
+  // until this one is recorded in the giver's voice).
+  treasure: ['A little treasure for you!', 'Look! A shiny treasure for you!', 'Here is a treasure for your shelf!'],
+  room:['Here is your room, {title}!', 'Welcome to your own room!', 'Your wardrobe is waiting for you!'],
   dressup: ["Let's dress up!", 'What shall we wear today?', 'Pick your favourite!'],
   castle: ['Welcome home, {title}!', 'Back to the castle!', 'Home sweet home!'],
   house: ['Knock, knock! The {letter} house!', 'Here is the {letter} house!', "Let's visit the {letter} house!"],

@@ -14,7 +14,8 @@
 //
 // Slots keep their princess names so the reward and wardrobe code works
 // unchanged: hand = arms, hair = legs, shape = body, head = head,
-// dress = paint colour, back = jetpack, ride = car, fairy = helper buddy.
+// dress = paint colour, back = jetpack, wings or propeller, ride = car,
+// fairy = helper buddy, treasure = the treasure shelf (ROBOT_TREASURES).
 
 // ---- Robot parts -----------------------------------------------------------
 // Unmarked parts come from anyone (Robot Town hands out arms, legs and
@@ -28,6 +29,9 @@ const ROBOT_PAINT = {
   yellow: { name: '노란',   icon: '🟡', c: ['#ffd34d', '#e0a02a', '#fff2b0', '#ff6b6b'] },
   green:  { name: '초록',   icon: '🟢', c: ['#5fd08a', '#36a066', '#c0f4d4', '#ffd34d'] },
   orange: { name: '주황',   icon: '🟠', c: ['#ffa04a', '#e0702a', '#ffd4a8', '#5aa6f0'] },
+  pink:   { name: '분홍',   icon: '🌸', c: ['#ff8fc0', '#e0609a', '#ffd0e6', '#ffd34d'] },
+  mint:   { name: '민트',   icon: '🍃', c: ['#6fe0c0', '#36aa8c', '#c8fff0', '#ff8a5a'] },
+  sky:    { name: '하늘',   icon: '☁️', c: ['#8fd3ff', '#5aa6e0', '#e0f6ff', '#ffd34d'] },
   purple: { name: '보라',   icon: '🟣', c: ['#a88cff', '#7a5ad8', '#dcd0ff', '#ffd34d'], forest: true },
   white:  { name: '하얀',   icon: '⚪', c: ['#f4f6fc', '#c4cce0', '#ffffff', '#ff6b6b'], forest: true },
   black:  { name: '까만',   icon: '⚫', c: ['#4a4e6e', '#33364f', '#7a80a4', '#6ff0ff'], forest: true },
@@ -50,12 +54,16 @@ const ROBOT_HEADS = {
   trex:    { name: '티라노 헬멧',   icon: '🦖', forest: true },
   tricera: { name: '트리케라 헬멧', icon: '🦕', forest: true },
   astro:   { name: '우주 헬멧',     icon: '🪐', shop: true, price: 12 },
+  cat:     { name: '고양이 머리',   icon: '🐱' },
+  shark:   { name: '상어 헬멧',     icon: '🦈' },
 };
 const ROBOT_ARMS = {
   basic:  { name: '기본 팔',   icon: '🦾' },
   claw:   { name: '집게 팔',   icon: '🦀' },
   drill:  { name: '드릴 팔',   icon: '🔩' },
   magnet: { name: '자석 팔',   icon: '🧲' },
+  hammer: { name: '망치 팔',   icon: '🔨' },
+  scoop:  { name: '포크레인 팔', icon: '🚧' },
   rocket: { name: '로켓 주먹', icon: '🥊', shop: true, price: 10 },
 };
 const ROBOT_LEGS = {
@@ -63,11 +71,46 @@ const ROBOT_LEGS = {
   wheel:  { name: '외바퀴',      icon: '🛞' },
   treads: { name: '탱크 바퀴',   icon: '🚜' },
   spring: { name: '용수철 다리', icon: '🌀' },
+  skates: { name: '롤러스케이트', icon: '🛼' },
+  dino:   { name: '공룡 발',     icon: '🦖', forest: true },
   hover:  { name: '부스터 다리', icon: '🔥', shop: true, price: 12 },
 };
 const ROBOT_BACKS = {
   none:    { name: '없음',   icon: '' },
+  wings:   { name: '로봇 날개', icon: '🪽' },
+  propeller: { name: '프로펠러', icon: '🚁' },
   jetpack: { name: '제트팩', icon: '🚀', shop: true, price: 15 },
+};
+// The workbench's treasure shelf (TREASURES in the princess edition).
+const ROBOT_TREASURES = {
+  gear:      { name: '톱니바퀴',   icon: '⚙️' },
+  bolt:      { name: '볼트',       icon: '🔩' },
+  wrench:    { name: '스패너',     icon: '🔧' },
+  toolbox:   { name: '공구 상자',  icon: '🧰' },
+  bulb:      { name: '전구',       icon: '💡' },
+  torch:     { name: '손전등',     icon: '🔦' },
+  antenna:   { name: '안테나',     icon: '📡' },
+  satellite: { name: '인공위성',   icon: '🛰️' },
+  telescope: { name: '망원경',     icon: '🔭' },
+  microscope: { name: '현미경',    icon: '🔬' },
+  flask:     { name: '실험관',     icon: '🧪' },
+  magnet:    { name: '말굽자석',   icon: '🧲' },
+  gamepad:   { name: '게임기',     icon: '🎮' },
+  joystick:  { name: '조이스틱',   icon: '🕹️' },
+  radio:     { name: '라디오',     icon: '📻' },
+  clock:     { name: '자명종',     icon: '⏰' },
+  trophy:    { name: '트로피',     icon: '🏆' },
+  medal:     { name: '금메달',     icon: '🥇' },
+  planet:    { name: '작은 행성',  icon: '🪐' },
+  comet:     { name: '별똥별',     icon: '🌠' },
+  rocket:    { name: '장난감 로켓', icon: '🚀' },
+  lights:    { name: '신호등',     icon: '🚦' },
+  bone:      { name: '공룡 뼈',    icon: '🦴', forest: true },
+  egg:       { name: '공룡 알',    icon: '🥚', forest: true },
+  chequer:   { name: '체크 깃발',  icon: '🏁', unicorn: true },
+  tyre:      { name: '타이어',     icon: '🛞', unicorn: true },
+  plane:     { name: '꼬마 비행기', icon: '🛩️', fairy: true },
+  parachute: { name: '낙하산',     icon: '🪂', fairy: true },
 };
 // A complete basic robot.
 const ROBOT_OUTFIT = { dress: 'blue', shape: 'basic', head: 'dome', hand: 'basic', hair: 'basic', back: 'none', ride: 'none', fairy: 'none' };
@@ -84,6 +127,7 @@ if (isCaptain()) {
   swap(HAND_ITEMS, ROBOT_ARMS);
   swap(HAIR_COLORS, ROBOT_LEGS);
   swap(BACK_ITEMS, ROBOT_BACKS);
+  swap(TREASURES, ROBOT_TREASURES);
   // UNICORNS and FAIRIES are swapped for cars and buddies by
   // js/captain-car.js and js/captain-drone.js.
   swap(DEFAULT_OUTFIT, ROBOT_OUTFIT);
@@ -96,6 +140,7 @@ if (isCaptain()) {
     ],
     yes: ['Looking cool!', 'Awesome upgrade!', 'Super cool, {title}!', 'Beep boop! You look great!', 'Wow, what a robot!'],
     keep: ["Okay! I'll put it on your workbench.", 'Off to the workbench it goes!', 'Great! You can fit it on in your room later.'],
+    treasure: ['A cool treasure for you!', 'Look! A treasure for your workbench!', 'Here is something cool for your shelf!'],
     dressup: ["Let's build your robot!", 'Time for a robot upgrade!', 'Pick your favourite parts!'],
     shop: ['What would you like today?', 'Pick a cool part!', 'These parts are extra special!'],
     poor: ['Oh, you need a few more coins. Beat the villains in the cave!', 'Almost! Visit the Villain Cave for more coins.', 'Not enough coins yet. The cave villains drop lots of coins!'],
@@ -104,9 +149,11 @@ if (isCaptain()) {
     // Said as a new part goes on and shows what it does (captainShowOff):
     // by slot, then by part. Recorded for every giver and the narrator.
     partShow: {
-      hand: { basic: 'Wave, wave! Robot hands!', claw: 'Snip, snip! Claw arms!', drill: 'Whirr! Drill arms!', magnet: 'Clink! Magnet arms!', rocket: 'Boom! Rocket fists!' },
-      hair: { basic: 'Stomp, stomp! Robot legs!', wheel: 'Roll, roll! One big wheel!', treads: 'Rumble, rumble! Tank treads!', spring: 'Boing, boing! Spring legs!', hover: 'Whoosh! Booster legs!' },
-      back: { jetpack: 'Zoom! Jetpack on!' },
+      hand: { basic: 'Wave, wave! Robot hands!', claw: 'Snip, snip! Claw arms!', drill: 'Whirr! Drill arms!', magnet: 'Clink! Magnet arms!', rocket: 'Boom! Rocket fists!',
+        hammer: 'Bang, bang! Hammer arms!', scoop: 'Scoop, scoop! Digger arms!' },
+      hair: { basic: 'Stomp, stomp! Robot legs!', wheel: 'Roll, roll! One big wheel!', treads: 'Rumble, rumble! Tank treads!', spring: 'Boing, boing! Spring legs!', hover: 'Whoosh! Booster legs!',
+        skates: 'Zoom, zoom! Roller skates!', dino: 'Stomp, stomp! Dino feet!' },
+      back: { jetpack: 'Zoom! Jetpack on!', wings: 'Whoosh! Robot wings!', propeller: 'Whirr! A propeller!' },
       head: 'Ta-da! A new head!',
       shape: 'Ta-da! A new body!',
       dress: 'Ta-da! New paint!',
@@ -126,12 +173,20 @@ function captainWardrobe(wardrobe) {
   // right village.
   for (const [k, car] of Object.entries(UNICORNS)) if (k !== 'none') car.unicorn = true;
   for (const [k, buddy] of Object.entries(FAIRIES)) if (k !== 'none') { buddy.fairy = true; buddy.glow = buddy.glow || '#9fe8ff'; }
+  // Each tab's title and picture; the head, body, arm and leg tabs show
+  // the robot's own part (`part`, see renderTabs in game.js).
   const rows = {
-    head: '머리', shape: '몸통', hand: '팔', hair: '다리', dress: '페인트 색',
-    back: '등에 메는 것 (부품 상점)', ride: '자동차 (자동차 마을)', fairy: '도우미 (드론 마을)',
+    head: ['머리', '🤖'], shape: ['몸통', '🔋'], hand: ['팔', '🦾'], hair: ['다리', '🦿'], dress: ['페인트 색', '🎨'],
+    back: ['등에 메는 것', '🚀'], ride: ['자동차 (자동차 마을)', '🚗'], fairy: ['도우미 (드론 마을)', '🛸'], treasure: ['보물 선반', '🧰'],
   };
   const order = Object.keys(rows);
-  for (const w of wardrobe) if (rows[w.slot]) w.title = rows[w.slot];
+  for (const w of wardrobe) {
+    if (!rows[w.slot]) continue;
+    [w.title, w.icon] = rows[w.slot];
+    delete w.boyTitle;
+    delete w.boyIcon;
+    w.part = ['head', 'shape', 'hand', 'hair'].includes(w.slot);
+  }
   wardrobe.sort((a, b) => order.indexOf(a.slot) - order.indexOf(b.slot));
   document.querySelector('#wardrobe .wd-done').textContent = '정비 끝! 🔧';
   document.querySelector('#shop .wd-name').textContent = place('shop');
@@ -142,12 +197,13 @@ function captainItemLabel(slot, v) {
   return slot === 'dress' ? `${v.icon} ${v.name} 페인트` : `${v.icon} ${v.name}`;
 }
 
-// The reward card's wording for a new part, car or buddy (also after a buy).
-function captainRewardText(isNew, label, ride, buddy) {
-  ui.rewardName.textContent = !isNew ? label : ride ? `${label} · 새 자동차가 생겼어요!` : buddy ? `${label} · 새 친구가 생겼어요!` : `${label} · 정비대에 쏙!`;
+// The reward card's wording for a new part, car, buddy or treasure (also
+// after a buy).
+function captainRewardText(isNew, label, ride, buddy, shelf) {
+  ui.rewardName.textContent = !isNew ? label : ride ? `${label} · 새 자동차가 생겼어요!` : buddy ? `${label} · 새 친구가 생겼어요!` : shelf ? `${label} · 보물 선반에 쏙!` : `${label} · 정비대에 쏙!`;
   // Car buttons are worded by js/captain-car.js.
   const car = typeof CAPTAIN_RIDE_TEXT !== 'undefined' ? CAPTAIN_RIDE_TEXT : { yes: '지금 탈래요 🚗', no: '차고에 둘래요 🅿️' };
-  ui.rewardYes.textContent = ride ? car.yes : buddy ? '같이 다닐래요 🛸' : '장착할래요 🔧';
+  ui.rewardYes.textContent = ride ? car.yes : buddy ? '같이 다닐래요 🛸' : shelf ? '보물 선반에 둘래요 ⚙️' : '장착할래요 🔧';
   ui.rewardNo.textContent = !isNew ? '그대로 할래요' : ride ? car.no : buddy ? '격납고에 둘래요 🛬' : '정비대에 둘래요 🧰';
 }
 
@@ -296,6 +352,44 @@ const ROBOT_HEAD_ROWS = {
     'bddDkkkkkkkkDDDB',
     '.wwwwwwwwwwwwww.',
     '..aAaAaAaAaAaA..',
+    '....jjjjjjjj....',
+  ] },
+  // Pointed ears, pink inside, and whiskers either side of the screen.
+  cat: { y0: 2, rows: [
+    '.d............d.',
+    '.dd..........dd.',
+    '.dpd........dpd.',
+    '.dppd......dppD.',
+    '.dLpdddddddddpD.',
+    '.dLLddddddddddD.',
+    '.dLLddddddddddD.',
+    '.dLkkkkkkkkkkDD.',
+    'adLkEekkkkEekDDa',
+    'AdLkeekkkkeekDDA',
+    'wdLkeekkkkeekDDw',
+    '.dLkpkekkekpkDD.',
+    'wdLkkkkeekkkkDDw',
+    '.ddDkkkkkkkkDDD.',
+    '..dDDDDDDDDDDD..',
+    '....jjjjjjjj....',
+  ] },
+  // A fin on top and rows of teeth round the screen.
+  shark: { y0: 2, rows: [
+    '.......dd.......',
+    '......dLd.......',
+    '.....dLLd.......',
+    '....dLLddd......',
+    '..ddddddddddDD..',
+    '.dLLddddddddddD.',
+    '.dLwAwAwAwAwADD.',
+    '.dLkkkkkkkkkkDD.',
+    'adLkEekkkkEekDDa',
+    'AdLkeekkkkeekDDA',
+    'adLkpkekkekpkDDa',
+    '.dLkkkkeekkkkDD.',
+    '.dLAwAwAwAwAwDD.',
+    '.ddDDDDDDDDDDDD.',
+    '..dDDDDDDDDDDD..',
     '....jjjjjjjj....',
   ] },
 };
@@ -493,6 +587,42 @@ const ROBOT_HANDS = {
     'aA.ss.aA..',
     '...s......',
   ]],
+  // A steel hammer that swings down.
+  hammer: [[
+    '...aA.....',
+    '...nN.....',
+    '..aaaaa...',
+    '.aMMaaaA..',
+    '.aMaaaAA..',
+    '.aaaaaAA..',
+    '..AAAAA...',
+  ], [
+    '...aA.....',
+    '...nN.....',
+    '...nN.....',
+    '.aaaaaa...',
+    'aMMaaaaA..',
+    'aMaaaaAA..',
+    '.AAAAAA...',
+  ]],
+  // A yellow digger bucket with steel teeth: open, then tipped up.
+  scoop: [[
+    '...aA.....',
+    '...jj.....',
+    '.yyyyyy...',
+    'yYYYYYYy..',
+    'yY____Yy..',
+    'yY____Yy..',
+    'yYyyyyYy..',
+    'aAaAaAaA..',
+  ], [
+    '...aA.....',
+    '...jj.....',
+    '.yyyyyy...',
+    'yYYYYYYy..',
+    'yYyyyyYy..',
+    '.aAaAaA...',
+  ]],
   // A big teal rocket glove on a metal cuff, its booster flickering.
   rocket: [[
     'u.aaaa....',
@@ -566,6 +696,34 @@ const ROBOT_LEG_ROWS = {
     'dLdddD',
     'dLdddD',
     'jjjjjj',
+  ]],
+  // Roller skates: a striped boot on four little wheels.
+  skates: [[
+    '..jj..',
+    '..aA..',
+    '..aA..',
+    '..jj..',
+    '..aA..',
+    '.dddd.',
+    'dLdddD',
+    'dLdddD',
+    'tttttt',
+    'jjjjjj',
+    'nN..nN',
+  ]],
+  // Big dinosaur feet with three ivory claws.
+  dino: [[
+    '..jj..',
+    '..dD..',
+    '.ddDD.',
+    '.dLdD.',
+    '.dLdD.',
+    '.dLdDD',
+    'ddLddD',
+    'dLdddD',
+    'dLdddD',
+    'dddddD',
+    'i.i.i.',
   ]],
   // Booster legs: a big tube with a jet nozzle and a flame, flickering.
   hover: [[
@@ -651,6 +809,25 @@ const ROBOT_TREADS = [[
 ]];
 // Jetpack: a little rocket over each shoulder, flames below.
 const ROBOT_JETPACK = ['.r.', 'rrR', 'aMA', 'aaA', 'tttt', 'aaA', 'aaA', 'aaA', 'aaA', 'aaA', 'aaA', 'jjj'];
+// Steel wings in the robot's paint, beside its head (the left one).
+const ROBOT_WINGS = [
+  'aa.....',
+  'aMa....',
+  'aMda...',
+  'aMdda..',
+  '.aMdda.',
+  '.aMddda',
+  '..aMdda',
+  '..aMdda',
+  '...aMda',
+  '...aaMa',
+  '....aaa',
+];
+// A propeller on a mast above the head; the blades turn between frames.
+const ROBOT_PROPELLER = [
+  ['rrrrrrrrrjMMjrrrrrrrrr', 'RRRRRRRRRjAAjRRRRRRRRR', '..........aA..........'],
+  ['......rrrjMMjrrr......', '......RRRjAAjRRR......', '..........aA..........'],
+];
 
 // A grid of colours to stamp bitmaps into (w x h, the robot's by default).
 function robotGrid(w = ROBOT_W, h = ROBOT_H) {
@@ -712,6 +889,10 @@ function robotSprite(outfit, frame) {
     for (const flip of [false, true]) G.stamp(ROBOT_JETPACK, pal, 2, 8, flip);
     flame(3, 20);
     flame(24, 20);
+  } else if (outfit.back === 'wings') {
+    for (const flip of [false, true]) G.stamp(ROBOT_WINGS, pal, 0, 5, flip);
+  } else if (outfit.back === 'propeller') {
+    G.stamp(ROBOT_PROPELLER[step ? 1 : 0], pal, 3, 0, false);
   }
   if (outfit.head === 'tricera') G.stamp(ROBOT_FRILL, pal, OX + 1, 1, false);
   const back = ROBOT_BODY_BACK[outfit.shape];
@@ -896,7 +1077,7 @@ function robotShowPose(show, ms) {
       const b = Math.abs(Math.sin(a * Math.PI * 3));
       pose.dy = -Math.round(b * 8);
       pose.frame = act && b < 0.35 ? 1 : 0;
-    } else if (value === 'wheel' || value === 'treads') {
+    } else if (value === 'wheel' || value === 'treads' || value === 'skates') {
       pose.frame = alt(80);
       pose.dx = Math.round(Math.sin(a * Math.PI * 2) * 6);
     } else if (value === 'hover') {
@@ -906,7 +1087,8 @@ function robotShowPose(show, ms) {
       pose.frame = alt(160);
       pose.dy = -pose.frame;
     }
-  } else if (slot === 'back' && value === 'jetpack') {
+  } else if (slot === 'back' && value !== 'none') {
+    // The jetpack, wings and propeller lift it off the ground.
     pose.frame = Math.floor(ms / 60) % 2;
     pose.dy = -Math.round(Math.sin(a * Math.PI) * 12);
   } else if (act) {
@@ -999,7 +1181,7 @@ function robotShowExtras(show, ms, pose, img, dot, lift) {
       dot(x + 10, y + 4, 5, 1, '#ffffff');
       dot(x + 11, y + 3, 3, 3, '#fff6c0');
     }
-  } else if (slot === 'hair' && (value === 'wheel' || value === 'treads')) {
+  } else if (slot === 'hair' && (value === 'wheel' || value === 'treads' || value === 'skates')) {
     // Dust behind the wheels as it rolls back and forth.
     for (let i = 0; i < 12; i++) {
       const born = 260 + i * 85;
@@ -1088,8 +1270,9 @@ function robotShowSound(show) {
   else if (part === 'magnet') { caveTone(300, 600, 0.4, 'sine', 0.05, 0.3); caveTone(2400, 2300, 0.12, 'triangle', 0.06, 0.75); }
   else if (part === 'rocket') { caveTone(180, 620, 0.35, 'sawtooth', 0.04, 0.35); caveTone(140, 60, 0.25, 'square', 0.07, 0.7); }
   else if (part === 'spring') for (let i = 0; i < 3; i++) caveTone(260, 720, 0.18, 'sine', 0.06, 0.25 + i * 0.35);
-  else if (part === 'wheel' || part === 'treads') caveTone(90, 140, 1.0, 'sawtooth', 0.03, 0.25);
-  else if (part === 'hover' || part === 'jetpack') caveTone(300, 1100, 0.8, 'triangle', 0.04, 0.25);
+  else if (part === 'wheel' || part === 'treads' || part === 'skates') caveTone(90, 140, 1.0, 'sawtooth', 0.03, 0.25);
+  else if (part === 'hover' || part === 'jetpack' || part === 'wings' || part === 'propeller') caveTone(300, 1100, 0.8, 'triangle', 0.04, 0.25);
+  else if (part === 'hammer') for (let i = 0; i < 3; i++) caveTone(160, 90, 0.08, 'square', 0.07, 0.3 + i * 0.3);
   else for (let i = 0; i < 4; i++) caveTone(880 + i * 220, 1320 + i * 220, 0.1, 'triangle', 0.04, 0.3 + i * 0.12);
 }
 
@@ -1127,6 +1310,12 @@ function captainStage(cv, outfit, riding) {
   robotStages.set(cv, { outfit: Object.assign({}, outfit), riding: !!riding });
   drawStage(cv, performance.now());
   if (!stageLoop) stageLoop = requestAnimationFrame(stageTick);
+}
+
+// The stage on `cv` stops, so something else can be drawn there (a
+// treasure in the shop's mirror).
+function captainStageStop(cv) {
+  robotStages.delete(cv);
 }
 
 // Redraws the open stages every frame, and stops when they are closed.
@@ -1294,18 +1483,19 @@ const robotIconCache = new Map();
 
 // A canvas showing `value` in `slot` on this robot, or null for slots
 // without one (paint, cars and buddies).
-function captainPartIcon(slot, value, outfit) {
+function captainPartIcon(slot, value, outfit, max = 40) {
   const box = ROBOT_PART_BOX[slot];
   if (!box || value === 'none') return null;
   const o = Object.assign({}, outfit, { [slot]: value });
   const dpr = Math.min(3, Math.round(window.devicePixelRatio || 1));
-  const key = `${robotKey(o)}|${slot}|${dpr}`;
+  const key = `${robotKey(o)}|${slot}|${dpr}|${max}`;
   if (!robotIconCache.has(key)) {
     if (robotIconCache.size > 400) robotIconCache.clear();
     let [x, y, w, h] = box;
-    if (slot === 'shape') {
-      // Bodies: the torso, and plates, spikes or a tail if it has them.
-      const more = robotChangeBox('shape', Object.assign({}, o, { shape: 'basic' }), o);
+    if (slot === 'shape' || slot === 'back') {
+      // Bodies: the torso, and plates, spikes or a tail if it has them;
+      // backs: wings and a propeller reach up past the head.
+      const more = robotChangeBox(slot, Object.assign({}, o, { [slot]: slot === 'shape' ? 'basic' : 'none' }), o);
       if (more) {
         const x1 = Math.max(x + w, more[0] + more[2]);
         const y1 = Math.max(y + h, more[1] + more[3]);
@@ -1315,8 +1505,8 @@ function captainPartIcon(slot, value, outfit) {
         h = y1 - y;
       }
     }
-    // Up to 40 screen pixels across, in device pixels.
-    const k = [3, 2, 1.5].find(n => Math.max(w, h) * n <= 40) || 1.5;
+    // Up to `max` screen pixels across, in device pixels.
+    const k = [4, 3, 2.5, 2, 1.5].find(n => Math.max(w, h) * n <= max) || 1.5;
     const cv = makeCanvas(Math.round(w * k) * dpr, Math.round(h * k) * dpr);
     const ctx = cv.getContext('2d');
     ctx.imageSmoothingEnabled = false;
@@ -1331,10 +1521,4 @@ function captainPartIcon(slot, value, outfit) {
   cv.style.height = `${icon.height / dpr}px`;
   cv.getContext('2d').drawImage(icon, 0, 0);
   return cv;
-}
-
-// A paint chip's dot: shiny paints get a metal gradient.
-function captainSwatch(item) {
-  const c = item.c;
-  return item.metal ? `linear-gradient(135deg, ${c[2]}, ${c[0]} 45%, ${c[1]})` : c[0];
 }

@@ -22,11 +22,19 @@ npx http-server -p 8080 .
   tap 🔊 to hear it. Villagers then greet her as "Prince Seoyeon" and so on.
   Princes and kings are boys; princesses, queens and fairies are girls; for
   a knight, wizard, explorer or captain pick 👧 여자 or 👦 남자.
-- **Boy hero**: a boy has short hair and wears a tunic, prince coat or king's
-  robe (in the same colours as the dresses), a prince circlet, king crown or
-  feather hat, and carries a sword, golden sceptre or the forest's star
-  sword. Presents only offer things that suit the hero; capes, crowns, hair
-  colours and unicorns suit both. Each look remembers its own outfit.
+- **Boy hero**: a boy has short hair and his own clothes instead of
+  dresses, each drawn in pixels in any of the colours: a knight's tunic, a
+  prince coat, a king's robe, a suit with a white shirt and red tie, steel
+  armour with a tabard, a sailor suit, a hanbok (jeogori and baji), an
+  explorer's vest and shorts, a starry wizard robe, and the Fairy
+  Village's leaf tunic. On his head a prince circlet, king crown, feather
+  hat, knight's helmet, pirate hat, wizard hat, explorer's sun helmet,
+  baseball cap or gat; in his hand a sword, sceptre, star sword, shield,
+  bow, wizard's staff, telescope or flag; on his back a knight's red cape
+  or the forest's dragon wings. Presents, the shop and the wardrobe only
+  offer things that suit the hero (`girl` / `boy` on an item in
+  `js/data.js`); colours, crowns, capes, hair colours, treasures, unicorns
+  and fairies suit both. Each look remembers its own outfit.
 
 - The town is 40 x 40 tiles and the camera follows the princess. Tap the
   ground to walk there.
@@ -123,14 +131,23 @@ npx http-server -p 8080 .
   The play-time clock, the limit and the sleep screen are in `js/guide.js`.
 - **Presents and the gift meter**: 🎁 ●●○ next to the stars fills a pip
   for every answer right the first time (not in the cave, which pays
-  coins); the third opens a present, which
-  can be a dress colour, a dress shape, a crown or tiara, a wand or bouquet,
-  or a hair colour (the villages' own treasures there first). The child sees
-  "now" and "after" side by side (on foot, unless the present is a unicorn)
-  and chooses to wear it now or put it in her wardrobe. A present is never
-  something she has: once there is nothing new to give there, a full meter
-  gives a pack of three stickers she hasn't found yet instead (fairy dust or
-  batteries once the album is full).
+  coins); the third opens a present from whoever she answered last. There
+  are about a hundred things to collect for each look (16 dress colours,
+  8 dresses or 10 boy outfits, 8 hair colours, hats and crowns, things to
+  hold, wings and capes, unicorns, fairies, and 26 treasures for the
+  treasure shelf: a shell, a kite, a toy piano, a golden key…). A present
+  is picked by kind first (so colours don't crowd out the rest), then at
+  random among the things of that kind she doesn't have that suit the
+  hero. A unicorn gives itself and a fairy villager her favourite fairy
+  first; a village's own treasures (`forest`, `unicorn`, `fairy` on an
+  item) come before anything else there and only from there. When the
+  villager's own one is hers already, it is something else new; a present
+  is never something she has. Once nobody there has anything new left, a
+  full meter gives a pack of three stickers she hasn't found yet instead
+  (fairy dust or batteries once the album is full). The child sees "now"
+  and "after" side by side (on foot, unless the present is a unicorn) and
+  chooses to wear it now or put it in her wardrobe; a treasure shows on
+  its own, with one button that puts it on the shelf.
 - **Sticker album (📒)**: every right answer, first try or after a hint,
   puts the question's word in the album as a sticker (its picture and the
   word, first letter in colour). A new one flies from the card into 📒,
@@ -159,14 +176,31 @@ npx http-server -p 8080 .
   about two seconds, and a tap anywhere ends it.
 - **Wardrobe**: every present is kept. In the throne room, the 🎀 door on
   the right leads to the princess's own room. Tap the wardrobe or the mirror
-  to change clothes freely; presents not yet earned show as ❓.
+  to change clothes freely. A row of picture tabs (she can't read yet) has
+  one tab per kind: 👗 dresses (👕 a boy's clothes), 🎨 colours, 💇 hair,
+  👑 head, 🪄 hand (🗡️), 🦋 wings and capes (🦸), 🧚 fairy friends,
+  🦄 unicorns and 💎 the treasure shelf. Each thing is a picture: her
+  wearing it (the whole of her for clothes and colours, her head for hats
+  and hair), or the thing itself (what she holds, wings and capes, the
+  unicorn, the fairy, the treasure). Things not hers yet are a grey shape
+  with a ❓ and tapping one goes "nope"; a treasure hops when tapped. Over
+  the pictures, the tab's name and how many of them she has; the mirror
+  still shows her outfit, and the last present sparkles (✨) on its tab,
+  which the wardrobe opens on. In the robot edition the workbench has the
+  same tabs for heads, bodies, arms, legs, paint, backpacks, cars, buddies
+  and treasures, the part tabs showing the robot's own parts. Code in
+  `renderWardrobe` and `itemPicture` in `js/game.js`; the tabs are
+  `WARDROBE`.
 - **Starlight Forest (level 2)**: a gate at the south end of the main road
   opens at 10 stars. The forest folk (★ bubble) ask harder questions: four
   words that share the first letter (hug / hut / hat / hen), the missing
   middle sound (c ? t), the missing last sound (ca ?), reading a word with
   no voice and picking its picture, hearing a word's sounds one by one
-  ("/s/ … /u/ … /n/") and picking its picture, and rhymes. Only the forest gives out fairy wings, a starlight cape and a
-  night-sky dress. Word families live in `WORD_FAMILIES` in `js/data.js`.
+  ("/s/ … /u/ … /n/") and picking its picture, and rhymes. Only the forest
+  (and the villages past it) gives out its treasures: fairy wings, a
+  starlight cape, a night-sky dress, the star sword and dragon wings for a
+  boy, a glowing mushroom and an acorn. Word families live in
+  `WORD_FAMILIES` in `js/data.js`.
 - **Unicorn Village (level 3)**: a gate at the south end of the forest path
   opens at 25 stars. The unicorns and their friends (♥ bubble) ask sentence
   questions: hear "The cow says moo." and pick *cow* from words that sound
@@ -174,7 +208,8 @@ npx http-server -p 8080 .
   Sentences live in `SENTENCES_L1`, `SENTENCES_L2` (easier) and `SENTENCES`
   in `js/data.js`.
 - **Unicorns**: presents in the Unicorn Village (a full gift meter) are its
-  eight unicorns first. Tap 🦄 (top right) or the waiting unicorn to ride, which is
+  eight unicorns and its treasures first (a unicorn horn, a rainbow cape, a
+  rainbow marble and a unicorn plush). Tap 🦄 (top right) or the waiting unicorn to ride, which is
   faster than walking. She gets off at the door of a house or the castle and
   the unicorn waits outside. Pick which unicorn to ride in the wardrobe.
 - **Crystal Cave (level 4)**: a rocky hill at the west end of the forest's
@@ -187,8 +222,11 @@ npx http-server -p 8080 .
 - **Starlight Shop**: the golden cottage on the forest's cross path. Tap it
   or the shopkeeper (🪙 bubble) to buy anything she doesn't own yet with
   coins, including a few shop-only treasures (crystal dress, silver hair,
-  gem headband, firefly lantern). Prices are in `shopPrice()` in
-  `js/game.js`, or `price` on an item.
+  gem headband, firefly lantern, marked ✨). It has the wardrobe's picture
+  tabs (only the kinds with something left to buy) and pictures with
+  prices; the mirror shows her with the one picked on (a treasure on its
+  own). Prices are in `shopPrice()` in `js/game.js` (treasures 3 coins, a
+  village's 5), or `price` on an item.
 - **Fairy Village (level 5)**: a gate at the east end of town's lower road
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
@@ -201,13 +239,15 @@ npx http-server -p 8080 .
   `js/quiz.js`). Between spelling questions the fairies also ask the
   easier reading and sound-blending ones.
 - **Fairy friends**: presents in the Fairy Village (a full gift meter) are
-  its six little fairies first (each fairy villager offers her own first). Her fairy
+  its six little fairies and its treasures first (a petal dress, a leaf
+  tunic for a boy, butterfly wings, a fairy teapot and a tulip; each fairy
+  villager offers her own fairy first). Her fairy
   flies above her head and trails after her, also while riding; pick one
   in the wardrobe. Every answer right the first time there also gives 2–4 ✨ fairy dust,
   shown next to the stars.
 - **A friend that grows**: in her room, tap the fairy friend flying over
   her (a ring round it shows how far it is to the next stage, and a ✨
-  bubble when she has dust), or the ✨ chip at the front of the fairy row in
+  bubble when she has dust), or the ✨ chip at the front of the fairy tab in
   the wardrobe. A card shows the friend big; every tap on it (or on the ✨
   jar) feeds it one dust. At 10, 25 and 45 dust (`FRIEND_STAGES`) it grows:
   a brighter glow, then a crown, then a little loop-the-loop dance, each
@@ -317,7 +357,7 @@ npx http-server -p 8080 .
 - 🖼️ picture hints on the answer cards (easier) are a parent setting now
   (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at }`, `music: false` when a parent turned the background music off, `at` when they last changed one), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit (and the one last worn as a girl and as a boy, `looks`), the presents she has (`owned`: a list per wardrobe slot, the treasure shelf's in `treasure`; an older version keeps names it doesn't know in its lists, drops a slot it doesn't know, and the next save from this one puts it back, since two saves' lists are joined), recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at }`, `music: false` when a parent turned the background music off, `at` when they last changed one), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -428,7 +468,10 @@ device's own voice.
 `node tools/smoke.js` (needs the `playwright` package) checks that no two
 scripts define the same global and that every scene (village homes too)
 builds without errors, for both a girl and a boy hero and the robot, and
-that every door can be reached and leads back out where it was.
+that every door can be reached and leads back out where it was; and that
+everything in the wardrobe that suits the hero draws walking, riding, in a
+portrait and as its wardrobe picture, and shows on the hero (a thing that
+looked the same as the next one in its slot would fail).
 `python tools/check-recordings.py` checks the recordings (see above).
 
 `node tools/check-visual.js` checks both editions at iPad sizes
@@ -439,8 +482,11 @@ dialog, the buttons a child taps are big enough (64 px), ▶ and the guest
 button show without scrolling, the HUD stays on one row with every counter
 and button showing, the sticker album and a celebration fit the screen
 with every word fitting its sticker, today's adventures fit on one row
-without scrolling, and every page of the books she reads herself fits its
-word tiles in two rows at most.
+without scrolling, every page of the books she reads herself fits its
+word tiles in two rows at most, and the wardrobe and the shop fit on every
+tab for a girl, a boy and the robot (the picture tabs on one row, tabs and
+pictures 64 px or 52 on the phone, every picture inside its tile, a row of
+them showing, the mirror and the buttons on screen).
 
 The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add
@@ -463,14 +509,19 @@ The other checks, all run by
   adventures played through in both editions (picked, ticked, the chest
   paying once, kept over a reload, new ones the next day), reading one
   of her own books to the end (a star once, a locked one stays locked),
+  presents for a girl, a boy and the robot (every villager gives until
+  nobody has anything new: never a repeat, also from a villager whose own
+  unicorn or fairy is hers, never something that doesn't suit the hero, a
+  village's treasures only from there, and the count full at the end),
   and the background music in both editions (it starts only after the
   first tap, ducks under a line and for a whole question, follows 🔊, the
   parent panel and its setting, a hidden page and the sleeping town, and
   plays nothing and breaks nothing without Web Audio).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), also next to the
-  deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
-  against the server still deployed.
+  deployed game (`origin/main`: it loads a save with new clothes and
+  treasures without an error, and the treasure shelf it drops comes back);
+  with `SYNC_SERVER_REF=origin/main` against the server still deployed.
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 
 Lines not recorded yet are listed; one the game actually says without a
@@ -560,7 +611,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/data.js`: content and settings
 - `js/account.js`: login / sign-up and the server save
 - `js/progress.js`: putting two copies of the save together (account sync)
-- `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
+- `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters, and the hero's clothes, hats, things to hold, wings and capes for a girl and a boy)
 - `js/world.js`: town and room layouts, pathfinding
 - `js/touch.js`: what things on the map do and say when tapped
 - `js/audio.js`: speech and sound effects
@@ -571,5 +622,5 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/minigame.js`: the fishing (magnet crane) game at the pond
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
-- `js/game.js`: game loop, camera, input, dialogs, presents
+- `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
 - `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations
