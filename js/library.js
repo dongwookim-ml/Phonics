@@ -64,6 +64,9 @@ const bookLine = (kind, vars) => line(`book-${kind}`, vars, BOOK_LINES[kind]);
 // ---- Book list -----------------------------------------------------------
 
 function openLibrary() {
+  // Once today's play time is up (js/guide.js) the library closes instead,
+  // so another book can't keep the town from going to sleep.
+  if (guideTimeUp()) { closeLibrary(); return; }
   state.busy = true;
   renderLibrary();
   libraryEl('library').classList.remove('hidden');
@@ -130,6 +133,7 @@ function readerMode(self) {
 }
 
 function openBook(book) {
+  if (guideTimeUp()) { closeLibrary(); return; } // as openLibrary
   Object.assign(library, { book, page: 0, sent: 0, playing: true, mode: 'read', quiz: null });
   libraryEl('library').classList.add('hidden');
   libraryEl('reader').classList.remove('hidden');
@@ -427,6 +431,7 @@ function selfLocked(b) {
 }
 
 function openSelfBook(book) {
+  if (guideTimeUp()) { closeLibrary(); return; } // as openLibrary
   Object.assign(library, { book, page: 0, sent: 0, playing: false, mode: 'self', quiz: null,
     self: { heard: book.pages.map(() => new Set()), ready: [], visit: 0 } });
   libraryEl('library').classList.add('hidden');

@@ -15,11 +15,12 @@
 //    and puts a ✓ on its cover, and a locked book stays locked;
 //  - the M3 cards, in both editions: closing one (or the parent panel over
 //    it) never frees the game under another or leaves it stuck, the
-//    feeding card stops her walk, 🔁 at the pond can't outrun the play
-//    limit, a wake is counted, a town left asleep wakes the next morning,
-//    no village's friends in the shop before its gate, no fish she'd name
-//    with the round's sound by another name (ALIAS), a friend's growth is
-//    cheered even after 👋, feeding is counted per tablet.
+//    feeding card stops her walk, neither 🔁 at the pond nor another book in
+//    the library can outrun the play limit, a wake is counted, a town left
+//    asleep wakes the next morning, no village's friends in the shop before
+//    its gate, no fish she'd name with the round's sound by another name
+//    (ALIAS), a friend's growth is cheered even after 👋, feeding is counted
+//    per tablet.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -598,6 +599,15 @@ async function cards(browser, edition) {
     await sleep(400);
     out.morning = { asleep: guide.asleep, shown: !document.getElementById('sleep').classList.contains('hidden'), busy: state.busy, day: state.playtime.day === guideDay(), wakes: state.playtime.wakes | 0 };
     window.Date = D;
+    // The library past the play limit: another book closes it, and the town sleeps.
+    state.playtime = { day: guideDay(), ms: 0, wakes: 0 };
+    openLibrary();
+    const libOpen = !document.getElementById('library').classList.contains('hidden');
+    state.playtime.ms = 60001;
+    openLibrary(); // 📚 다른 책 읽기
+    await sleep(300);
+    out.library = { libOpen, shut: ['library', 'reader'].every(id => document.getElementById(id).classList.contains('hidden')), asleep: guide.asleep };
+    if (guide.asleep) guideWake();
     state.settings.playLimit = 0;
     // Today's play time goes with both editions, like her level.
     save();
@@ -631,6 +641,7 @@ async function cards(browser, edition) {
   check(`${tag}: 👋 before the growing bite lands: the friend's new stage is still celebrated`, r.grow.stage === 1 && r.grow.said.includes(r.grow.line), r.grow);
   check(`${tag}: feeding is counted per tablet, an earlier plain count kept`, r.perDevice.mine === 1 && r.perDevice.fed === r.perDevice.want, r.perDevice);
   check(`${tag}: 🔁 at the pond past the play limit: the town sleeps`, !r.again.mini && r.again.asleep, r.again);
+  check(`${tag}: another book past the play limit closes the library, and the town sleeps`, r.library.libOpen && r.library.shut && r.library.asleep, r.library);
   check(`${tag}: a parent's wake keeps the minutes and counts the wake`, r.wake.ms >= 60001 && r.wake.wakes === 1 && !r.wake.up && r.wake.busy === false, r.wake);
   check(`${tag}: left asleep overnight, the town wakes in the morning`, r.night && !r.morning.asleep && !r.morning.shown && r.morning.busy === false && r.morning.day && r.morning.wakes === 0, r);
   check(`${tag}: today's play time is saved with both editions`, r.shared);
