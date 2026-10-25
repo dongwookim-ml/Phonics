@@ -11,7 +11,8 @@
 //    put, ball, cold) never count as readable;
 //  - every sound a word is sounded out with is a pure sound cut from the
 //    narrator's words (tools/letter-sounds.json), and every letter pair it
-//    knows is one the spelling tiles know (PART_SOUNDS);
+//    knows is one the spelling tiles know (PART_SOUNDS) or a doubled letter
+//    (ll, ss), which says its one letter's sound, as in js/quiz.js;
 //  - 4 to 6 pages of one sentence and a picture; levels 1 to 4 in order,
 //    the first book at level 1; ids unique.
 // Run: node tools/check-books.js  (no browser; tools/quiz-test.js runs it too)
@@ -55,7 +56,7 @@ function check() {
   }
   for (const [w, lv, from] of expect) if (D.decodeLevel(w) !== lv) say(`decodeLevel("${w}") is ${D.decodeLevel(w)}, ${from} says ${lv}`);
   for (const [w, lv] of Object.entries(TRICKY)) if (D.decodeLevel(w) !== lv) say(`decodeLevel("${w}") is ${D.decodeLevel(w)}, should be ${lv}`);
-  for (const p of D.DECODE.pairs) if (!D.PART_SOUNDS[p]) say(`letter pair "${p}" has no sound in PART_SOUNDS`);
+  for (const p of D.DECODE.pairs) if (!D.PART_SOUNDS[p] && p[0] !== p[1]) say(`letter pair "${p}" has no sound in PART_SOUNDS`);
 
   // ---- The books ----
   const pure = new Set(Object.keys(JSON.parse(fs.readFileSync(path.join(__dirname, 'letter-sounds.json'), 'utf8')).sounds));
