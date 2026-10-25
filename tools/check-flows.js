@@ -5,9 +5,13 @@
 //  - the parent password: wrong, offline (with and without the check kept
 //    at login) and server busy each say the right thing;
 //  - a broken or edited save never reaches the parent panel as HTML;
-//  - the first tap after ▶ doesn't cut off the line being spoken.
+//  - the first tap after ▶ doesn't cut off the line being spoken;
+//  - a book she reads herself: tapping words sounds them out, ▶ comes after
+//    every word is tapped or a while, reading to the end pays a star once
+//    and puts a ✓ on its cover, and a locked book stays locked.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
+const fs = require('fs');
 const path = require('path');
 const { launch } = require('./browser');
 
@@ -197,10 +201,113 @@ async function audioUnlock(browser) {
   await ctx.close();
 }
 
+// The library's shelf of books she reads herself (js/library.js, DECODABLE_BOOKS in js/books.js).
+async function selfRead(browser) {
+  const { page, ctx, errors } = await game(browser);
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    // Speech is instant: each line is noted and its callbacks run at once.
+    const said = [];
+    const say = Sound.say;
+    Sound.say = parts => {
+      for (const p of [].concat(parts)) {
+        if (p && p.text) said.push({ text: p.text, narrator: !!p.narrator });
+        if (p && p.call) p.call();
+      }
+    };
+    const $ = s => document.querySelector(s);
+    const cover = id => $(`#lib-books .lib-book.self[data-id="${id}"]`);
+    const shown = s => !$(s).classList.contains('hidden');
+    const out = { stars0: state.stars };
+    openLibrary();
+    out.covers = document.querySelectorAll('#lib-books .lib-book.self').length;
+    out.firstOpen = !cover(DECODABLE_BOOKS[0].id).classList.contains('locked');
+    const hard = DECODABLE_BOOKS.find(b => b.level === 3);
+    out.hardLocked = cover(hard.id).classList.contains('locked');
+    // A locked book says so and doesn't open.
+    said.length = 0;
+    cover(hard.id).click();
+    out.lockedSays = said.some(p => BOOK_LINES.selfLocked.includes(p.text));
+    out.lockedStaysShut = !shown('#reader');
+    // The first book: every word tapped, then ▶.
+    const book = DECODABLE_BOOKS[0];
+    cover(book.id).click();
+    out.opened = shown('#reader') && $('#reader').classList.contains('self') && library.mode === 'self';
+    out.playHidden = $('#rd-play').classList.contains('wait');
+    const tokens = decodeTokens(book.pages[0].text);
+    const tiles = [...document.querySelectorAll('#rd-text .rd-word')];
+    out.tiles = [tiles.length, tokens.length];
+    said.length = 0;
+    tiles.slice(0, -1).forEach(t => t.click());
+    out.playHiddenBeforeLast = $('#rd-play').classList.contains('wait');
+    tiles[tiles.length - 1].click();
+    const sounded = tokens.find(t => !t.sight);
+    const sight = tokens.find(t => t.sight);
+    out.soundsOut = decodeSounds(sounded.word).every(s => said.some(p => p.text === `/${s}/`)) && said.some(p => p.text === `${sounded.word.toLowerCase()}!`);
+    out.sightSaid = said.some(p => p.text === sight.word.toLowerCase());
+    out.playAfterTaps = !$('#rd-play').classList.contains('wait');
+    said.length = 0;
+    $('#rd-play').click();
+    out.playReads = said.some(p => p.text === book.pages[0].text);
+    // The next page: no taps, ▶ comes after a while.
+    $('#rd-next').click();
+    out.page2Waits = library.page === 1 && $('#rd-play').classList.contains('wait');
+    await sleep(SELF_PLAY_MS + 600);
+    out.page2Play = !$('#rd-play').classList.contains('wait');
+    // To the end: a party, a star, and a tap goes on to the way out.
+    for (let i = 1; i < book.pages.length; i++) $('#rd-next').click();
+    out.party = library.mode === 'selfEnd' && shown('#rd-quiz') && !document.querySelector('#rd-options button');
+    out.star = state.stars - out.stars0;
+    out.log = Object.assign({}, state.books[`self:${book.id}`]);
+    await sleep(100);
+    $('#rd-paper').click();
+    out.buttonsAfterTap = document.querySelectorAll('#rd-options button').length;
+    document.querySelector('#rd-options .rd-wide.yes').click();
+    out.tick = !!cover(book.id).querySelector('.tick');
+    // Read again: no second star.
+    cover(book.id).click();
+    for (let i = 0; i < book.pages.length; i++) $('#rd-next').click();
+    out.starAgain = state.stars - out.stars0;
+    out.readAgain = state.books[`self:${book.id}`].read;
+    await sleep(2300);
+    out.buttonsAfterWait = document.querySelectorAll('#rd-options button').length;
+    document.querySelector('#rd-options .rd-wide.yes').click();
+    // Still locked at reading tier 1; open once a parent sets tier 3.
+    out.stillLocked = cover(hard.id).classList.contains('locked');
+    state.skill.read = Object.assign(Quiz.skill('read'), { t: 3 });
+    renderLibrary();
+    out.unlocked = !cover(hard.id).classList.contains('locked') && cover(DECODABLE_BOOKS.find(b => b.level === 4).id).classList.contains('locked');
+    closeLibrary();
+    out.closed = !shown('#reader') && !shown('#library') && !state.busy;
+    Sound.say = say;
+    out.said = said;
+    return out;
+  });
+  check('reading: 8 books on her shelf, the first open', r.covers === 8 && r.firstOpen, r);
+  check('reading: a level 3 book is locked, says so and stays shut', r.hardLocked && r.lockedSays && r.lockedStaysShut, r);
+  check('reading: the first book opens with a tile for every word', r.opened && r.tiles[0] === r.tiles[1] && r.tiles[0] > 1, r.tiles);
+  check('reading: ▶ waits until she has tapped every word', r.playHidden && r.playHiddenBeforeLast && r.playAfterTaps, r);
+  check('reading: a tapped word is sounded out and said, a sight word just said', r.soundsOut && r.sightSaid, r);
+  check('reading: ▶ reads the sentence', r.playReads, r);
+  check('reading: on a page she doesn\'t tap, ▶ comes after a while', r.page2Waits && r.page2Play, r);
+  check('reading: the end is a party, then a tap shows the way out', r.party && r.buttonsAfterTap === 2, r);
+  check('reading: the first time to the end pays one star and logs it', r.star === 1 && r.log.read === 1, r);
+  check('reading: its cover gets a ✓', r.tick, r);
+  check('reading: reading it again pays nothing more', r.starAgain === 1 && r.readAgain === 2 && r.buttonsAfterWait === 2, r);
+  check('reading: a locked book stays locked until her reading tier reaches its level', r.stillLocked && r.unlocked, r);
+  check('reading: closing the library frees the game', r.closed, r);
+  // Everything the narrator said is listed for recording.
+  const listed = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'tts-phrases.json'), 'utf8')).filter(p => p.voice === 'af_heart').map(p => p.text));
+  const unlisted = [...new Set(r.said.filter(p => p.narrator && !listed.has(p.text.trim())).map(p => p.text))];
+  check('reading: every line said is in tools/tts-phrases.json', !unlisted.length, unlisted);
+  check('reading: no page errors', !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
-  const parts = { parentPauses, parentPassword, brokenSave, audioUnlock };
+  const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, selfRead };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

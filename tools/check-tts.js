@@ -120,6 +120,28 @@ async function play(browser, edition) {
         }
       }
       if (n === 'castle2') step('library', () => { openLibrary(); closeLibrary(); library.hintUntil = 0; libraryInvite(); });
+      // Every book she reads herself: each word tapped, ▶ on each page, to
+      // the end, and a locked one. The reader is quiet while 🔊 shows muted,
+      // so it shows sound on here (Sound itself stays muted).
+      if (n === 'castle2') step('reading', () => {
+        const skill = JSON.stringify(state.skill.read || null);
+        ui.mute.textContent = '🔊';
+        openLibrary();
+        selfLocked(document.createElement('button'));
+        state.skill.read = Object.assign(Quiz.skill('read'), { t: 4 });
+        for (const book of DECODABLE_BOOKS) {
+          openSelfBook(book);
+          for (let i = 0; i < book.pages.length; i++) {
+            document.querySelectorAll('#rd-text .rd-word').forEach(b => b.click());
+            library.self.ready[library.page] = true;
+            selfPlay();
+            selfTurn(1);
+          }
+        }
+        closeLibrary();
+        ui.mute.textContent = '🔇';
+        state.skill.read = JSON.parse(skill) || undefined;
+      });
       if (n === 'yuna') step('wardrobe', () => { openWardrobe(); closeWardrobe(); });
       for (const l of sc.links || []) if (l.needStars) step('locked', () => Sound.say([{ text: line('locked', { stars: l.needStars }) }]));
       if (sc.outdoor) {

@@ -66,6 +66,22 @@ const C = device('captain', 'dC');
   check('two new devices: the next star counts once', B.merge(m, play(A, m, 1, 0), 'mine').stars === 16);
 }
 
+// ---- The books she reads herself (js/library.js, `self:<id>` in books) ------------
+{
+  // Each tablet finished a different book (its star counted on that tablet);
+  // both have read the first one, one of them twice.
+  const start = { edition: 'princess', stars: 2, books: { 'self:cat-hat': { read: 1, last: 10 } } };
+  const a = play(A, start, 1, 0, { books: { 'self:cat-hat': { read: 2, last: 30 }, 'self:i-can': { read: 1, last: 20 } } });
+  const b = play(B, start, 1, 0, { books: { 'self:cat-hat': { read: 1, last: 10 }, 'self:big-pig': { read: 1, last: 25 }, b1: { read: 1, quizRight: 0, got: [] } } });
+  const m = A.merge(a, b, 'mine');
+  const done = Object.keys(m.books).filter(k => k.startsWith('self:') && m.books[k].read > 0).sort();
+  check('own books: finished books from both tablets are all finished', done.join() === 'self:big-pig,self:cat-hat,self:i-can', m.books);
+  check('own books: read counts and times take the larger', m.books['self:cat-hat'].read === 2 && m.books['self:cat-hat'].last === 30, m.books['self:cat-hat']);
+  check('own books: each tablet\'s star counts once (2 + 1 + 1)', m.stars === 4, m.stars);
+  check('own books: the stories\' log is kept beside them', m.books.b1.read === 1, m.books);
+  check('own books: merging again changes nothing', A.same(A.merge(m, b, 'mine'), m) && A.same(B.merge(b, m, 'theirs'), m));
+}
+
 // ---- Old client → new: a save written by an older version ---------------------
 {
   const old = { edition: 'princess', stars: 10, coins: 4 };

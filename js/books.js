@@ -188,6 +188,171 @@ const BOOKS = [
   },
 ];
 
+// ---- I can read! ---------------------------------------------------------
+// Little books she reads herself (their own shelf in the library, above the
+// stories): one short sentence per page with a big picture, every word one
+// she can sound out at the book's level or one of the few SIGHT_WORDS.
+// Tapping a word sounds it out ("/c/ /a/ /t/… cat!"). A book opens once her
+// tier in reading words (the `read` questions) reaches its level; level 1
+// always is. tools/check-books.js checks every word against decodeLevel below.
+//   level 1  short a: cat, has      level 3  sh ch th ck ll ss ng: fish, duck
+//   level 2  any short vowel: pig   level 4  blends: frog, jump, splash
+
+// Words she learns by heart, said whole when tapped.
+const SIGHT_WORDS = ['the', 'a', 'I', 'is', 'to', 'see', 'go', 'no', 'my', 'we', 'said', 'you'];
+
+const DECODABLE_BOOKS = [
+  {
+    id: 'cat-hat', level: 1, title: 'The Cat', ko: '고양이', cover: '🐱', color: '#ffd9a0',
+    pages: [
+      { text: 'A cat sat.', pic: '🐱' },
+      { text: 'The cat has a hat.', pic: '🐱🎩' },
+      { text: 'The cat had a nap.', pic: '🐱💤' },
+      { text: 'A rat ran at the cat.', pic: '🐀💨🐱' },
+      { text: 'The rat has the hat!', pic: '🐀🎩' },
+    ],
+  },
+  {
+    id: 'i-can', level: 1, title: 'I Can!', ko: '할 수 있어!', cover: '🙌', color: '#b8eab0',
+    pages: [
+      { text: 'I can tap.', pic: '👆🥁' },
+      { text: 'I can bat.', pic: '⚾' },
+      { text: 'I can tag Dad.', pic: '🏃👨' },
+      { text: 'I can pat my cat.', pic: '✋🐱' },
+      { text: 'I can nap.', pic: '😴' },
+    ],
+  },
+  {
+    id: 'big-pig', level: 2, title: 'The Big Pig', ko: '커다란 돼지', cover: '🐷', color: '#ffc4dc',
+    pages: [
+      { text: 'A big pig sat in the mud.', pic: '🐷🟫' },
+      { text: 'The pig had a nap in the sun.', pic: '☀️🐷💤' },
+      { text: 'A red hen got on the pig.', pic: '🐔🐷' },
+      { text: 'The pig did not get up.', pic: '🐷😴' },
+      { text: 'The hen had a nap on the pig!', pic: '🐔💤🐷' },
+    ],
+  },
+  {
+    id: 'bug-cup', level: 2, title: 'The Bug in the Cup', ko: '컵 속의 벌레', cover: '🐛', color: '#bfe2ff',
+    pages: [
+      { text: 'A dog sat on a log.', pic: '🐶🪵' },
+      { text: 'A bug sat on the dog.', pic: '🐛🐶' },
+      { text: 'The dog did a big hop.', pic: '🐶💨' },
+      { text: 'The bug hid in a cup.', pic: '🐛🥤' },
+      { text: 'The dog can not see the bug!', pic: '🐶❓' },
+      { text: 'The bug had fun.', pic: '🐛😄' },
+    ],
+  },
+  {
+    id: 'fish-wish', level: 3, title: 'The Fish Wish', ko: '물고기의 소원', cover: '🐟', color: '#a8dcff',
+    pages: [
+      { text: 'Beth has a fish.', pic: '👧🐟' },
+      { text: 'The fish is in a dish.', pic: '🐟🥣' },
+      { text: 'The fish has a wish.', pic: '🐟💭🛁' },
+      { text: 'Beth gets a big tub.', pic: '👧🛁' },
+      { text: 'The fish had its wish!', pic: '🐟🛁✨' },
+    ],
+  },
+  {
+    id: 'chuck-duck', level: 3, title: 'Chuck the Duck', ko: '오리 척', cover: '🦆', color: '#ffe98a',
+    pages: [
+      { text: 'Chuck is a duck.', pic: '🦆' },
+      { text: 'Chuck got mud on his neck.', pic: '🦆🟫' },
+      { text: 'Chuck had a bath in a tub.', pic: '🦆🛁' },
+      { text: 'Rub, rub, rub!', pic: '🧽🫧' },
+      { text: 'Then Chuck sat in the sun.', pic: '🦆☀️' },
+    ],
+  },
+  {
+    id: 'frog-jump', level: 4, title: 'Jump, Frog, Jump!', ko: '뛰어라 개구리', cover: '🐸', color: '#a8eb98',
+    pages: [
+      { text: 'A frog sat on a big rock.', pic: '🐸🪨' },
+      { text: 'The frog had a plan.', pic: '🐸💭' },
+      { text: 'Jump, frog, jump!', pic: '🐸⬆️' },
+      { text: 'The frog fell in the pond with a splash!', pic: '🐸💦' },
+      { text: 'The frog can swim fast.', pic: '🐸💨' },
+      { text: 'The frog is glad.', pic: '🐸😊' },
+    ],
+  },
+  {
+    id: 'best-gift', level: 4, title: 'The Best Gift', ko: '최고의 선물', cover: '🎁', color: '#ffbcb0',
+    pages: [
+      { text: 'Brad has a gift.', pic: '👦🎁' },
+      { text: 'The gift is in a big red box.', pic: '🎁📦' },
+      { text: 'Brad lifts the lid.', pic: '👦📦' },
+      { text: 'It is a drum!', pic: '🥁' },
+      { text: 'Brad can drum and drum.', pic: '👦🥁' },
+      { text: 'Mom and Dad clap and clap!', pic: '👩👨👏' },
+    ],
+  },
+];
+
+// What each level can sound out. A word is one short vowel closed by its
+// last sounds; letter pairs that say one sound (PART_SOUNDS) come at 3.
+const DECODE = {
+  pairs: ['sh', 'ch', 'th', 'ck', 'll', 'ss', 'ng'],
+  // First sounds: none or one letter (1), sh ch th (3), a blend (4).
+  onset1: 'bcdfghjklmnprstvwyz',
+  onset3: ['sh', 'ch', 'th'],
+  onset4: ['bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'pl', 'pr', 'sc', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sw', 'tr', 'tw',
+    'scr', 'spl', 'spr', 'str', 'shr', 'thr'],
+  // Last sounds: one letter that says its own sound (1), a pair (3), a blend (4).
+  coda1: 'bdfgklmnpstxz',
+  coda3: ['sh', 'ch', 'th', 'ck', 'll', 'ss', 'ng'],
+  coda4: ['ft', 'lk', 'lp', 'lt', 'lf', 'ld', 'mp', 'nd', 'nt', 'pt', 'sk', 'sp', 'st', 'xt', 'ct', 'nch', 'lch'],
+  // Spellings whose letters don't say their usual short sounds: was, want,
+  // swan (not wag, swam); won; ball, talk, salt, half; cold, bolt, most; a
+  // soft c (cent).
+  odd: /wa(?![gxm]|ck)|wo|all$|alk|alt|alf|old$|olt$|[hmp]ost$|c[eiy]/,
+  // And words that look regular but aren't.
+  irregular: ['put', 'push', 'pull', 'full', 'bull', 'bush', 'puss', 'of', 'son', 'ton', 'from', 'front', 'month',
+    'roll', 'toll', 'poll', 'troll', 'scroll', 'stroll', 'kind', 'mind', 'find', 'bind', 'hind', 'rind', 'blind', 'grind',
+    'wild', 'mild', 'child', 'gem', 'gel', 'gin', 'gym', 'gist'],
+  // A pair that says the sound of one of its letters is sounded out as that letter.
+  sound: { ll: 'l', ss: 's' },
+};
+
+// The level a word can be sounded out at (1-4), or 0 if it can't. An -s
+// on the end (gets, its) comes at level 2, after a word she can read.
+function decodeLevel(word) {
+  const w = String(word).toLowerCase();
+  if (!/^[a-z]+$/.test(w) || DECODE.odd.test(w) || DECODE.irregular.includes(w)) return 0;
+  const m = /^([^aeiou]*)([aeiou])([^aeiou]+)$/.exec(w);
+  // The level of a first or last sound: no letter or one letter is 1.
+  const of = (part, one, three, four) => (part.length < 2 ? (one.includes(part) ? 1 : 0)
+    : three.includes(part) ? 3 : four.includes(part) ? 4 : 0);
+  const on = m && of(m[1], DECODE.onset1, DECODE.onset3, DECODE.onset4);
+  const off = m && of(m[3], DECODE.coda1, DECODE.coda3, DECODE.coda4);
+  if (on && off) return Math.max(on, m[2] === 'a' ? 1 : 2, off);
+  const stem = w.slice(0, -1);
+  if (w.endsWith('s') && !/(s|x|z|sh|ch)$/.test(stem)) { const l = decodeLevel(stem); if (l) return Math.max(2, l); }
+  return 0;
+}
+
+// Its letters, a pair that says one sound as one: f-i-sh, b-e-ll.
+function decodeParts(word) {
+  const w = String(word).toLowerCase();
+  const out = [];
+  for (let i = 0; i < w.length; i++) {
+    const two = w.slice(i, i + 2);
+    if (DECODE.pairs.includes(two)) { out.push(two); i++; } else out.push(w[i]);
+  }
+  return out;
+}
+
+// The pure sounds that say it, one per part: b-e-ll is /b/ /e/ /l/.
+const decodeSounds = word => decodeParts(word).map(p => DECODE.sound[p] || p);
+
+// A page's words as tiles: { text (shown), word (said), sight, level }.
+// Punctuation stays on the tile it follows.
+function decodeTokens(text) {
+  return String(text).split(/\s+/).filter(Boolean).map(t => {
+    const word = t.replace(/[^A-Za-z']/g, '');
+    const sight = SIGHT_WORDS.includes(word) || SIGHT_WORDS.includes(word.toLowerCase());
+    return { text: t, word, sight, level: sight ? 0 : decodeLevel(word) };
+  });
+}
+
 // What the narrator and the librarian say around the books.
 const BOOK_LINES = {
   // Said when she comes upstairs, so she knows the bookcases open stories.
@@ -199,6 +364,10 @@ const BOOK_LINES = {
   reveal: ['Good try! Here is the answer.'],
   done: ['You did it! Great reading, {name}!', 'What a good listener you are!'],
   theEnd: ['The End!'],
+  // The books she reads herself: when one opens, a locked one, the end.
+  selfStart: ['Your turn to read! Tap a word if you need help.', 'Now you read it! Tap a word to hear it.'],
+  selfLocked: ['Keep reading words, and this book will open soon!'],
+  selfDone: ['You read it all by yourself, {name}!', 'Wow, {name}! You can read!'],
 };
 
 // The words the voice reads for an option: the text after its emoji.

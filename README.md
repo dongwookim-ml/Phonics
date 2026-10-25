@@ -238,6 +238,29 @@ npx http-server -p 8080 .
   re-reading is free but can't farm coins. A wrong answer gets a second try,
   then the answer is shown. Books live in `BOOKS` in `js/books.js`; the
   reader is `js/library.js`.
+- **I can read! (the library's first shelf, ✏️ 내가 읽는 책)**: eight
+  little books she reads herself, 4–6 pages of one short sentence under a
+  big picture. Every word is one she can sound out at the book's level, or
+  one of twelve sight words (`SIGHT_WORDS`: the, a, I, is, to, see, go, no,
+  my, we, said, you). Level 1 is short a (The Cat, I Can!), 2 any short
+  vowel (The Big Pig, The Bug in the Cup), 3 sh, ch, th, ck, ll, ss, ng
+  (The Fish Wish, Chuck the Duck), 4 blends (Jump, Frog, Jump!, The Best
+  Gift). Each word is a big tile: a tap sounds it out with the narrator's
+  pure sounds, its letters lighting up in turn, then says it ("/c/ /a/ /t/…
+  cat!"); a sight word is just said. ▶ reads the page slowly, but only
+  shows once she has tapped every word on it, or after 8 seconds, so she
+  tries first; ➡ turns the page. The end is a short party (a tap ends it),
+  ⭐ 1 star the first time she reads that book to the end (never again for
+  it), and a ✓ on its cover. A book opens once her tier in reading words
+  (the forest's and fairies' `read` questions: read a word with no voice,
+  pick its picture, the very skill these books use) reaches the book's
+  level, or a parent sets it there; level 1 is always open, and a 🔒 cover
+  says "읽기 3단계". The robot edition's HQ library calls it a reading
+  mission (🚀). The parent panel lists which ones she has read. Books live
+  in `DECODABLE_BOOKS` in `js/books.js`, with the rule for what each level
+  can sound out (`decodeLevel`); `node tools/check-books.js` (also run by
+  `tools/quiz-test.js`) checks every word against it, and the rule against
+  the word bank in `js/data.js`.
 - **Village homes**: every home in the villages opens too: the forest's
   mushroom houses, the unicorn homes and stable, and the fairies' teacup
   and tulip cottages (🍄 🦄 🫖 🌷 over their doors). Tap one to walk to its
@@ -259,7 +282,7 @@ npx http-server -p 8080 .
 - 🖼️ picture hints on the answer cards (easier) are a parent setting now
   (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables }`), the first-steps pointer (`guide`) and today's play time (`playtime`) are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables }`), the first-steps pointer (`guide`) and today's play time (`playtime`) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -379,8 +402,9 @@ on a phone held sideways (844 x 390): no villager hidden behind a building,
 every word fits its answer card, the person talking stays visible above the
 dialog, the buttons a child taps are big enough (64 px), ▶ and the guest
 button show without scrolling, the HUD stays on one row with every counter
-and button showing, and the sticker album and a celebration fit the screen
-with every word fitting its sticker.
+and button showing, the sticker album and a celebration fit the screen
+with every word fitting its sticker, and every page of the books she reads
+herself fits its word tiles in two rows at most.
 
 The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add
@@ -392,13 +416,15 @@ The other checks, all run by
 
 - `node tools/check-merge.js`: the save merge rules (no browser).
 - `ROUNDS=30 node tools/quiz-test.js`: thousands of questions from every
-  asker, under an empty, a finished and a mixed history.
+  asker, under an empty, a finished and a mixed history; first it runs
+  `tools/check-books.js` (every word of her own books readable at its level).
 - `node tools/check-tts.js`: every recording has its file, and nothing the
   game says while playing both editions lacks a recording.
 - `node tools/check-reach.js`: every villager, door and way out can be
   walked to, also with the ride parked.
 - `node tools/check-flows.js`: the parent panel pauses the game, its
-  password messages, a broken save, the first tap after ▶.
+  password messages, a broken save, the first tap after ▶, and reading one
+  of her own books to the end (a star once, a locked one stays locked).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), also next to the
   deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`

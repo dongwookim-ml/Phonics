@@ -27,7 +27,7 @@ function loadData(edition) {
 }
 
 const B = vm.runInNewContext(`${fs.readFileSync(path.join(root, 'js/books.js'), 'utf8')}
-({ BOOKS, BOOK_LINES, bookSpoken, bookSentences })`);
+({ BOOKS, BOOK_LINES, bookSpoken, bookSentences, DECODABLE_BOOKS, decodeTokens })`);
 
 const out = new Map();
 const add = (voice, text, speed = 0.95) => {
@@ -186,6 +186,19 @@ function collect(D) {
     for (const q of b.quiz) {
       add(N, q.q);
       for (const o of q.options) add(N, B.bookSpoken(o), 0.85);
+    }
+  }
+  // The books she reads herself: a word she taps is sounded out (its pure
+  // sounds, listed below) and said ("cat!"), a sight word just said, and ▶
+  // reads the page slowly (js/library.js).
+  for (const k of ['selfStart', 'selfLocked', 'selfDone']) for (const l of B.BOOK_LINES[k]) for (const t of fills(l)) add(N, t);
+  for (const b of B.DECODABLE_BOOKS) {
+    for (const p of b.pages) {
+      add(N, p.text, 0.85);
+      for (const t of B.decodeTokens(p.text)) {
+        if (t.sight || !t.level) add(N, t.word === 'I' ? t.word : t.word.toLowerCase(), 0.8);
+        else add(N, `${t.word.toLowerCase()}!`, 0.8);
+      }
     }
   }
 }
