@@ -199,19 +199,70 @@ the wardrobe options, the villagers and the house positions.
 ### Voices and lines
 
 What people say comes from `LINES` and `PERSONA` in `js/data.js`. Every line
-is pre-recorded with the open-source [Kokoro](https://github.com/thewh1teagle/kokoro-onnx)
-voice model into `audio/tts/`, one natural voice per kind of villager
-(`tts` in `VOICES`) and a narrator voice for quiz words and letter sounds.
+is pre-recorded with Amazon Polly's generative voices into `audio/tts/`: one
+voice per kind of villager (`tts` in `VOICES`, which `VOICES` in
+`tools/polly-build.py` maps to a Polly voice) and a narrator (Ruth) for
+answers, letter names, letter sounds and the library's books. People who
+share a Polly voice are told apart by `lift` in `VOICES`: their chit-chat
+plays a little faster and higher (or slower and deeper). Questions, quiz
+words and letter sounds always play exactly as recorded.
 
-After changing lines, words or the default name, record again:
+How a clip is made (`tools/polly-build.py`, `tools/clipaudio.py`):
+
+- A lone word is said as a short sentence ("Cat."), so its pitch falls and
+  nothing comes before it. A word starting with b, d, g or j loses any long
+  hum before its burst (which sounded like "uh-bear").
+- Every clip is high-passed at 70 Hz and trimmed, then gets its voice's gain
+  (`tools/polly-gains.json`, set towards -20 LUFS by the normalise step) and
+  a peak limiter.
+- Pure letter sounds: a "/m/" line is the narrator's /m/ cut from its own
+  recording of a word (`tools/letter-sounds.json`: m from "ham", s from "bus"
+  and so on): continuants held about half a second with no vowel, stops
+  clipped to their burst, short vowels held 0.4 s. In "M says mmm." the
+  speaker says "M says" and the narrator's /m/ follows. The automatic checks
+  only catch a cut in the wrong place, so listen to them all on
+  `tools/letter-sounds.html` (open it from the repository or the site).
+- A clip's id (its file name) covers the voice, the text, the processing and
+  the gain, so any change gives new URLs. Clips of the deployed build
+  (`main`) are kept one more release for tabs that are still open.
+
+Recording runs in GitHub Actions (`.github/workflows/polly.yml`, with the
+AWS keys in the repository's secrets). After changing lines, words or the
+default name, change `tools/polly-run.json` on a branch and push, e.g.
+`{ "mode": "all", "run": 8, "check": "changed", "fix": true }`. The workflow
+lists every line (`node tools/tts-phrases.js`), records the new ones, checks
+every clip, records failing lines again and commits the clips to the
+branch; `"normalise": true` then evens out the voices' loudness, and
+`"mode": "check"` or `"normalise"` re-checks or re-levels without recording.
+
+The checks:
+
+- `tools/clip-check.py` (acoustic, no model) writes `tools/clip-check.json`:
+  silent clips, a lone word said twice, a clip far longer or shorter than the
+  same line in other voices, a late start (a hum or "uh" before a word), a
+  lone word rising like a question, long gaps, and true peaks over -1 dBTP.
+- `tools/voice-check.py` listens with Whisper as a second opinion, failing a
+  clip only where the acoustic measures agree (`tools/voice-check.json`).
+- The fix step records failing lines again in another way (wrapped in a
+  sentence, then after "Listen." with that cut off), never with another
+  engine, and keeps the first that passes.
+- `python tools/check-recordings.py` is the gate before deploying: every
+  line has a clip, every clip was made on its voice's engine, and both
+  reports were made for this very `audio/tts/index.js` with nothing failing.
+
+To record without the workflow (AWS keys in the environment, plus
+`pip install boto3 numpy` and ffmpeg):
 
 ```sh
-pip install kokoro-onnx soundfile        # once, plus ffmpeg
-curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx
-curl -LO https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 node tools/tts-phrases.js                # lists every line the game can say
-python tools/tts-build.py --model kokoro-v1.0.int8.onnx --voices voices-v1.0.bin
+python tools/polly-build.py --mode all   # then: --mode fix, --mode normalise
+python tools/clip-check.py
+python tools/letter-sounds.py --sheet sheet.png   # try the letter-sound cutter (Pillow)
+python tools/letter-sounds.py --built --sheet sheet.png   # spectrograms of the recorded sounds
 ```
+
+`tools/tts-build.py` can still record everything with the open-source
+[Kokoro](https://github.com/thewh1teagle/kokoro-onnx) model as an offline fallback.
 
 Lines that are not recorded, such as a name typed on the start screen, come
 from the live speech server when `TTS_SERVER` is set, otherwise from the
@@ -223,6 +274,7 @@ device's own voice.
 scripts define the same global and that every scene (village homes too)
 builds without errors, for both a girl and a boy hero and the robot, and
 that every door can be reached and leads back out where it was.
+`python tools/check-recordings.py` checks the recordings (see above).
 
 `node tools/check-visual.js` checks both editions at iPad sizes
 (1024 x 768, 1180 x 820, 768 x 1024, 1024 x 700 with Safari's toolbars) and
@@ -334,7 +386,7 @@ audio/letters/b.mp3   "buh"
 audio/words/bus.mp3   "bus"
 ```
 
-These win over the Kokoro recordings; any missing file falls back to them.
+These win over the Polly recordings; any missing file falls back to them.
 
 ## Files
 

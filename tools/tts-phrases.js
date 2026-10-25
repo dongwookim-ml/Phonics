@@ -155,6 +155,16 @@ function collect(D) {
 }
 for (const edition of ['princess', 'captain']) collect(loadData(edition));
 
+// Pure letter sounds: the narrator's "/m/" (a spelling tile, or spliced into
+// "M says mmm." by whoever says it) is cut from the narrator's own words, so
+// it records every anchor word of tools/letter-sounds.json too.
+const N = loadData('princess').TTS_NARRATOR;
+const SOUNDS = JSON.parse(fs.readFileSync(path.join(__dirname, 'letter-sounds.json'), 'utf8')).sounds;
+for (const [key, s] of Object.entries(SOUNDS)) {
+  add(N, `/${key}/`, 0.8);
+  for (const [word] of s.anchors) if (!out.has(`${N}|${word}`)) add(N, word, 0.8);
+}
+
 const list = [...out.values()];
 fs.writeFileSync(path.join(__dirname, 'tts-phrases.json'), JSON.stringify(list, null, 0));
 const per = {};

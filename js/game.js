@@ -419,7 +419,7 @@ function getOn() {
   removeParked();
   state.mounted = true;
   burstAtHero(24);
-  Sound.correct();
+  Sound.sparkle();
   Sound.say([{ text: line('mount'), pitch: 1.3 }]);
   renderRide();
 }
@@ -812,7 +812,7 @@ function acceptReward(yes) {
     if (state.gift.slot === 'ride' && state.scene.outdoor) { removeParked(); state.mounted = true; }
     renderRide();
     burstAtHero(50);
-    Sound.correct();
+    Sound.sparkle();
     // The robot shows its new part off and says what it does (once that
     // line is recorded).
     const who = voiceOf(state.giver);
@@ -961,7 +961,7 @@ function closeWardrobe() {
   ui.wardrobe.classList.add('hidden');
   state.busy = false;
   burstAtHero(40);
-  Sound.correct();
+  Sound.sparkle();
   Sound.say([{ text: line('yes'), pitch: 1.3 }]);
 }
 
@@ -997,7 +997,7 @@ function catchMonster(npc) {
     state.coins += coins;
     save();
     renderCoins(true);
-    Sound.party();
+    Sound.coin();
     showPlace(`🪙 코인 ${coins}개!`);
     Sound.say([{ text: line('caught') }], voiceOf(npc));
   });
@@ -1102,7 +1102,7 @@ function buyPick() {
   const npc = state.shopkeeper;
   if (!pick) return;
   if (state.coins < pick.price) {
-    Sound.wrong();
+    Sound.locked();
     ui.shopMsg.textContent = `코인이 ${pick.price - state.coins}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎`;
     if (isCaptain()) ui.shopMsg.textContent = CAPTAIN_TEXT.poor(pick.price - state.coins);
     Sound.say([{ text: line('poor') }], voiceOf(npc));
@@ -2105,7 +2105,7 @@ function linkAt(sc, t, wx, wy) {
 function goLink(group, tap) {
   const locked = group.find(l => l.needStars && state.stars < l.needStars);
   if (locked) {
-    Sound.wrong();
+    Sound.locked();
     showPlace(`🔒 별 ${locked.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
     Sound.say([{ text: line('locked', { stars: locked.needStars }) }]);
     return;

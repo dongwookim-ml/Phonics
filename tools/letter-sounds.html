@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Letter Sounds Check</title>
+<!--
+  Plays every pure letter sound the game uses (the narrator's "/m/" clips,
+  cut from the narrator's own words by tools/polly-build.py) next to the word
+  it was cut from, and every "M says mmm." line, so a parent can approve them
+  by ear. The automatic checks only catch a cut in the wrong place; they
+  can't say whether a sound sounds right. Open from the repository (or the
+  deployed site) as tools/letter-sounds.html.
+-->
+<style>
+  :root { --bg: #fdf8f3; --card: #fff; --ink: #2b2433; --soft: #7a6f86; --line: #eadfd3; --accent: #e0568a; --ok: #2f9e6a; --bad: #d0453a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1d1a22; --card: #29252f; --ink: #f2edf6; --soft: #a99fb5; --line: #3a3442; --accent: #ff7aa8; --ok: #5bd39a; --bad: #ff7a6e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p { margin: 4px 0 12px; color: var(--soft); max-width: 46rem; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 16px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  .card.ok { border-color: var(--ok); }
+  .card.bad { border-color: var(--bad); }
+  .key { font-size: 1.6rem; font-weight: 700; }
+  .meta { color: var(--soft); font-size: .85rem; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .vote.on.yes { background: var(--ok); color: #fff; border-color: var(--ok); }
+  .vote.on.no { background: var(--bad); color: #fff; border-color: var(--bad); }
+  .lines { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .lines li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; gap: 10px; align-items: center; }
+  .lines li span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .missing { color: var(--bad); }
+  h2 { font-size: 1.1rem; margin: 22px 0 8px; }
+</style>
+</head>
+<body>
+<h1>Letter sounds 글자 소리 확인</h1>
+<p>Each sound was cut from the narrator's own recording of the word beside it. Play the sound, then the word:
+  the sound should be the start (or the end) of that word, with no extra vowel ("mmm", not "muh").
+  Mark each one 👍 or 👎; your marks stay in this browser, and "Copy results" puts them on the clipboard.
+  소리를 듣고 단어와 비교해 보세요. 모음이 붙지 않은 소리면 👍.</p>
+<div class="bar">
+  <button id="all">▶ Play all sounds</button>
+  <button id="copy">Copy results</button>
+  <span class="meta" id="count"></span>
+</div>
+<div class="grid" id="grid"></div>
+<h2>"M says mmm." lines 집 주인 인사</h2>
+<ul class="lines" id="lines"></ul>
+<script src="../audio/tts/index.js"></script>
+<script src="../audio/tts/sounds.js"></script>
+<script>
+(() => {
+  const NARRATOR = 'af_heart';
+  const index = typeof TTS_INDEX !== 'undefined' ? TTS_INDEX : {};
+  const sounds = typeof TTS_SOUNDS !== 'undefined' ? TTS_SOUNDS : {};
+  const url = (voice, id) => `../audio/tts/${voice}/${id}.mp3`;
+  const player = new Audio();
+  let queue = [];
+  function play(list) {
+    queue = list.slice();
+    next();
+  }
+  function next() {
+    const item = queue.shift();
+    if (!item) return;
+    if (item.pause) { setTimeout(next, item.pause); return; }
+    player.src = item;
+    player.onended = next;
+    player.onerror = next;
+    player.play().catch(next);
+  }
+  const KEY = 'pixeltown-letter-sounds';
+  let votes = {};
+  try { votes = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { votes = {}; }
+  const saveVotes = () => { try { localStorage.setItem(KEY, JSON.stringify(votes)); } catch (e) { /* private mode */ } };
+
+  const grid = document.getElementById('grid');
+  const keys = Object.keys(index[NARRATOR] || {}).filter(t => /^\/[a-z]+\/$/.test(t)).map(t => t.slice(1, -1)).sort();
+  const cards = {};
+  function render(key) {
+    const s = sounds[key] || {};
+    const id = index[NARRATOR][`/${key}/`];
+    const card = cards[key] || (cards[key] = document.createElement('div'));
+    const vote = votes[key];
+    const sig = `${id}`;
+    card.className = 'card' + (vote && vote.clip === sig ? (vote.ok ? ' ok' : ' bad') : '');
+    card.innerHTML = `<div class="key">/${key}/</div>
+      <div class="meta">${s.anchor ? `from “${s.anchor}” (${s.where}), ${s.ms} ms` : 'word not known'}</div>
+      <div class="row">
+        <button data-a="sound">▶ sound</button>
+        ${s.anchorClip ? '<button data-a="word">▶ word</button><button data-a="both">▶ sound, word</button>' : ''}
+      </div>
+      <div class="row">
+        <button class="vote yes${vote && vote.clip === sig && vote.ok ? ' on' : ''}" data-a="yes">👍</button>
+        <button class="vote no${vote && vote.clip === sig && !vote.ok ? ' on' : ''}" data-a="no">👎</button>
+      </div>`;
+    card.onclick = e => {
+      const a = e.target.dataset && e.target.dataset.a;
+      if (!a) return;
+      const snd = url(NARRATOR, id);
+      const word = s.anchorClip && url(NARRATOR, s.anchorClip);
+      if (a === 'sound') play([snd]);
+      if (a === 'word') play([word]);
+      if (a === 'both') play([snd, { pause: 500 }, word]);
+      if (a === 'yes' || a === 'no') { votes[key] = { ok: a === 'yes', clip: sig, anchor: s.anchor }; saveVotes(); render(key); count(); }
+    };
+    return card;
+  }
+  for (const key of keys) grid.append(render(key));
+  if (!keys.length) grid.innerHTML = '<p class="missing">No pure sounds are recorded yet (no "/m/" lines in audio/tts/index.js).</p>';
+  function count() {
+    const done = keys.filter(k => votes[k] && votes[k].clip === `${index[NARRATOR][`/${k}/`]}`);
+    document.getElementById('count').textContent =
+      `${done.filter(k => votes[k].ok).length} 👍, ${done.filter(k => !votes[k].ok).length} 👎, ${keys.length - done.length} to go`;
+  }
+  count();
+  document.getElementById('all').onclick = () =>
+    play(keys.flatMap(k => [url(NARRATOR, index[NARRATOR][`/${k}/`]), { pause: 700 }]));
+  document.getElementById('copy').onclick = () => {
+    const out = {};
+    for (const k of keys) out[`/${k}/`] = votes[k] && votes[k].clip === `${index[NARRATOR][`/${k}/`]}` ? (votes[k].ok ? 'ok' : 'redo') : 'not heard';
+    const text = JSON.stringify(out, null, 1);
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).catch(() => prompt('Copy:', text));
+  };
+
+  const lines = document.getElementById('lines');
+  for (const [voice, m] of Object.entries(index).sort()) {
+    for (const [text, id] of Object.entries(m).sort()) {
+      if (!/\b[A-Z] says /.test(text)) continue;
+      const li = document.createElement('li');
+      li.innerHTML = `<button>▶</button><span>${text.replace(/</g, '&lt;')}</span><span class="meta">${voice}</span>`;
+      li.querySelector('button').onclick = () => play([url(voice, id)]);
+      lines.append(li);
+    }
+  }
+})();
+</script>
+</body>
+</html>

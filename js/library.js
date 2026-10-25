@@ -203,7 +203,7 @@ function bookFinish() {
   renderBookPage();
   libraryEl('rd-q').innerHTML = `<div class="rd-end">🎉 The End! 🎉</div>`;
   libraryEl('rd-options').innerHTML = '';
-  Sound.correct();
+  Sound.sparkle();
   bookSay([{ text: bookLine('theEnd'), narrator: true }, { pause: 400 }, { text: bookLine('quiz'), narrator: true }, { pause: 500 }],
     () => bookQuestion(0));
 }

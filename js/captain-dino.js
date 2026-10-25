@@ -39,10 +39,10 @@ if (isCaptain()) {
     dinoRex:    { gender: 'male', tts: 'am_eric', pitch: 0.7, rate: 0.95, voice: ['Fred', 'Rishi', 'Microsoft Guy', 'Aaron'] },
     dinoTops:   { gender: 'female', tts: 'af_jessica', pitch: 1.1, rate: 0.98, voice: ['Samantha', 'Microsoft Aria', 'Google US English'] },
     dinoStego:  { gender: 'male', tts: 'am_liam', pitch: 1.05, rate: 1.02, voice: ['Alex', 'Tom', 'Microsoft Andrew'] },
-    dinoBronto: { gender: 'male', tts: 'bm_george', pitch: 0.6, rate: 0.82, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
+    dinoBronto: { gender: 'male', tts: 'bm_george', lift: 0.93, pitch: 0.6, rate: 0.82, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] },
     dinoPtero:  { gender: 'female', tts: 'af_nova', pitch: 1.5, rate: 1.08, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
     dinoAnky:   { gender: 'male', tts: 'am_adam', pitch: 0.85, rate: 0.88, voice: ['Ralph', 'Fred', 'Aaron'] },
-    dinoBaby:   { gender: 'female', tts: 'af_sky', pitch: 1.75, rate: 1.1, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+    dinoBaby:   { gender: 'female', tts: 'af_sky', lift: 1.12, pitch: 1.75, rate: 1.1, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   });
   Object.assign(PERSONA, {
     dinoRex:    ['Roar! Oh, sorry, that was my happy roar. Hello, {title} {name}!', 'My arms are tiny, but my brain is big! Let\'s play a word game.', 'Welcome to Dinosaur Village, {title} {name}! I am the big boss here.'],
