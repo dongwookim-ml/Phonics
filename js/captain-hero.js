@@ -855,7 +855,8 @@ function captainShowing(now) {
 // Riding, it hops out beside its car to show off.
 function drawCaptainShowOff(now) {
   if (!captainShowing(now)) return;
-  const ms = now - robotShow.t0;
+  // A frame's time can be a little before the tap that started the show.
+  const ms = Math.max(0, now - robotShow.t0);
   const p = heroWorld();
   const flip = state.hero.flip;
   const q = toScreen(state.mounted ? p.x + (flip ? -9 : 9) : p.x, p.y + 1);
@@ -1155,7 +1156,7 @@ function drawStage(cv, now) {
   if (car) {
     ctx.drawImage(car.canvas, fx - car.ax, fy - car.ay);
     top = fy - car.ay;
-  } else if (show) drawRobotShow(ctx, show, now - show.t0, fx, fy, 1, false);
+  } else if (show) drawRobotShow(ctx, show, Math.max(0, now - show.t0), fx, fy, 1, false);
   else {
     const sprite = robotSprite(outfit, Math.floor(now / 500) % 2);
     drawSprite(ctx, sprite, fx, fy, false);

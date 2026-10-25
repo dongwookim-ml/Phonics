@@ -650,9 +650,11 @@ function acceptReward(yes) {
     renderRide();
     burstAtHero(50);
     Sound.correct();
-    // The robot shows its new part off and says what it does.
+    // The robot shows its new part off and says what it does (once that
+    // line is recorded).
+    const who = voiceOf(state.giver);
     const show = isCaptain() && captainShowOff(state.gift.slot, was, state.outfit);
-    Sound.say([{ text: show || line('yes') }], voiceOf(state.giver));
+    Sound.say([{ text: show && Sound.hasClip(show, who) ? show : line('yes') }], who);
   } else {
     Sound.say([{ text: line('keep') }], voiceOf(state.giver));
   }

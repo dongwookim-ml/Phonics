@@ -161,9 +161,14 @@ const Sound = (() => {
     }
   }
 
+  // Whether a line has a recording in this person's voice (new lines play
+  // only once they have been recorded).
+  const hasClip = (text, who = {}) => !!(index[who.tts || TTS_NARRATOR] || {})[norm(text)];
+
   return {
     say,
     profile,
+    hasClip,
     tap: () => notes([[660, 0, 0.08]]),
     step: () => notes([[220, 0, 0.04]], 'triangle', 0.03),
     correct: () => notes([[523, 0, 0.12], [659, 0.1, 0.12], [784, 0.2, 0.25]]),
