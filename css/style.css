@@ -613,7 +613,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 }
 .sticker .em { font-size: 48px; line-height: 1.1; filter: brightness(0); opacity: 0.13; }
 .sticker .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 22px; font-size: min(22px, 17cqi); line-height: 1.1; white-space: nowrap; color: #c4b4c0; }
-.sticker .w.long { font-size: min(22px, 14cqi); }
+.sticker .w.long { font-size: 16px; font-size: min(22px, 14cqi); }
 .sticker .first { color: var(--accent-ink); }
 .sticker.got { background: #fff; border: 3px solid var(--ink); box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2); }
 .sticker.got .em { filter: none; opacity: 1; }
@@ -631,13 +631,17 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .medal.got .disc .L { background: none; color: #7a4a10; filter: none; opacity: 1; }
 .medal .ribbon { position: absolute; right: 2px; bottom: -2px; font-size: 28px; }
 
-/* A new sticker flying from the card into 📒. */
-.sticker-fly {
-  position: fixed;
-  z-index: 30;
-  width: 124px;
+/* A new sticker flying from the card into 📒: a point that moves, with the
+   sticker centred on it (as wide as its word). */
+.sticker-fly { position: fixed; z-index: 30; width: 0; height: 0; pointer-events: none; }
+.sticker-fly .card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  min-width: 124px;
   height: 124px;
-  margin: -62px 0 0 -62px;
+  padding: 0 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -646,7 +650,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   border: 4px solid var(--gold);
   border-radius: 26px;
   box-shadow: 0 6px 22px rgba(90, 50, 110, 0.35);
-  pointer-events: none;
 }
 .sticker-fly .em { font-size: 60px; line-height: 1.05; }
 .sticker-fly .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 24px; line-height: 1.1; white-space: nowrap; }
@@ -708,7 +711,7 @@ body.captain .medal.got .disc .L { color: #fff; }
   .fanfare .ic { font-size: 36px; }
   .fanfare .t { font-size: 20px; }
   .fanfare .s { font-size: 16px; }
-  .sticker-fly { width: 100px; height: 100px; margin: -50px 0 0 -50px; }
+  .sticker-fly .card { min-width: 100px; height: 100px; }
   .sticker-fly .em { font-size: 46px; }
   .sticker-fly .w { font-size: 20px; }
 }

@@ -176,7 +176,7 @@ function stickerFly(list, from) {
   list.forEach((s, i) => {
     const el = document.createElement('div');
     el.className = 'sticker-fly';
-    el.innerHTML = `<span class="em">${s.e}</span><span class="w">${albumWordHtml(s.w)}</span>`;
+    el.innerHTML = `<span class="card"><span class="em">${s.e}</span><span class="w">${albumWordHtml(s.w)}</span></span>`;
     const x0 = start.left + start.width / 2 + (i - (list.length - 1) / 2) * 110;
     const y0 = start.top + start.height / 2;
     el.style.left = `${Math.round(x0)}px`;
