@@ -1,3 +1,15 @@
+// Little games in the #mini card: the fisherman's at the town pond (below)
+// and one in each village (js/village-games.js). This file runs them all.
+// A game is a few rounds. Each round asks something, and the things to tap
+// wait until it has been heard. The right one wins the round; a wrong one
+// gets a hint, and after two misses the right one glows, like the
+// questions. On the first round a finger shows what to tap until she tries
+// one. At the end there is a little party, coins and 🔁 / 👋. A game
+// (MINI_GAMES) brings its rounds, what is said and how it looks. The card
+// is one of BUSY_CARDS (js/game.js), keeps the music down while it is open
+// (js/music.js) and never opens once today's play time is used up
+// (guideTimeUp in js/guide.js). Nothing here is needed to go on in the game.
+//
 // The fisherman's game at the town pond; in the robot edition the fishing
 // robot works a magnet crane over boxes instead. FISHING.fish fish, each
 // with a picture, swim by and he says "Catch the fish that starts with /m/!"
@@ -7,7 +19,7 @@
 // hears its word and the sound again, and after two misses the right fish
 // glows. FISHING.rounds fish fill the bucket and pay FISHING.coins coins.
 // It starts from the 🎣 button in the fisherman's dialog, the 🎣 over the
-// pond, or a tap on the pond. Nothing here is needed to go on in the game.
+// pond, or a tap on the pond.
 
 const mini = {
   el: document.getElementById('mini'),
@@ -19,16 +31,18 @@ const mini = {
   catch: document.getElementById('mini-catch'),
   coins: document.getElementById('mini-coins'),
   button: document.getElementById('dlg-mini'),
-  npc: null,
-  rounds: [],     // [{ info, fish: [{ w, e, letter, right }] }]
+  game: null,     // the game being played (MINI_GAMES)
+  npc: null,      // the villager who runs it
+  rounds: [],     // the game's own, e.g. [{ info, fish: [{ w, e, letter, right }] }]
   round: -1,
-  items: [],      // fish (boxes) in the water
-  caught: [],
+  items: [],      // the things to tap: { x, y, e, right, state }, state 'live' while she may
+  caught: [],     // the right one of each round won
   misses: 0,
-  locked: true,   // until the sound has been said
+  locked: true,   // until the question has been said
+  tapped: false,  // she has tried one: the finger on the first round goes
   turn: 0,        // bumps whenever the game moves on, so stale callbacks give up
-  anim: null,     // the right one being reeled in: { it, t0 }
-  splashes: [],
+  anim: null,     // the round's right one, being won: { it, t0, x0, y0 }
+  sparks: [],     // splashes and sparkles: { x, y, vx, vy, life, col, fall }
   ripples: [],
   timers: [],
   trolley: 104,   // where the crane's magnet hangs (robot edition)
@@ -37,22 +51,368 @@ const mini = {
   last: 0,
   loop: 0,
 };
-// The picture is drawn in a box this many pixels big, scaled up in whole
-// pixels to fill the screen; the water starts at MINI_WATER.
+// Every game is drawn in a box this many pixels big, scaled up in whole
+// pixels to fill the screen; its backdrop carries on past it to the edges.
 const MINI_W = 208;
 const MINI_H = 128;
 const MINI_WATER = 44;
-const MINI_CATCH_MS = () => (isCaptain() ? 1600 : 1100);
 const MINI_COLORS = ['#ff9ec4', '#ffd36b', '#8fd3ff', '#b9a0ff', '#8fe8c4', '#ffb08a'];
+const MINI_EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
+// The games, by key; js/village-games.js adds the villages' own.
+//   scene, host()       where it is played, and the villager who runs it
+//   label(), title()    its button in that villager's dialog, the card's title
+//   pip(), bag()        the picture for each round won, and on the end card
+//   rounds()            the questions, one per round
+//   items(r)            the things to tap in round r
+//   clue(r)             the box at the top: { text, color }
+//   ask(r, first), replay(r)   what poses the question (the first with a hello)
+//   answer(r, it), teach(r, it), show(r, it)   said for the right one, after
+//                       a first miss, and once the answer is shown
+//   done()              said at the end
+//   catchMs()           how long the right one's little show takes
+//   box(it)             where a thing can be tapped, in picture pixels
+//   tap(it)             optional: a game that takes the tap itself (spelling)
+//   caught(it), missed(it), leave(items), update(dt, now)   optional, for the pictures
+//   pointAt(it, t)      where its picture is (the finger and the 👆 point there)
+//   rows                optional [top, bottom]: the rows of the box that
+//                       must show, so a short screen shows them bigger
+//   draw: { backdrop, back, item, front, labels }
+const MINI_GAMES = {};
 
 // Like later() in js/game.js: while the parent panel is open, timers wait.
 function miniLater(ms, fn) { mini.timers.push(setTimeout(() => whenPlaying(fn), ms)); }
 function miniClear() { mini.timers.forEach(clearTimeout); mini.timers = []; }
+const miniRound = () => mini.rounds[mini.round];
+
+// ---- Opening and closing -----------------------------------------------
+
+// The game this villager runs here, if any.
+function miniGameOf(npc) {
+  if (!npc) return null;
+  return Object.values(MINI_GAMES).find(g => state.scene === state.scenes[g.scene] && g.host() === npc) || null;
+}
+
+// A villager who runs a game gets its button in their dialog.
+function miniDialog(npc) {
+  const g = miniGameOf(npc);
+  mini.button.classList.toggle('hidden', !g);
+  if (g) mini.button.textContent = g.label();
+}
+
+// Not once today's play time is used up: 🔁 (or the button in the dialog)
+// closes one card and opens the next at once, so the town could never fall
+// asleep. 🔁 passes its game (`g`): a cave monster caught just before may
+// have gone home meanwhile.
+function openMini(npc, g = miniGameOf(npc)) {
+  if (!g || state.scene !== state.scenes[g.scene] || state.busy || guideTimeUp()) return;
+  state.busy = true;
+  miniClear();
+  Object.assign(mini, { game: g, npc, rounds: g.rounds(), round: -1, items: [], caught: [], anim: null, sparks: [], ripples: [], last: 0, trolley: 104, tapped: false });
+  mini.title.textContent = g.title();
+  mini.end.classList.add('hidden');
+  mini.el.classList.remove('hidden');
+  miniNext(true);
+  if (!mini.loop) mini.loop = requestAnimationFrame(miniFrame);
+}
+
+function closeMini() {
+  if (mini.el.classList.contains('hidden')) return;
+  Sound.tap();
+  Sound.say([]);
+  miniClear();
+  mini.turn++;
+  mini.el.classList.add('hidden');
+  mini.items = [];
+  mini.anim = null;
+  state.busy = busyNow(); // js/game.js
+}
+
+// ---- Playing -------------------------------------------------------------
+
+// The next round: the things left go, new ones come.
+function miniNext(first) {
+  const g = mini.game;
+  mini.round++;
+  if (g.leave) g.leave(mini.items);
+  else mini.items = [];
+  if (mini.round >= mini.rounds.length) { miniFinish(); return; }
+  mini.misses = 0;
+  mini.items = mini.items.concat(g.items(miniRound()));
+  miniRender();
+  miniAsk(first);
+}
+
+// Says the question with the things waiting; they can be tapped once it has
+// been heard (or a few seconds later, if the voice is slow or missing).
+function miniAsk(first) {
+  const turn = ++mini.turn;
+  mini.locked = true;
+  const ready = () => { if (mini.turn === turn) mini.locked = false; };
+  miniSay(mini.game.ask(miniRound(), first).concat({ call: ready }), first ? 8000 : 6000, ready);
+}
+
+function miniSay(parts, ms, ready) {
+  if (Sound.muted) ready();
+  else miniLater(ms, ready);
+  Sound.say(parts, voiceOf(mini.npc));
+}
+
+// 🔊 or the box at the top: the question again.
+function miniReplay() {
+  const r = miniRound();
+  if (!r || mini.anim || !mini.end.classList.contains('hidden')) return;
+  Sound.tap();
+  // Still waiting for it: ask again, and the things open after it.
+  if (mini.locked) miniAsk(false);
+  else Sound.say(mini.game.replay(r), voiceOf(mini.npc));
+}
+
+function miniTapAt(e) {
+  e.preventDefault();
+  const p = miniPoint(e);
+  mini.ripples.push({ x: p.x, y: p.y, t0: performance.now() });
+  if (mini.locked || mini.anim || !mini.end.classList.contains('hidden')) return;
+  const hit = miniHit(p);
+  if (!hit) return;
+  mini.tapped = true;
+  if (mini.game.tap) mini.game.tap(hit);
+  else if (hit.right) miniCatch(hit);
+  else miniMiss(hit);
+}
+
+// The thing she can tap there: the nearest one whose box holds the point.
+function miniHit(p) {
+  let hit = null;
+  let best = Infinity;
+  for (const it of mini.items) {
+    if (it.state !== 'live') continue;
+    const b = mini.game.box(it);
+    if (p.x < b.x0 || p.x > b.x1 || p.y < b.y0 || p.y > b.y1) continue;
+    const d = Math.abs(p.x - (b.x0 + b.x1) / 2) + Math.abs(p.y - (b.y0 + b.y1) / 2);
+    if (d < best) { best = d; hit = it; }
+  }
+  return hit;
+}
+
+// The right one wins the round: its little show (reeled in, hatched...)
+// and the answer said, then the next round.
+function miniCatch(it) {
+  const g = mini.game;
+  const turn = ++mini.turn;
+  mini.locked = true;
+  it.state = 'caught';
+  mini.anim = { it, t0: performance.now(), x0: it.x, y0: it.y, from: mini.trolley };
+  mini.caught.push(it);
+  questAdd('fish'); // today's adventures (js/quest.js): a round won in any game
+  Sound.correct();
+  if (g.caught) g.caught(it);
+  miniRender();
+  // On once the show is over and the answer has been said.
+  const next = () => { if (mini.turn === turn) { mini.anim = null; miniNext(false); } };
+  let wait = Sound.muted ? 1 : 2;
+  const done = () => { if (--wait <= 0) next(); };
+  miniLater(g.catchMs() + 200, done);
+  miniLater(g.catchMs() + 4500, next);
+  Sound.say([{ pause: 250 }].concat(g.answer(miniRound(), it), { pause: 300 }, { call: done }), voiceOf(mini.npc));
+}
+
+// A wrong one: she hears what she picked and a hint, and tries again. After
+// two misses (or with only the right one left) the right one glows.
+function miniMiss(it) {
+  const g = mini.game;
+  const r = miniRound();
+  mini.misses++;
+  Sound.oops();
+  it.state = 'out';
+  it.t0 = performance.now();
+  if (g.missed) g.missed(it);
+  const left = mini.items.some(x => x.state === 'live' && !x.right);
+  const show = mini.misses >= 2 || !left;
+  if (show) miniGlow(x => x.right);
+  miniHint((show ? g.show : g.teach)(r, it), 5000);
+}
+
+// The right one glows, with a 👆 on it.
+function miniGlow(isIt) {
+  for (const x of mini.items) x.glow = x.state === 'live' && isIt(x);
+}
+
+// Says a hint; nothing can be tapped until it has been said.
+function miniHint(parts, ms) {
+  const turn = ++mini.turn;
+  mini.locked = true;
+  const ready = () => { if (mini.turn === turn) mini.locked = false; };
+  miniSay(parts.concat({ call: ready }), ms, ready);
+}
+
+// The end: coins, a little party and the 🔁 / 👋 card.
+function miniFinish() {
+  const g = mini.game;
+  mini.locked = true;
+  ++mini.turn;
+  state.coins += FISHING.coins;
+  renderCoins(true);
+  save();
+  Sound.party();
+  for (let i = 0; i < 40; i++) miniSpark(MINI_W / 2 + (Math.random() - 0.5) * 120, MINI_H * 0.6, 1, MINI_COLORS[i % MINI_COLORS.length], 70);
+  mini.catch.textContent = `${g.bag()} ${mini.caught.map(it => it.prize || it.e).join(' ')}`;
+  mini.coins.textContent = `🪙 +${FISHING.coins}`;
+  mini.end.classList.remove('hidden');
+  Sound.say([{ pause: 400 }].concat(g.done()), voiceOf(mini.npc));
+}
+
+// Round pips (a picture for each one won) and the box at the top.
+function miniRender() {
+  const icon = mini.game.pip();
+  mini.pips.innerHTML = mini.rounds.map((r, i) => `<span class="pip${i < mini.caught.length ? ' on' : ''}">${i < mini.caught.length ? icon : ''}</span>`).join('');
+  const r = mini.rounds[Math.min(mini.round, mini.rounds.length - 1)];
+  if (!r) return;
+  const clue = mini.game.clue(r);
+  mini.letter.textContent = clue.text;
+  mini.letter.classList.toggle('long', [...clue.text].length > 6);
+  mini.letter.style.setProperty('--l', clue.color);
+}
+
+// Sparkles (or splashes): n pixels flying out from x, y and falling.
+function miniSpark(x, y, n, col, speed = 40, fall = 120) {
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
+    const v = speed * (0.5 + Math.random());
+    mini.sparks.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.5 + Math.random() * 0.4, col: typeof col === 'function' ? col(i) : col, fall });
+  }
+}
+
+// ---- Drawing -------------------------------------------------------------
+
+function miniFrame(now) {
+  mini.loop = 0;
+  if (mini.el.classList.contains('hidden')) return;
+  const dt = Math.min(0.05, mini.last ? (now - mini.last) / 1000 : 0);
+  mini.last = now;
+  miniUpdate(dt, now);
+  miniDraw(now);
+  mini.loop = requestAnimationFrame(miniFrame);
+}
+
+function miniUpdate(dt, now) {
+  if (state.paused) return; // the parent panel is open: everything waits
+  if (mini.game.update) mini.game.update(dt, now);
+  for (const p of mini.sparks) { p.vy += p.fall * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+  mini.sparks = mini.sparks.filter(p => p.life > 0);
+  mini.ripples = mini.ripples.filter(r => now - r.t0 < 500);
+}
+
+// The tap in picture pixels.
+function miniPoint(e) {
+  const box = mini.canvas.getBoundingClientRect();
+  const v = mini.view;
+  const dpr = mini.canvas.width / Math.max(1, box.width);
+  return { x: ((e.clientX - box.left) * dpr) / v.k - v.bx, y: ((e.clientY - box.top) * dpr) / v.k - v.by };
+}
+
+function miniDraw(now) {
+  const cv = mini.canvas;
+  const dpr = window.devicePixelRatio || 1;
+  const W = Math.round(cv.clientWidth * dpr);
+  const H = Math.round(cv.clientHeight * dpr);
+  if (!W || !H) return;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  // Whole screen pixels per picture pixel, as big as the box (the rows of
+  // it that must show) fits; on a small screen a fraction, so it isn't
+  // tiny. The backdrop carries on past it to the edges.
+  const [top, bottom] = mini.game.rows || [0, MINI_H];
+  const fit = Math.min(W / MINI_W, H / (bottom - top));
+  const k = fit >= 4 ? Math.floor(fit) : Math.max(0.5, fit);
+  const LW = Math.ceil(W / k);
+  const LH = Math.ceil(H / k);
+  if (!mini.buf || mini.buf.width !== LW || mini.buf.height !== LH) mini.buf = makeCanvas(LW, LH);
+  const bx = Math.floor((LW - MINI_W) / 2);
+  const by = Math.floor((LH - (bottom - top)) / 2) - top;
+  mini.view = { k, bx, by };
+  const g = mini.buf.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.clearRect(0, 0, LW, LH);
+  const t = now / 1000;
+  const art = mini.game.draw;
+  art.backdrop(g, LW, LH, bx, by, t);
+  g.translate(bx, by);
+  art.back(g, t, now);
+  for (const it of mini.items) if (it !== (mini.anim && mini.anim.it)) art.item(g, it, t, now);
+  art.front(g, t, now);
+  for (const p of mini.sparks) px(g, Math.round(p.x), Math.round(p.y), 1, 1, p.col);
+
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(mini.buf, 0, 0, LW * k, LH * k);
+  // Pictures and letters, sharp at screen resolution.
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const at = (x, y) => ({ x: (x + bx) * k, y: (y + by) * k });
+  for (const l of art.labels(t, now)) {
+    const q = at(l.x, l.y);
+    ctx.globalAlpha = l.alpha === undefined ? 1 : l.alpha;
+    ctx.font = l.letter ? `800 ${Math.round(l.size * k)}px "Baloo 2", sans-serif` : `${Math.round(l.size * k)}px ${MINI_EMOJI}`;
+    ctx.fillStyle = l.color || '#3a2c50';
+    ctx.fillText(l.text, q.x, q.y + k * 0.5);
+  }
+  ctx.globalAlpha = 1;
+  // The right one, shown after two misses.
+  ctx.font = `${Math.round(12 * k)}px ${MINI_EMOJI}`;
+  ctx.textBaseline = 'top';
+  for (const it of mini.items) {
+    if (!it.glow || it.state !== 'live') continue;
+    const q = at(...miniPointAt(it, t));
+    ctx.fillText('👆', q.x + 6 * k, q.y + 8 * k + Math.abs(Math.sin(now / 260)) * 3 * k);
+  }
+  miniFinger(ctx, at, t, now);
+  ctx.textBaseline = 'middle';
+  // Where she tapped.
+  for (const r of mini.ripples) {
+    const kk = (now - r.t0) / 500;
+    const q = at(r.x, r.y);
+    ctx.strokeStyle = `rgba(255,255,255,${1 - kk})`;
+    ctx.lineWidth = Math.max(2, k * (1 - kk));
+    ctx.beginPath();
+    ctx.ellipse(q.x, q.y, (3 + kk * 8) * k, (1.5 + kk * 4) * k, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+const miniPointAt = (it, t) => { const p = mini.game.pointAt(it, t); return [p.x, p.y]; };
+
+// The first round shows what to do: once the question has been said, a
+// finger taps on each thing in turn with a ring round it, until she tries
+// one (like the 👆 on a villager in js/guide.js). It never stays on one.
+const miniFingerShows = () => mini.round === 0 && !mini.tapped && !mini.locked && !mini.anim && mini.items.some(it => it.state === 'live');
+function miniFinger(ctx, at, t, now) {
+  if (!miniFingerShows()) return;
+  const live = mini.items.filter(it => it.state === 'live');
+  const it = live[Math.floor(now / 1300) % live.length];
+  const k = mini.view.k;
+  const q = at(...miniPointAt(it, t));
+  const pulse = (now % 1300) / 1300;
+  ctx.strokeStyle = `rgba(255,214,77,${1 - pulse})`;
+  ctx.lineWidth = 2 * k;
+  ctx.beginPath();
+  ctx.ellipse(q.x, q.y, (8 + pulse * 8) * k, (8 + pulse * 8) * k, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  const tap = Math.abs(Math.sin(now / 280));
+  ctx.font = `${Math.round(16 * k)}px ${MINI_EMOJI}`;
+  ctx.shadowColor = 'rgba(255,255,255,0.95)';
+  ctx.shadowBlur = 4 * k;
+  ctx.fillText('👆', q.x + 4 * k, q.y + 2 * k + tap * 4 * k);
+  ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent';
+}
+
+// ---- The fisherman's game -----------------------------------------------
+
+const MINI_CATCH_MS = () => (isCaptain() ? 1600 : 1100);
 
 // The fisherman in town (the fishing robot in the robot edition).
 const miniFisher = () => { const sc = state.scenes.town; return sc ? sc.npcs.find(n => /fisher/.test(n.look)) : null; };
-
-// ---- Questions -----------------------------------------------------------
 
 // Words she can name from the picture alone, by letter.
 function miniWords() {
@@ -93,15 +453,61 @@ function miniRounds() {
 // "/m/": the letter's pure sound, in the narrator's voice (js/audio.js).
 const miniSound = r => ({ text: `/${r.info.letter.toLowerCase()}/`, narrator: true });
 const miniQuestion = r => [{ text: line('fishAsk') }, { pause: 150 }, miniSound(r)];
+// A wrong fish: its word, and the sound again.
+const miniAgain = (r, it) => [{ text: it.w, narrator: true, show: `${it.w}…` }, { pause: 350 }, { text: line('listen') }, { pause: 150 }, miniSound(r)];
 
-// ---- Opening and closing -----------------------------------------------
-
-// The fisherman's dialog gets a "let's fish" button.
-function miniDialog(npc) {
-  const fisher = !!npc && npc === miniFisher() && state.scene === state.scenes.town;
-  mini.button.classList.toggle('hidden', !fisher);
-  mini.button.textContent = isCaptain() ? '🧲 크레인 놀이' : '🎣 낚시 놀이';
-}
+MINI_GAMES.fish = {
+  scene: 'town',
+  host: miniFisher,
+  label: () => (isCaptain() ? '🧲 크레인 놀이' : '🎣 낚시 놀이'),
+  title: () => (isCaptain() ? '🧲 자석 크레인' : '🎣 낚시 놀이'),
+  pip: () => (isCaptain() ? '📦' : '🐟'),
+  bag: () => (isCaptain() ? '🚚' : '🪣'),
+  rounds: miniRounds,
+  // New fish swim in, each in its own lane.
+  items(r) {
+    const lanes = shuffle([0, 1, 2, 3]);
+    const span = MINI_W - 40;
+    const slots = shuffle([0, 1, 2, 3]);
+    return shuffle(r.fish.slice()).map((f, i) => {
+      const dir = lanes[i] % 2 ? 1 : -1;
+      return Object.assign({}, f, {
+        lane: lanes[i], x: 20 + (slots[i] + 0.2 + Math.random() * 0.6) * (span / 4), y: 62 + lanes[i] * 18,
+        vx: dir * (6 + Math.random() * 5), ph: Math.random() * 6, color: MINI_COLORS[(mini.round + i) % MINI_COLORS.length],
+        state: 'live', born: performance.now(), glow: false,
+      });
+    });
+  },
+  // The ones left swim off.
+  leave(items) { for (const it of items) if (it.state === 'live') { it.state = 'leave'; it.vx = Math.sign(it.vx) * 60; } },
+  clue: r => ({ text: r.info.letter + r.info.letter.toLowerCase(), color: shade(r.info.color, -25) }),
+  ask: (r, first) => (first ? [{ text: line('fishHello') }, { pause: 350 }] : []).concat(miniQuestion(r)),
+  replay: miniQuestion,
+  answer: (r, it) => [{ text: `${it.w} starts with ${it.letter}.`, narrator: true }],
+  teach: miniAgain,
+  show: miniAgain,
+  done: () => [{ text: line('fishDone') }],
+  catchMs: MINI_CATCH_MS,
+  // Big enough to tap on a phone held sideways too (lanes are 18 apart: the
+  // nearest fish wins).
+  box: it => ({ x0: it.x - 19, x1: it.x + 19, y0: it.y - 16, y1: it.y + 16 }),
+  pointAt: (it, t) => miniItemAt(it, t),
+  caught(it) { if (!isCaptain()) { Sound.tune('splash'); miniSplash(it.x, it.y, 14); } },
+  // A wrong one swims away.
+  missed(it) {
+    it.state = 'flee';
+    it.vx = (it.x < MINI_W / 2 ? -1 : 1) * 75;
+    miniSplash(it.x, it.y, 10);
+  },
+  update: miniSwim,
+  draw: {
+    backdrop: miniBackdrop,
+    back: (g, t, now) => (isCaptain() ? miniCrane : miniRod).back(g, t, now),
+    item: miniItem,
+    front: (g, t, now) => (isCaptain() ? miniCrane : miniRod).front(g, t, now),
+    labels: miniFishLabels,
+  },
+};
 
 // Walks her to the fisherman and starts. True when there is a pond game here.
 function miniGo() {
@@ -113,274 +519,34 @@ function miniGo() {
   return true;
 }
 
-// Not once today's play time is used up: 🔁 (or 🎣 in his dialog) closes
-// one card and opens the next at once, so the town could never fall asleep.
-function openMini(npc) {
-  if (!npc || state.busy || guideTimeUp()) return;
-  state.busy = true;
-  miniClear();
-  Object.assign(mini, { npc, rounds: miniRounds(), round: -1, items: [], caught: [], anim: null, splashes: [], ripples: [], last: 0, trolley: 104 });
-  mini.title.textContent = isCaptain() ? '🧲 자석 크레인' : '🎣 낚시 놀이';
-  mini.end.classList.add('hidden');
-  mini.el.classList.remove('hidden');
-  miniNext(true);
-  if (!mini.loop) mini.loop = requestAnimationFrame(miniFrame);
-}
-
-function closeMini() {
-  if (mini.el.classList.contains('hidden')) return;
-  Sound.tap();
-  Sound.say([]);
-  miniClear();
-  mini.turn++;
-  mini.el.classList.add('hidden');
-  mini.items = [];
-  mini.anim = null;
-  state.busy = busyNow(); // js/game.js
-}
-
-// ---- Playing -------------------------------------------------------------
-
-// The next fish to catch: the ones left swim off, new ones swim in.
-function miniNext(first) {
-  mini.round++;
-  for (const it of mini.items) if (it.state === 'swim') { it.state = 'leave'; it.vx = Math.sign(it.vx) * 60; }
-  if (mini.round >= mini.rounds.length) { miniFinish(); return; }
-  const r = mini.rounds[mini.round];
-  mini.misses = 0;
-  const lanes = shuffle([0, 1, 2, 3]);
-  const span = MINI_W - 40;
-  const slots = shuffle([0, 1, 2, 3]);
-  mini.items = mini.items.concat(shuffle(r.fish.slice()).map((f, i) => {
-    const dir = lanes[i] % 2 ? 1 : -1;
-    return Object.assign({}, f, {
-      lane: lanes[i], x: 20 + (slots[i] + 0.2 + Math.random() * 0.6) * (span / 4), y: 62 + lanes[i] * 18,
-      vx: dir * (6 + Math.random() * 5), ph: Math.random() * 6, color: MINI_COLORS[(mini.round + i) % MINI_COLORS.length],
-      state: 'swim', born: performance.now(), glow: false,
-    });
-  }));
-  miniRender();
-  miniAsk(first);
-}
-
-// Says the question with the fish waiting; they can be caught once the sound
-// has been heard (or a few seconds later, if the voice is slow or missing).
-function miniAsk(first) {
-  const r = mini.rounds[mini.round];
-  const turn = ++mini.turn;
-  mini.locked = true;
-  const ready = () => { if (mini.turn === turn) mini.locked = false; };
-  const hello = first ? [{ text: line('fishHello') }, { pause: 350 }] : [];
-  miniSay(hello.concat(miniQuestion(r), { call: ready }), first ? 8000 : 6000, ready);
-}
-
-function miniSay(parts, ms, ready) {
-  if (Sound.muted) ready();
-  else miniLater(ms, ready);
-  Sound.say(parts, voiceOf(mini.npc));
-}
-
-// 🔊 or the letter: the question again.
-function miniReplay() {
-  const r = mini.rounds[mini.round];
-  if (!r || mini.anim || !mini.end.classList.contains('hidden')) return;
-  Sound.tap();
-  // Still waiting for the sound: ask again, and the fish open after it.
-  if (mini.locked) miniAsk(false);
-  else Sound.say(miniQuestion(r), voiceOf(mini.npc));
-}
-
-function miniTapAt(e) {
-  e.preventDefault();
-  const p = miniPoint(e);
-  mini.ripples.push({ x: p.x, y: p.y, t0: performance.now() });
-  if (mini.locked || mini.anim || !mini.end.classList.contains('hidden')) return;
-  let hit = null;
-  let best = Infinity;
-  for (const it of mini.items) {
-    if (it.state !== 'swim') continue;
-    const dx = Math.abs(p.x - it.x);
-    const dy = Math.abs(p.y - it.y);
-    if (dx < 19 && dy < 13 && dx + dy < best) { best = dx + dy; hit = it; }
-  }
-  if (!hit) return;
-  if (hit.right) miniCatch(hit);
-  else miniMiss(hit);
-}
-
-// The right one: reeled in (or picked up by the magnet), and its word said.
-function miniCatch(it) {
-  const turn = ++mini.turn;
-  mini.locked = true;
-  it.state = 'caught';
-  mini.anim = { it, t0: performance.now(), x0: it.x, y0: it.y, from: mini.trolley };
-  mini.caught.push(it);
-  questAdd('fish'); // today's adventures (js/quest.js)
-  Sound.correct();
-  if (!isCaptain()) { Sound.tune('splash'); miniSplash(it.x, it.y, 14); }
-  miniRender();
-  // On to the next one once it is in the bucket and its word has been said.
-  const next = () => { if (mini.turn === turn) { mini.anim = null; miniNext(false); } };
-  let wait = Sound.muted ? 1 : 2;
-  const done = () => { if (--wait <= 0) next(); };
-  miniLater(MINI_CATCH_MS() + 200, done);
-  miniLater(MINI_CATCH_MS() + 4500, next);
-  Sound.say([{ pause: 250 }, { text: `${it.w} starts with ${it.letter}.`, narrator: true }, { pause: 300 }, { call: done }], voiceOf(mini.npc));
-}
-
-// A wrong one swims away; she hears its word and the sound again. After two
-// misses the right one glows.
-function miniMiss(it) {
-  const r = mini.rounds[mini.round];
-  mini.misses++;
-  Sound.oops();
-  it.state = 'flee';
-  it.vx = (it.x < MINI_W / 2 ? -1 : 1) * 75;
-  miniSplash(it.x, it.y, 10);
-  if (mini.misses >= 2) for (const x of mini.items) if (x.right && x.state === 'swim') x.glow = true;
-  const turn = ++mini.turn;
-  mini.locked = true;
-  const ready = () => { if (mini.turn === turn) mini.locked = false; };
-  miniSay([{ text: it.w, narrator: true, show: `${it.w}…` }, { pause: 350 }, { text: line('listen') }, { pause: 150 }, miniSound(r), { call: ready }], 5000, ready);
-}
-
-function miniFinish() {
-  mini.locked = true;
-  ++mini.turn;
-  state.coins += FISHING.coins;
-  renderCoins(true);
-  save();
-  Sound.party();
-  mini.catch.textContent = `${isCaptain() ? '🚚' : '🪣'} ${mini.caught.map(it => it.e).join(' ')}`;
-  mini.coins.textContent = `🪙 +${FISHING.coins}`;
-  mini.end.classList.remove('hidden');
-  Sound.say([{ pause: 400 }, { text: line('fishDone') }], voiceOf(mini.npc));
-}
-
-// Round pips (a fish or box for each one caught) and the letter to listen for.
-function miniRender() {
-  const icon = isCaptain() ? '📦' : '🐟';
-  mini.pips.innerHTML = mini.rounds.map((r, i) => `<span class="pip${i < mini.caught.length ? ' on' : ''}">${i < mini.caught.length ? icon : ''}</span>`).join('');
-  const r = mini.rounds[Math.min(mini.round, mini.rounds.length - 1)];
-  if (!r) return;
-  mini.letter.textContent = r.info.letter + r.info.letter.toLowerCase();
-  mini.letter.style.setProperty('--l', shade(r.info.color, -25));
-}
-
 function miniSplash(x, y, n) {
-  for (let i = 0; i < n; i++) {
-    const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2;
-    const v = 20 + Math.random() * 40;
-    mini.splashes.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.5 + Math.random() * 0.4, col: i % 3 ? '#ffffff' : '#bfeaff' });
-  }
+  miniSpark(x, y, n, i => (i % 3 ? '#ffffff' : '#bfeaff'));
 }
 
-// ---- Drawing -------------------------------------------------------------
-
-function miniFrame(now) {
-  mini.loop = 0;
-  if (mini.el.classList.contains('hidden')) return;
-  const dt = Math.min(0.05, mini.last ? (now - mini.last) / 1000 : 0);
-  mini.last = now;
-  miniUpdate(dt, now);
-  miniDraw(now);
-  mini.loop = requestAnimationFrame(miniFrame);
-}
-
-function miniUpdate(dt, now) {
-  if (state.paused) return; // the parent panel is open: everything waits
+// Fish swim round and round; the ones that left (or fled) swim off.
+function miniSwim(dt) {
   const v = mini.view;
   const left = -v.bx - 18;
   const right = (mini.buf ? mini.buf.width : MINI_W) - v.bx + 18;
   for (const it of mini.items) {
     if (it.state === 'caught') continue;
     it.x += it.vx * dt;
-    if (it.state === 'swim') {
+    if (it.state === 'live') {
       if (it.x < left) it.x = right;
       if (it.x > right) it.x = left;
     }
   }
-  mini.items = mini.items.filter(it => it.state === 'swim' || (it.state === 'caught' ? !!mini.anim && mini.anim.it === it : it.x > left - 30 && it.x < right + 30));
-  for (const p of mini.splashes) { p.vy += 120 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
-  mini.splashes = mini.splashes.filter(p => p.life > 0);
-  mini.ripples = mini.ripples.filter(r => now - r.t0 < 500);
+  mini.items = mini.items.filter(it => it.state === 'live' || (it.state === 'caught' ? !!mini.anim && mini.anim.it === it : it.x > left - 30 && it.x < right + 30));
   // The magnet drifts back to the middle between catches.
   if (isCaptain() && !mini.anim) mini.trolley += (104 - mini.trolley) * Math.min(1, dt * 1.5);
 }
 
-// The tap in picture pixels.
-function miniPoint(e) {
-  const box = mini.canvas.getBoundingClientRect();
-  const v = mini.view;
-  const dpr = mini.canvas.width / Math.max(1, box.width);
-  return { x: ((e.clientX - box.left) * dpr) / v.k - v.bx, y: ((e.clientY - box.top) * dpr) / v.k - v.by };
-}
-
-function miniDraw(now) {
-  const cv = mini.canvas;
-  const dpr = window.devicePixelRatio || 1;
-  const W = Math.round(cv.clientWidth * dpr);
-  const H = Math.round(cv.clientHeight * dpr);
-  if (!W || !H) return;
-  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-  // Whole screen pixels per picture pixel, as big as the box fits (on a
-  // small screen a fraction, so it isn't tiny); the sky, the bank and the
-  // water carry on past it to the edges.
-  const fit = Math.min(W / MINI_W, H / MINI_H);
-  const k = fit >= 4 ? Math.floor(fit) : Math.max(0.5, fit);
-  const LW = Math.ceil(W / k);
-  const LH = Math.ceil(H / k);
-  if (!mini.buf || mini.buf.width !== LW || mini.buf.height !== LH) mini.buf = makeCanvas(LW, LH);
-  const bx = Math.floor((LW - MINI_W) / 2);
-  const by = Math.floor((LH - MINI_H) / 2);
-  mini.view = { k, bx, by };
-  const g = mini.buf.getContext('2d');
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  g.clearRect(0, 0, LW, LH);
-  const t = now / 1000;
-  miniBackdrop(g, LW, LH, bx, by, t);
-  g.translate(bx, by);
+// Pictures on the fish (and the one being reeled in).
+function miniFishLabels(t, now) {
   const art = isCaptain() ? miniCrane : miniRod;
-  art.back(g, t, now);
-  for (const it of mini.items) if (it !== (mini.anim && mini.anim.it)) miniItem(g, it, t, now);
-  art.front(g, t, now);
-  for (const p of mini.splashes) px(g, Math.round(p.x), Math.round(p.y), 1, 1, p.col);
-
-  const ctx = cv.getContext('2d');
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(mini.buf, 0, 0, LW * k, LH * k);
-  // Pictures on the fish, sharp at screen resolution.
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const at = (x, y) => ({ x: (x + bx) * k, y: (y + by) * k });
   const shown = mini.items.filter(it => it !== (mini.anim && mini.anim.it)).map(it => ({ it, p: miniItemAt(it, t) }));
   if (mini.anim) shown.push({ it: mini.anim.it, p: art.carried(now) });
-  for (const { it, p } of shown) {
-    if (!p) continue;
-    const q = at(p.x, p.y);
-    ctx.globalAlpha = it.state === 'leave' ? 0.6 : 1;
-    ctx.font = `${Math.round((isCaptain() ? 11 : 9.5) * k * (p.s || 1))}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-    ctx.fillText(it.e, q.x, q.y + k * 0.5);
-    if (it.glow && it.state === 'swim') {
-      const b = Math.abs(Math.sin(now / 260)) * 3 * k;
-      ctx.font = `${Math.round(12 * k)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-      ctx.textBaseline = 'top';
-      ctx.fillText('👆', q.x + 6 * k, q.y + 8 * k + b);
-      ctx.textBaseline = 'middle';
-    }
-  }
-  ctx.globalAlpha = 1;
-  // Where she tapped.
-  for (const r of mini.ripples) {
-    const kk = (now - r.t0) / 500;
-    const q = at(r.x, r.y);
-    ctx.strokeStyle = `rgba(255,255,255,${1 - kk})`;
-    ctx.lineWidth = Math.max(2, k * (1 - kk));
-    ctx.beginPath();
-    ctx.ellipse(q.x, q.y, (3 + kk * 8) * k, (1.5 + kk * 4) * k, 0, 0, Math.PI * 2);
-    ctx.stroke();
-  }
+  return shown.filter(x => x.p).map(({ it, p }) => ({ text: it.e, x: p.x, y: p.y, size: (isCaptain() ? 11 : 9.5) * (p.s || 1), alpha: it.state === 'leave' ? 0.6 : 1 }));
 }
 
 // Sky, the far bank (or the dock) and the water, across the whole canvas.
@@ -440,7 +606,7 @@ function miniItemAt(it, t) {
 
 function miniItem(g, it, t, now) {
   const p = miniItemAt(it, t);
-  if (it.glow && it.state === 'swim') {
+  if (it.glow && it.state === 'live') {
     const col = Math.floor(now / 200) % 2 ? '#fff27a' : '#ffc21a';
     for (let a = 0; a < Math.PI * 2; a += 0.12) px(g, Math.round(p.x + Math.cos(a) * 19), Math.round(p.y + Math.sin(a) * 12), 1, 1, col);
   }
@@ -702,7 +868,7 @@ function drawMiniHint(now) {
   ctx.lineTo(p.x, p.y + 10.5 * s);
   ctx.lineTo(p.x + 2.5 * s, p.y + 7 * s - 1);
   ctx.fill();
-  ctx.font = `${10 * s}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+  ctx.font = `${10 * s}px ${MINI_EMOJI}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(isCaptain() ? '🧲' : '🎣', p.x, p.y + 0.5 * s);
@@ -719,5 +885,5 @@ mini.letter.addEventListener('click', miniReplay);
 document.getElementById('mini-replay').addEventListener('click', miniReplay);
 document.getElementById('mini-close').addEventListener('click', closeMini);
 document.getElementById('mini-bye').addEventListener('click', closeMini);
-document.getElementById('mini-again').addEventListener('click', () => { const npc = mini.npc; Sound.tap(); closeMini(); openMini(npc); });
+document.getElementById('mini-again').addEventListener('click', () => { const { npc, game } = mini; Sound.tap(); closeMini(); openMini(npc, game); });
 mini.button.addEventListener('click', () => { const npc = state.talking; Sound.tap(); closeDialog(); openMini(npc); });

@@ -163,6 +163,11 @@ function collect(D) {
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
+  // The villages' little games (js/village-games.js): the narrator says
+  // what to do as one starts and hands over the coins. Everything else in
+  // them is the host's own question lines and the narrator's words and
+  // sounds, listed above.
+  lines(N, ['miniRhyme', 'miniSpell', 'miniBlend', 'miniRead', 'miniDone'].filter(k => D.LINES[k]));
   // Today's adventures and the treasure chest (js/quest.js). Tapping a
   // quest's picture says its word, which is recorded with the words below.
   lines(N, ['questHello', 'questReady', 'questChest'].filter(k => D.LINES[k]));

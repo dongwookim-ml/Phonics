@@ -226,9 +226,42 @@ npx http-server -p 8080 .
   she hears its word and the sound again; after two misses the right fish
   glows. A catch is reeled into the bucket and the narrator says "moon
   starts with M.". Five fish pay 3 🪙 coins (`FISHING`). Letters she can't
-  tell apart (`HARD_PAIRS`) never swim together. In the robot edition the
-  fishing robot works a 🧲 magnet crane that lifts boxes into a truck.
-  Code in `js/minigame.js`.
+  tell apart (`HARD_PAIRS`) never swim together. On the first round a
+  finger taps on each fish in turn until she tries one. In the robot
+  edition the fishing robot works a 🧲 magnet crane that lifts boxes into
+  a truck. Code in `js/minigame.js`.
+- **A little game in each village**: one villager in each village has a
+  button in their dialog with the village's picture (🌲 버섯 점프 놀이, 🧚
+  글자 요정 놀이, 🦄 유니콘 달리기, 💎 보물 상자 놀이). Each is five rounds of
+  that village's own skill, three pictures to pick from (four letters to
+  spell), and pays the fishing game's coins (`VILLAGE_GAMES` in
+  `js/data.js`):
+  - Starlight Forest, from the mushroom grandpa: "Which one rhymes with…
+    cat?" and she hops onto the mushroom with the 🎩 (rhyme).
+  - Fairy Village, from the petal fairy: she hears "cat" and taps c, a, t
+    in order on the bubbles little fairies carry; each says its sound and
+    the right one flies up into the next slot (spell, three-letter words;
+    the first letter given at her first tier).
+  - Unicorn Village, from the ranch girl: she hears /c/ /a/ /t/ and taps
+    the unicorn whose cloud shows the 🐱, which gallops off (blend).
+  - Crystal Cave, from the baby dragon: "cat" is written at the top and
+    nobody says it; she opens the treasure chest with the 🐱 (read).
+  In the robot edition: Dinosaur Village's triceratops has eggs that hatch
+  baby dinos, Drone Village's doctor has drones carrying letter boxes, Car
+  Village's mechanic has cars that race over the finish line, and the
+  Villain Cave's Can Bot has crystals to free. Every round is a question
+  from `js/quiz.js` of that kind, at her tier for it (capped like the
+  village asks it), so the hint after a miss ("dog… Listen to the end.
+  cat") and the answer shown after two are the questions' own, and the
+  rhyme pictures are ones she can name for sure. The narrator says what to
+  do once at the start ("Hop on the mushroom that rhymes!") and a finger
+  taps on each picture in turn until she tries one; everything else said
+  was recorded already. The answers don't move her tier, give no stars and
+  aren't kept in her history. Like fishing, the card keeps the game busy
+  and the music down, never opens once today's play time is used up, and
+  ends with 🔁 / 👋. The games share one framework in `js/minigame.js`
+  (rounds, hints, the finger, coins and the card); each brings its
+  questions and pictures (`js/village-games.js`).
 - **First steps**: a new player sees a bouncing 👆 on the nearest villager
   until she first taps one, and once more after her first present. After
   about 20 seconds with no tap (and nothing open) the nearest villager hops
@@ -237,11 +270,12 @@ npx http-server -p 8080 .
 - **Today's adventures and the treasure chest**: a little chest at the top
   right (three dots under it) opens a card with three picture quests for
   the day, one of each kind: answering (⭐ ●●●●● stars, 🎁 a full gift
-  meter, 📒 new stickers, ✨ fairy dust), playing (🐟 fish, 📖 a book read
-  to her or one she reads herself, her own friend fed once) and going
-  somewhere (🏠 a letter house, or a village by its picture). Only what
-  she can do is picked: nothing behind a shut gate, no feeding without a
-  friend. What she does that day fills the dots;
+  meter, 📒 new stickers, ✨ fairy dust), playing (🎮 rounds won in the
+  little games, fishing or a village's, 📖 a book read to her or one she
+  reads herself, her own friend fed once) and going somewhere (🏠 a letter
+  house, or a village by its picture). Only what she can do is picked:
+  nothing behind a shut gate, no feeding without a friend. What she does
+  that day fills the dots;
   a finished quest gets a tick and a chime once she is free, and when all
   three are done the chest glows ("All done! Open the treasure chest!").
   Tapping it opens it (about 2 seconds, a tap skips) and 5 🪙 coins
@@ -315,7 +349,7 @@ npx http-server -p 8080 .
   It is soft (about 14 dB under the voices), and whenever anything is said
   it drops to an eighth within a fraction of a second, then comes back
   slowly (over two or three seconds) once the voice has stopped; while a
-  question, a book or the fishing game is open it stays down the whole
+  question, a book or a little game is open it stays down the whole
   time. Sound effects play over it. A new place crossfades to its tune in
   about a second. It starts with ▶ (after the first tap, which iOS needs
   before a page may make sound) and is silent while 🔊 is off, the parent
@@ -462,9 +496,12 @@ dialog, the buttons a child taps are big enough (64 px), ▶ and the guest
 button show without scrolling, the HUD stays on one row with every counter
 and button showing, the sticker album and a celebration fit the screen
 with every word fitting its sticker, today's adventures fit on one row
-without scrolling, and every page of the books she reads herself fits its
-word tiles in two rows at most. On a phone held upright (390 x 844,
-375 x 667, 360 x 640) every word tile of those books and the end card's
+without scrolling, every page of the books she reads herself fits its
+word tiles in two rows at most, and every little game (the pond's and each
+village's) fits the screen with its top row on one line, its buttons and
+every picture or letter to tap in every round at least 64 px (52 on the
+phone), and its pictures big enough to see. On a phone held upright (390 x
+844, 375 x 667, 360 x 640) every word tile of her books and the end card's
 buttons are on the page and take a tap; on a very small one (320 x 568)
 the page may scroll, as long as each comes into reach.
 
@@ -481,7 +518,8 @@ The other checks, all run by
   asker, under an empty, a finished and a mixed history; first it runs
   `tools/check-books.js` (every word of her own books readable at its level).
 - `node tools/check-tts.js`: every recording has its file, and nothing the
-  game says while playing both editions lacks a recording.
+  game says while playing both editions (every little game too) lacks a
+  recording.
 - `node tools/check-reach.js`: every villager, door and way out can be
   walked to, also with the ride parked.
 - `node tools/check-flows.js`: the parent panel pauses the game, its
@@ -492,7 +530,13 @@ The other checks, all run by
   comes in, a card left open overnight, a chest an older tab says is
   shut), the robot's cave fight with the parent panel over it, reading one
   of her own books to the end (a star once, a locked one stays locked),
-  and the background music in both editions (it starts only after the
+  every little game in both editions with real taps (its button only in
+  its host's dialog, what to do said and the finger on the first round, a
+  hint after a miss and the answer after two, five rounds won paying the
+  coins once and counting for the quest, busy and the music down until it
+  closes, nothing past the play limit, the questions at her tier with no
+  tier moved, every line said listed for recording), and the background
+  music in both editions (it starts only after the
   first tap, ducks under a line and for a whole question, follows 🔊, the
   parent panel and its setting, a hidden page and the sleeping town, and
   plays nothing and breaks nothing without Web Audio).
@@ -599,7 +643,8 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/books.js`: the library's story books and their questions
 - `js/library.js`: the book list, the reader and the book quiz
 - `js/friend.js`: feeding the fairy friend (helper buddy) and how it grows
-- `js/minigame.js`: the fishing (magnet crane) game at the pond
+- `js/minigame.js`: the little games' rounds, hints, coins and card, and the fishing (magnet crane) game at the pond
+- `js/village-games.js`: the game in each village (rhyme, spell, blend, read) in both editions
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents

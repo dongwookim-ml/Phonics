@@ -8,6 +8,12 @@
 //   tabs and done, the feeding card, the 🎣 button and the pond game's
 //   buttons 64 px, spelling tiles 68 px tall, wardrobe chips 56 px (on a
 //   phone a bit less),
+// - every little game (the pond's and each village's, js/minigame.js): the
+//   card on screen with its top row on one line, the picture-and-word box
+//   at the top fitting its text, its button in the host's dialog, ✖ and 🔊
+//   and the end card's 🔁 / 👋 64 px (52 on a phone), every thing to tap
+//   in every round at least that big and inside the picture, and its
+//   pictures big enough to see,
 // - ▶ on the start screen and the guest button on the login screen show
 //   without scrolling, also with Safari's toolbars (1024 x 700),
 // - with every counter and button showing (the next-gate and gift meters
@@ -244,17 +250,54 @@ function ask(kind, scene) {
         small('#fd-jar', big, true);
         small('#fd-done', big, true);
         closeFeed();
-        state.scene = sceneFor('town');
-        state.busy = false;
-        openDialog(miniFisher());
-        small('#dlg-mini', big, true);
-        closeDialog();
-        openMini(miniFisher());
-        small('#mini-close', big);
-        small('#mini-replay', big);
-        document.getElementById('mini-end').classList.remove('hidden');
-        small('.mini-end .answer button', big, true);
-        closeMini();
+        // Every little game, from its host's dialog.
+        for (const [key, g] of Object.entries(MINI_GAMES)) {
+          state.scene = sceneFor(g.scene);
+          state.busy = false;
+          const host = g.host();
+          openDialog(host);
+          small('#dlg-mini', big, true);
+          closeDialog();
+          state.busy = false;
+          openMini(host);
+          miniDraw(performance.now());
+          const card = mini.el.getBoundingClientRect();
+          if (card.top < 0 || card.left < 0 || card.bottom > innerHeight + 0.5 || card.right > innerWidth + 0.5) out.push(`${key} game: the card runs off the screen`);
+          const head = mini.el.querySelector('.mini-head');
+          if (head.scrollWidth > head.clientWidth + 1) out.push(`${key} game: the top row runs over (${head.scrollWidth} > ${head.clientWidth})`);
+          if (mini.pips.scrollWidth > mini.pips.clientWidth + 1) out.push(`${key} game: the round pips run over`);
+          if (mini.letter.scrollWidth > mini.letter.clientWidth + 1) out.push(`${key} game: "${mini.letter.textContent}" runs out of its box`);
+          small('#mini-close', big);
+          small('#mini-replay', big);
+          small('#mini-letter', big, true);
+          // The things to tap in every round, on the screen.
+          const cv = mini.canvas.getBoundingClientRect();
+          const v = mini.view;
+          const dpr = mini.canvas.width / cv.width;
+          const css = x => (x * v.k) / dpr;
+          const tiny = [];
+          for (const r of mini.rounds) {
+            for (const it of g.items(r)) {
+              if (it.state !== 'live') continue;
+              const b = g.box(it);
+              const w = css(b.x1 - b.x0);
+              const h = css(b.y1 - b.y0);
+              if (Math.min(w, h) < big - 0.5) tiny.push(`${Math.round(w)}x${Math.round(h)}`);
+              const x0 = cv.left + css(b.x0 + v.bx);
+              const y0 = cv.top + css(b.y0 + v.by);
+              if (key !== 'fish' && (x0 < cv.left || y0 < cv.top || x0 + w > cv.right || y0 + h > cv.bottom)) out.push(`${key} game: a thing to tap is outside the picture`);
+            }
+          }
+          if (tiny.length) out.push(`${key} game: ${tiny.length} thing(s) to tap under ${big}px, e.g. ${tiny[0]}`);
+          // Its pictures (and letters) big enough to see.
+          const least = Math.min(...g.draw.labels(performance.now() / 1000, performance.now() + 2000).map(l => css(l.size)));
+          if (key !== 'fish' && least < (phone ? 24 : 40)) out.push(`${key} game: pictures only ${Math.round(least)}px`);
+          document.getElementById('mini-end').classList.remove('hidden');
+          small('.mini-end .answer button', big, true);
+          const end = document.getElementById('mini-end').getBoundingClientRect();
+          if (end.top < card.top || end.bottom > card.bottom) out.push(`${key} game: the end card runs out of the card`);
+          closeMini();
+        }
 
         // The HUD with everything showing (js/album.js): the stars toward the
         // last gate, the gift meter, coins and dust, and every button with

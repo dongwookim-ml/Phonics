@@ -31,6 +31,17 @@
 //    village's friends in the shop before its gate, no fish she'd name
 //    with the round's sound by another name (ALIAS), a friend's growth is
 //    cheered even after 👋, feeding is counted per tablet;
+//  - the little games (js/minigame.js, js/village-games.js), the pond's
+//    and each village's, in both editions: each starts from its host's
+//    dialog in its own place and nobody else's (not a look-alike at home);
+//    the first round says what to do and shows the finger until she tries
+//    one; a miss gets the hint and a second shows the answer; five rounds
+//    won pay the coins once and count for today's games quest; the card
+//    keeps the game busy and the music down until 👋 and frees it after;
+//    it never opens past the play limit and 🔁 there puts the town to
+//    sleep; the questions come at her tier, capped like the village asks
+//    it, and playing moves no tier and records no answer; no page errors,
+//    and every line said is listed for recording;
 //  - the background music (js/music.js), in both editions: it starts only
 //    after the first tap, and only once the town is on screen; it drops
 //    quickly while a line is said and comes back slowly after, stays down
@@ -372,7 +383,7 @@ async function quests(browser, edition) {
         changeScene('town');
         settle();
         openMini(miniFisher());
-        miniCatch(mini.items.find(x => x.right && x.state === 'swim'));
+        miniCatch(mini.items.find(x => x.right && x.state === 'live'));
         closeMini();
       },
       book: () => { openLibrary(); openBook(BOOKS[0]); bookFinish(); closeLibrary(); },
@@ -902,6 +913,178 @@ async function cards(browser, edition) {
   await ctx.close();
 }
 
+// The little games: the fisherman's at the pond and one in each village,
+// played with real taps on the canvas. Speech is instant here: each line
+// is noted with its voice and its callbacks run at once.
+async function littleGames(browser, edition) {
+  const other = edition === 'captain' ? 'princess' : 'captain';
+  const seed = { edition, stars: 40, coins: 0, other: { [other]: { edition: other } } };
+  const { page, ctx, errors } = await game(browser, { seed, edition });
+  const r = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const until = async (f, ms) => { const t0 = performance.now(); while (!f() && performance.now() - t0 < ms) await sleep(40); return f(); };
+    const said = [];
+    const all = new Map();
+    Sound.say = (parts, who) => {
+      for (const p of [].concat(parts)) {
+        if (p && p.text) {
+          const x = { voice: p.narrator || !(who && who.tts) ? TTS_NARRATOR : who.tts, text: String(p.text).trim().replace(/\s+/g, ' '), narrator: !!p.narrator };
+          said.push(x);
+          all.set(`${x.voice}|${x.text}`, x);
+        }
+        if (p && p.call) p.call();
+      }
+    };
+    const shown = id => !document.getElementById(id).classList.contains('hidden');
+    // A tap on a thing in the picture, where it is on the screen.
+    const tap = it => {
+      const b = mini.game.box(it);
+      const v = mini.view;
+      const box = mini.canvas.getBoundingClientRect();
+      const dpr = mini.canvas.width / box.width;
+      const x = box.left + (((b.x0 + b.x1) / 2 + v.bx) * v.k) / dpr;
+      const y = box.top + (((b.y0 + b.y1) / 2 + v.by) * v.k) / dpr;
+      mini.canvas.dispatchEvent(new PointerEvent('pointerdown', { clientX: x, clientY: y, bubbles: true, cancelable: true }));
+    };
+    const live = () => mini.items.filter(x => x.state === 'live');
+    // The right one: the right picture, or the letter the next slot needs.
+    const right = () => live().find(x => (mini.game.tap ? vgWants(x) : x.right));
+    const wrong = () => live().find(x => (mini.game.tap ? !vgWants(x) : !x.right));
+    const winRound = async () => {
+      const n = mini.round;
+      for (let i = 0; i < 8 && mini.round === n && right(); i++) { tap(right()); await sleep(60); }
+      return until(() => mini.round > n || shown('mini-end'), 6000);
+    };
+    const firstLines = ['miniRhyme', 'miniSpell', 'miniBlend', 'miniRead'].flatMap(k => LINES[k]).concat(LINES.fishHello);
+    const out = {};
+    for (const key of ['fish', 'forest', 'fairy', 'unicorn', 'dungeon']) {
+      const g = MINI_GAMES[key];
+      const o = out[key] = {};
+      changeScene(g.scene);
+      await sleep(500);
+      const sc = state.scene;
+      const host = g.host();
+      // The button: in the host's dialog only, with the game's picture.
+      openDialog(host);
+      o.button = { shown: shown('dlg-mini'), text: document.getElementById('dlg-mini').textContent };
+      closeDialog();
+      const someone = sc.npcs.find(n => n !== host && !n.mount && !n.shop && !n.caught);
+      openDialog(someone);
+      o.button.other = shown('dlg-mini');
+      closeDialog();
+      const home = VILLAGE_HOMES.find(h => h.scene === g.scene && h.look === host.look);
+      if (home) {
+        changeScene(`home-${home.id}`);
+        await sleep(500);
+        openDialog(state.scene.npcs[0]);
+        o.button.home = shown('dlg-mini');
+        closeDialog();
+        changeScene(g.scene);
+        await sleep(500);
+      }
+      // Started from the button: busy, the music down, what to do said, the
+      // finger. (The dialog's own question counts towards her tier.)
+      openDialog(host);
+      const skill = JSON.stringify(state.skill);
+      const history = JSON.stringify(state.history);
+      const coins = state.coins;
+      const quest = questCount('fish');
+      said.length = 0;
+      document.getElementById('dlg-mini').click();
+      await sleep(100);
+      o.open = { card: shown('mini'), dialog: shown('dialog'), busy: state.busy, music: musicListening(), title: mini.title.textContent };
+      o.first = { line: said.find(p => firstLines.includes(p.text)) || null, finger: miniFingerShows() };
+      o.rounds = mini.rounds.length;
+      o.choices = mini.rounds.map(() => 0);
+      o.choices[0] = live().length;
+      // Round one: a miss (the hint), a second (the answer shown), then the right one.
+      said.length = 0;
+      tap(wrong());
+      o.miss = { said: said.map(p => p.text), finger: miniFingerShows(), glow: mini.items.some(x => x.glow) };
+      mini.locked = false;
+      said.length = 0;
+      tap(wrong());
+      const glowing = mini.items.filter(x => x.glow);
+      o.show = { said: said.map(p => p.text), glow: glowing.length === 1 && glowing[0] === right() };
+      mini.locked = false;
+      o.won = [await winRound()];
+      for (let i = 1; i < mini.rounds.length; i++) {
+        o.choices[i] = live().length;
+        o.finger = o.finger || miniFingerShows();
+        o.won.push(await winRound());
+      }
+      await until(() => shown('mini-end'), 3000);
+      // The end: the coins once, the quest, the pips.
+      tap({ x: 100, y: 80 });
+      await sleep(300);
+      o.end = { card: shown('mini-end'), coins: state.coins - coins, quest: questCount('fish') - quest, pips: document.querySelectorAll('#mini-pips .pip.on').length, done: said.some(p => (key === 'fish' ? LINES.fishDone : LINES.miniDone).includes(p.text)) };
+      // 🔁 plays again; 👋 closes and frees the game.
+      document.getElementById('mini-again').click();
+      await sleep(100);
+      o.again = { card: shown('mini'), end: shown('mini-end'), round: mini.round, caught: mini.caught.length };
+      document.getElementById('mini-close').click();
+      await sleep(100);
+      o.closed = { card: shown('mini'), busy: state.busy, music: musicListening() };
+      o.kept = { skill: JSON.stringify(state.skill) === skill, history: JSON.stringify(state.history) === history };
+      // Her tier, capped like the village asks it; three-letter words to spell.
+      if (key !== 'fish') {
+        const kind = VILLAGE_GAMES[key].kind;
+        const was = state.skill[kind];
+        const cap = Math.min(key === 'fairy' ? 2 : TIER_BAND[key][1], Quiz.tierMax(kind));
+        o.tiers = {};
+        for (const t of [1, 9]) {
+          state.skill[kind] = Object.assign({}, was || {}, { t });
+          const rounds = g.rounds();
+          o.tiers[t] = { got: [...new Set(rounds.map(x => x.q.tier))], want: Math.min(t, cap), three: rounds.every(x => key !== 'fairy' || x.q.slots.length === 3) };
+        }
+        if (was) state.skill[kind] = was;
+        else delete state.skill[kind];
+      }
+      // Past the play limit: the button opens nothing, and 🔁 puts the town to sleep.
+      state.settings.playLimit = 1;
+      state.playtime = { day: guideDay(), ms: 60001, wakes: 0 };
+      openDialog(host);
+      document.getElementById('dlg-mini').click();
+      await sleep(100);
+      o.limit = { card: shown('mini') };
+      await until(() => guide.asleep, 2000);
+      o.limit.asleep = guide.asleep;
+      guideWake();
+      state.playtime = { day: guideDay(), ms: 0, wakes: 0 };
+      openMini(host);
+      state.playtime.ms = 60001;
+      document.getElementById('mini-again').click();
+      await sleep(300);
+      o.limit.again = { card: shown('mini'), asleep: guide.asleep };
+      if (guide.asleep) guideWake();
+      state.settings.playLimit = 0;
+      state.playtime = { day: guideDay(), ms: 0, wakes: 0 };
+    }
+    return { out, said: [...all.values()] };
+  });
+  const tag = `little games (${edition})`;
+  for (const [key, o] of Object.entries(r.out)) {
+    const t = `${tag} ${key}`;
+    check(`${t}: its button is in the host's dialog only, with its picture`, o.button.shown && !o.button.other && o.button.home !== true && /^\p{Extended_Pictographic}/u.test(o.button.text), o.button);
+    check(`${t}: the button opens it, busy and the music down`, o.open.card && !o.open.dialog && o.open.busy && o.open.music && !!o.open.title, o.open);
+    check(`${t}: the first round says what to do and shows the finger, which goes after a try`, !!o.first.line && o.first.finger && !o.miss.finger && !o.finger, { first: o.first, miss: o.miss.finger, later: o.finger });
+    check(`${t}: five rounds, ${key === 'fish' ? 4 : key === 'fairy' ? '3 or 4' : 3} to pick from`, o.rounds === 5 && o.choices.every(n => (key === 'fish' ? n === 4 : key === 'fairy' ? n === 3 || n === 4 : n === 3)), o.choices);
+    check(`${t}: a miss gets a hint, a second shows the right one`, o.miss.said.length > 1 && !o.miss.glow && o.show.glow && o.show.said.length > 1, { miss: o.miss, show: o.show });
+    check(`${t}: every round can be won`, o.won.length === 5 && o.won.every(Boolean), o.won);
+    check(`${t}: the end pays the coins once and counts each round for the games quest`, o.end.card && o.end.coins === r.out.fish.end.coins && o.end.coins > 0 && o.end.quest === 5 && o.end.pips === 5 && o.end.done, o.end);
+    check(`${t}: 🔁 plays again from the start`, o.again.card && !o.again.end && o.again.round === 0 && o.again.caught === 0, o.again);
+    check(`${t}: ✖ closes it and frees the game and the music`, !o.closed.card && o.closed.busy === false && o.closed.music === false, o.closed);
+    check(`${t}: playing moves no tier and records no answer`, o.kept.skill && o.kept.history, o.kept);
+    if (o.tiers) check(`${t}: the questions come at her tier, capped like the village`, Object.values(o.tiers).every(x => x.got.length === 1 && x.got[0] === x.want && x.three), o.tiers);
+    check(`${t}: past the play limit it doesn't open, and 🔁 puts the town to sleep`, !o.limit.card && o.limit.asleep && !o.limit.again.card && o.limit.again.asleep, o.limit);
+  }
+  const listed = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'tts-phrases.json'), 'utf8')).map(p => `${p.voice}|${p.text}`));
+  const unlisted = r.said.filter(p => !listed.has(`${p.voice}|${p.text}`)).map(p => `${p.voice} "${p.text}"`);
+  check(`${tag}: every line said (${r.said.length}) is listed in tools/tts-phrases.json`, r.said.length > 30 && !unlisted.length, unlisted);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 // The background music (js/music.js), watched through musicInfo, with real
 // taps and real clips.
 async function musicFlows(browser, edition) {
@@ -1113,6 +1296,7 @@ async function musicFlows(browser, edition) {
   const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
     questEdges: b => questEdges(b, 'princess'), questEdgesCaptain: b => questEdges(b, 'captain'), caveFight,
     cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
+    games: b => littleGames(b, 'princess'), gamesCaptain: b => littleGames(b, 'captain'),
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);

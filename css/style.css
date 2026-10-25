@@ -1420,7 +1420,7 @@ body.captain .rd-word.on, body.captain .rd-text.now .rd-word { background: #dceb
 .chip.feed-chip { background: #fff4b8; border-color: #e0a52a; }
 .chip.feed-chip .pips { font-size: 13px; letter-spacing: 1px; color: #c8901a; }
 
-/* ---- The fisherman's game (js/minigame.js) ---- */
+/* ---- The little games: fishing, and one in each village (js/minigame.js, js/village-games.js) ---- */
 
 .mini {
   position: fixed;
@@ -1457,6 +1457,8 @@ body.captain .rd-word.on, body.captain .rd-text.now .rd-word { background: #dceb
   box-shadow: 0 4px 0 rgba(74, 44, 79, 0.25);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
 }
+/* A picture and a word ("🐱 cat") or a long word: a little smaller. */
+.mini-letter.long { font-size: 32px; }
 .mini-pips { flex: 1; min-width: 0; display: flex; justify-content: center; gap: 6px; }
 .mini-pips .pip {
   width: 46px;
@@ -1579,6 +1581,7 @@ body.captain .mini-end { background: radial-gradient(circle at 50% 30%, #fffdf2,
   .mini { top: calc(var(--hud) + 6px); bottom: 6px; padding: 6px 10px 8px; gap: 6px; border-radius: 18px; }
   .mini-title { display: none; }
   .mini-letter { min-width: 76px; height: 52px; font-size: 34px; }
+  .mini-letter.long { font-size: 26px; }
   .mini-pips .pip { width: 38px; height: 38px; font-size: 20px; }
   .mini-end { padding: 8px 12px 10px; }
   .mini-catch { font-size: 30px; }
