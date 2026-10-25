@@ -1779,6 +1779,45 @@ async function shopTabs(browser, edition) {
   await ctx.close();
 }
 
+// Riding up to a house (or into the cave): the ride waits outside, and she
+// is back on it as she comes out. On foot, it waits next to her as before.
+async function rideInOut(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const trip = (how, riding) => page.evaluate(async ([how, riding]) => {
+    const wait = ok => new Promise(res => { const t0 = performance.now(); const go = () => (ok() || performance.now() - t0 > 4000 ? res() : setTimeout(go, 50)); go(); });
+    const settled = () => !ui.fade.classList.contains('on');
+    // The town and one of its houses, or the place the cave is in and the
+    // way in and out of it.
+    const name = how === 'door' ? 'town' : ['town', 'forest', 'unicorn', 'fairy'].find(n => (sceneFor(n).links || []).some(l => l.target === 'dungeon'));
+    const town = sceneFor(name);
+    const v = Object.keys(UNICORNS).find(x => x !== 'none');
+    if (!state.owned.ride.includes(v)) state.owned.ride.push(v);
+    state.outfit = Object.assign({}, state.outfit, { ride: v });
+    if (state.scene !== town) { changeScene(name); await wait(() => state.scene === town && settled()); }
+    if (riding) getOn();
+    else getOff();
+    const before = { mounted: state.mounted };
+    if (how === 'door') enterDoor(town.doors.find(d => d.obj && d.obj.info) || town.doors[0]);
+    else followLink(town.links.find(l => l.target === 'dungeon'));
+    await wait(() => !state.scene.outdoor && settled());
+    const inside = { scene: state.scene.kind, mounted: state.mounted, button: ui.ride.classList.contains('active'), waits: !!state.parked && state.parked.sc === town };
+    if (how === 'door') leaveRoom();
+    else followLink(state.scene.links.find(l => l.target === name));
+    await wait(() => state.scene === town && settled());
+    return { before, inside, out: { mounted: state.mounted, parked: !!state.parked, button: ui.ride.classList.contains('active'), busy: state.busy } };
+  }, [how, riding]);
+  const tag = `riding (${edition})`;
+  for (const how of ['door', 'cave']) {
+    const rode = await trip(how, true);
+    check(`${tag}: rides up to the ${how}, goes in on foot, and is back on as she comes out`, rode.before.mounted && !rode.inside.mounted && !rode.inside.button
+      && rode.inside.waits && rode.out.mounted && !rode.out.parked && rode.out.button && !rode.out.busy, rode);
+    const walked = await trip(how, false);
+    check(`${tag}: walks to the ${how}: comes out on foot, the ride waiting next to her`, !walked.before.mounted && !walked.out.mounted && walked.out.parked && !walked.out.button, walked);
+  }
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const site = await serve();
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -1790,7 +1829,8 @@ async function shopTabs(browser, edition) {
     presentsGirl: b => presents(b, 'princess', 'girl'), presentsBoy: b => presents(b, 'princess', 'boy'), presentsRobot: b => presents(b, 'captain', 'robot'),
     outside: b => outsideTaps(b, 'princess'), outsideCaptain: b => outsideTaps(b, 'captain'),
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain'),
-    shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain') };
+    shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain'),
+    ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

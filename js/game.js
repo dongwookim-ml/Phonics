@@ -281,6 +281,7 @@ const state = {
   timers: [],
   mounted: false,    // riding her unicorn right now
   parked: null,      // { sc, npc } where the unicorn waits when she is off it
+  rodeIn: false,     // she rode up to the door she is inside (or the cave): back on as she comes out
   fairyAt: null,     // where her fairy friend is flying, in world pixels
 };
 
@@ -393,6 +394,8 @@ function changeScene(target, at, label) {
   state.busy = true;
   ui.fade.classList.add('on');
   later(320, () => {
+    const from = state.scene;
+    const riding = state.mounted;
     state.scene = sceneFor(target);
     document.body.classList.toggle('forest', state.scene.kind === 'forest');
     document.body.classList.toggle('unicorn', state.scene.kind === 'unicorn');
@@ -402,9 +405,20 @@ function changeScene(target, at, label) {
     state.fairyAt = null;
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);
-    // Her unicorn waits next to her whenever she steps outside on foot.
-    if (!state.scene.outdoor) state.mounted = false;
-    else if (!state.mounted) parkUnicorn();
+    // Her unicorn (or car) can't come inside. If she rode up to the door
+    // (or into the cave), she is back on it as she comes out; else it waits
+    // next to her whenever she steps outside on foot.
+    if (!state.scene.outdoor) {
+      if (from && from.outdoor) state.rodeIn = state.rodeIn || riding;
+      state.mounted = false;
+      renderRide(); // the 🦄 button isn't lit while she's on foot
+    } else if (state.rodeIn && hasUnicorn()) {
+      state.rodeIn = false;
+      getOn(true); // quietly: the place's own hello may be playing
+    } else {
+      state.rodeIn = false;
+      if (!state.mounted) parkUnicorn();
+    }
     snapCamera();
     ui.fade.classList.remove('on');
     state.busy = busyNow();
@@ -422,7 +436,7 @@ function showPlace(text) {
 }
 
 function enterDoor(door) {
-  getOff();
+  getOffToGoIn();
   Sound.door();
   if (door.target === 'castle') {
     changeScene('castle', null, place('castle'));
@@ -479,14 +493,21 @@ function parkUnicorn() {
   state.parked = { sc, npc };
 }
 
-function getOn() {
+function getOn(quiet) {
   if (!hasUnicorn() || !state.scene.outdoor) return;
   removeParked();
   state.mounted = true;
   burstAtHero(24);
   Sound.sparkle();
-  Sound.say([{ text: line('mount'), pitch: 1.3 }]);
+  if (!quiet) Sound.say([{ text: line('mount'), pitch: 1.3 }]);
   renderRide();
+}
+
+// Before going in by a door or into the cave: if she rode up to it, she is
+// back on as she comes out (changeScene).
+function getOffToGoIn() {
+  if (state.scene.outdoor) state.rodeIn = state.mounted;
+  getOff();
 }
 
 // Before going indoors, or when she taps the 🦄 button.
@@ -1020,7 +1041,7 @@ function followLink(link) {
     changeScene('unicorn', link.at, place('unicorn'));
     Sound.say([{ text: line('unicorn'), pitch: 1.3 }]);
   } else if (link.target === 'dungeon') {
-    getOff();
+    getOffToGoIn();
     respawnMonsters(sceneFor('dungeon'));
     changeScene('dungeon', link.at, place('dungeon'));
     Sound.say([{ text: line('dungeon'), pitch: 1.3 }]);
