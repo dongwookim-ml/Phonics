@@ -5,7 +5,7 @@
 // Account.user    the signed-in id, or null
 // Account.ready   resolves once the login screen is done
 // Account.verify  checks the account password (the parent panel)
-// Account.push    uploads the save, 2 s after the last change
+// Account.push    uploads the save, 2 s after the last change (one at a time)
 // Account.pull    the server's save, or null
 
 // Tests point this at a local server with window.ACCOUNT_SERVER, and skip
@@ -82,6 +82,8 @@ const Account = {
   _resolve: null,
   _started: false, // the login screen is done; saves from now on are real progress
   _timer: 0,
+  _inflight: null, // the upload on its way, if any
+  _again: false,   // something changed while it was: send again after it
   get _dirty() { return !!accountGet('dirty'); },
 
   async verify(pw) {
@@ -109,9 +111,26 @@ const Account = {
     this._timer = setTimeout(() => this._upload(), 2000);
   },
 
-  // Sends the local save up now. Fails quietly; the next save tries again.
-  async _upload(keepalive) {
+  // Sends the local save up now, one upload at a time: a save made while one
+  // is on its way goes up after it, on the version that one gets back (two
+  // at once would be built on the same version, and the second would be
+  // refused). Fails quietly; the next save tries again.
+  _upload(keepalive) {
     clearTimeout(this._timer);
+    // The last one as the page goes away may overlap; a 409 there is harmless.
+    if (keepalive) return this._send(true);
+    if (this._inflight) { this._again = true; return this._inflight; }
+    this._inflight = (async () => {
+      try {
+        do { this._again = false; await this._send(false); } while (this._again);
+      } finally {
+        this._inflight = null;
+      }
+    })();
+    return this._inflight;
+  },
+
+  async _send(keepalive) {
     const json = accountLocalSave();
     if (!this.user || !json || !this._dirty) return;
     const body = { save: JSON.parse(json), base: Number(accountGet('updated')) || 0 };
