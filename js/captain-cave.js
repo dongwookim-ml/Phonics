@@ -246,15 +246,15 @@ function buildVillainCave() {
   caveLairWalls(sc, 84);
 
   // Props stand on single tiles; `anim` ones are drawn every frame.
-  const prop = (c, r, up, draw, anim) => {
+  const prop = (c, r, up, draw, anim, react) => {
     block(sc, c, r, 1, 1);
     const p = tileCenter(sc, c, r);
     const bounds = { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 };
     if (anim) sc.objects.push(Object.assign({ c0: c, r0: r, c1: c, r1: r }, bounds, { animated: (ctx, t) => anim(ctx, Math.round(p.x), Math.round(p.y), t) }));
-    else addObject(sc, { c, r, w: 1, d: 1 }, bounds, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    else addObject(sc, { c, r, w: 1, d: 1 }, bounds, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
-  for (const [c, r] of [[1, 2], [14, 1], [1, 12], [15, 4]]) prop(c, r, 26, caveScrapHeap);
+  for (const [c, r] of [[1, 2], [14, 1], [1, 12], [15, 4]]) prop(c, r, 26, caveScrapHeap, null, { word: 'bolt', fx: 'hop' });
   for (const [c, r, col] of [[0, 6, '#ff9a4a'], [4, 1, '#6fb8ff'], [15, 7, '#ff6fa8'], [10, 12, '#6fb8ff']]) {
     const p = prop(c, r, 24, (ctx, x, y) => caveBarrel(ctx, x, y, col));
     sc.lamps.push({ x: p.x, y: p.y - 18, small: true });
@@ -265,16 +265,16 @@ function buildVillainCave() {
   }
   const lab = prop(13, 2, 30, caveLabTable);
   sc.lamps.push({ x: lab.x, y: lab.y - 20 });
-  prop(11, 1, 26, caveBigButton);
+  prop(11, 1, 26, caveBigButton, null, { fx: 'boing' });
   for (const [c, r] of [[6, 13], [9, 13]]) {
     const p = prop(c, r, 36, null, caveBeacon);
     sc.lamps.push({ x: p.x, y: p.y - 30 });
   }
   // The boss's golden throne, and the pirate's treasure.
   block(sc, 7, 2, 1, 1);
-  addObject(sc, { c: 7, r: 2, w: 1, d: 1 }, footBounds(sc, 7, 2, 1, 1, 44), ctx => drawThrone(ctx, sc, 7, 2, '#9a7ae0'));
+  addObject(sc, { c: 7, r: 2, w: 1, d: 1 }, footBounds(sc, 7, 2, 1, 1, 44), ctx => drawThrone(ctx, sc, 7, 2, '#9a7ae0'), { react: FURNITURE.chair });
   block(sc, 3, 11, 1, 1);
-  addObject(sc, { c: 3, r: 11, w: 1, d: 1 }, footBounds(sc, 3, 11, 1, 1, 30), ctx => drawTreasureChest(ctx, sc, 3, 11));
+  addObject(sc, { c: 3, r: 11, w: 1, d: 1 }, footBounds(sc, 3, 11, 1, 1, 30), ctx => drawTreasureChest(ctx, sc, 3, 11), { react: FURNITURE.chest });
 
   // Bubbles popping in the goo pool.
   const gp = tileCenter(sc, 11.5, 8);

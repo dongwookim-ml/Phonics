@@ -907,6 +907,9 @@ function rtProp(kind) {
     },
   }[kind];
   const p = make();
+  const [word, fx] = { solar: ['sun', 'glow'], turbine: ['wind', 'shake'], dish: ['dish', 'hop'], gear: ['gear', 'hop'], crates: ['box', 'hop'],
+    cones: ['cone', 'hop'], tires: ['tire', 'boing'], lamp: ['lamp', 'glow'] }[kind] || [];
+  if (word) touchable(p, word, fx);
   rtPropCache.set(kind, p);
   return p;
 }
@@ -936,35 +939,35 @@ function rtArch(ctx, A, B, accent) {
 }
 
 // Like addGate and addSideGate in world.js, with pylons and a truss.
-function rtAddGate(sc, cols, r, mat) {
+function rtAddGate(sc, cols, r, mat, links) {
   const post = rtProp('post');
   for (const c of cols) {
     const p = tileCenter(sc, c, r);
     sc.objects = sc.objects.filter(o => !(o.tree && o.c0 === c && o.r0 === r));
     block(sc, c, r, 1, 1);
-    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height, links });
     sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
   }
   for (let c = cols[0] + 1; c < cols[1]; c++) for (const rr of [r, r + 1]) if (tileAt(sc, c, rr)) tileAt(sc, c, rr).mat = mat;
   const A = tileCenter(sc, cols[0], r);
   const B = tileCenter(sc, cols[1], r);
   addObject(sc, { c: cols[0], r, w: cols[1] - cols[0] + 1, d: 1 }, { x: A.x - 2, y: A.y - 60, w: B.x - A.x + 4, h: B.y - A.y + 34 },
-    ctx => rtArch(ctx, A, B, shade(mat, -20)));
+    ctx => rtArch(ctx, A, B, shade(mat, -20)), { links });
 }
-function rtAddSideGate(sc, c, rows, mat, mats) {
+function rtAddSideGate(sc, c, rows, mat, mats, links) {
   const post = rtProp('post');
   for (const r of rows) {
     const p = tileCenter(sc, c, r);
     sc.objects = sc.objects.filter(o => !(o.tree && o.c0 === c && o.r0 === r));
     block(sc, c, r, 1, 1);
-    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height, links });
     sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
   }
   for (let r = rows[0] + 1; r < rows[1]; r++) for (const cc of mats) if (tileAt(sc, cc, r)) tileAt(sc, cc, r).mat = mat;
   const A = tileCenter(sc, c, rows[1]);
   const B = tileCenter(sc, c, rows[0]);
   addObject(sc, { c, r: rows[0], w: 1, d: rows[1] - rows[0] + 1 }, { x: A.x - 2, y: B.y - 60, w: B.x - A.x + 4, h: A.y - B.y + 34 },
-    ctx => rtArch(ctx, A, B, shade(mat, -20)));
+    ctx => rtArch(ctx, A, B, shade(mat, -20)), { links });
 }
 
 // The fountain in the square: a golden robot statue splashing water.
@@ -1266,8 +1269,8 @@ function buildRobotTown() {
   block(sc, 19, 19, 2, 2);
   for (let r = 18; r <= 21; r++) for (let c = 18; c <= 21; c++) reserve(c, r);
   const fc = tileCenter(sc, 19.5, 19.5);
-  sc.objects.push({ c0: 19, r0: 19, c1: 20, r1: 20, x: fc.x - 30, y: fc.y - 52, w: 60, h: 72,
-    animated: (ctx, t) => rtFountain(ctx, Math.round(fc.x), Math.round(fc.y), t) });
+  sc.objects.push(stillFrame({ c0: 19, r0: 19, c1: 20, r1: 20, x: fc.x - 30, y: fc.y - 52, w: 60, h: 72,
+    animated: (ctx, t) => rtFountain(ctx, Math.round(fc.x), Math.round(fc.y), t), react: { word: 'fountain', fx: 'splash' } }));
 
   // Street lamps.
   const lamp = rtProp('lamp');
@@ -1334,18 +1337,20 @@ function buildRobotTown() {
   sc.start = { c: 20, r: 12 };
 
   // Gate to the Dino Village at the south end of the main road.
-  rtAddGate(sc, [18, 21], 38, '#9fe0a0');
-  sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🦖', style: 'gate', needStars: FOREST_STARS }));
+  const toDino = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🦖', style: 'gate', needStars: FOREST_STARS }));
+  sc.links = [...toDino];
+  rtAddGate(sc, [18, 21], 38, '#9fe0a0', toDino);
   const gp = tileCenter(sc, 19.5, 38);
-  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#4fa35a', needStars: FOREST_STARS });
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#4fa35a', needStars: FOREST_STARS, links: toDino });
   // Gate to the Drone Village at the east end of the lower road.
   for (const [c, r] of [[37, 27], [38, 26], [38, 27], [39, 26], [39, 27]]) setTile(sc, c, r, 'road');
   sc.objects = sc.objects.filter(o => !(o.tree && o.c0 >= 37 && o.r0 >= 26 && o.r0 <= 29));
   for (let r = 26; r <= 29; r++) for (let c = 37; c <= 39; c++) tileAt(sc, c, r).blocked = false;
-  rtAddSideGate(sc, 38, [25, 28], '#9fd8ff', [38, 39]);
-  for (const r of [26, 27]) sc.links.push({ c: 39, r, target: 'fairy', at: { c: 2, r: r - 14 }, icon: '🛸', style: 'gate', needStars: FAIRY_STARS });
+  const toDrones = [26, 27].map(r => ({ c: 39, r, target: 'fairy', at: { c: 2, r: r - 14 }, icon: '🛸', style: 'gate', needStars: FAIRY_STARS }));
+  sc.links.push(...toDrones);
+  rtAddSideGate(sc, 38, [25, 28], '#9fd8ff', [38, 39], toDrones);
   const dp = tileCenter(sc, 39, 25.5);
-  sc.signs.push({ x: dp.x, y: dp.y - 64, text: place('fairy'), color: '#3f8fd8', needStars: FAIRY_STARS });
+  sc.signs.push({ x: dp.x, y: dp.y - 64, text: place('fairy'), color: '#3f8fd8', needStars: FAIRY_STARS, links: toDrones });
   renderGround(sc);
   return sc;
 }
@@ -1595,17 +1600,17 @@ function buildRobotWorkshop(h) {
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
   const WB = wall(k.T, k.R);
   const poster = wallPt(WB, WB.len * 0.32, 39);
-  sc.signs.push({ x: poster.x, y: poster.y, text: info.letter + info.letter.toLowerCase(), color: info.color, big: true, plain: true });
-  info.words.slice(0, 3).forEach(([, emoji], i) => {
+  sc.signs.push({ x: poster.x, y: poster.y, text: info.letter + info.letter.toLowerCase(), color: info.color, big: true, plain: true, poster: info });
+  info.words.slice(0, 3).forEach(([word, emoji], i) => {
     const p = wallPt(WB, WB.len * (0.6 + i * 0.13), 40 + (i % 2) * 6);
-    sc.decor.push({ x: p.x, y: p.y, emoji, frame: true });
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, letter: info.letter, frame: true });
   });
 
-  rtFurn(sc, 6, 0, 1, 2, 30, ctx => rtPod(ctx, sc, 6, 0, info.color));
-  rtFurn(sc, 1, 0, 1, 1, 44, ctx => rtPartsShelf(ctx, sc, 1, 0, info.color));
-  rtFurn(sc, 0, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 3));
-  rtFurn(sc, 7, 5, 1, 1, 30, ctx => drawPlant(ctx, sc, 7, 5));
-  rtFurn(sc, 5, 5, 1, 1, 26, ctx => rtWorkTable(ctx, sc, 5, 5, info.color));
+  rtFurn(sc, 6, 0, 1, 2, 30, ctx => rtPod(ctx, sc, 6, 0, info.color), { react: FURNITURE.bed });
+  rtFurn(sc, 1, 0, 1, 1, 44, ctx => rtPartsShelf(ctx, sc, 1, 0, info.color), { react: RT_FURNITURE.shelf });
+  rtFurn(sc, 0, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 3), { react: FURNITURE.plant });
+  rtFurn(sc, 7, 5, 1, 1, 30, ctx => drawPlant(ctx, sc, 7, 5), { react: FURNITURE.plant });
+  rtFurn(sc, 5, 5, 1, 1, 26, ctx => rtWorkTable(ctx, sc, 5, 5, info.color), { react: RT_FURNITURE.table });
 
   sc.npcs.push(makeNpc({ who: h.who, look: h.look, c: 4, r: 2 }, h.letter));
   sc.exit = exit;
@@ -1616,6 +1621,101 @@ function buildRobotWorkshop(h) {
   return sc;
 }
 for (const h of TOWN_HOUSES) CAPTAIN_SCENES[`house-${h.letter}`] = () => buildRobotWorkshop(h);
+
+// What robot furniture says when tapped (with FURNITURE in js/world.js).
+const RT_FURNITURE = {
+  shelf: { word: 'bolt', fx: 'hop' },
+  table: { word: 'robot', fx: 'hop' },
+  console: { word: 'light', fx: 'glow' },
+  cup: { word: 'cup', fx: 'sparkle' },
+};
+
+// ---- Village homes inside (robot edition) --------------------------------------------
+
+// Swaps a village's homes (VILLAGE_HOMES in js/data.js) for robot-edition
+// ones, each with a robot room inside. Called by the village files.
+function captainHomes(scene, homes) {
+  for (let i = VILLAGE_HOMES.length - 1; i >= 0; i--) if (VILLAGE_HOMES[i].scene === scene) VILLAGE_HOMES.splice(i, 1);
+  VILLAGE_HOMES.push(...homes);
+  for (const h of homes) CAPTAIN_SCENES[`home-${h.id}`] = () => buildRobotHome(h);
+}
+
+// How each robot home looks inside, like HOME_THEMES in js/world.js: the
+// label on the way in, the pictures on the wall and the thing in the corner
+// ([draw(ctx, sc, x, y, color), what it says and does]).
+const ROBOT_HOME_THEMES = {
+  garage:  { label: '🔧 정비소', pictures: [['🚗', 'car'], ['🔩', 'bolt'], ['🚌', 'bus']],
+    big: [(ctx, sc, x, y) => { const t = makeTyres(3); ctx.drawImage(t.canvas, x - t.ax, y - t.ay); }, { word: 'tire', fx: 'boing' }] },
+  fire:    { label: '🚒 소방서', pictures: [['🔥', 'fire'], ['🚒', 'truck'], ['🔔', 'bell']],
+    big: [(ctx, sc, x, y) => drawCaptainCar(ctx, x, y, 'fire', 0, { eyes: false }), { word: 'truck', fx: 'honk' }] },
+  wash:    { label: '🫧 세차장', pictures: [['🦆', 'duck'], ['🚗', 'car'], ['☀️', 'sun']],
+    big: [(ctx, sc, x, y) => drawCaptainCar(ctx, x, y, 'police', 0, { eyes: false }), { word: 'car', fx: 'bubbles' }] },
+  gas:     { label: '⛽ 주유소', pictures: [['⛽', 'gas'], ['🚕', 'taxi'], ['🚚', 'truck']],
+    big: [(ctx, sc, x, y) => drawPump(ctx, x, y, '#ec4a3c'), { word: 'gas', fx: 'hop' }] },
+  carhome: { label: '🚗 자동차 집', pictures: [['🚗', 'car'], ['🏠', 'house'], ['⭐', 'star']],
+    big: [(ctx, sc, x, y, col, c, r) => rtToyBox(ctx, sc, c, r), { word: 'box', fx: 'toy' }] },
+  egg:     { label: '🥚 알 집', pictures: [['🥚', 'egg'], ['🦕', 'dinosaur'], ['🌋', 'volcano']],
+    big: [(ctx, sc, x, y) => drawDinoNest(ctx, x, y, ['#9fd8ff', '#fff4d8', '#ffc4d4']), { word: 'egg', fx: 'hop' }] },
+  hangar:  { label: '🚁 드론 격납고', pictures: [['🚁', 'helicopter'], ['✈️', 'jet'], ['🚀', 'rocket']],
+    big: [(ctx, sc, x, y, col) => drawCargoDrone(ctx, x, y, 0, false, col), { word: 'drone', fx: 'hop' }] },
+  lab:     { label: '🔬 드론 연구소', pictures: [['🤖', 'robot'], ['🚀', 'rocket'], ['🌙', 'moon']],
+    big: [(ctx, sc, x, y, col, c, r) => rtWorkTable(ctx, sc, c, r, col), RT_FURNITURE.table] },
+};
+
+// Inside a robot-edition village home: a workshop-like room in the home's
+// colours with its resident, who asks the village's questions.
+function buildRobotHome(home) {
+  const theme = ROBOT_HOME_THEMES[home.theme];
+  const sc = makeScene('room', 8, 7, 110, 50);
+  for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'wood');
+  for (let r = 2; r <= 4; r++) for (let c = 2; c <= 5; c++) {
+    const t = tileAt(sc, c, r);
+    t.type = 'carpet';
+    t.color = mix(home.color, '#ffffff', 0.35);
+    t.edge = r === 2 || r === 4 || c === 2 || c === 5;
+  }
+  const exit = { c: 3, r: sc.D - 1 };
+  tileAt(sc, exit.c, exit.r).rug = '#4f7fe8';
+  rtPaintFloor(sc, ['wood'], '#e2e9f6');
+
+  addRoomWalls(sc, 64, mix(home.color, '#ffffff', 0.75), mix(home.color, '#4f7fe8', 0.45), (ctx, WA, WB) => {
+    // A round window and a screen on the left wall, hazard stripes along the top.
+    rtPort(ctx, WA, WA.len * 0.35, 40, 9, '#c8d2e0', '#a8dcff');
+    wallRect(ctx, WA, WA.len * 0.35 - 1, WA.len * 0.35 + 1, 31, 49, '#c8d2e0');
+    rtScreen(ctx, WA, WA.len * 0.62, WA.len * 0.86, 30, 50);
+    for (const W of [WA, WB]) rtHazard(ctx, W, 0, W.len, 58, 61);
+  });
+  const k = boxCorners(sc, 0, 0, sc.W, sc.D);
+  const WB = wall(k.T, k.R);
+  theme.pictures.forEach(([emoji, word], i) => {
+    const p = wallPt(WB, WB.len * (0.3 + i * 0.15), 40 + (i % 2) * 6);
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, frame: true });
+  });
+
+  rtFurn(sc, 6, 0, 1, 2, 30, ctx => rtPod(ctx, sc, 6, 0, home.color), { react: FURNITURE.bed });
+  rtFurn(sc, 1, 0, 1, 1, 44, ctx => rtPartsShelf(ctx, sc, 1, 0, home.color), { react: RT_FURNITURE.shelf });
+  rtFurn(sc, 7, 5, 1, 1, 30, ctx => drawPlant(ctx, sc, 7, 5), { react: FURNITURE.plant });
+  rtFurn(sc, 5, 5, 1, 1, 26, ctx => rtWorkTable(ctx, sc, 5, 5, home.color), { react: RT_FURNITURE.table });
+  // The thing in the corner may be a whole car, so it gets a wide box.
+  const [draw, react] = theme.big;
+  const p = tileCenter(sc, 0, 3);
+  block(sc, 0, 3, 1, 1);
+  addObject(sc, { c: 0, r: 3, w: 1, d: 1 }, { x: p.x - 30, y: p.y - 48, w: 60, h: 58 }, ctx => draw(ctx, sc, Math.round(p.x), Math.round(p.y), home.color, 0, 3), { react });
+
+  const npc = makeNpc({ who: home.who, look: home.look, c: 4, r: 2 }, null);
+  npc.level = HOME_LEVEL[home.scene];
+  if (home.unicorn) npc.unicorn = home.unicorn;
+  if (home.gives) npc.gives = home.gives;
+  if (npc.level === 5) npc.badge = '⚡';
+  sc.npcs.push(npc);
+  sc.exit = exit;
+  sc.start = { c: exit.c, r: exit.r - 1 };
+  sc.home = home;
+  sc.label = theme.label;
+  sc.returnTo = { scene: home.scene, at: { c: home.door[0][0], r: home.door[0][1] } };
+  renderGround(sc);
+  return sc;
+}
 
 // ---- Captain HQ inside ----------------------------------------------------------------
 
@@ -1793,16 +1893,16 @@ function buildCaptainHQ() {
     rtWallDoor(ctx, WA, YUNA_DOOR_X, '#5a8af0');
   });
 
-  rtFurn(sc, 5, 0, 1, 1, 40, ctx => rtChair(ctx, sc, 5, 0, '#ff9a3a'));
-  rtFurn(sc, 6, 0, 1, 1, 40, ctx => rtChair(ctx, sc, 6, 0, '#5a8af0'));
+  rtFurn(sc, 5, 0, 1, 1, 40, ctx => rtChair(ctx, sc, 5, 0, '#ff9a3a'), { react: FURNITURE.chair });
+  rtFurn(sc, 6, 0, 1, 1, 40, ctx => rtChair(ctx, sc, 6, 0, '#5a8af0'), { react: FURNITURE.chair });
   for (const [c, r] of [[2, 2], [9, 2], [2, 6], [9, 6]]) {
     rtFurn(sc, c, r, 1, 1, 80, ctx => { const p = tileCenter(sc, c, r); rtPillar(ctx, p.x, p.y); });
   }
-  rtFurn(sc, 0, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 4));
-  rtFurn(sc, 11, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 11, 4));
-  rtFurn(sc, 8, 4, 1, 1, 40, ctx => rtHoloTable(ctx, sc, 8, 4));
-  rtFurn(sc, 3, 0, 1, 1, 40, ctx => rtConsole(ctx, sc, 3, 0));
-  rtFurn(sc, 8, 0, 1, 1, 40, ctx => rtConsole(ctx, sc, 8, 0));
+  rtFurn(sc, 0, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 4), { react: FURNITURE.plant });
+  rtFurn(sc, 11, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 11, 4), { react: FURNITURE.plant });
+  rtFurn(sc, 8, 4, 1, 1, 40, ctx => rtHoloTable(ctx, sc, 8, 4), { react: { word: 'map', fx: 'sparkle' } });
+  rtFurn(sc, 3, 0, 1, 1, 40, ctx => rtConsole(ctx, sc, 3, 0), { react: RT_FURNITURE.console });
+  rtFurn(sc, 8, 0, 1, 1, 40, ctx => rtConsole(ctx, sc, 8, 0), { react: RT_FURNITURE.console });
 
   for (const n of CAPTAIN_HQ_NPCS) sc.npcs.push(makeNpc(n, null));
   sc.exit = exit;
@@ -1813,12 +1913,12 @@ function buildCaptainHQ() {
   const door = wallPt(wall(k.L, k.T), YUNA_DOOR_X, 28);
   tileAt(sc, 0, 6).rug = '#5a8af0';
   sc.links = [{ c: 0, r: 6, target: 'yuna', icon: '🛏️', style: 'door', door }];
-  sc.signs.push({ x: door.x, y: door.y - 46, text: place('room'), color: '#3f6fd8' });
+  sc.signs.push({ x: door.x, y: door.y - 46, text: place('room'), color: '#3f6fd8', links: sc.links });
   // Stairs in the back-right corner up to the library floor.
   addStairs(sc, 10, 0, 2, 3, ctx => rtStairs(ctx, sc, 10, 0, 2, 3),
     [10, 11].map(c => ({ c, r: 3, target: 'castle2', at: { c: 7, r: 4 }, icon: '⬆️' })));
   const up = tileCenter(sc, 10.5, 1);
-  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#4f7fe8' });
+  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#4f7fe8', links: sc.links.filter(l => l.target === 'castle2') });
   renderGround(sc);
   return sc;
 }
@@ -1925,17 +2025,17 @@ function buildHQUpstairs() {
   const shelf = r => ({ kind: 'bookcase', front: [{ c: 1, r }, { c: 1, r: r + 1 }] });
   rtFurn(sc, 0, 1, 0.45, 2, 70, ctx => rtBookcase(ctx, sc, 0, 1, 2), shelf(1));
   rtFurn(sc, 0, 4, 0.45, 2, 70, ctx => rtBookcase(ctx, sc, 0, 4, 2), shelf(4));
-  rtFurn(sc, 1, 0, 1, 1, 44, ctx => rtPartsShelf(ctx, sc, 1, 0, '#ff9a3a'));
-  rtFurn(sc, 3, 7, 1, 1, 26, ctx => rtWorkTable(ctx, sc, 3, 7, '#5a8af0'));
-  rtFurn(sc, 7, 2, 1, 1, 40, ctx => rtConsole(ctx, sc, 7, 2));
-  rtFurn(sc, 8, 0, 1, 1, 44, ctx => rtModelRocket(ctx, sc, 8, 0));
-  rtFurn(sc, 9, 0, 1, 1, 34, ctx => rtTrophy(ctx, sc, 9, 0));
-  rtFurn(sc, 9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1));
-  rtFurn(sc, 9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3));
+  rtFurn(sc, 1, 0, 1, 1, 44, ctx => rtPartsShelf(ctx, sc, 1, 0, '#ff9a3a'), { react: RT_FURNITURE.shelf });
+  rtFurn(sc, 3, 7, 1, 1, 26, ctx => rtWorkTable(ctx, sc, 3, 7, '#5a8af0'), { react: RT_FURNITURE.table });
+  rtFurn(sc, 7, 2, 1, 1, 40, ctx => rtConsole(ctx, sc, 7, 2), { react: RT_FURNITURE.console });
+  rtFurn(sc, 8, 0, 1, 1, 44, ctx => rtModelRocket(ctx, sc, 8, 0), { react: { word: 'rocket', fx: 'stars' } });
+  rtFurn(sc, 9, 0, 1, 1, 34, ctx => rtTrophy(ctx, sc, 9, 0), { react: RT_FURNITURE.cup });
+  rtFurn(sc, 9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1), { react: FURNITURE.coins });
+  rtFurn(sc, 9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3), { react: FURNITURE.plant });
   const lib = tileCenter(sc, 0, 3);
   sc.signs.push({ x: lib.x - 4, y: lib.y - 84, text: place('library'), color: '#4a6ab8' });
   const cup = tileCenter(sc, 8.5, 0);
-  sc.signs.push({ x: cup.x, y: cup.y - 50, text: '🏆', color: '#ffd34d', plain: true });
+  sc.signs.push({ x: cup.x, y: cup.y - 50, text: '🏆', color: '#ffd34d', plain: true, react: RT_FURNITURE.cup });
 
   // Stairs back down in the front-right corner.
   addStairs(sc, 7, 6, 2, 3, ctx => rtStairwell(ctx, sc, 7, 6, 2, 3),
@@ -2003,18 +2103,18 @@ function buildCaptainRoom() {
   });
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
   const WB = wall(k.T, k.R);
-  ['🚀', '🤖', '⭐'].forEach((emoji, i) => {
+  [['🚀', 'rocket'], ['🤖', 'robot'], ['⭐', 'star']].forEach(([emoji, word], i) => {
     const p = wallPt(WB, WB.len * (0.42 + i * 0.12), 40 + (i % 2) * 5);
-    sc.decor.push({ x: p.x, y: p.y, emoji, frame: true });
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, frame: true });
   });
 
   // Tapping the workbench or the tool cabinet opens the parts (game.js).
   rtFurn(sc, 1, 0, 2, 0.5, 66, ctx => rtWorkbench(ctx, sc, 1, 0), { kind: 'wardrobe', front: [{ c: 1, r: 1 }, { c: 2, r: 1 }] });
   rtFurn(sc, 0, 3, 0.5, 1, 52, ctx => rtToolCabinet(ctx, sc, 0, 3), { kind: 'wardrobe', front: [{ c: 1, r: 3 }] });
-  rtFurn(sc, 7, 0, 1, 2, 30, ctx => rtBed(ctx, sc, 7, 0, '#5a8af0'));
-  rtFurn(sc, 8, 4, 1, 1, 30, ctx => rtToyBox(ctx, sc, 8, 4));
-  rtFurn(sc, 0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6));
-  rtFurn(sc, 5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0));
+  rtFurn(sc, 7, 0, 1, 2, 30, ctx => rtBed(ctx, sc, 7, 0, '#5a8af0'), { react: FURNITURE.bed });
+  rtFurn(sc, 8, 4, 1, 1, 30, ctx => rtToyBox(ctx, sc, 8, 4), { react: FURNITURE.toys });
+  rtFurn(sc, 0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6), { react: FURNITURE.plant });
+  rtFurn(sc, 5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0), { react: FURNITURE.plant });
 
   sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 1, r: 6 }, icon: '🚪', style: 'mat' }];
   sc.start = { c: 4, r: sc.D - 2 };

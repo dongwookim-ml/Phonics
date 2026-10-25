@@ -22,6 +22,18 @@ const CAPTAIN_BUDDIES = {
   owl:    { name: '부엉이 로봇', icon: '🦉', fairy: true, price: 10, body: '#9a84e8', trim: '#ffd34d', eye: '#7ff0ff', glow: '#d0c0ff' },
 };
 
+// The hangars and labs are homes (see VILLAGE_HOMES in js/data.js), with
+// the door tile in front of each roll-up or sliding door. The little rocket
+// buddy is given by nobody outside, so a hangar drone gives it.
+const DRONE_HOMES = [
+  { id: 'hangar1', scene: 'fairy', c: 5,  r: 5,  w: 2, door: [[6, 7]],   theme: 'hangar', color: '#4fa8ff', who: '꼬마 쿼드',      look: 'droneQuad' },
+  { id: 'lab1',    scene: 'fairy', c: 15, r: 1,  w: 2, door: [[16, 3]],  theme: 'lab',    color: '#9a7af0', who: '발명가 박사님',  look: 'droneDoc' },
+  { id: 'hangar2', scene: 'fairy', c: 20, r: 7,  w: 2, door: [[21, 9]],  theme: 'hangar', color: '#ff9a3c', who: '꿀벌 드론 윙윙', look: 'droneBee' },
+  { id: 'lab2',    scene: 'fairy', c: 4,  r: 17, w: 2, door: [[5, 19]],  theme: 'lab',    color: '#5fd08a', who: '부엉이 박사',    look: 'droneOwl' },
+  { id: 'hangar3', scene: 'fairy', c: 7,  r: 1,  w: 2, door: [[8, 3]],   theme: 'hangar', color: '#ff6f8a', who: '정비사 너트',    look: 'droneMech' },
+  { id: 'hangar4', scene: 'fairy', c: 18, r: 14, w: 2, door: [[19, 16]], theme: 'hangar', color: '#5fd08a', who: '쿼드 드론 씽씽', look: 'droneQuad', gives: 'rocket' },
+];
+
 if (isCaptain()) {
   // The game reads its little flying friends from FAIRIES, so in the captain
   // edition that table holds the buddies instead.
@@ -62,6 +74,11 @@ if (isCaptain()) {
   Object.assign(LINES, {
     fairyland: ['Welcome to Drone Village!', 'Look up! Drones are zooming everywhere!', 'Beep boop! The drones are waiting for you.'],
     newFairy: ['A little helper wants to fly with you! Shall it come along?', 'This buddy would love to be your sidekick! Shall it come with you?', 'Zoom zoom! A new helper buddy for you! Shall it come now?'],
+  });
+  captainHomes('fairy', DRONE_HOMES);
+  Object.assign(HOME_HELLO, {
+    hangar: ['Welcome to my hangar, {title} {name}!', 'Come in! This is where the drones charge up.', 'Whirr! Mind the propellers!'],
+    lab:    ['Welcome to my lab, {title} {name}!', 'Come in! We invent new drones in here.', 'Beep boop! It is science time!'],
   });
   CAPTAIN_SCENES.fairy = () => buildDroneVillage();
   droneBatteryLabel();
@@ -656,18 +673,19 @@ function buildDroneVillage() {
   const pads = [{ c: 17, r: 18.5, R: 20 }, { c: 21, r: 20.5, R: 20 }];
 
   // Props on single tiles.
-  const prop = (c, r, up, draw, w = 32) => {
+  const prop = (c, r, up, draw, w = 32, react) => {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    return addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - w / 2, y: p.y - up, w, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    return addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - w / 2, y: p.y - up, w, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
   };
 
   // The control tower in the middle, with a turning radar and a beacon.
   block(sc, 12, 12, 2, 2);
   for (let r = 11; r <= 14; r++) for (let c = 11; c <= 14; c++) reserve(c, r);
   const mid = tileCenter(sc, 12.5, 12.5);
-  const tower = addObject(sc, { c: 12, r: 12, w: 2, d: 2 }, { x: mid.x - 40, y: mid.y - 112, w: 80, h: 124 }, ctx => drawDroneTower(ctx, sc));
+  const tower = addObject(sc, { c: 12, r: 12, w: 2, d: 2 }, { x: mid.x - 40, y: mid.y - 112, w: 80, h: 124 }, ctx => drawDroneTower(ctx, sc),
+    { react: { word: 'drone', fx: 'sparkle' } });
   const radarAt = { x: Math.round(mid.x), y: Math.round(mid.y) - 8 - 77 - 6 };
   tower.animated = (ctx, t) => {
     ctx.drawImage(tower.canvas, tower.x, tower.y);
@@ -680,33 +698,38 @@ function buildDroneVillage() {
   [[3, 9], [10, 3], [16, 6], [22, 10], [10, 16], [2, 21], [15, 23], [23, 15], [7, 11], [16, 9]].forEach(([c, r], i) => {
     const p = tileCenter(sc, c, r);
     if (i % 2 === 0) {
-      prop(c, r, 44, ctx => drawDroneCharger(ctx, sc, c, r));
+      prop(c, r, 44, ctx => drawDroneCharger(ctx, sc, c, r), 32, { word: 'light', fx: 'glow' });
       sc.lamps.push({ x: p.x, y: p.y - 38, small: true });
     } else {
-      prop(c, r, 58, (ctx, x, y) => drawDroneMast(ctx, x, y), 20);
+      prop(c, r, 58, (ctx, x, y) => drawDroneMast(ctx, x, y), 20, { word: 'light', fx: 'glow' });
       sc.lamps.push({ x: p.x, y: p.y - 52, small: true });
     }
   });
   // Wind turbines, solar panels and crates of parts.
   [[10, 6], [2, 6], [21, 4], [9, 22], [23, 18], [15, 10]].forEach(([c, r], i) => {
     if (i % 3 === 0) {
-      const o = prop(c, r, 52, (ctx, x, y) => drawDroneTurbineMast(ctx, x, y), 34);
+      const o = prop(c, r, 52, (ctx, x, y) => drawDroneTurbineMast(ctx, x, y), 34, { word: 'wind', fx: 'shake' });
       const hub = tileCenter(sc, c, r);
       o.animated = (ctx, t) => {
         ctx.drawImage(o.canvas, o.x, o.y);
         drawDroneBlades(ctx, Math.round(hub.x), Math.round(hub.y) - 47, t + i);
       };
-    } else if (i % 3 === 1) prop(c, r, 32, (ctx, x, y) => drawDroneSolar(ctx, x, y));
-    else prop(c, r, 30, ctx => drawDroneCrates(ctx, sc, c, r));
+    } else if (i % 3 === 1) prop(c, r, 32, (ctx, x, y) => drawDroneSolar(ctx, x, y), 32, { word: 'sun', fx: 'glow' });
+    else prop(c, r, 30, ctx => drawDroneCrates(ctx, sc, c, r), 32, { word: 'box', fx: 'hop' });
   });
 
-  // Hangars and labs on the cottage plots, each on a 2 x 2 footprint.
+  // Hangars and labs on the cottage plots, each on a 2 x 2 footprint, each a
+  // home with a little sign over its door.
   for (const [c, r, kind, col] of [[5, 5, 'hangar', '#4fa8ff'], [15, 1, 'lab', '#9a7af0'], [20, 7, 'hangar', '#ff9a3c'], [4, 17, 'lab', '#5fd08a'], [7, 1, 'hangar', '#ff6f8a'], [18, 14, 'hangar', '#5fd08a']]) {
     block(sc, c, r, 2, 2);
     for (let rr = r - 1; rr <= r + 2; rr++) for (let cc = c - 1; cc <= c + 2; cc++) reserve(cc, rr);
     const m = tileCenter(sc, c + 0.5, r + 0.5);
-    addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 46, y: m.y - 86, w: 92, h: 100 },
+    const obj = addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 46, y: m.y - 86, w: 92, h: 100 },
       ctx => (kind === 'lab' ? drawDroneLab : drawDroneHangar)(ctx, sc, c, r, col));
+    addHomeDoors(sc, obj, homeAt('fairy', c, r));
+    const k = boxCorners(sc, c, r, 2, 2);
+    const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, kind === 'lab' ? 20 : 25);
+    sc.signs.push({ x: sign.x, y: sign.y, text: kind === 'lab' ? '🔬' : '🚁', color: col, plain: true });
     sc.lamps.push({ x: m.x - 12, y: m.y - 12 });
   }
 
@@ -718,7 +741,8 @@ function buildDroneVillage() {
     const L = pa.x < pb.x ? pa : pb;
     const R = pa.x < pb.x ? pb : pa;
     const foot = { c: Math.min(a[0], b[0]), r: Math.min(a[1], b[1]), w: Math.abs(a[0] - b[0]) + 1, d: Math.abs(a[1] - b[1]) + 1 };
-    const o = addObject(sc, foot, { x: L.x - 8, y: Math.min(pa.y, pb.y) - 54, w: R.x - L.x + 16, h: Math.abs(pa.y - pb.y) + 62 }, ctx => drawDroneGate(ctx, L, R));
+    const o = addObject(sc, foot, { x: L.x - 8, y: Math.min(pa.y, pb.y) - 54, w: R.x - L.x + 16, h: Math.abs(pa.y - pb.y) + 62 }, ctx => drawDroneGate(ctx, L, R),
+      { react: { word: 'gate', fx: 'sparkle' } });
     o.animated = (ctx, t) => drawDroneGate(ctx, L, R, t);
   }
 
@@ -726,7 +750,8 @@ function buildDroneVillage() {
   const p1 = tileCenter(sc, pads[0].c, pads[0].r);
   block(sc, 17, 18, 1, 1);
   block(sc, 17, 19, 1, 1);
-  addObject(sc, { c: 17, r: 18, w: 1, d: 2 }, { x: p1.x - 26, y: p1.y - 40, w: 52, h: 48 }, ctx => drawCargoDrone(ctx, p1.x, p1.y, 0, false));
+  addObject(sc, { c: 17, r: 18, w: 1, d: 2 }, { x: p1.x - 26, y: p1.y - 40, w: 52, h: 48 }, ctx => drawCargoDrone(ctx, p1.x, p1.y, 0, false),
+    { react: { word: 'drone', fx: 'hop' } });
   const p2 = tileCenter(sc, pads[1].c, pads[1].r);
   block(sc, 21, 20, 1, 1);
   block(sc, 21, 21, 1, 1);
@@ -821,11 +846,11 @@ function buildDroneVillage() {
   for (let r = 12; r <= 13; r++) for (const c of [0, 1]) tileAt(sc, c, r).mat = '#4fa8ff';
   const ga = tileCenter(sc, 1, 14);
   const gb = tileCenter(sc, 1, 11);
-  const gate = addObject(sc, { c: 1, r: 11, w: 1, d: 4 }, { x: ga.x - 8, y: gb.y - 54, w: gb.x - ga.x + 16, h: ga.y - gb.y + 62 }, ctx => drawDroneGate(ctx, ga, gb));
-  gate.animated = (ctx, t) => drawDroneGate(ctx, ga, gb, t);
   sc.links = [12, 13].map(r => ({ c: 0, r, target: 'town', at: { c: 37, r: r + 14 }, icon: '🤖', style: 'gate' }));
+  const gate = addObject(sc, { c: 1, r: 11, w: 1, d: 4 }, { x: ga.x - 8, y: gb.y - 54, w: gb.x - ga.x + 16, h: ga.y - gb.y + 62 }, ctx => drawDroneGate(ctx, ga, gb), { links: sc.links });
+  gate.animated = (ctx, t) => drawDroneGate(ctx, ga, gb, t);
   const tg = tileCenter(sc, 1, 12.5);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#4fa8ff' });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#4fa8ff', links: sc.links });
   sc.start = { c: 2, r: 12 };
   renderGround(sc);
   return sc;
