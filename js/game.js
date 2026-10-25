@@ -149,10 +149,11 @@ function load(raw) {
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
     // Stars, coins and dust are also counted per device (js/progress.js).
     return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
-      skill, settings, friends: s.friends || {}, guide: firstSteps, playtime: s.playtime || {} };
+      skill, settings, friends: s.friends || {}, guide: firstSteps, playtime: s.playtime || {},
+      stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0 };
   } catch (e) {
     return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: true, history: {}, books: {},
-      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {} };
+      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0 };
   }
 }
 
@@ -181,7 +182,7 @@ function save() {
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
   const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
-    friends: state.friends, guide: state.guide, playtime: state.playtime }, Progress.count(state));
+    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -193,7 +194,7 @@ function save() {
 function applyProgress(s) {
   const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
   Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures,
-    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime });
+    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts });
   const ride = state.outfit.ride;
   state.worn = PLAYER.look;
   state.outfit = p.outfit;
@@ -230,6 +231,10 @@ const state = {
   skill: saved.skill, // her tier per kind of question (js/quiz.js)
   settings: saved.settings, // parent settings: { twoSyllables }
   books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
+  stickers: saved.stickers || {}, // the word album: { [word]: { e, n, at, new } } (js/album.js)
+  medals: saved.medals || {}, // { 'house:C' or 'village:forest': when }
+  gifts: saved.gifts | 0, // pips on the gift meter
+  combo: 0, // answers right the first time in a row, this visit
   pictures: saved.pictures,
   friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: n } (js/friend.js)
   settings: saved.settings, // from the parent panel: { playLimit, hideMute }
@@ -624,34 +629,41 @@ function choose(i, btn) {
   else missed(q, o, btn);
 }
 
-// A right answer: praise and a star. Right the first time, a present too
-// (if there is one she doesn't have yet); right after a hint, no present.
+// A right answer: praise, a star and the word's sticker (js/album.js).
+// Right the first time fills a pip of the gift meter; a full meter opens a
+// present she doesn't have yet (or a sticker pack). Three in a row get a
+// cheer instead of the praise.
 function answeredRight(q, btn) {
   const npc = state.talking;
   q.done = true;
   btn.classList.add('right');
   ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
   if (q.solved) ui.clue.innerHTML = q.solved;
-  const praise = line('praise');
+  collectSticker(q, btn);
+  const praise = comboCheer(q) || line('praise');
   ui.text.textContent = praise;
   Sound.correct();
   // A kind of question just went up to a new tier.
   const levelUp = q.levelUp ? [{ pause: 300 }, { text: line('levelUp'), narrator: true }] : [];
   if (q.levelUp) later(600, showLevelUp);
+  checkMedals();
   // Cave monsters pay in coins instead of a star and a present.
   if (npc.monster) {
     Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp), voiceOf(npc));
     catchMonster(npc);
     return;
   }
-  const gift = !q.misses && hasNewGift(npc);
+  const full = !q.misses && fillGiftMeter();
+  const gift = full && hasNewGift(npc);
+  if (full && !gift) later(700, stickerPack);
   const close = () => { if (state.question === q) closeDialog(); };
   Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
   if (npc.level === 5 && !q.misses) addDust();
-  state.stars++;
+  const before = state.stars++;
   state.answered++;
   save();
   renderStars(true);
+  gateCheck(before);
   burstAtHero(q.misses ? 14 : 30);
   if (gift) giftLater(q, npc);
   else later(Sound.muted ? 1800 : 7000, close);
@@ -713,6 +725,7 @@ function showLevelUp() {
 function finishShown(q, btn) {
   const npc = state.talking;
   q.done = true;
+  state.combo = 0;
   btn.classList.remove('glow');
   btn.classList.add('right');
   ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
@@ -896,6 +909,7 @@ function renderStars(pop) {
   }
   renderCoins(false);
   renderDust(false);
+  renderAlbumHud();
 }
 
 function followLink(link) {
@@ -1841,6 +1855,8 @@ function drawOverlay(now) {
   if (!state.busy) drawBookHints(now);
   // The 🎣 over the pond, her friend's ring in her room, the first-steps 👆.
   if (!state.busy) { drawMiniHint(now); drawFriendHint(now); drawGuide(now); }
+  // Medals on house signs, the sparkle trail to a gate that just opened.
+  drawProgressFx(now);
 
   // Tap ripples.
   for (const r of state.ripples) {
@@ -2084,6 +2100,12 @@ function tapObject(o, wx, wy, front) {
   if (o.kind === 'shop') {
     Sound.tap();
     talkTo(o.keeper);
+    return true;
+  }
+  // The sticker album on its desk in her room (js/album.js).
+  if (o.kind === 'album') {
+    Sound.tap();
+    walkTo((c, r) => o.front.some(f => f.c === c && f.r === r), openAlbum);
     return true;
   }
   // The library's bookcases open the book list, the wardrobe and mirror the wardrobe.

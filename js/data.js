@@ -373,6 +373,24 @@ LINES.ask2 = [
 LINES.forest = ['Welcome to the Starlight Forest!', 'Wow, the forest is sparkling!', 'Look at all the fireflies!'];
 LINES.locked = ['Collect {stars} stars to open this gate!', 'This gate opens with {stars} stars. Keep going!'];
 
+// ---- Progress she can see (js/album.js) -------------------------------------
+
+// The narrator, when a gate's stars are reached.
+LINES.openForest = isCaptain() ? ['Dinosaur Village is open!'] : ['The Starlight Forest is open!'];
+LINES.openFairy = isCaptain() ? ['Drone Village is open!'] : ['The Fairy Village is open!'];
+LINES.openUnicorn = isCaptain() ? ['Car Village is open!'] : ['The Unicorn Village is open!'];
+LINES.openDungeon = isCaptain() ? ['The Villain Cave is open!'] : ['The Crystal Cave is open!'];
+// The asker, instead of the praise, at 3 and 5 answers right the first time
+// in a row (then every 5). The quiz word follows, so no "a" or "the" at the
+// end. Nothing is said when a row ends.
+LINES.combo = ['Three in a row!', 'Three in a row! Hooray!'];
+LINES.combo5 = ['Five in a row! Super star!', 'Five in a row! Amazing!'];
+LINES.comboMore = ['You are on a roll!', 'Wow, super listening!'];
+// The narrator: a letter house's medal, a village's medal, the sticker album.
+LINES.medalHouse = ['You know all the {letter} words!'];
+LINES.medalVillage = ['You got a medal! Hooray!', 'A shiny medal for you!'];
+LINES.album = ['Your sticker book!', "Let's look at your stickers!"];
+
 // ---- Question variety ------------------------------------------------------
 
 // Which kinds of questions each kind of person asks. A person never asks

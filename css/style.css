@@ -592,6 +592,186 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .wd-mirror canvas { width: 88px; height: 136px; }
 }
 
+/* ---- Sticker album, gift meter, next gate and celebrations (js/album.js) ---- */
+
+/* ⭐ 7/10 🌲 in the star counter, over a bar that fills toward that gate. */
+#stars { position: relative; }
+#stars.to-gate { padding-bottom: 9px; }
+.gate-meter { display: inline-flex; align-items: center; gap: 4px; }
+.gate-meter.hidden { display: none; }
+.gate-meter .need { margin-left: -4px; font-size: 0.8em; opacity: 0.8; }
+.gate-meter .bar { position: absolute; left: 10px; right: 10px; bottom: 4px; height: 6px; border-radius: 3px; background: rgba(74, 44, 79, 0.14); overflow: hidden; }
+.gate-meter .bar i { display: block; width: 0; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ffd34d, #ff9f1c); transition: width 0.6s ease; }
+/* 🎁 ●●○: right the first time three times opens a present. */
+.gift-meter { gap: 6px; padding: 4px 12px; }
+.gift-meter .ic { display: inline-block; }
+.gift-meter .pips { display: flex; gap: 4px; }
+.gift-meter .pips i { width: 17px; height: 17px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; }
+.gift-meter .pips i.on { background: var(--gold); border-color: #b9800e; }
+.gift-meter .pips i.pop { animation: pop 0.5s ease; }
+.gift-meter.full .ic { animation: wiggle 0.5s ease infinite; }
+.gift-meter.full .pips i { box-shadow: 0 0 10px rgba(255, 200, 80, 0.95); }
+@keyframes wiggle { 25% { transform: rotate(-12deg) scale(1.12); } 75% { transform: rotate(12deg) scale(1.12); } }
+/* 📒 with a dot for stickers she hasn't looked at yet. */
+.album-btn { position: relative; }
+.album-btn.pop { animation: pop 0.45s ease; }
+.album-btn .badge { position: absolute; top: -8px; right: -8px; min-width: 24px; height: 24px; padding: 0 5px; border-radius: 12px; border: 2px solid #fff; background: #ff4f8a; color: #fff; font: 800 15px/20px "Baloo 2", sans-serif; }
+.album-btn .badge.hidden { display: none; }
+/* Narrower screens (an iPad held upright): smaller counters, and below 820px
+   the next gate shows its picture and bar without the number, so the HUD
+   stays on one row with every counter and button showing. */
+@media (max-width: 920px) {
+  .hud { padding-left: 10px; padding-right: 10px; }
+  .hud .counters, .hud .buttons { gap: 6px; }
+  .hud .stars { gap: 4px; padding: 3px 9px; font-size: 22px; }
+  #stars.to-gate { padding-bottom: 8px; }
+  .gift-meter .pips i { width: 13px; height: 13px; border-width: 2px; }
+}
+@media (max-width: 820px) {
+  .gate-meter .need { display: none; }
+}
+
+.album { width: min(900px, calc(100vw - 24px)); }
+.al-tabs { flex: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.al-tab {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 54px;
+  height: 58px;
+  padding: 0 6px 6px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2);
+}
+.al-tab .L { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 32px; line-height: 1; }
+.al-tab.medal-tab .L { font-size: 28px; }
+.al-tab .bar { position: absolute; left: 7px; right: 7px; bottom: 5px; height: 5px; border-radius: 3px; background: #f0e2ea; overflow: hidden; }
+.al-tab .bar i { display: block; height: 100%; background: var(--gold); }
+.al-tab.on { background: #fff4b8; border-color: #e0a52a; box-shadow: 0 0 0 3px var(--gold); }
+.al-tab.done .L { color: #d08a10; }
+.al-tab.fresh::after { content: ''; position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; background: #ff4f8a; }
+.al-page { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); align-content: start; gap: 10px; padding: 6px 4px; }
+.album.medals .al-page { display: block; }
+.sticker {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 104px;
+  padding: 6px 4px;
+  background: #fbf6f9;
+  border: 3px dashed #dccbd6;
+  border-radius: 18px;
+}
+.sticker .em { font-size: 48px; line-height: 1.1; filter: brightness(0); opacity: 0.13; }
+.sticker .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 22px; font-size: min(22px, 17cqi); line-height: 1.1; white-space: nowrap; color: #c4b4c0; }
+.sticker .w.long { font-size: 16px; font-size: min(22px, 14cqi); }
+.sticker .first { color: var(--accent-ink); }
+.sticker.got { background: #fff; border: 3px solid var(--ink); box-shadow: 0 3px 0 rgba(74, 44, 79, 0.2); }
+.sticker.got .em { filter: none; opacity: 1; }
+.sticker.got .w { color: var(--ink); }
+.sticker.shiny { background: linear-gradient(135deg, #fffbe6, #fff0b0); border-color: #e0a52a; }
+.sticker.new { animation: glow 1.4s ease-in-out infinite; }
+.sticker.wiggle, .medal.wiggle { animation: wiggle 0.45s ease; }
+.al-group { margin: 6px 6px 4px; font-size: 19px; }
+.al-medals { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; padding: 4px; }
+.medal { position: relative; display: grid; place-items: center; height: 88px; background: none; }
+.medal .disc { display: grid; place-items: center; width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(var(--gold) var(--p), #ece0e8 0); }
+.medal .disc .L { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 50%; background: #fff; font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 30px; color: #b8a6b4; }
+.medal:not(.house) .disc .L { font-size: 34px; filter: grayscale(1); opacity: 0.6; }
+.medal.got .disc { background: radial-gradient(circle at 35% 30%, #fff6c0, #ffc83d 60%, #d99a1c); box-shadow: 0 3px 0 rgba(74, 44, 79, 0.25); }
+.medal.got .disc .L { background: none; color: #7a4a10; filter: none; opacity: 1; }
+.medal .ribbon { position: absolute; right: 2px; bottom: -2px; font-size: 28px; }
+
+/* A new sticker flying from the card into 📒: a point that moves, with the
+   sticker centred on it (as wide as its word). */
+.sticker-fly { position: fixed; z-index: 30; width: 0; height: 0; pointer-events: none; }
+.sticker-fly .card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  min-width: 124px;
+  height: 124px;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 4px solid var(--gold);
+  border-radius: 26px;
+  box-shadow: 0 6px 22px rgba(90, 50, 110, 0.35);
+}
+.sticker-fly .em { font-size: 60px; line-height: 1.05; }
+.sticker-fly .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 24px; line-height: 1.1; white-space: nowrap; }
+.sticker-fly .first { color: var(--accent-ink); }
+/* A gate opening, a medal. */
+.fanfare {
+  position: fixed;
+  z-index: 30;
+  left: 50%;
+  top: calc(var(--hud) + 5vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 30px 14px;
+  text-align: center;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.95);
+  border: 4px solid var(--gold);
+  border-radius: 28px;
+  box-shadow: 0 8px 30px rgba(90, 50, 110, 0.35);
+  pointer-events: none;
+  animation: fanfare 2.5s ease forwards;
+}
+.fanfare .ic { font-size: 66px; line-height: 1.15; }
+.fanfare .t { font-size: 32px; color: var(--accent-ink); }
+.fanfare .s { font-size: 24px; }
+@keyframes fanfare {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.6); }
+  12% { opacity: 1; transform: translateX(-50%) scale(1.06); }
+  20%, 85% { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1); }
+}
+/* The robot's book: blue chips, and the medals are blue bolt badges. */
+body.captain .album { background: radial-gradient(circle at 30% 20%, #fbfdff, #dbe7f7); }
+body.captain .sticker.got { background: linear-gradient(#f6f9ff, #e2ecff); border-color: #2f6fd8; border-radius: 12px; }
+body.captain .sticker { border-radius: 12px; }
+body.captain .sticker.shiny { background: linear-gradient(135deg, #fffbe6, #ffe9a0); border-color: #e0a52a; }
+body.captain .medal.got .disc { background: radial-gradient(circle at 35% 30%, #e8f4ff, #7ab8ff 60%, #2f6fd8); }
+body.captain .medal.got .disc .L { color: #fff; }
+@media (max-width: 560px) {
+  .al-tabs { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; }
+  .al-tab { flex: none; }
+  .al-page { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
+  .gift-meter .pips i { width: 13px; height: 13px; border-width: 2px; }
+}
+@media (max-height: 520px) {
+  .gift-meter .pips i { width: 13px; height: 13px; border-width: 2px; }
+  .al-tabs { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding: 3px 3px 5px; }
+  .al-tab { flex: none; min-width: 48px; height: 50px; }
+  .al-tab .L { font-size: 27px; }
+  .al-page { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+  .sticker { min-height: 84px; padding: 3px; }
+  .sticker .em { font-size: 36px; }
+  .al-medals { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+  .medal { height: 76px; }
+  .medal .disc { width: 70px; height: 70px; }
+  .medal .disc .L { width: 54px; height: 54px; font-size: 26px; }
+  .fanfare { top: calc(var(--hud) + 2px); padding: 2px 18px 6px; border-radius: 18px; }
+  .fanfare .ic { font-size: 36px; }
+  .fanfare .t { font-size: 20px; }
+  .fanfare .s { font-size: 16px; }
+  .sticker-fly .card { min-width: 100px; height: 100px; }
+  .sticker-fly .em { font-size: 46px; }
+  .sticker-fly .w { font-size: 20px; }
+}
+
 /* ---- Starlight Forest: twilight sky and cooler light ---- */
 
 body.unicorn { background: linear-gradient(#ffd6ec, #e4d8ff 50%, #c8f0ff); }

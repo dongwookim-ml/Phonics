@@ -7,7 +7,11 @@
 // - what a child taps is big enough: HUD, hear-again and close 64 px,
 //   spelling tiles 68 px tall, wardrobe chips 56 px (on a phone a bit less),
 // - ▶ on the start screen and the guest button on the login screen show
-//   without scrolling, also with Safari's toolbars (1024 x 700).
+//   without scrolling, also with Safari's toolbars (1024 x 700),
+// - with every counter and button showing (the next-gate and gift meters
+//   too) the HUD stays on one row and on screen; the sticker album fits the
+//   screen with big tabs and stickers and every word fits its sticker; a
+//   celebration banner fits across the screen.
 // Run: node tools/check-visual.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -175,6 +179,59 @@ function ask(kind, scene) {
         openWardrobe();
         small('#wd-slots .chip', 56, true);
         closeWardrobe();
+
+        // The HUD with everything showing (js/album.js): the stars toward the
+        // last gate, the gift meter, coins and dust, and every button with
+        // the ride: on one row, on screen, clear of the buttons.
+        Object.assign(state, { stars: DUNGEON_STARS - 3, coins: 15, dust: 15, gifts: 2 });
+        state.owned.ride.push(Object.keys(WARDROBE.find(x => x.slot === 'ride').items).find(v => v !== 'none'));
+        renderRide();
+        renderStars(false);
+        const pills = [...document.querySelectorAll('.hud .counters > *')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect());
+        const btns = [...document.querySelectorAll('.hud .buttons > *')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect());
+        if (pills.concat(btns).some(r => r.left < 0 || r.right > innerWidth + 0.5 || r.top < 0)) out.push('HUD: something runs off the screen');
+        const reach = Math.max(...pills.map(r => r.right));
+        const from = Math.min(...btns.map(r => r.left));
+        if (reach > from - 4) out.push(`HUD: the counters reach under the buttons (${Math.round(reach)} > ${Math.round(from)})`);
+        if (new Set(pills.map(r => Math.round(r.top))).size > 1) out.push('HUD: the counters wrap onto a second row');
+        if (!document.querySelector('#stars .gate-meter:not(.hidden)') || !document.querySelector('#gift-meter').offsetParent) out.push('HUD: the gate or gift meter is not showing');
+        small('#album-btn', big);
+
+        // The sticker album: on screen, big tabs and stickers, every word
+        // fits its sticker, at least a row of stickers shows; the medals.
+        state.busy = false;
+        openAlbum();
+        const al = document.getElementById('album').getBoundingClientRect();
+        if (al.top < 0 || al.left < 0 || al.bottom > innerHeight + 0.5 || al.right > innerWidth + 0.5) out.push(`album: ${Math.round(al.left)},${Math.round(al.top)} to ${Math.round(al.right)},${Math.round(al.bottom)} is off the screen`);
+        small('#album .al-tab', phone ? 48 : 56, true);
+        small('#album .sticker', phone ? 80 : 96);
+        small('#album .al-done', 44, true);
+        const done = document.querySelector('#album .al-done').getBoundingClientRect();
+        if (done.bottom > innerHeight) out.push('album: the done button is below the screen');
+        const albumPage = document.querySelector('#album .al-page');
+        const st = albumPage.querySelector('.sticker');
+        if (albumPage.clientHeight < st.offsetHeight) out.push(`album: the page (${albumPage.clientHeight}px) shows less than a row of stickers`);
+        st.classList.add('got');
+        const sw = st.querySelector('.w');
+        const tooWide = [];
+        for (const x of albumWords()) {
+          sw.className = `w${x.w.length > 7 ? ' long' : ''}`;
+          sw.innerHTML = albumWordHtml(x.w);
+          if (sw.offsetWidth > room(st) + 1) tooWide.push(`${x.w} ${sw.offsetWidth}px`);
+        }
+        if (tooWide.length) out.push(`album: ${tooWide.length} word(s) wider than a ${Math.round(room(st))}px sticker: ${tooWide.slice(0, 6).join(', ')}`);
+        albumTab = 'medals';
+        renderAlbum();
+        small('#album .medal', phone ? 70 : 80);
+        closeAlbum();
+        albumTab = null;
+        // A celebration with the longest place name fits across the screen.
+        const longest = albumGates().map(g => placeName(g.key)).sort((a, b) => b.length - a.length)[0];
+        const show = fanfareBanner('🌲🔓', longest, '문이 열렸어요!', 2500);
+        show.el.style.animation = 'none';
+        const fb = show.el.getBoundingClientRect();
+        if (fb.left < 0 || fb.right > innerWidth || fb.bottom > innerHeight) out.push('a celebration runs off the screen');
+        show.stop();
         return out;
       }, phone);
       r.forEach(fail);
