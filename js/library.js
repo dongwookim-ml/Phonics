@@ -1,16 +1,19 @@
 // The royal library on the castle's second floor: the shelf of story books
 // (BOOKS in js/books.js), a reader that reads each story aloud sentence by
 // sentence, and three questions at the end that pay a coin each, once.
+// Another shelf, above the stories, holds the little books she reads
+// herself (DECODABLE_BOOKS): the same reader shows each word as a tile.
 
 const library = {
   book: null,
   page: 0,
   sent: 0,           // the sentence being read on this page
   playing: false,
-  mode: 'read',      // 'read', 'quiz' or 'summary'
+  mode: 'read',      // 'read', 'quiz' or 'summary'; 'self' or 'selfEnd' for her own books
   token: 0,          // bumps whenever reading stops, so stale callbacks give up
   watchdog: null,
   quiz: null,        // { i, tries, right, coins, order, locked }
+  self: null,        // her own book: { heard: [Set per page], ready: [per page], visit }
   hintUntil: 0,      // the bookcase hints stay big until then
 };
 
@@ -73,9 +76,15 @@ function renderLibrary() {
   // The captain edition's library has its own name ("본부 도서관").
   libraryEl('library').querySelector('.wd-name').textContent = place('library');
   const read = BOOKS.filter(b => state.books && state.books[b.id] && state.books[b.id].read > 0).length;
-  libraryEl('lib-count').textContent = `읽은 책 ${read} / ${BOOKS.length}`;
+  const mine = DECODABLE_BOOKS.filter(selfDone).length;
+  libraryEl('lib-count').textContent = `읽은 책 ${read + mine} / ${BOOKS.length + DECODABLE_BOOKS.length}`;
   const list = libraryEl('lib-books');
   list.innerHTML = '';
+  // Her own books first, then the stories read to her.
+  const text = selfText();
+  list.append(libraryShelf(text.shelf, `${mine} / ${DECODABLE_BOOKS.length}`));
+  for (const book of DECODABLE_BOOKS) list.append(selfCover(book));
+  list.append(libraryShelf(text.stories, `${read} / ${BOOKS.length}`));
   for (const book of BOOKS) {
     const log = (state.books && state.books[book.id]) || {};
     const got = (log.got || []).length;
@@ -101,12 +110,30 @@ function closeLibrary() {
   state.busy = false;
 }
 
+// A shelf's name across the book list, with how many she has read.
+function libraryShelf(name, count) {
+  const h = document.createElement('div');
+  h.className = 'lib-shelf';
+  h.innerHTML = `<span>${name}</span><span class="n">${count}</span>`;
+  return h;
+}
+
 // ---- Reader --------------------------------------------------------------
+
+// The reader shows a story (◀ ⏸ ▶) or one of her own books (⬅ ▶ ➡, with
+// the words as tiles).
+function readerMode(self) {
+  libraryEl('reader').classList.toggle('self', self);
+  libraryEl('rd-prev').textContent = self ? '⬅' : '◀';
+  libraryEl('rd-next').textContent = self ? '➡' : '▶';
+  libraryEl('rd-play').classList.remove('wait');
+}
 
 function openBook(book) {
   Object.assign(library, { book, page: 0, sent: 0, playing: true, mode: 'read', quiz: null });
   libraryEl('library').classList.add('hidden');
   libraryEl('reader').classList.remove('hidden');
+  readerMode(false);
   libraryEl('rd-title').textContent = `${book.cover} ${book.ko}`;
   renderBookPage();
   bookSay([{ text: `${book.title}.`, narrator: true, rate: 0.85 }, { pause: 700 }], bookRead);
@@ -170,6 +197,7 @@ function bookRead() {
 }
 
 function bookTurn(step) {
+  if (library.mode === 'self') { selfTurn(step); return; }
   if (library.mode !== 'read') return;
   const to = library.page + step;
   if (to < 0) return;
@@ -182,6 +210,7 @@ function bookTurn(step) {
 
 function bookPlayButton() {
   Sound.tap();
+  if (library.mode === 'self') { selfPlay(); return; }
   if (library.mode === 'quiz') { bookAsk(); return; }
   if (library.mode !== 'read') return;
   if (library.playing) {
@@ -329,6 +358,249 @@ function bookSummary() {
   renderBookPage();
   if (z.right) { Sound.party(); bookCheer(); }
   bookSay([{ text: bookLine('done'), narrator: true }]);
+}
+
+// ---- I can read! -----------------------------------------------------------
+// Her own books (DECODABLE_BOOKS in js/books.js). Each word is a tile:
+// tapping one sounds it out with the pure letter sounds and says it, its
+// letters lighting up as they are said; a sight word is just said. ▶ reads
+// the whole sentence, but only once she has tapped every word on the page
+// or after a while, so she tries first. ➡ turns the page. The end is a
+// short party (a tap ends it), a star the first time, and a ✓ on its cover.
+
+const SELF_PLAY_MS = 8000; // ▶ shows up after this long on a page anyway
+
+// The shelf and the party in each edition's words: the robot's HQ library
+// reads like a mission.
+const selfText = () => (isCaptain()
+  ? { shelf: '🚀 내가 읽는 책', stories: '📖 읽어 주는 책', done: '미션 완료! 혼자 다 읽었어요!', again: '미션 완료! 또 읽었어요!', icon: '🚀' }
+  : { shelf: '✏️ 내가 읽는 책', stories: '📖 읽어 주는 책', done: '혼자 다 읽었어요!', again: '또 읽었어요!', icon: '👑' });
+
+// Her tier in reading a word and picking its picture (the `read` questions,
+// js/quiz.js): the highest she has reached, or the one a parent set. Books
+// up to that level are open; the first level always is.
+function selfLevel() {
+  const k = (state.skill || {}).read || {};
+  return Math.max(1, k.t | 0, k.best | 0);
+}
+
+// Logged with the stories (state.books) as `self:<id>`: { read, last }.
+// Tablets join it like the stories (js/progress.js), so a book finished on
+// either one has its ✓ on both.
+const selfKey = book => `self:${book.id}`;
+const selfDone = book => (((state.books || {})[selfKey(book)] || {}).read | 0) > 0;
+const selfOpen = book => book.level <= selfLevel() || selfDone(book);
+function selfLog(book) {
+  if (!state.books) state.books = {};
+  return state.books[selfKey(book)] || (state.books[selfKey(book)] = { read: 0, last: 0 });
+}
+
+function selfCover(book) {
+  const open = selfOpen(book);
+  const done = selfDone(book);
+  const b = document.createElement('button');
+  b.className = 'lib-book self';
+  b.classList.toggle('read', done);
+  b.classList.toggle('locked', !open);
+  b.dataset.id = book.id;
+  b.style.setProperty('--cover', book.color);
+  // The star she gets the first time, or the level a locked one needs.
+  const note = !open ? `읽기 ${book.level}단계` : done ? '⭐' : '<i>☆</i>';
+  b.innerHTML = `<span class="cv">${book.cover}</span>${open ? '' : '<span class="lock">🔒</span>'}` +
+    `<span class="en">${book.title}</span><span class="ko">${book.ko}</span><span class="coins">${note}</span>` +
+    (done ? '<span class="tick">✓</span>' : '');
+  b.addEventListener('click', () => {
+    if (!selfOpen(book)) { selfLocked(b); return; }
+    Sound.tap();
+    openSelfBook(book);
+  });
+  return b;
+}
+
+// A locked cover wiggles and says it opens with more reading.
+function selfLocked(b) {
+  Sound.locked();
+  b.classList.remove('wiggle');
+  void b.offsetWidth;
+  b.classList.add('wiggle');
+  bookSay([{ text: bookLine('selfLocked'), narrator: true }], null);
+}
+
+function openSelfBook(book) {
+  Object.assign(library, { book, page: 0, sent: 0, playing: false, mode: 'self', quiz: null,
+    self: { heard: book.pages.map(() => new Set()), ready: [], visit: 0 } });
+  libraryEl('library').classList.add('hidden');
+  libraryEl('reader').classList.remove('hidden');
+  readerMode(true);
+  libraryEl('rd-title').textContent = `${book.cover} ${book.title}`;
+  renderSelfPage();
+  bookSay([{ text: bookLine('selfStart'), narrator: true }], null);
+}
+
+function renderSelfPage() {
+  const { book, page } = library;
+  const reading = library.mode === 'self';
+  libraryEl('rd-page').classList.toggle('hidden', !reading);
+  libraryEl('rd-quiz').classList.toggle('hidden', reading);
+  libraryEl('rd-nav').classList.remove('quiz');
+  libraryEl('rd-nav').classList.toggle('done', !reading);
+  libraryEl('rd-pageno').textContent = reading ? `${page + 1} / ${book.pages.length}` : '';
+  if (!reading) return;
+  libraryEl('rd-paper').style.setProperty('--cover', book.color);
+  libraryEl('rd-pic').textContent = book.pages[page].pic;
+  const text = libraryEl('rd-text');
+  text.classList.remove('now');
+  text.innerHTML = '';
+  const heard = library.self.heard[page];
+  decodeTokens(book.pages[page].text).forEach((t, i) => {
+    const b = document.createElement('button');
+    b.className = 'rd-word';
+    b.classList.toggle('sight', t.sight);
+    b.classList.toggle('heard', heard.has(i));
+    b.innerHTML = selfTileHtml(t);
+    b.addEventListener('click', () => selfTap(i, b, t));
+    text.append(b);
+  });
+  libraryEl('rd-prev').disabled = page === 0;
+  libraryEl('rd-next').disabled = false;
+  renderSelfPlay(false);
+  // ▶ comes anyway after a while on this page (game time: it waits under
+  // the parent panel).
+  const visit = ++library.self.visit;
+  if (!library.self.ready[page]) {
+    later(SELF_PLAY_MS, () => {
+      if (library.mode !== 'self' || library.self.visit !== visit) return;
+      library.self.ready[page] = true;
+      renderSelfPlay(true);
+    });
+  }
+}
+
+// A tile: punctuation dimmed, and each letter (or pair, sh) in its own span
+// so it can light up as its sound is said.
+function selfTileHtml(t) {
+  const at = t.text.indexOf(t.word);
+  const mark = s => (s ? `<span class="p">${s}</span>` : '');
+  let k = 0;
+  const parts = t.sight || !t.level ? [t.word] : decodeParts(t.word).map(p => t.word.slice(k, k += p.length));
+  return `${mark(t.text.slice(0, at))}${parts.map(p => `<span class="g">${p}</span>`).join('')}${mark(t.text.slice(at + t.word.length))}`;
+}
+
+function renderSelfPlay(pop) {
+  const play = libraryEl('rd-play');
+  play.textContent = '▶';
+  play.title = '읽어 주세요';
+  play.classList.toggle('wait', !library.self.ready[library.page]);
+  if (pop && library.self.ready[library.page]) {
+    play.classList.remove('pop');
+    void play.offsetWidth;
+    play.classList.add('pop');
+  }
+}
+
+// "/c/ /a/ /t/… cat!" with c, a, t lighting up in turn; a sight word whole.
+function selfTap(i, b, t) {
+  if (library.mode !== 'self') return;
+  const page = library.page;
+  const heard = library.self.heard[page];
+  heard.add(i);
+  b.classList.add('heard');
+  const text = libraryEl('rd-text');
+  text.classList.remove('now');
+  text.querySelectorAll('.rd-word').forEach(x => x.classList.remove('on'));
+  text.querySelectorAll('.g').forEach(x => x.classList.remove('lit'));
+  b.classList.add('on');
+  const g = [...b.querySelectorAll('.g')];
+  const light = k => ({ call: () => g.forEach((x, j) => x.classList.toggle('lit', k < 0 || j === k)) });
+  let parts;
+  if (t.sight || !t.level) parts = [selfWord(t.word)];
+  else {
+    let k = 0;
+    // A light before each sound, then all of them for the word.
+    parts = Quiz.soundOut(t.word.toLowerCase(), decodeSounds(t.word))
+      .flatMap(p => (!p.text ? [p] : [light(/^\/.+\/$/.test(p.text) ? k++ : -1), p]));
+  }
+  const all = heard.size === text.querySelectorAll('.rd-word').length;
+  if (all) library.self.ready[page] = true;
+  bookSay(parts, () => {
+    b.classList.remove('on');
+    g.forEach(x => x.classList.remove('lit'));
+    if (all && library.page === page) renderSelfPlay(true);
+  });
+}
+
+// A sight word, said the way a word in a question is (the narrator).
+const selfWord = w => ({ text: w === 'I' ? w : w.toLowerCase(), narrator: true, rate: 0.8 });
+
+// ▶ reads the page's sentence, slowly, the tiles lit while it does.
+function selfPlay() {
+  if (library.mode !== 'self' || !library.self.ready[library.page]) return;
+  const text = libraryEl('rd-text');
+  text.querySelectorAll('.rd-word').forEach(x => x.classList.remove('on'));
+  text.classList.add('now');
+  bookSay([{ text: library.book.pages[library.page].text, narrator: true, rate: 0.85 }], () => text.classList.remove('now'));
+}
+
+function selfTurn(step) {
+  const to = library.page + step;
+  if (to < 0) return;
+  bookHush();
+  if (to >= library.book.pages.length) { selfFinish(); return; }
+  library.page = to;
+  renderSelfPage();
+}
+
+// The last page turned: a party for about 2 s (a tap ends it), a star the
+// first time she reads this book to the end, then the way out.
+function selfFinish() {
+  const { book } = library;
+  const log = selfLog(book);
+  const first = !log.read;
+  log.read++;
+  log.last = Date.now();
+  const before = state.stars;
+  if (first) {
+    state.stars++;
+    renderStars(true);
+  }
+  save();
+  if (first) gateCheck(before); // a gate it opens celebrates once she leaves (js/album.js)
+  library.mode = 'selfEnd';
+  renderSelfPage();
+  const text = selfText();
+  libraryEl('rd-q').innerHTML = `<div class="rd-summary"><div class="rd-big">${book.cover}</div>` +
+    `<div class="rd-end">${text.icon} I can read!</div><div class="rd-score">${first ? text.done : text.again}</div>` +
+    `${first ? '<div class="rd-got">⭐ +1</div>' : '<div class="rd-note">⭐ 이 책의 별은 벌써 받았어요</div>'}</div>`;
+  libraryEl('rd-options').innerHTML = '';
+  Sound.party();
+  bookCheer();
+  later(600, bookCheer);
+  bookSay([{ pause: 300 }, { text: bookLine('selfDone'), narrator: true }], null);
+  // The way out after the party, or at once when she taps (not the tap on
+  // ➡ that got here, which is still on its way up).
+  const reader = libraryEl('reader');
+  const from = performance.now();
+  const skip = e => {
+    if (e && e.timeStamp <= from) return;
+    reader.removeEventListener('click', skip);
+    selfEndButtons(book);
+  };
+  reader.addEventListener('click', skip);
+  later(2000, skip);
+}
+
+function selfEndButtons(book) {
+  const opts = libraryEl('rd-options');
+  if (library.mode !== 'selfEnd' || library.book !== book || opts.children.length) return;
+  const again = document.createElement('button');
+  again.className = 'rd-wide yes';
+  again.textContent = '📚 다른 책 읽기';
+  again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(); });
+  const bye = document.createElement('button');
+  bye.className = 'rd-wide no';
+  bye.textContent = '나갈래요 👋';
+  bye.addEventListener('click', () => { Sound.tap(); closeLibrary(); });
+  opts.append(again, bye);
 }
 
 // ---- Hints ---------------------------------------------------------------

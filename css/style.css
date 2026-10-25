@@ -1294,6 +1294,64 @@ body.captain.fairy { background: linear-gradient(#bfe6ff, #e0f2ff 50%, #dff6e0);
 }
 @keyframes cheer { from { opacity: 1; transform: translateY(0) scale(0.6); } to { opacity: 0; transform: translateY(-260px) scale(1.2); } }
 
+/* The shelves: her own books, then the stories read to her. */
+.lib-shelf {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 6px 4px;
+  font-size: 21px;
+  border-bottom: 3px dashed rgba(74, 106, 184, 0.35);
+}
+.lib-shelf:not(:first-child) { margin-top: 8px; }
+.lib-shelf .n { font-size: 16px; color: #4a6ab8; }
+.lib-book.locked { filter: grayscale(0.8); opacity: 0.75; }
+.lib-book.locked .coins { font-size: 14px; letter-spacing: 0; color: #4a6ab8; }
+.lib-book .lock { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); font-size: 34px; }
+.lib-book.wiggle { animation: wiggle 0.45s ease; }
+
+/* Her own books: every word a tile to tap; its letters light up as they
+   are sounded out. */
+.reader.self .rd-text {
+  max-width: none;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 12px;
+  overflow: visible;
+}
+.rd-word {
+  min-height: 64px;
+  padding: 2px 16px 4px;
+  font-family: "Baloo 2", sans-serif;
+  font-weight: 800;
+  font-size: clamp(30px, min(5.4vh, 5vw), 46px);
+  line-height: 1.2;
+  white-space: nowrap;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 rgba(74, 44, 79, 0.22);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.rd-word:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(74, 44, 79, 0.22); }
+.rd-word.sight { background: #fff4d6; }
+.rd-word.heard { border-color: #4fae5a; }
+.rd-word .p { color: #b8a8c8; }
+.rd-word .g { transition: color 0.15s; }
+.rd-word .g.lit { color: var(--accent-ink); }
+.rd-word.on, .rd-text.now .rd-word { background: #fff1a8; box-shadow: 0 0 0 3px #ffe27a, 0 4px 0 rgba(74, 44, 79, 0.22); }
+.rd-btn.wait { visibility: hidden; }
+.rd-btn.pop { animation: pop 0.6s ease; }
+.reader.self #rd-next { width: 120px; font-size: 38px; color: #fff; background: #7fcf86; }
+body.captain .lib-shelf { border-bottom-color: rgba(47, 111, 216, 0.35); }
+body.captain .rd-word.sight { background: #eaf2ff; }
+body.captain .rd-word.on, body.captain .rd-text.now .rd-word { background: #dcebff; box-shadow: 0 0 0 3px #9cc4f0, 0 4px 0 rgba(47, 44, 86, 0.22); }
+
 @media (max-width: 560px) {
   .lib-books { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .lib-book .cv { font-size: 42px; }
@@ -1669,6 +1727,19 @@ body.captain .parent-head { background: #dcebff; }
   .rd-nav { gap: 12px; }
   .rd-btn { width: 64px; height: 52px; font-size: 26px; }
   .rd-btn.play { width: 80px; }
+  .reader.self #rd-next { width: 100px; font-size: 32px; }
+  /* Her own books: the picture beside the words, so both stay big. */
+  .reader.self .rd-page { flex-direction: row; gap: 10px; padding: 8px 12px; }
+  .reader.self .rd-pic { flex: none; max-width: 32%; font-size: 58px; letter-spacing: 2px; text-align: center; }
+  .reader.self .rd-text { flex: 1; min-width: 0; gap: 8px; }
+  .rd-word { min-height: 52px; padding: 0 11px 2px; font-size: 26px; border-radius: 12px; }
+  .reader.self .rd-big { display: none; }
+  .reader.self .rd-end { font-size: 32px; }
+  .reader.self .rd-score { font-size: 20px; }
+  .reader.self .rd-got { font-size: 28px; }
+  .rd-wide { min-height: 48px; padding: 4px 16px; font-size: 20px; }
+  .lib-shelf { font-size: 18px; padding-bottom: 2px; }
+  .lib-book .lock { top: 22px; font-size: 26px; }
 
   .start { padding: 8px 16px; gap: 4px 24px; }
   .start .preview { width: 56px; height: 86px; }

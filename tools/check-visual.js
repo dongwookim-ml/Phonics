@@ -14,7 +14,10 @@
 //   celebration banner fits across the screen;
 // - today's adventures (js/quest.js): the card fits without scrolling, its
 //   pictures, arrow and chest on one row, big enough to tap, nothing runs
-//   over, and the tick under the HUD chest stays on screen.
+//   over, and the tick under the HUD chest stays on screen;
+// - on every page of the books she reads herself the picture and the word
+//   tiles fit the page, in two rows at most, the tiles 64 px tall (52 on a
+//   phone), and the card at the end fits.
 // Run: node tools/check-visual.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -228,6 +231,40 @@ function ask(kind, scene) {
         small('#album .medal', phone ? 70 : 80);
         closeAlbum();
         albumTab = null;
+
+        // The books she reads herself: on every page the picture and the
+        // word tiles fit the page, in two rows at most, each tile big enough
+        // to tap; and the card at the end fits too.
+        state.skill.read = Object.assign(Quiz.skill('read'), { t: 4 });
+        state.busy = false;
+        openLibrary();
+        small('#lib-books .lib-book.self', big);
+        const inside = (el, box) => { const r = el.getBoundingClientRect(); return r.left >= box.left - 0.5 && r.right <= box.right + 0.5 && r.top >= box.top - 0.5 && r.bottom <= box.bottom + 0.5; };
+        for (const book of DECODABLE_BOOKS) {
+          openSelfBook(book);
+          book.pages.forEach((p, i) => {
+            library.page = i;
+            renderSelfPage();
+            const paper = document.getElementById('rd-paper').getBoundingClientRect();
+            const tiles = [...document.querySelectorAll('#rd-text .rd-word')];
+            const rows = new Set(tiles.map(t => Math.round(t.getBoundingClientRect().top))).size;
+            const where = `reading ${book.id} page ${i + 1}`;
+            if (rows > 2) out.push(`${where}: the words take ${rows} rows`);
+            const out_ = [document.getElementById('rd-pic')].concat(tiles).filter(el => !inside(el, paper));
+            if (out_.length) out.push(`${where}: ${out_.map(el => el.textContent).join(' ')} runs off the page`);
+          });
+          small('#rd-text .rd-word', phone ? 52 : 64, true);
+          for (const b of ['#rd-prev', '#rd-next']) small(`#reader ${b}`, big);
+          if (book === DECODABLE_BOOKS[DECODABLE_BOOKS.length - 1]) {
+            selfFinish();
+            selfEndButtons(book);
+            const paper = document.getElementById('rd-paper').getBoundingClientRect();
+            const off = [...document.querySelectorAll('#rd-q > *, #rd-options button')].filter(el => !inside(el, paper));
+            if (off.length) out.push(`reading: the end card runs off the page (${off.map(el => el.textContent).join(', ')})`);
+            small('#rd-options button', phone ? 48 : 56, true);
+          }
+        }
+        closeLibrary();
         // A celebration with the longest place name fits across the screen.
         const longest = albumGates().map(g => placeName(g.key)).sort((a, b) => b.length - a.length)[0];
         const show = fanfareBanner('🌲🔓', longest, '문이 열렸어요!', 2500);

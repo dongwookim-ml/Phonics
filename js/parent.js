@@ -253,7 +253,23 @@ function parentStats() {
     </div>
     <h3>글자별 정답률 (한 번에 맞힌 비율)</h3>
     <div class="parent-letters">${parentLetters()}</div>`;
+  parentSelfBooks(parentUi.panel.querySelector('.parent-body'));
   parentSettings(parentUi.panel.querySelector('.parent-body'));
+}
+
+// The books she reads herself (js/library.js): read to the end (✓ and how
+// often), open, or waiting for her reading tier (🔒 읽기 3단계).
+function parentSelfBooks(body) {
+  const box = document.createElement('section');
+  const chips = DECODABLE_BOOKS.map(b => {
+    const n = ((state.books || {})[selfKey(b)] || {}).read | 0;
+    const what = n ? `✓ ${n}번` : selfOpen(b) ? '열림' : `🔒 읽기 ${b.level}단계`;
+    return `<span class="l-chip${n ? ' good' : ''}">${b.cover} ${parentEsc(b.title)} <b>${what}</b></span>`;
+  }).join('');
+  box.innerHTML = `<h3>혼자 읽는 책 (도서관)</h3>
+    <p class="parent-note">아는 소리로만 된 작은 책이에요. 읽기 단계가 오르면 다음 책이 열리고, 처음 끝까지 읽으면 별을 하나 받아요.</p>
+    <div class="parent-letters">${chips}</div>`;
+  body.append(box);
 }
 
 // − / + on a tier.

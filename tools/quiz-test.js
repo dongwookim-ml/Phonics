@@ -8,6 +8,8 @@
 // else; it fails only with TTS_STRICT=1, since new lines wait for the
 // recording workflow). Also: every villager in every scene has a voice and
 // a persona, and every LINES / BOOK_LINES kind the code asks for exists.
+// First it runs tools/check-books.js: every word of the books she reads
+// herself can be sounded out at the book's level, or is a sight word.
 // Run: node tools/quiz-test.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -32,6 +34,11 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
 (async () => {
   const browser = await launch();
   let failed = 0;
+  // Every word of the books she reads herself can be read at its level.
+  const books = require('./check-books').check();
+  console.log(`books she reads herself: ${books.length ? `${books.length} problem(s)` : 'OK'}`);
+  for (const p of books) console.log(`  ${p}`);
+  failed += books.length;
   for (const edition of ['princess', 'captain']) {
     const page = await browser.newPage();
     const errors = [];
