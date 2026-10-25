@@ -229,6 +229,38 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .clue-sentence .first { color: var(--accent); }
 .clue-sentence .blank.wide { display: inline-block; min-width: 2.6em; margin: 0 0.15em; color: #e0a52a; border-bottom: 4px solid #e0a52a; text-align: center; }
 .clue-letter { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 52px; color: var(--accent); line-height: 1.1; }
+/* Sound blending: a dot for each sound she hears. */
+.clue-sounds { display: flex; gap: 14px; padding: 10px 0; }
+.clue-sounds .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); box-shadow: 0 3px 0 rgba(74, 44, 79, 0.25); animation: breathe 1.2s ease infinite; }
+.clue-sounds .dot:nth-child(2) { animation-delay: 0.2s; }
+.clue-sounds .dot:nth-child(3) { animation-delay: 0.4s; }
+.clue-sounds .dot:nth-child(4) { animation-delay: 0.6s; }
+/* A kind of question went up a tier. */
+.level-up {
+  position: fixed;
+  left: 50%;
+  top: 34%;
+  z-index: 60;
+  padding: 10px 28px;
+  font-family: "Jua", "Baloo 2", sans-serif;
+  font-size: 56px;
+  color: #fff8d8;
+  background: linear-gradient(#ffc83d, #ff8fc0);
+  border: 5px solid var(--ink);
+  border-radius: 30px;
+  box-shadow: 0 0 0 5px #fff inset, 0 10px 0 rgba(74, 44, 79, 0.3), 0 0 50px rgba(255, 220, 90, 0.9);
+  text-shadow: 0 3px 0 rgba(74, 44, 79, 0.45);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: levelup 2.6s ease forwards;
+}
+@keyframes levelup {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
+  25% { transform: translate(-50%, -50%) scale(1) rotate(0); }
+  80% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -90%) scale(0.9); }
+}
 .side { display: flex; flex-direction: column; gap: 8px; justify-content: space-between; }
 .round {
   width: 58px;
@@ -566,8 +598,10 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .dust.pop { animation: pop 0.5s ease; }
 
 .spell-word { display: flex; gap: 8px; }
+.spell-word .syl { display: flex; gap: 8px; }
+.spell-word .syl + .syl { margin-left: 18px; }
 .spell-word .slot {
-  width: 1.1em;
+  min-width: 1.1em; /* sh and ck fill one blank */
   height: 1.3em;
   display: grid;
   place-items: center;
@@ -597,7 +631,8 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
   .counters { flex: 1; min-width: 0; flex-wrap: wrap; }
   .counters .stars { padding: 3px 8px; font-size: 19px; gap: 3px; }
   .buttons { flex: none; }
-  .spell-word { gap: 6px; }
+  .spell-word, .spell-word .syl { gap: 6px; }
+  .level-up { font-size: 38px; }
   .spell-word .slot { font-size: 32px; }
   .choices.spell { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .choices.spell .tile .letter { font-size: 32px; }
@@ -704,6 +739,18 @@ body.captain.fairy .vignette { background: radial-gradient(ellipse at center, tr
 .parent-bar { grid-column: 1 / -1; display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; background: var(--p-untried); }
 .parent-bar .seg { min-width: 3px; }
 .k-nums { grid-column: 1 / -1; font-size: 13px; color: var(--p-muted); }
+.k-tier { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.k-tier .tier-btn { width: 28px; height: 28px; padding: 0; font-size: 18px; line-height: 1; border: 2px solid #d8cce0; border-radius: 8px; background: #fff; color: inherit; }
+.k-tier .tier-btn:disabled { opacity: 0.35; }
+.k-tier .tier-more { margin-left: auto; font-size: 12px; color: var(--p-muted); }
+.parent-note { margin: 0 0 6px; font-size: 13px; color: var(--p-muted); }
+.parent-letters { display: flex; flex-wrap: wrap; gap: 6px; }
+.l-chip { padding: 2px 8px; font-size: 14px; border-radius: 10px; background: #f3eef6; }
+.l-chip.good { background: #dff4e6; }
+.l-chip.mid { background: #fff2cc; }
+.l-chip.low { background: #ffe0e4; }
+.parent-setting { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.parent-setting input { width: 20px; height: 20px; }
 .parent-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .parent-missed { margin: 0; padding-left: 22px; font-size: 15px; }
 .parent-missed li { margin: 3px 0; }

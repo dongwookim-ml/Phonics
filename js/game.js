@@ -135,9 +135,14 @@ function load() {
     outfit = fitOutfit(outfit);
     // Picture hints start on for a new player (a pre-reader needs them).
     const pictures = s.pictures === undefined ? true : !!s.pictures;
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {} };
+    // Her level per kind of question describes her, so both editions share
+    // it; a save from before levels gets them from its answers.
+    const others = Object.values(otherEditions);
+    const skill = s.skill || (others.find(o => o && o.skill) || {}).skill || Quiz.migrate([s.history].concat(others.map(o => o && o.history)));
+    const settings = s.settings || (others.find(o => o && o.settings) || {}).settings || {};
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {}, skill, settings };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {} };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {}, skill: {}, settings: {} };
   }
 }
 
@@ -158,7 +163,8 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
+  for (const o of Object.values(otherEditions)) if (o) Object.assign(o, { skill: state.skill, settings: state.settings });
+  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -176,6 +182,8 @@ const state = {
   coins: saved.coins,
   dust: saved.dust,  // fairy dust from the Fairy Village
   history: saved.history, // { questionId: { kind, tries, right, wrong, last } }
+  skill: saved.skill, // her tier per kind of question (js/quiz.js)
+  settings: saved.settings, // parent settings: { twoSyllables }
   books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
   pictures: saved.pictures,
   scenes: {},
@@ -494,7 +502,7 @@ function openDialog(npc) {
   ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
   // The cards wait until she has heard the word (Quiz.READY in q.ask).
-  listen(q, [{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), 9000);
+  listen(q, [{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), 12000);
   save();
 }
 
@@ -555,15 +563,18 @@ function answeredRight(q, btn) {
   const praise = line('praise');
   ui.text.textContent = praise;
   Sound.correct();
+  // A kind of question just went up to a new tier.
+  const levelUp = q.levelUp ? [{ pause: 300 }, { text: line('levelUp'), narrator: true }] : [];
+  if (q.levelUp) later(600, showLevelUp);
   // Cave monsters pay in coins instead of a star and a present.
   if (npc.monster) {
-    Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(npc));
+    Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp), voiceOf(npc));
     catchMonster(npc);
     return;
   }
   const gift = !q.misses && hasNewGift(npc);
   const close = () => { if (state.question === q) closeDialog(); };
-  Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
+  Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
   if (npc.level === 5 && !q.misses) addDust();
   state.stars++;
   state.answered++;
@@ -612,6 +623,17 @@ function showAnswer(q, o) {
   listen(q, parts.concat(Quiz.READY, { pause: 300 }, tap), 8000);
   // A nudge if she hasn't tapped it a while later.
   later(16000, () => { if (state.question === q && !q.done && !q.locked) Sound.say([tap], voiceOf(state.talking)); });
+}
+
+// "⭐ 레벨 업!" over the game, with a fanfare.
+function showLevelUp() {
+  const el = document.createElement('div');
+  el.className = 'level-up';
+  el.textContent = '⭐ 레벨 업!';
+  document.body.append(el);
+  Sound.levelUp();
+  burstAtHero(40);
+  setTimeout(() => el.remove(), 2600);
 }
 
 // She tapped the shown answer: it is said once more, no star, and it comes
@@ -1060,6 +1082,8 @@ function renderSpell(q) {
     b.addEventListener('click', () => spellTap(i));
     ui.choices.append(b);
   });
+  // The easiest words come with the first letter in already.
+  for (let i = 0; i < (q.given || 0); i++) q.picked.push(q.tiles.findIndex((t, j) => t.l === q.slots[i] && !q.picked.includes(j)));
   showSpelled(q);
 }
 

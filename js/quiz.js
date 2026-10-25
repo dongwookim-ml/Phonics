@@ -13,95 +13,145 @@
 //   model    speech parts that show the answer after a second miss
 // `ask` holds Quiz.READY where the target has been heard: the cards can be
 // tapped from there on.
+//
+// How hard a question is depends on her tier for that kind (TIERS in
+// js/data.js, state.skill): how many cards, pictures or not, how close the
+// other cards are, which words. See tierFor and learn below.
 
 const Quiz = (() => {
   const READY = { ready: true };
-  let recent = [];
+  let recent = {}; // kind -> the last targets asked
 
-  const allWords = () => LETTERS.flatMap(info => info.words.map(([w, e]) => ({ w, e, info })));
-  const infoOf = w => LETTERS.find(l => l.letter === w[0].toUpperCase()) || LETTERS[0];
-  const cvc = () => {
-    const seen = new Set();
-    const list = [];
-    for (const fam of WORD_FAMILIES) for (const [w, e] of fam) {
-      if (w.length === 3 && 'aeiou'.includes(w[1]) && !'aeiouwy'.includes(w[2]) && PART_SOUNDS[w[2]] && !seen.has(w)) {
-        seen.add(w);
-        list.push({ w, e });
-      }
-    }
-    return list;
-  };
-
-  // Prefer words she hasn't seen lately; fall back to everything.
-  function fresh(list, key = x => x.w) {
-    const f = list.filter(x => !recent.includes(key(x)));
-    return f.length ? f : list;
+  // ---- Words -----------------------------------------------------------------
+  // Every word the questions use, once: { w, e, pic, aka, parts, syl }.
+  //   pic 2: the picture alone names it (WEAK_PICTURES and pic-1 bank
+  //   words don't); aka: other names she may use for the picture (ALIAS);
+  //   parts: its sounds when a letter pair is one sound (f-i-sh);
+  //   syl: its syllables (rab-bit).
+  let index = null;
+  function words() {
+    if (index) return index;
+    index = {};
+    const add = (w, e, pic = 2, parts, bank) => {
+      const x = index[w] || (index[w] = { w, e, pic, aka: ALIAS[w] || [] });
+      x.pic = WEAK_PICTURES.has(w) ? 1 : Math.min(x.pic, pic);
+      if (parts) x[parts.some(p => p.length > 2) ? 'syl' : 'parts'] = parts;
+      if (bank) x.bank = true; // every letter (or letter pair) says its usual sound
+    };
+    for (const list of [CVC_A1, CVC_A2, CCVC, CVCC, LONG, DIGRAPH]) for (const [w, e, pic, parts] of list) add(w, e, pic, parts, true);
+    LETTERS.forEach(l => l.words.forEach(([w, e]) => add(w, e)));
+    WORD_FAMILIES.forEach(f => f.forEach(([w, e]) => add(w, e)));
+    RHYME_SETS.forEach(r => r.set.forEach(([w, e]) => add(w, e)));
+    for (const x of SENTENCES.concat(SENTENCES_L1, SENTENCES_L2)) { add(x.w[0], x.w[1]); x.other.forEach(([w, e]) => add(w, e)); }
+    return index;
   }
-  function remember(word) {
-    recent = recent.filter(w => w !== word).concat(word).slice(-RECENT_WORDS);
-  }
-
-  // Every question has a stable id ("rhyme:cat", "sentence:The {} says moo.")
-  // and each kind has a pool of all the ids it can ask, so the game can tell
-  // which ones she has already got right (state.history, see record()).
+  const entry = ([w]) => words()[w];
+  const syllables = w => (w.match(/[aeiouy]+/g) || []).length;
+  // Old word families: every word with the family it belongs to.
   const famWords = () => {
     const seen = new Set();
     const list = [];
-    for (const fam of WORD_FAMILIES) for (const [w, e] of fam) if (!seen.has(w)) { seen.add(w); list.push({ w, e, fam }); }
+    for (const fam of WORD_FAMILIES) for (const [w] of fam) if (!seen.has(w)) { seen.add(w); list.push(Object.assign({ fam }, words()[w])); }
     return list;
   };
-  const withId = (kind, list, key = x => x.w) => list.map(x => Object.assign({}, x, { id: `${kind}:${key(x)}` }));
-  const clearPicture = x => !WEAK_PICTURES.has(x.w);
+  // The word lists TIERS name.
+  const BANK = {
+    CVC_A1: () => CVC_A1.map(entry),
+    CVC: () => CVC_A1.concat(CVC_A2).map(entry),
+    BLEND4: () => CCVC.concat(CVCC).map(entry),
+    DIGRAPH4: () => DIGRAPH.filter(([w]) => w.length === 4).map(entry),
+    ONE5: () => LONG.filter(x => !x[3]).concat(DIGRAPH.filter(([w]) => w.length >= 5 && syllables(w) === 1)).map(entry),
+    TWO: () => LONG.filter(x => x[3]).concat(DIGRAPH.filter(([w]) => syllables(w) > 1)).map(entry),
+    FAM: famWords,
+  };
+  const minimalWords = () => [...new Set(MINIMAL_SETS.flat())].map(w => words()[w]);
+  const letterWords = () => LETTERS.flatMap(info => info.words.map(([w]) => Object.assign({ info }, words()[w])));
+  const clear = x => x.pic >= 2;
+  // Three letters, a vowel in the middle and a plain last letter (cat, not cow).
+  const cvcShape = x => /^[^aeiou][aeiou][^aeiouwy]$/.test(x.w) && !!PART_SOUNDS[x.w[2]];
+  // Starts with one consonant sound: no tr, sn, sh (first-sound questions, easiest tier).
+  const single = x => /^[^aeiou][aeiou]/.test(x.w) && !/^qu/.test(x.w);
+  const prefer = (list, f) => { const some = f ? list.filter(f) : list; return some.length ? some : list; };
+  const sentencesAt = lv => (lv === 1 ? SENTENCES_L1 : lv === 2 ? SENTENCES_L2 : SENTENCES);
 
-  // Letters she can't tell apart yet, or that say the same sound (HARD_PAIRS),
-  // never sit side by side in one question; nor do words that differ only in
-  // such letters (pan, pen).
-  const pairs = () => HARD_PAIRS.vowels.concat(HARD_PAIRS.consonants, HARD_PAIRS.same);
-  const confusable = (x, y) => x !== y && pairs().some(([a, b]) => (a === x && b === y) || (a === y && b === x));
+  // ---- Sounds she can't tell apart -------------------------------------------
+  // HARD_PAIRS: a/e, f/p, l/r... only come together at a kind's top tier
+  // (`near`); letters that say the same sound (c and k) never do.
+  const has = (list, a, b) => list.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
+  const sameSound = (a, b) => a === b || has(HARD_PAIRS.same, a, b);
+  const hardPair = (a, b) => a !== b && has(HARD_PAIRS.vowels.concat(HARD_PAIRS.consonants), a, b);
+  const nearPair = (a, b) => hardPair(a, b) || has(HARD_PAIRS.looks, a, b);
+  // Two words that differ only in such a letter (pan, pen).
   function nearWords(a, b) {
     if (a.length !== b.length) return false;
     const diff = [...a].map((c, i) => [c, b[i]]).filter(([x, y]) => x !== y);
-    return diff.length === 1 && confusable(diff[0][0], diff[0][1]);
+    return diff.length === 1 && hardPair(diff[0][0], diff[0][1]);
   }
-  // Adds things from `list` to `chosen`, up to n, skipping any that clash
-  // with one already chosen.
-  function apart(chosen, list, n, clash) {
-    const out = chosen.slice();
-    for (const x of list) if (out.length < n && !out.some(y => clash(x, y))) out.push(x);
+  // A card whose picture she may call by the target's own name (🥤 for mug).
+  const alike = (x, t) => x.aka.includes(t.w) || t.aka.includes(x.w) || x.e === t.e;
+  // n other cards from `pool`, each passing ok(x, chosen). With `partner`,
+  // the first one is a hard one: partner(x) and ok(x, chosen, true).
+  function others(pool, n, ok, partner) {
+    const out = [];
+    const list = shuffle(pool.slice());
+    if (partner) { const p = list.find(x => partner(x) && ok(x, out, true)); if (p) out.push(p); }
+    for (const x of list) if (out.length < n && !out.includes(x) && ok(x, out, false)) out.push(x);
     return out;
   }
+
+  const withId = (kind, list, key = x => x.w) => list.map(x => Object.assign({}, x, { id: `${kind}:${key(x)}` }));
+  // Every question has a stable id ("rhyme:cat", "sentence:The {} says moo.")
+  // and each kind has a pool of the ids it can ask at a tier, so the game can
+  // tell which ones she has already got right (state.history, see record()).
   const pools = {
-    word: npc => withId('word', npc.letter ? allWords().filter(x => x.info.letter === npc.letter) : allWords()),
-    start: () => withId('start', allWords()),
+    word: npc => withId('word', letterWords().filter(x => !npc.letter || x.info.letter === npc.letter)),
+    start: (npc, cfg) => withId('start', prefer(letterWords(), cfg.single && single)),
     // Only the picture is shown, so only pictures she can name for sure.
-    findStart: npc => withId('findStart', allWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && clearPicture(x))),
-    rhyme: () => withId('rhyme', RHYMES.map(set => ({ set, w: set[0][0] }))),
-    family: () => withId('family', famWords()),
-    vowel: () => withId('vowel', cvc()),
-    ending: () => withId('ending', cvc()),
-    read: () => withId('read', famWords().filter(clearPicture)),
-    sentence: () => withId('sentence', SENTENCES.map(x => ({ x, w: x.w[0] })), y => y.x.s),
-    meaning: () => withId('meaning', SENTENCES.map(x => ({ x, w: x.w[0] })), y => y.x.s),
-    spell: () => withId('spell', spellWords()),
+    findStart: (npc, cfg) => withId('findStart', prefer(letterWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && clear(x)), cfg.single && single)),
+    rhyme: () => withId('rhyme', RHYME_SETS.map(r => ({ r, w: r.set[0][0] }))),
+    family: (npc, cfg) => withId('family', cfg.minimal ? minimalWords() : BANK[cfg.words]()),
+    vowel: (npc, cfg) => withId('vowel', BANK[cfg.words]().filter(cvcShape)),
+    ending: (npc, cfg) => withId('ending', BANK[cfg.words]().filter(cvcShape)),
+    read: (npc, cfg) => withId('read', cfg.minimal ? minimalWords() : BANK[cfg.words]().filter(clear)),
+    blend: (npc, cfg) => withId('blend', cfg.minimal ? minimalWords() : BANK[cfg.words]().filter(clear)),
+    sentence: (npc, cfg) => withId('sentence', sentencesAt(cfg.lv).map(x => ({ x, w: x.w[0] })), y => y.x.s),
+    meaning: (npc, cfg) => withId('meaning', sentencesAt(cfg.lv).map(x => ({ x, w: x.w[0] })), y => y.x.s),
+    spell: (npc, cfg) => withId('spell', BANK[cfg.words]().filter(x => !(cfg.noX && x.w.includes('x')) && graphemes(x).every(soundOf))),
   };
   const history = () => (typeof state !== 'undefined' && state.history) || {};
   const solved = id => (history()[id] || {}).right > 0;
-  // Review mode: every question of this kind (here) has been answered right.
-  const reviewing = (kind, npc) => !!pools[kind] && pools[kind](npc).every(x => solved(x.id));
+  // Review mode: every question of this kind at this tier (here) has been answered right.
+  const reviewing = (kind, npc, cfg) => !!pools[kind] && pools[kind](npc, cfg).every(x => solved(x.id));
 
-  // The next question of a kind: one she hasn't got right yet if there is
-  // any, otherwise a review that favours the ones she missed and the ones
-  // she hasn't seen for a while. Recent words still stay out when they can.
-  // A question that comes back after a miss asks for its own id (`want`).
+  // Prefer words she hasn't seen lately; fall back to everything. Each kind
+  // keeps its own list, at most half its pool, so small pools still turn over.
+  function fresh(kind, list) {
+    const r = recent[kind] || [];
+    const f = list.filter(x => !r.includes(x.w));
+    return f.length ? f : list;
+  }
+  function remember(kind, word, size) {
+    const cap = Math.max(1, Math.min(RECENT_WORDS, Math.floor(size / 2)));
+    recent[kind] = (recent[kind] || []).filter(w => w !== word).concat(word).slice(-cap);
+  }
+
+  // The next question of a kind at a tier: one she hasn't got right yet if
+  // there is any, otherwise a review that favours the ones she missed and
+  // the ones she hasn't seen for a while. Recent words stay out when they
+  // can. A question that comes back after a miss asks for its own id (`want`).
   let want = null;
-  function take(kind, npc = {}) {
-    const all = pools[kind](npc);
+  function take(kind, npc, cfg) {
+    const all = pools[kind](npc, cfg);
     const back = want && all.find(x => x.id === want);
-    if (back) return back;
+    const x = back || choose(kind, all);
+    remember(kind, x.w, all.length);
+    return x;
+  }
+  function choose(kind, all) {
     const open = all.filter(x => !solved(x.id));
-    if (open.length) return pick(fresh(open));
+    if (open.length) return pick(fresh(kind, open));
     const now = Date.now();
-    const list = fresh(all);
+    const list = fresh(kind, all);
     const weights = list.map(x => {
       const h = history()[x.id];
       const days = Math.min(14, (now - (h.last || 0)) / 864e5);
@@ -112,9 +162,80 @@ const Quiz = (() => {
     return list[list.length - 1];
   }
 
+  // ---- Tiers -----------------------------------------------------------------
+  const placeOf = npc => (npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
+  const settings = () => (typeof state !== 'undefined' && state.settings) || {};
+  // Tiers a kind has; a tier with a `setting` only once a parent turns it on.
+  const tierMax = kind => TIERS[kind].filter(c => !c.setting || settings()[c.setting]).length;
+  const newSkill = () => ({ t: 1, best: 1, w: [], last: [], placed: false, easy: false, n: 0 });
+  // Her level in a kind (state.skill, saved): t her tier, best the highest
+  // she has reached, w her last first-try answers at t (1 right, 0 missed),
+  // last her last ten first tries anywhere, placed once she has missed one.
+  function skill(kind) {
+    if (typeof state === 'undefined') return newSkill();
+    const all = state.skill || (state.skill = {});
+    return all[kind] || (all[kind] = newSkill());
+  }
+  // The tier for the next question: hers, capped by the place, and one
+  // lower right after a miss and for every 4th question. Only questions at
+  // her own tier count towards moving up or down.
+  function tierFor(kind, npc) {
+    const k = skill(kind);
+    const hi = Math.min((TIER_BAND[placeOf(npc)] || [1, 1])[1], tierMax(kind));
+    const own = Math.max(1, Math.min(k.t, hi));
+    let t = own;
+    if (k.easy || ++k.n % SKILL.reviewEvery === 0) t--;
+    t = Math.max(1, t);
+    return { t, cfg: TIERS[kind][t - 1], counts: t === own, cap: hi };
+  }
+  // Her first answer to a question (from record): moves her tier. Up after
+  // 5 of the last 6 (or, before her first miss, 3 in a row), down after 2
+  // misses in a row; never above what this place asks. A new best tier is a
+  // level-up for the child.
+  function learn(q, right) {
+    const k = skill(q.kind);
+    const max = Math.min(tierMax(q.kind), q.cap || Infinity);
+    k.last = (k.last || []).concat(right ? 1 : 0).slice(-10);
+    k.easy = !right;
+    if (!q.counts) return;
+    if (!right) k.placed = true;
+    k.w = k.w.concat(right ? 1 : 0).slice(-SKILL.window);
+    const sum = k.w.reduce((a, b) => a + b, 0);
+    const run = k.w.slice(-SKILL.placementRun);
+    const placing = !k.placed && run.length === SKILL.placementRun && run.every(Boolean);
+    if (k.t < max && (placing || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
+      k.t++;
+      k.w = [];
+      if (k.t > (k.best || 1)) { k.best = k.t; q.levelUp = true; }
+    } else if (k.t > 1 && k.w.length >= SKILL.demoteAfter && k.w.slice(-SKILL.demoteAfter).every(x => !x)) {
+      k.t--;
+      k.w = [];
+    }
+  }
+  // Levels for a save from before tiers, from its answers: a kind with 8 or
+  // more answers starts at tier 3 if 90% were right the first time, tier 2
+  // at 75%. Spelling stops at 2 (its higher tiers are new words).
+  function migrate(histories) {
+    const per = {};
+    for (const hist of histories) for (const h of Object.values(hist || {})) {
+      if (!h || !TIERS[h.kind]) continue;
+      const p = per[h.kind] || (per[h.kind] = { tries: 0, right: 0 });
+      p.tries += h.tries | 0;
+      p.right += h.right | 0;
+    }
+    const out = {};
+    for (const [kind, p] of Object.entries(per)) {
+      if (p.tries < 8) continue;
+      const r = p.right / p.tries;
+      const t = Math.min(r >= 0.9 ? 3 : r >= 0.75 ? 2 : 1, kind === 'spell' ? 2 : 3, TIERS[kind].length);
+      out[kind] = Object.assign(newSkill(), { t, best: t, placed: true });
+    }
+    return out;
+  }
+
   // Counts a question once, at her first answer (choose in game.js). A miss
   // stays a miss: the question that comes back after it (q.retry) adds a
-  // try but not a right, so it is asked again later.
+  // try but not a right, so it is asked again later; it doesn't move her tier.
   function record(q, right) {
     if (!q || !q.id || q.recorded || typeof state === 'undefined') return;
     q.recorded = true;
@@ -124,15 +245,15 @@ const Quiz = (() => {
     if (!right) h.wrong++;
     else if (!q.misses && !q.retry) h.right++;
     h.last = Date.now();
+    if (!q.retry && TIERS[q.kind]) learn(q, right && !q.misses);
   }
 
+  // ---- Speech ----------------------------------------------------------------
   const say = w => ({ text: w, file: rec('words', w), rate: 0.72, narrator: true });
   // The word in a question, in the asker's own voice so the line doesn't
   // switch speakers halfway (recorded for each voice by tools/tts-phrases.js).
   // `slow` plays the recording a little slower, for a hint.
   const voiced = (w, slow) => Object.assign({ text: w, file: rec('words', w), rate: 0.85 }, slow ? { slow } : {});
-
-  // ---- Hints after a miss --------------------------------------------------
   // How a letter's sound is spelled in lines like "C says kuh.".
   const soundOf = l => PART_SOUNDS[l] || (LETTERS.find(x => x.letter === l.toUpperCase()) || {}).sound;
   // A letter's pure sound, said on its own by the narrator: "/c/" is a clip
@@ -144,46 +265,57 @@ const Quiz = (() => {
   // The word she picked, said back.
   const named = w => Object.assign(say(w), { show: `${w}…` });
   const lead = kind => ({ text: line(kind) });
-  // Sounds first, then the word: "/c/ /a/ /t/… cat!" for a word whose every
-  // letter says its own sound (no sh, oo, silent e, r after a vowel or soft
-  // c); other words are just said.
+  // A word whose every letter says its own sound (no sh, oo, silent e, r
+  // after a vowel or soft c). Bank words say how they are sounded out.
   const plain = w => /^[a-z]{3,5}$/.test(w) && (w.match(/[aeiou]/g) || []).length === 1 &&
     !/sh|ch|th|ck|ng|ll|ss|gh|wh|ph|kn|wr|qu|w[ao]|[aoe]w|oo|ee|ea|oa|ai|[aeiou]r|[aeiouwy]$|c[eiy]|g[eiy]|olt$|[hmp]ost$|old$|ind$|ild$/.test(w) &&
     [...w].every(soundOf);
-  const sounds = w => [...w].flatMap(l => [sound(l), { pause: 160 }]);
-  const sounded = w => (plain(w) ? sounds(w).concat({ pause: 250 }) : []).concat(say(`${w}!`));
-  // Every word in the content with its picture, to show what a wrong letter
-  // spells ("c u t" is cut ✂️).
-  let pictures = null;
-  const pictureOf = w => {
-    if (!pictures) {
-      pictures = {};
-      const add = ([x, e]) => { if (!pictures[x]) pictures[x] = e; };
-      LETTERS.forEach(l => l.words.forEach(add));
-      WORD_FAMILIES.forEach(f => f.forEach(add));
-      RHYMES.forEach(s => s.forEach(add));
-      SENTENCES.forEach(x => { add(x.w); x.other.forEach(add); });
-    }
-    return pictures[w];
-  };
+  // Its sounds, one tile each: f-i-sh, c-a-t; a long word syllable by syllable.
+  const graphemes = x => x.parts || (x.syl ? x.syl.join('').split('') : [...x.w]);
+  const soundable = x => !!(x.bank || plain(x.w));
+  // "/f/ /i/ /sh/", a longer pause between syllables.
+  function sounds(x, gap = 160) {
+    const out = [];
+    const groups = x.syl ? x.syl.map(s => s.split('')) : [graphemes(x)];
+    groups.forEach((g, i) => {
+      if (i) out.push({ pause: 300 });
+      for (const l of g) out.push(sound(l), { pause: gap });
+    });
+    return out;
+  }
+  // Sounds first, then the word: "/c/ /a/ /t/… cat!"; a word that can't be
+  // sounded out is just said.
+  const sounded = x => (soundable(x) ? sounds(x).concat({ pause: 250 }) : []).concat(say(`${x.w}!`));
   // What a letter picked for a blank spells: a real word is said and shown
-  // on its card, otherwise the letter's sound is said.
+  // on its card ("c u t" is cut), otherwise the letter's sound is said.
   function filledIn(t, x, at) {
     const w = t.w.slice(0, at) + x + t.w.slice(at + 1);
-    const e = pictureOf(w);
+    const e = words()[w] && words()[w].e;
     return e ? { w, e, parts: [named(w)], html: `<span class="also">${e} ${w}</span>` } : { w, parts: [says(x)], html: '' };
   }
+
+  // ---- Cards -----------------------------------------------------------------
   const firstBig = w => `<span class="first">${w[0]}</span>${w.slice(1)}`;
   const long = w => (w.length > 6 ? ' long' : '');
   const wordCard = (w, e) => `<span class="pic">${e}</span><span class="w${long(w)}">${firstBig(w)}</span>`;
   const picCard = (w, e) => `<span class="bigpic">${e}</span><span class="w hide">${w}</span>`;
   const letterCard = l => `<span class="letter">${l}</span>`;
+  const plainCard = w => `<span class="w${long(w)}">${w}</span>`;
+  // Cards in a random order, the right one marked.
+  const deal = (t, list, card) => shuffle([t].concat(list)).map(o => Object.assign(card(o), { right: o === t }));
 
-  // `n` words for the other cards, each with a different first letter that
-  // doesn't sound like another card's. `picture`: only clear pictures.
-  function distractors(target, n, picture) {
-    const others = shuffle(allWords().filter(x => x.info !== target.info && (!picture || clearPicture(x))));
-    return apart([target], others, n + 1, (x, y) => x.info === y.info || confusable(x.w[0], y.w[0])).slice(1);
+  // Word cards for the word and findStart questions: other letters' words.
+  // Never one she could call by a name that starts like the target (🦍 is
+  // a monkey to her), nor two cards starting with letters that say the same
+  // sound (c, k); at the top tier one starts with a letter she finds hard to
+  // tell from the target's.
+  function letterOthers(t, n, cfg, picture) {
+    const L = t.w[0];
+    const ok = (x, out, partner) => x.info !== t.info && !alike(x, t) && (!picture || clear(x)) &&
+      ![x.w].concat(x.aka).some(m => sameSound(m[0], L)) &&
+      (partner || !(cfg.far ? nearPair : hardPair)(x.w[0], L)) &&
+      !out.some(o => o.info === x.info || o.e === x.e || alike(o, x) || sameSound(o.w[0], x.w[0]));
+    return others(letterWords(), n, ok, cfg.near && (x => nearPair(x.w[0], L)));
   }
 
   // Hints shared by the kinds where she hears a word and picks it: what she
@@ -191,74 +323,90 @@ const Quiz = (() => {
   const hearAgain = t => ({
     teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), voiced(t.w, 0.85)],
     picked: o => [named(o.wrong)],
-    model: sounded(t.w),
+    model: sounded(t),
   });
 
   const builders = {
-    word(npc) {
-      const t = take('word', npc);
-      const opts = shuffle([t, ...distractors(t, 2)]);
+    word(npc, cfg) {
+      const t = take('word', npc, cfg);
       return Object.assign({
         id: t.id, target: t.w, clue: '',
         ask: [{ text: line('ask') }, { pause: 750 }, voiced(t.w), READY],
         replay: [voiced(t.w)],
-        options: opts.map(o => ({ html: wordCard(o.w, o.e), right: o === t, wrong: o.w, words: true })),
+        options: deal(t, letterOthers(t, cfg.n - 1, cfg), o => ({ html: wordCard(o.w, o.e), wrong: o.w, words: true, alwaysPictures: cfg.pics })),
         answer: [say(`${t.w}!`)],
       }, hearAgain(t));
     },
 
-    start(npc) {
-      const t = take('start', npc);
-      const low = l => l.letter.toLowerCase();
-      const letters = shuffle(apart([t.info], shuffle(LETTERS.filter(l => l !== t.info)), 3, (x, y) => confusable(low(x), low(y))));
+    start(npc, cfg) {
+      const t = take('start', npc, cfg);
       const L = t.info.letter;
+      const low = l => l.letter.toLowerCase();
+      // No letter her own name for the picture starts with (C for 🐱 "kitty" is fine, K is not).
+      const ok = (l, out, partner) => l !== t.info && !t.aka.some(m => sameSound(m[0], low(l))) && !sameSound(low(l), t.w[0]) &&
+        (partner || !(cfg.far ? nearPair : hardPair)(low(l), t.w[0])) && !out.some(o => sameSound(low(o), low(l)));
+      const letters = others(LETTERS, cfg.n - 1, ok, cfg.near && (l => nearPair(low(l), t.w[0])));
+      const card = l => (cfg.lower ? l.letter.toLowerCase() : l.letter + l.letter.toLowerCase());
+      // With `sound`, she hears the word's first sound on its own too: "cat… /k/".
+      const hint = cfg.sound ? [{ pause: 400 }, sound(t.w[0])] : [];
+      const ask = line('firstSound');
       return {
         id: t.id, target: t.w, clue: `<span class="clue-pic">${t.e}</span>`,
-        ask: [voiced(t.w), { pause: 600 }, { text: line('firstSound') }, READY],
-        replay: [voiced(t.w)],
-        options: letters.map(l => ({ html: letterCard(l.letter + l.letter.toLowerCase()), right: l === t.info, wrong: l.letter })),
-        answer: [{ text: `${t.w} starts with ${L}.`, narrator: true }],
+        prompt: ask,
+        ask: [voiced(t.w)].concat(hint, { pause: 600 }, { text: ask }, READY),
+        replay: [voiced(t.w)].concat(hint),
+        options: deal(t.info, letters, l => ({ html: letterCard(card(l)), wrong: l.letter })),
+        answer: [{ text: `${t.w} starts with ${L}.`, narrator: true }].concat(cfg.sound ? [{ pause: 200 }, says(L)] : []),
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
         // "M says mmm. Listen. cat"
         teach: o => [says(o.wrong), { pause: 400 }, lead('listen'), voiced(t.w, 0.85)],
         picked: o => [says(o.wrong)],
         // "/k/… cat starts with C."
-        model: [sound(L.toLowerCase()), { pause: 300 }, { text: `${t.w} starts with ${L}.`, narrator: true }],
+        model: [sound(t.w[0]), { pause: 300 }, { text: `${t.w} starts with ${L}.`, narrator: true }],
       };
     },
 
-    findStart(npc) {
-      const t = take('findStart', npc);
-      const info = t.info;
-      const opts = shuffle([t, ...distractors(t, 2, true)]);
-      // One sentence in the asker's voice, the letter said by its name.
-      const ask = { text: `${line('findStart')} ${info.letter}?` };
+    findStart(npc, cfg) {
+      const t = take('findStart', npc, cfg);
+      const L = t.info.letter;
+      // One sentence in the asker's voice, the letter said by its name;
+      // with `sound`, then the letter's sound on its own.
+      const ask = { text: `${line('findStart')} ${L}?` };
+      const hint = cfg.sound ? [{ pause: 400 }, sound(L.toLowerCase())] : [];
       const startsWith = o => ({ text: `${o.w} starts with ${o.info.letter}.`, narrator: true });
       return {
-        id: t.id, target: t.w, clue: `<span class="clue-letter">${info.letter}${info.letter.toLowerCase()}</span>`,
-        ask: [ask, READY],
-        replay: [ask],
-        options: opts.map(o => ({ html: picCard(o.w, o.e), right: o === t, wrong: o.w, item: o })),
-        answer: [say(`${t.w}!`)],
+        id: t.id, target: t.w, clue: `<span class="clue-letter">${L}${L.toLowerCase()}</span>`,
+        prompt: ask.text,
+        ask: [ask].concat(hint, READY),
+        replay: [ask].concat(hint),
+        options: deal(t, letterOthers(t, cfg.n - 1, cfg, true), o => ({ html: picCard(o.w, o.e), wrong: o.w, item: o })),
+        answer: [say(`${t.w}!`)].concat(cfg.sound ? [{ pause: 200 }, says(L)] : []),
         // "dog starts with D. C says kuh."
-        teach: o => [startsWith(o.item), { pause: 400 }, says(info.letter)],
+        teach: o => [startsWith(o.item), { pause: 400 }, says(L)],
         picked: o => [startsWith(o.item)],
-        model: [sound(info.letter.toLowerCase()), { pause: 300 }, startsWith(t)],
+        model: [sound(L.toLowerCase()), { pause: 300 }, startsWith(t)],
       };
     },
 
-    rhyme() {
-      const { set, id } = take('rhyme');
-      const [base, ans] = shuffle(set.slice()).map(([w, e]) => ({ w, e }));
-      const others = shuffle(RHYMES.filter(s => s !== set)).slice(0, 2).map(s => { const [w, e] = pick(s); return { w, e }; });
-      const opts = shuffle([ans, ...others]);
+    // The other cards come from rhymes with another vowel; at the top tier
+    // one has the same vowel (cat, can).
+    rhyme(npc, cfg) {
+      const { r, id } = take('rhyme', npc, cfg);
+      const [base, ans] = shuffle(r.set.slice()).map(([w]) => words()[w]);
+      const fromSet = s => words()[pick(s.set)[0]];
+      const pool = RHYME_SETS.filter(s => s !== r).map(s => Object.assign({ v: s.v }, fromSet(s)));
+      // Never a picture she may call by a rhyming name (🚐 "car" for star).
+      const rhymes = x => x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
+      const ok = (x, out, partner) => (partner || x.v !== r.v) && !alike(x, base) && !alike(x, ans) && !rhymes(x) &&
+        !out.some(o => o.w === x.w || o.e === x.e || o.v === x.v);
+      const list = others(pool, cfg.n - 1, ok, cfg.sameVowel && (x => x.v === r.v));
       const ask = line('rhyme');
       return {
-        id, target: set[0][0], clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
+        id, target: r.set[0][0], clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
         prompt: `${ask} "${base.w}"?`,
         ask: [{ text: ask }, { pause: 300 }, voiced(base.w), READY],
         replay: [voiced(base.w)],
-        options: opts.map(o => ({ html: wordCard(o.w, o.e), right: o === ans, wrong: o.w, alwaysPictures: true })),
+        options: deal(ans, list, o => ({ html: wordCard(o.w, o.e), wrong: o.w, alwaysPictures: true })),
         answer: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
         // "dog… Listen to the end. cat"
         teach: o => [named(o.wrong), { pause: 300 }, lead('rhymeEnd'), voiced(base.w, 0.85)],
@@ -267,64 +415,118 @@ const Quiz = (() => {
       };
     },
 
-    family() {
-      const t = take('family');
-      const others = shuffle(t.fam.filter(([w]) => w !== t.w)).map(([w, e]) => ({ w, e }));
-      const four = shuffle(apart([t], others, 4, (x, y) => nearWords(x.w, y.w)));
+    // Hear a word, find it among words that start the same way, so she has
+    // to listen to the middle and the end.
+    family(npc, cfg) {
+      const t = take('family', npc, cfg);
+      const list = similar(t, cfg, cfg.minimal ? minimalWords() : cfg.words === 'FAM' ? famWords() : BANK[cfg.words]());
       return Object.assign({
         id: t.id, target: t.w, clue: '',
         ask: [{ text: line('ask2') }, { pause: 750 }, voiced(t.w), READY],
         replay: [voiced(t.w)],
-        options: four.map(o => ({ html: wordCard(o.w, o.e), right: o === t, wrong: o.w, words: true })),
+        options: deal(t, list, o => ({ html: wordCard(o.w, o.e), wrong: o.w, words: true, alwaysPictures: cfg.pics })),
         answer: [say(`${t.w}!`)],
       }, hearAgain(t));
     },
 
-    vowel() {
-      const t = take('vowel');
+    vowel(npc, cfg) {
+      const t = take('vowel', npc, cfg);
       const v = t.w[1];
-      const vowels = shuffle(apart([v], shuffle('aeiou'.split('')), 3, (x, y) => x === y || confusable(x, y)));
-      return Object.assign(blankQuestion(t, 1, vowels), {
+      const ask = line('vowel');
+      return Object.assign(blankQuestion(t, 1, letterChoices(v, 'aeiou', cfg)), {
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="blank">?</span>${t.w[2]}</span>`,
         // The word first, then the question about it.
-        ask: [voiced(t.w), { pause: 600 }, { text: line('vowel') }, READY],
+        prompt: ask,
+        ask: [voiced(t.w), { pause: 600 }, { text: ask }, READY],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w[0]}<span class="first">${v}</span>${t.w[2]}</span>`,
       });
     },
 
-    ending() {
-      const t = take('ending');
+    ending(npc, cfg) {
+      const t = take('ending', npc, cfg);
       const end = t.w[2];
-      const ends = shuffle(apart([end], shuffle('tgnpdbm'.split('')), 3, (x, y) => x === y || confusable(x, y)));
-      return Object.assign(blankQuestion(t, 2, ends), {
+      const ask = line('ending');
+      return Object.assign(blankQuestion(t, 2, letterChoices(end, 'tgnpdbmsx', cfg)), {
         clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="blank">?</span></span>`,
-        // The word first, then the question about it.
-        ask: [voiced(t.w), { pause: 600 }, { text: line('ending') }, READY],
+        prompt: ask,
+        ask: [voiced(t.w), { pause: 600 }, { text: ask }, READY],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w.slice(0, 2)}<span class="first">${end}</span></span>`,
       });
     },
 
-    read() {
-      const t = take('read');
-      // Pictures from its family, or from any family when it has too few clear ones.
-      const own = t.fam.filter(([w]) => w !== t.w).map(([w, e]) => ({ w, e })).filter(clearPicture);
-      const more = own.length >= 2 ? [] : famWords().filter(x => x.w !== t.w && x.fam !== t.fam && clearPicture(x));
-      const three = shuffle(apart([t], shuffle(own).concat(shuffle(more)), 3, (x, y) => x.w === y.w || x.e === y.e || nearWords(x.w, y.w)));
+    // Read a word, pick its picture. She reads it herself, so a hint sounds
+    // it out without saying it.
+    read(npc, cfg) {
+      const t = take('read', npc, cfg);
+      const list = similar(t, cfg, cfg.minimal ? minimalWords() : BANK[cfg.words]().filter(clear), true);
       const ask = line('read');
-      // She reads it herself, so the hint sounds it out without saying it.
-      const hint = plain(t.w) ? sounds(t.w) : [sound(t.w[0])];
       return {
         id: t.id, target: t.w, clue: `<span class="clue-word big">${t.w}</span>`,
         ask: [{ text: ask }],
         replay: [{ text: ask }],
-        options: three.map(o => ({ html: picCard(o.w, o.e), right: o === t, wrong: o.w })),
+        options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
         answer: [say(`${t.w}!`)],
-        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(hint),
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(soundable(t) ? sounds(t) : [sound(t.w[0])]),
         picked: o => [named(o.wrong)],
-        model: sounded(t.w),
+        model: sounded(t),
+      };
+    },
+
+    // Hear a word's sounds one by one ("/s/ … /u/ … /n/") and pick its picture.
+    blend(npc, cfg) {
+      const t = take('blend', npc, cfg);
+      const list = similar(t, cfg, cfg.minimal ? minimalWords() : BANK[cfg.words]().filter(clear), true);
+      const ask = line('blend');
+      const slow = sounds(t, 450);
+      return {
+        id: t.id, target: t.w,
+        // A dot for each sound.
+        clue: `<span class="clue-sounds">${graphemes(t).map(() => '<span class="dot"></span>').join('')}</span>`,
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 500 }].concat(slow, READY),
+        replay: slow,
+        options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: sounded(t),
+        solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w}</span>`,
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(sounds(t, 600)),
+        picked: o => [named(o.wrong)],
+        model: sounded(t),
       };
     },
   };
+
+  // Words for the other cards of family, read and blend: ones that sound
+  // much like the target (same first letter, or its minimal set at the top
+  // tier), then others from the list. Never two that differ only in a sound
+  // she can't hear yet, below the top tier; never the same picture, or one
+  // she could call by the target's name.
+  function similar(t, cfg, list, picture) {
+    const n = cfg.n - 1;
+    const sets = MINIMAL_SETS.filter(s => s.includes(t.w)).flat();
+    const pool = list.concat(famWords(), BANK.CVC()).filter(x => x.w !== t.w && (!picture || clear(x) || cfg.minimal));
+    const ok = (x, out) => !alike(x, t) && (cfg.minimal || !nearWords(x.w, t.w)) &&
+      !out.some(o => o.w === x.w || o.e === x.e || alike(o, x) || (!cfg.minimal && nearWords(o.w, x.w)));
+    const out = [];
+    const add = cands => { for (const x of shuffle(cands)) if (out.length < n && ok(x, out)) out.push(x); };
+    if (cfg.minimal) add(pool.filter(x => sets.includes(x.w)));
+    if (cfg.minimal) add(pool.filter(x => x.w.length === t.w.length && [...x.w].filter((c, i) => c !== t.w[i]).length === 1));
+    if (cfg.words === 'FAM' && t.fam) add(pool.filter(x => t.fam.some(([w]) => w === x.w)));
+    // `far`: only words that start with another letter.
+    if (cfg.far) add(list.filter(x => x.w !== t.w && x.w[0] !== t.w[0] && (!picture || clear(x))));
+    add(list.filter(x => x.w !== t.w && x.w[0] === t.w[0] && (!picture || clear(x) || cfg.minimal)));
+    add(pool.filter(x => x.w[0] === t.w[0]));
+    add(list.filter(x => x.w !== t.w && (!picture || clear(x) || cfg.minimal)));
+    add(pool);
+    return out;
+  }
+
+  // The letters on the cards of a blank: the right one and others; the
+  // easiest tier only far ones (a, o), the top tier one she finds hard (a, e).
+  function letterChoices(right, from, cfg) {
+    const ok = (l, out, partner) => !sameSound(l, right) && (partner || !(cfg.far ? nearPair : hardPair)(l, right)) &&
+      !out.some(o => sameSound(o, l));
+    return [right].concat(others(from.split(''), cfg.n - 1, ok, cfg.near && (l => hardPair(l, right))));
+  }
 
   // Middle and last letter questions: the letter at `at` is missing. A
   // wrong letter that spells another word shows and says it ("cut ✂️").
@@ -335,11 +537,11 @@ const Quiz = (() => {
     return {
       id: t.id, target: t.w,
       replay: [voiced(t.w)],
-      options: letters.map(x => ({ html: letterCard(x) + (made[x] ? made[x].html : ''), right: x === right, wrong: x.toUpperCase(), letter: x })),
+      options: shuffle(letters).map(x => ({ html: letterCard(x) + (made[x] ? made[x].html : ''), right: x === right, wrong: x.toUpperCase(), letter: x })),
       answer: [say(`${t.w}!`)],
       teach: o => made[o.letter].parts.concat({ pause: 300 }, lead('listen'), voiced(t.w, 0.8)),
       picked: o => made[o.letter].parts,
-      model: sounded(t.w),
+      model: sounded(t),
     };
   }
 
@@ -350,19 +552,24 @@ const Quiz = (() => {
   }
   const blankHtml = x => { const p = sentenceParts(x); return `<span class="clue-sentence">${p.before}<span class="blank wide">?</span>${p.after}</span>`; };
   const filledHtml = x => { const p = sentenceParts(x); return `<span class="clue-sentence">${p.before}<span class="first">${x.w[0]}</span>${p.after}</span>`; };
-  const plainCard = w => `<span class="w${long(w)}">${w}</span>`;
   Object.assign(builders, {
     // She hears the whole sentence and picks the word she heard from
-    // words that sound alike.
-    sentence() {
-      const { x, id } = take('sentence');
+    // words that sound alike (with pictures at the easiest tier, when they
+    // all have one).
+    sentence(npc, cfg) {
+      const { x, id } = take('sentence', npc, cfg);
       const full = { text: sentenceParts(x).full, rate: 0.8 };
-      const opts = shuffle([x.w[0], ...x.alike]);
+      const pic = w => words()[w] && words()[w].e;
+      // Below the top tiers, words she can't hear apart yet (pan, pen) go last.
+      const rank = w => (nearWords(w, x.w[0]) ? 2 : 0) + (cfg.pics && !pic(w) ? 1 : 0);
+      const alikes = shuffle(x.alike.slice()).sort((a, b) => rank(a) - rank(b)).slice(0, cfg.n - 1);
+      const opts = [x.w[0]].concat(alikes);
+      const pics = cfg.pics && opts.every(pic) && new Set(opts.map(pic)).size === opts.length;
       return {
         id, target: x.w[0], clue: blankHtml(x),
         ask: [{ text: line('sentence') }, { pause: 700 }, full, READY],
         replay: [full],
-        options: opts.map(w => ({ html: plainCard(w), right: w === x.w[0], wrong: w })),
+        options: deal(x.w[0], alikes, w => ({ html: pics ? wordCard(w, pic(w)) : plainCard(w), wrong: w, alwaysPictures: pics })),
         answer: [full],
         solved: filledHtml(x),
         teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), Object.assign({ slow: 0.9 }, full)],
@@ -371,18 +578,17 @@ const Quiz = (() => {
       };
     },
     // The blank is hummed, so she has to pick the word that makes sense.
-    meaning() {
-      const { x, id } = take('meaning');
+    meaning(npc, cfg) {
+      const { x, id } = take('meaning', npc, cfg);
       const p = sentenceParts(x);
       const hum = [{ text: p.before, rate: 0.8 }, { pause: 250 }, { text: 'hmm, hmm', rate: 0.8 }, { pause: 250 }];
       if (p.after.replace(/[.!?\s]/g, '')) hum.push({ text: p.after, rate: 0.8 });
-      const opts = shuffle([x.w, ...x.other]);
       const ask = line('meaning');
       return {
         id, target: x.w[0], clue: blankHtml(x),
         ask: [{ text: ask }, { pause: 600 }].concat(hum, READY),
         replay: hum,
-        options: opts.map(([w, e]) => ({ html: wordCard(w, e), right: w === x.w[0], wrong: w, alwaysPictures: true })),
+        options: deal(x.w, shuffle(x.other.slice()).slice(0, cfg.n - 1), ([w, e]) => ({ html: wordCard(w, e), wrong: w, alwaysPictures: true })),
         answer: [{ text: p.full, rate: 0.8 }],
         solved: filledHtml(x),
         // "rock… Hmm, that sounds silly!" and the sentence hummed again.
@@ -393,46 +599,40 @@ const Quiz = (() => {
     },
   });
 
-  // Three and four letter words where every letter says its own sound:
-  // no digraphs (sh, ck, oo), no silent e and no r after a vowel.
-  const spellWords = () => {
-    const seen = new Set();
-    const list = [];
-    for (const [w, e] of allWords().map(x => [x.w, x.e]).concat(...WORD_FAMILIES)) {
-      if (seen.has(w) || w.length < 3 || w.length > 4 || !/^[a-z]+$/.test(w)) continue;
-      if (/sh|ch|th|ck|ng|ll|ss|oo|ee|ea|oa|ai|[aeiou]r|[aeiouwy]$|[wyjqvz]/.test(w) || (w.match(/[aeiou]/g) || []).length !== 1) continue;
-      if (![...w].every(soundOf)) continue;
-      seen.add(w);
-      list.push({ w, e });
-    }
-    return list;
-  };
   Object.assign(builders, {
-    // She hears a word and taps its letters in order. The dialog shows
-    // `tiles` (the word's letters plus a few others) and `slots`, one per
-    // letter; each tile is checked as it goes in (spellTap in game.js).
-    spell() {
-      const t = take('spell');
-      const own = [...t.w];
-      // Never a letter that sounds like one in the word, such as c for milk,
+    // She hears a word and taps its sounds in order: the dialog shows
+    // `tiles` (the word's letters, with sh, ck... as one tile, plus a few
+    // others) and `slots`, one per tile; each tile is checked as it goes in
+    // (spellTap in game.js). `given` blanks are filled in already.
+    spell(npc, cfg) {
+      const t = take('spell', npc, cfg);
+      const own = graphemes(t);
+      // Never a letter that sounds like one in the word, such as c for duck,
       // or that she can't tell from one yet (d for tent).
-      const free = l => !own.some(o => soundOf(o) === soundOf(l) || confusable(o, l));
-      const vowels = 'aeiou'.split('').filter(free);
-      const others = shuffle('bcdfghlmnprst'.split('').filter(free));
-      // One other vowel, so she has to listen for the middle sound too.
-      const extra = [pick(vowels)].concat(others).slice(0, Math.max(SPELL_TILES, own.length + 3) - own.length);
+      const free = l => !own.some(o => o === l || soundOf(o) === soundOf(l) || sameSound(o, l) || hardPair(o, l));
+      const myVowels = own.filter(g => 'aeiou'.includes(g));
+      // One other vowel, so she has to listen for the middle sound too: a
+      // far one (a, o), a hard one (a, e) at the top tier.
+      const vowelOk = (v, out, partner) => !own.includes(v) && (partner || !myVowels.some(o => nearPair(o, v)));
+      const vowel = cfg.vowelFoil ? others('aeiou'.split(''), 1, vowelOk, cfg.near && (v => myVowels.some(o => hardPair(o, v)))) : [];
+      const extra = others('bcdfghjklmnprstvwz'.split('').filter(free), cfg.extra - vowel.length, (l, out) => !out.some(o => sameSound(o, l)));
+      extra.unshift(...vowel);
+      const groups = t.syl ? t.syl.map(s => s.length) : [own.length];
+      let n = 0;
+      const slots = groups.map(g => `<span class="syl">${Array.from({ length: g }, () => `<span class="slot" data-i="${n++}"></span>`).join('')}</span>`).join('');
       return {
         id: t.id, target: t.w,
         word: t.w,
         slots: own,
-        clue: `<span class="clue-pic">${t.e}</span><span class="spell-word">${own.map(() => '<span class="slot"></span>').join('')}</span>`,
+        given: cfg.firstGiven ? 1 : 0,
+        clue: `<span class="clue-pic">${t.e}</span><span class="spell-word">${slots}</span>`,
         // Tapping a tile says its sound.
         tiles: shuffle(own.concat(extra)).map(l => ({ l, sound: sound(l) })),
         ask: [{ text: line('spell') }, { pause: 600 }, voiced(t.w), READY],
         replay: [voiced(t.w)],
         options: [],
         // Sound it out, then say it: "/c/ /a/ /t/… cat!"
-        answer: sounds(t.w).concat({ pause: 250 }, say(`${t.w}!`)),
+        answer: sounds(t).concat({ pause: 250 }, say(`${t.w}!`)),
         solved: `<span class="clue-pic">${t.e}</span><span class="spell-word right">${own.map(l => `<span class="slot full">${l}</span>`).join('')}</span>`,
         // A wrong tile: the word again, slowly. Twice in one slot: the sound it needs.
         teach: () => [lead('listen'), voiced(t.w, 0.8)],
@@ -441,27 +641,32 @@ const Quiz = (() => {
     },
   });
 
-  // Picks a kind of question this person didn't ask last time.
-  function make(npc) {
-    const kinds = QUIZ_TYPES[npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town'];
-    const choices = kinds.filter(k => k !== npc.lastQuiz);
-    const kind = pick(choices.length ? choices : kinds);
+  // Picks a kind of question this person didn't ask last time, at her tier.
+  // `force` ({ kind, tier }) is for tests.
+  function make(npc, force) {
+    const kinds = QUIZ_TYPES[placeOf(npc)];
+    let kind = force && force.kind;
+    if (!kind) {
+      const choices = kinds.filter(k => k !== npc.lastQuiz);
+      kind = pick(choices.length ? choices : kinds);
+    }
     npc.lastQuiz = kind;
-    return build(kind, npc);
+    const tier = force && force.tier ? { t: force.tier, cfg: TIERS[kind][force.tier - 1], counts: false } : tierFor(kind, npc);
+    return build(kind, npc, tier);
   }
-  function build(kind, npc) {
-    const review = reviewing(kind, npc);
-    const q = builders[kind](npc);
-    if (!q.prompt) q.prompt = q.ask.find(p => p.text && !p.file).text;
-    remember(q.target);
-    return Object.assign(q, { kind, review, done: false, misses: 0 });
+  function build(kind, npc, tier) {
+    const q = builders[kind](npc, tier.cfg);
+    if (!q.prompt) q.prompt = (q.ask.find(p => p.text && !p.file && !p.narrator) || { text: '' }).text;
+    return Object.assign(q, { kind, tier: tier.t, counts: tier.counts, cap: tier.cap, review: reviewing(kind, npc, tier.cfg), done: false, misses: 0 });
   }
-  // A missed question comes back with the same target and new options in a
-  // new order. It is a retry: putting it right doesn't count as solved yet.
+  // A missed question comes back with the same target, at the same tier,
+  // with new options in a new order. It is a retry: putting it right
+  // doesn't count as solved yet.
   function again(old, npc) {
     want = old.id;
     try {
-      const q = build(old.kind, npc);
+      const t = Math.min(old.tier || 1, TIERS[old.kind].length);
+      const q = build(old.kind, npc, { t, cfg: TIERS[old.kind][t - 1], counts: false });
       return Object.assign(q, { retry: q.id === old.id });
     } finally { want = null; }
   }
@@ -472,15 +677,26 @@ const Quiz = (() => {
     again,
     record,
     reviewing,
+    migrate,
+    skill,
+    tierMax,
+    // A parent sets a tier by hand (parent.js); it doesn't count as a level-up.
+    setTier(kind, t) {
+      const k = skill(kind);
+      k.t = Math.max(1, Math.min(tierMax(kind), t));
+      Object.assign(k, { w: [], placed: true, easy: false });
+    },
     kinds: Object.keys(pools),
-    pool: (kind, npc = {}) => (pools[kind] ? pools[kind](npc).map(x => x.id) : []),
+    // Every id a kind can ask here, at any tier.
+    pool: (kind, npc = {}) => (pools[kind] ? [...new Set(TIERS[kind].flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),
+    words,
     get recent() { return recent; },
-    set recent(list) { recent = Array.isArray(list) ? list.slice(-RECENT_WORDS) : []; },
+    set recent(saved) { recent = saved && !Array.isArray(saved) && typeof saved === 'object' ? saved : {}; },
   };
 })();
 
 // Every question id a kind can ask here. House pools are per letter, so
 // pass the house's npc (or { letter: 'C' }); without one it is the town pool.
 function reviewPool(kind, npc) { return Quiz.pool(kind, npc || {}); }
-// Called from choose() for every answer.
+// Called from choose() for her first answer to a question.
 function reviewRecord(q, right) { Quiz.record(q, right); }

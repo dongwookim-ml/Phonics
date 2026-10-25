@@ -104,8 +104,11 @@ if (isCaptain()) {
     'The king lives in a big {}.': { s: 'The dinosaur has a long {}.', w: ['tail', '🦖'], alike: ['tall', 'pail'], other: [['cup', '🥤'], ['sock', '🧦']] },
     'The princess wears a pink {}.': { s: 'The fire truck puts out the {}.', w: ['fire', '🔥'], alike: ['tire', 'wire'], other: [['pig', '🐷'], ['cake', '🎂']] },
     'The prince rides a white {}.': { s: 'The race car goes very {}.', w: ['fast', '🏎️'], alike: ['last', 'fist'], other: [['cake', '🎂'], ['spoon', '🥄']] },
+    'The witch flies on her {}.': { s: 'The robot rides in a red {}.', w: ['van', '🚐'], alike: ['fan', 'man'], other: [['egg', '🥚'], ['cup', '🥤']] },
+    'Cinderella lost her glass {}.': { s: 'The dinosaur stomps with its big {}.', w: ['foot', '🦶'], alike: ['food', 'good'], other: [['cake', '🎂'], ['moon', '🌙']] },
+    'The {} swims with her fish tail.': { s: 'The {} swims under the sea.', w: ['shark', '🦈'], alike: ['shirt', 'park'], other: [['bus', '🚌'], ['chair', '🪑']] },
   };
-  SENTENCES.forEach((x, i) => { if (swap[x.s]) SENTENCES[i] = swap[x.s]; });
+  for (const list of [SENTENCES, SENTENCES_L1, SENTENCES_L2]) list.forEach((x, i) => { if (swap[x.s]) list[i] = Object.assign({ lv: x.lv }, swap[x.s]); });
 
   // Narrator and reward lines that talked about castles, dresses and wardrobes.
   Object.assign(LINES, {

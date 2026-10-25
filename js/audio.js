@@ -185,6 +185,7 @@ const Sound = (() => {
     oops: () => notes([[523, 0, 0.09], [392, 0.1, 0.18]], 'sine', 0.06),
     door: () => notes([[392, 0, 0.08], [523, 0.08, 0.08], [659, 0.16, 0.14]], 'triangle', 0.07),
     party: () => notes([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.4], [784, 0.5, 0.1], [1047, 0.6, 0.5]]),
+    levelUp: () => notes([[392, 0, 0.12], [523, 0.12, 0.12], [659, 0.24, 0.12], [784, 0.36, 0.2], [1047, 0.56, 0.18], [1319, 0.74, 0.6]], 'triangle', 0.08),
     toggleMute() {
       muted = !muted;
       if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); if (player) player.pause(); }

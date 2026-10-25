@@ -63,8 +63,28 @@ npx http-server -p 8080 .
   b/p, d/t, m/n… in `HARD_PAIRS`) and c with k never share a question, and
   picture-only cards leave out pictures with another name (`WEAK_PICTURES`).
 - **No repeats**: a person never asks the same kind of question twice in a
-  row, and the last 24 answers are kept out of new questions (saved with the
+  row, and the last answers of each kind (up to 24, at most half of what that
+  kind can ask at her tier) are kept out of new questions (saved with the
   game). The mix lives in `QUIZ_TYPES` and the builders in `js/quiz.js`.
+- **Difficulty that follows her**: every kind of question has tiers, easiest
+  first (`TIERS` in `js/data.js`): fewer cards with pictures and letters far
+  apart at first, then more cards, text only, words that differ in one sound,
+  and only at the top tier the sounds a Korean ear finds hard (a/e, f/p, l/r,
+  m/n...). Each kind keeps her own tier (`state.skill`, saved, shared by both
+  editions): up after 5 right first tries of the last 6 (the first 3 in a
+  row before her first miss), down after 2 misses in a row; after a miss the
+  next one is a tier easier, and every 4th question is from the tier below.
+  Each place caps the tier (`TIER_BAND`). Reaching a new best tier shows
+  "⭐ 레벨 업!" with a fanfare (no message going down). Spelling goes 3
+  letters with the first given (4 tiles) → 3 letters, 5 tiles → sh, ck, ll as
+  one tile (fish, duck, bell) → 4-letter blends (frog, milk) → 5 letters
+  (plant, truck) → two syllables (rab·bit), the last only when a parent
+  turns it on. A save from before tiers starts each kind from its answers
+  so far. The words come from the bank in `js/data.js` (`CVC_A1`, `CVC_A2`,
+  `CCVC`, `CVCC`, `LONG`, `DIGRAPH`, `MINIMAL_SETS`, `RHYME_SETS`,
+  `SENTENCES_L1`/`_L2`); `ALIAS` lists other names for pictures so a wrong
+  card is never right by her name for it, and `WEAK_PICTURES` keeps
+  pictures with another name off picture-only cards.
 - **Solved questions and review**: every question has a stable id
   (`rhyme:cat`, `sentence:The {} says moo.`) and each kind has a pool of all
   its ids (`reviewPool(kind, npc)`; house pools are per letter). Answers are
@@ -76,8 +96,11 @@ npx http-server -p 8080 .
 - **Parent panel (⚙️, top right)**: asks for the login password (0000
   without an account) and shows stars, coins, fairy dust and answers, a
   bar per question kind (right / missed / not tried, out of the pool) with
-  the first-try accuracy, the most-missed questions and the last 7 days.
-  The game is paused while it is open. Code in `js/parent.js`.
+  the first-try accuracy, her tier ("단계 2 / 4", with − and + to set it),
+  her best tier and her last ten first tries, the most-missed questions,
+  the last 7 days, first-try accuracy per first letter, and a setting for
+  two-syllable spelling words. The game is paused while it is open. Code in
+  `js/parent.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
   colour. The child sees "now" and "after" side by side and chooses to
@@ -89,13 +112,15 @@ npx http-server -p 8080 .
   opens at 10 stars. The forest folk (★ bubble) ask harder questions: four
   words that share the first letter (hug / hut / hat / hen), the missing
   middle sound (c ? t), the missing last sound (ca ?), reading a word with
-  no voice and picking its picture, and rhymes. Only the forest gives out fairy wings, a starlight cape and a
+  no voice and picking its picture, hearing a word's sounds one by one
+  ("/s/ … /u/ … /n/") and picking its picture, and rhymes. Only the forest gives out fairy wings, a starlight cape and a
   night-sky dress. Word families live in `WORD_FAMILIES` in `js/data.js`.
 - **Unicorn Village (level 3)**: a gate at the south end of the forest path
   opens at 25 stars. The unicorns and their friends (♥ bubble) ask sentence
   questions: hear "The cow says moo." and pick *cow* from words that sound
   alike, or hear "I eat a red, hmm hmm." and pick the word that makes sense.
-  Sentences live in `SENTENCES` in `js/data.js`.
+  Sentences live in `SENTENCES_L1`, `SENTENCES_L2` (easier) and `SENTENCES`
+  in `js/data.js`.
 - **Unicorns**: right answers in the Unicorn Village give one of eight
   unicorns. Tap 🦄 (top right) or the waiting unicorn to ride, which is
   faster than walking. She gets off at the door of a house or the castle and
@@ -121,7 +146,8 @@ npx http-server -p 8080 .
   one shakes and hops back while the word is said again slowly. Two wrong
   tiles for the same blank make the right tile glow. The words are the
   game's own short words where every letter says its sound (`spell` in
-  `js/quiz.js`).
+  `js/quiz.js`). Between spelling questions the fairies also ask the
+  easier reading and sound-blending ones.
 - **Fairy friends**: right answers in the Fairy Village give one of six
   little fairies (each fairy villager offers her own first). Her fairy
   flies above her head and trails after her, also while riding; pick one
