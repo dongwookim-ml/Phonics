@@ -1515,7 +1515,7 @@ const TTS_INDEX = {
 "Good morning, Wizard Yuna! Let's visit the town!": "e9c8732682",
 "Good try! Here is the answer.": "477b93877c",
 "Great listening!": "86b4a4e343",
-"H": "7750099058",
+"H": "4925103ffd",
 "H says hhh.": "a45c6e26e1",
 "Happy": "6b72ff2338",
 "Hare": "cd2c3f781c",
