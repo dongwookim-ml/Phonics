@@ -116,8 +116,10 @@ npx http-server -p 8080 .
     player. With them off, the child has to read the first letter. This
     used to be the 🖼️ button in the HUD.
   - 🔊 소리 버튼: hide the child's mute button (the sound comes back on).
+  - 배경 음악: the background music on (the default) or off.
   - 두 음절 철자: let the top spelling tier use two-syllable words.
-  Settings are shared by both editions.
+  Settings are shared by both editions; a change is stamped, so the newest
+  one wins when two tablets' saves are put together.
   The play-time clock, the limit and the sleep screen are in `js/guide.js`.
 - **Presents and the gift meter**: 🎁 ●●○ next to the stars fills a pip
   for every answer right the first time (not in the cave, which pays
@@ -294,10 +296,28 @@ npx http-server -p 8080 .
   through it, or says how many stars it needs. Taps never give stars or
   coins. Code in `js/touch.js`; words not in the word lists are in
   `PROP_WORDS`.
+- **Background music**: a short, calm loop in a major key for each kind of
+  place: the town and the castle, the forest, the fairy village, the unicorn
+  village, the cave, and inside a house or her room. Each is eight bars of
+  a melody over a broken chord and a bass, made on the spot with Web Audio
+  (no audio files); every third time round the melody rests. The princess
+  hears a music box, the robot edition a little chiptune band a tone higher.
+  It is soft (about 14 dB under the voices), and whenever anything is said
+  it drops to an eighth within a fraction of a second, then comes back
+  slowly (over two or three seconds) once the voice has stopped; while a
+  question, a book or the fishing game is open it stays down the whole
+  time. Sound effects play over it. A new place crossfades to its tune in
+  about a second. It starts with ▶ (after the first tap, which iOS needs
+  before a page may make sound) and is silent while 🔊 is off, the parent
+  panel is open, the page is hidden or the town is asleep, or when a parent
+  turns it off. Notes are scheduled ahead on the audio clock (a lookahead
+  timer, never the frame loop), at most three at once (six in a
+  crossfade). The tunes are `MUSIC_TUNES` and the sounds `MUSIC_TIMBRES`
+  in `js/music.js`.
 - 🖼️ picture hints on the answer cards (easier) are a parent setting now
   (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables }`), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at }`, `music: false` when a parent turned the background music off, `at` when they last changed one), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -441,8 +461,12 @@ The other checks, all run by
 - `node tools/check-flows.js`: the parent panel pauses the game, its
   password messages, a broken save, the first tap after ▶, today's
   adventures played through in both editions (picked, ticked, the chest
-  paying once, kept over a reload, new ones the next day), and reading one
-  of her own books to the end (a star once, a locked one stays locked).
+  paying once, kept over a reload, new ones the next day), reading one
+  of her own books to the end (a star once, a locked one stays locked),
+  and the background music in both editions (it starts only after the
+  first tap, ducks under a line and for a whole question, follows 🔊, the
+  parent panel and its setting, a hidden page and the sleeping town, and
+  plays nothing and breaks nothing without Web Audio).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), also next to the
   deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
@@ -540,6 +564,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/world.js`: town and room layouts, pathfinding
 - `js/touch.js`: what things on the map do and say when tapped
 - `js/audio.js`: speech and sound effects
+- `js/music.js`: the background music, its tunes and how it ducks under speech
 - `js/books.js`: the library's story books and their questions
 - `js/library.js`: the book list, the reader and the book quiz
 - `js/friend.js`: feeding the fairy friend (helper buddy) and how it grows
