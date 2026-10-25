@@ -43,7 +43,7 @@ const TTS_SOUNDS = {
 "d": {
 "anchor": "dog",
 "anchorClip": "7758bbe68f",
-"clip": "ed6b866088",
+"clip": "bc756274d9",
 "kind": "vstop",
 "ms": 65,
 "where": "initial"
@@ -107,7 +107,7 @@ const TTS_SOUNDS = {
 "l": {
 "anchor": "lock",
 "anchorClip": "6887ba609d",
-"clip": "ef90f9bde6",
+"clip": "062bfe05f9",
 "kind": "liquid",
 "ms": 550,
 "where": "initial"
@@ -155,7 +155,7 @@ const TTS_SOUNDS = {
 "q": {
 "anchor": "queen",
 "anchorClip": "ba0eeacd20",
-"clip": "c75563161e",
+"clip": "487ff32945",
 "kind": "glide",
 "ms": 82,
 "where": "initial"
@@ -195,7 +195,7 @@ const TTS_SOUNDS = {
 "th": {
 "anchor": "tooth",
 "anchorClip": "0e1a37b679",
-"clip": "4310b5e367",
+"clip": "8034d5f8b1",
 "kind": "fricative",
 "ms": 550,
 "where": "final"
