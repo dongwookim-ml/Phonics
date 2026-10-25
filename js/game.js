@@ -135,7 +135,7 @@ function load() {
     outfit = fitOutfit(outfit);
     // Picture hints start on for a new player (a pre-reader needs them).
     const pictures = s.pictures === undefined ? true : !!s.pictures;
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {} };
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {}, stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0 };
   } catch (e) {
     return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: true, history: {}, books: {} };
   }
@@ -158,7 +158,7 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
+  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, stickers: state.stickers, medals: state.medals, gifts: state.gifts, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -177,6 +177,10 @@ const state = {
   dust: saved.dust,  // fairy dust from the Fairy Village
   history: saved.history, // { questionId: { kind, tries, right, wrong, last } }
   books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
+  stickers: saved.stickers || {}, // the word album: { [word]: { e, n, at, new } } (js/album.js)
+  medals: saved.medals || {}, // { 'house:C' or 'village:forest': when }
+  gifts: saved.gifts | 0, // pips on the gift meter
+  combo: 0, // answers right the first time in a row, this visit
   pictures: saved.pictures,
   scenes: {},
   scene: null,
@@ -557,31 +561,38 @@ function choose(i, btn) {
   else missed(q, o, btn);
 }
 
-// A right answer: praise and a star. Right the first time, a present too
-// (if there is one she doesn't have yet); right after a hint, no present.
+// A right answer: praise, a star and the word's sticker (js/album.js).
+// Right the first time fills a pip of the gift meter; a full meter opens a
+// present she doesn't have yet (or a sticker pack). Three in a row get a
+// cheer instead of the praise.
 function answeredRight(q, btn) {
   const npc = state.talking;
   q.done = true;
   btn.classList.add('right');
   ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
   if (q.solved) ui.clue.innerHTML = q.solved;
-  const praise = line('praise');
+  collectSticker(q, btn);
+  const praise = comboCheer(q) || line('praise');
   ui.text.textContent = praise;
   Sound.correct();
+  checkMedals();
   // Cave monsters pay in coins instead of a star and a present.
   if (npc.monster) {
     Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer), voiceOf(npc));
     catchMonster(npc);
     return;
   }
-  const gift = !q.misses && hasNewGift(npc);
+  const full = !q.misses && fillGiftMeter();
+  const gift = full && hasNewGift(npc);
+  if (full && !gift) later(700, stickerPack);
   const close = () => { if (state.question === q) closeDialog(); };
   Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
   if (npc.level === 5 && !q.misses) addDust();
-  state.stars++;
+  const before = state.stars++;
   state.answered++;
   save();
   renderStars(true);
+  gateCheck(before);
   burstAtHero(q.misses ? 14 : 30);
   if (gift) giftLater(q, npc);
   else later(Sound.muted ? 1800 : 7000, close);
@@ -632,6 +643,7 @@ function showAnswer(q, o) {
 function finishShown(q, btn) {
   const npc = state.talking;
   q.done = true;
+  state.combo = 0;
   btn.classList.remove('glow');
   btn.classList.add('right');
   ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
@@ -814,6 +826,7 @@ function renderStars(pop) {
   }
   renderCoins(false);
   renderDust(false);
+  renderAlbumHud();
 }
 
 function followLink(link) {
@@ -1748,6 +1761,8 @@ function drawOverlay(now) {
   if (!state.busy) drawExitHints(now);
   drawFairyGlows(now);
   if (!state.busy) drawBookHints(now);
+  // Medals on house signs, the sparkle trail to a gate that just opened.
+  drawProgressFx(now);
 
   // Tap ripples.
   for (const r of state.ripples) {
@@ -1987,6 +2002,12 @@ function tapObject(o, wx, wy, front) {
   if (o.kind === 'shop') {
     Sound.tap();
     talkTo(o.keeper);
+    return true;
+  }
+  // The sticker album on its desk in her room (js/album.js).
+  if (o.kind === 'album') {
+    Sound.tap();
+    walkTo((c, r) => o.front.some(f => f.c === c && f.r === r), openAlbum);
     return true;
   }
   // The library's bookcases open the book list, the wardrobe and mirror the wardrobe.

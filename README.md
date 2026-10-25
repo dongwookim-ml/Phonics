@@ -51,8 +51,9 @@ npx http-server -p 8080 .
   grey and shows its picture; she hears what she picked and a hint for that
   kind of question ("cap… Listen. cat", "M says mmm. Listen. cat", "dog…
   Listen to the end. cat"), and tries again with the cards that are left.
-  Right then: praise and a star, but no present (presents are for getting it
-  right the first time, and never something she already has). A second miss,
+  Right then: praise, a star and the word's sticker, but no pip on the gift
+  meter (presents are for getting it right the first time, and never
+  something she already has). A second miss,
   or a miss with only the right card left, shows the answer: it glows with a
   👆, the word is sounded out ("/c/ /a/ /t/… cat!") and she taps it to finish
   (no star). That question comes back later from the same person, with new
@@ -78,11 +79,42 @@ npx http-server -p 8080 .
   bar per question kind (right / missed / not tried, out of the pool) with
   the first-try accuracy, the most-missed questions and the last 7 days.
   The game is paused while it is open. Code in `js/parent.js`.
-- **Presents**: every right answer offers a present, which can be a dress
-  colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
-  colour. The child sees "now" and "after" side by side (on foot, unless
-  the present is a unicorn) and chooses to wear it now or put it in her
-  wardrobe.
+- **Presents and the gift meter**: 🎁 ●●○ next to the stars fills a pip
+  for every answer right the first time (not in the cave, which pays
+  coins); the third opens a present, which
+  can be a dress colour, a dress shape, a crown or tiara, a wand or bouquet,
+  or a hair colour (the villages' own treasures there first). The child sees
+  "now" and "after" side by side (on foot, unless the present is a unicorn)
+  and chooses to wear it now or put it in her wardrobe. A present is never
+  something she has: once there is nothing new to give there, a full meter
+  gives a pack of three stickers she hasn't found yet instead (fairy dust or
+  batteries once the album is full).
+- **Sticker album (📒)**: every right answer, first try or after a hint,
+  puts the question's word in the album as a sticker (its picture and the
+  word, first letter in colour). A new one flies from the card into 📒,
+  whose dot counts the ones not seen yet. The album opens from 📒 at the top
+  right or from the desk with the open book in her room: a page per first
+  letter with big letter tabs, stickers she has in colour (shining gold once
+  she has got that word three times), the others as grey "?" shapes. Tapping
+  a sticker says its word, and "cat starts with C." once that is recorded.
+  The words come from the word lists in `js/data.js`, so new words show up by
+  themselves. The robot edition calls it a word chip book. Code in
+  `js/album.js`.
+- **Next gate and medals**: the star counter shows the next gate that is
+  still shut, "⭐ 7/10 🌲" over a bar (from 820 px down just the picture and
+  the bar), and goes back to plain stars when every gate is open. When a
+  gate's stars are reached, once the dialog and any present have closed,
+  there is a short party (fireworks, "The Starlight Forest is open!") and a
+  sparkle trail on the ground leads to that gate for a minute and a half. A
+  letter house gets a medal when every question about its letter (its words,
+  the pictures that start with it) has been answered right once; a village
+  when every question of its kinds has. Medals show as a ⭐ on the house sign
+  and on the album's 🏅 page with how far each one is.
+- **Cheers**: three answers right the first time in a row and the asker says
+  "Three in a row!" instead of the usual praise, with a burst of sparkles;
+  five, "Five in a row! Super star!", then a cheer every five. A miss starts
+  the count again without a word. No celebration gives stars, each lasts
+  about two seconds, and a tap anywhere ends it.
 - **Wardrobe**: every present is kept. In the throne room, the 🎀 door on
   the right leads to the princess's own room. Tap the wardrobe or the mirror
   to change clothes freely; presents not yet earned show as ❓.
@@ -97,8 +129,8 @@ npx http-server -p 8080 .
   questions: hear "The cow says moo." and pick *cow* from words that sound
   alike, or hear "I eat a red, hmm hmm." and pick the word that makes sense.
   Sentences live in `SENTENCES` in `js/data.js`.
-- **Unicorns**: right answers in the Unicorn Village give one of eight
-  unicorns. Tap 🦄 (top right) or the waiting unicorn to ride, which is
+- **Unicorns**: presents in the Unicorn Village (a full gift meter) are its
+  eight unicorns first. Tap 🦄 (top right) or the waiting unicorn to ride, which is
   faster than walking. She gets off at the door of a house or the castle and
   the unicorn waits outside. Pick which unicorn to ride in the wardrobe.
 - **Crystal Cave (level 4)**: a rocky hill at the west end of the forest's
@@ -123,10 +155,10 @@ npx http-server -p 8080 .
   tiles for the same blank make the right tile glow. The words are the
   game's own short words where every letter says its sound (`spell` in
   `js/quiz.js`).
-- **Fairy friends**: right answers in the Fairy Village give one of six
-  little fairies (each fairy villager offers her own first). Her fairy
+- **Fairy friends**: presents in the Fairy Village (a full gift meter) are
+  its six little fairies first (each fairy villager offers her own first). Her fairy
   flies above her head and trails after her, also while riding; pick one
-  in the wardrobe. Every right answer there also gives 2–4 ✨ fairy dust,
+  in the wardrobe. Every answer right the first time there also gives 2–4 ✨ fairy dust,
   shown next to the stars. What dust is for is not decided yet; it is saved.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
   "📖 책 읽어주세요" button, for ten short fairy tales and fables retold in
@@ -158,7 +190,7 @@ npx http-server -p 8080 .
 - 🖼️ toggles picture hints on the answer cards (easier); they start on for
   a new player. With it off, the child has to read the first letter.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid) and the hint setting are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid), the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`) and the hint setting are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (4 or more
@@ -208,8 +240,10 @@ that every door can be reached and leads back out where it was.
 (1024 x 768, 1180 x 820, 768 x 1024, 1024 x 700 with Safari's toolbars) and
 on a phone held sideways (844 x 390): no villager hidden behind a building,
 every word fits its answer card, the person talking stays visible above the
-dialog, the buttons a child taps are big enough (64 px), and ▶ and the guest
-button show without scrolling.
+dialog, the buttons a child taps are big enough (64 px), ▶ and the guest
+button show without scrolling, the HUD stays on one row with every counter
+and button showing, and the sticker album and a celebration fit the screen
+with every word fitting its sticker.
 
 The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add
@@ -280,3 +314,4 @@ These win over the Kokoro recordings; any missing file falls back to them.
 - `js/books.js`: the library's story books and their questions
 - `js/library.js`: the book list, the reader and the book quiz
 - `js/game.js`: game loop, camera, input, dialogs, presents
+- `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations

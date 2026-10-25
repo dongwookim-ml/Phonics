@@ -73,6 +73,8 @@ function collect(D) {
     // Praise, the hints after a miss and the answer shown after a second one
     // (choose in js/game.js), and the present.
     lines(v, ['praise', 'listen', 'showMe', 'tapIt', 'soon', 'again', 'next', 'gift', 'yes', 'keep']);
+    // A cheer instead of the praise for answers right in a row (js/album.js).
+    lines(v, ['combo', 'combo5', 'comboMore']);
     if (town.has(look)) lines(v, ['ask', 'firstSound', 'findStart', 'rhyme', 'rhymeEnd']);
     if (forest.has(look)) lines(v, ['ask2', 'vowel', 'ending', 'read', 'rhyme', 'rhymeEnd']);
     if (unicorn.has(look)) {
@@ -137,6 +139,13 @@ function collect(D) {
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
   for (const t of partShow) add(N, t);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
+  // Gates opening, medals and the sticker album (js/album.js). A sticker says
+  // what its word starts with, unless it starts with two letters that make
+  // one sound (chair, ship, three) or one that sounds like another (one).
+  lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'medalVillage', 'album']);
+  for (const l of D.TOWN_HOUSES) lines(N, ['medalHouse'], { letter: l.letter });
+  const stickers = [...D.WORD_FAMILIES.flat(), ...D.RHYMES.flat(), ...D.SENTENCES.map(x => x.w)].map(([w]) => w);
+  for (const w of stickers) if (/^[a-z]+$/.test(w) && !/^(ch|sh|th|wh|ph|gh|kn|wr)/.test(w) && w !== 'one') add(N, `${w} starts with ${w[0].toUpperCase()}.`);
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
   for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 

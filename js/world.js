@@ -626,6 +626,8 @@ function buildYunaRoom() {
   furn(8, 4, 1, 1, 30, ctx => drawToyChest(ctx, sc, 8, 4), { react: FURNITURE.toys });
   furn(0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6), { react: FURNITURE.plant });
   furn(5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0), { react: FURNITURE.plant });
+  // The sticker album on its desk (js/album.js).
+  addAlbumDesk(sc, 3, 0);
 
   sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 1, r: 6 }, icon: '🚪', style: 'mat' }];
   sc.start = { c: 4, r: sc.D - 2 };
