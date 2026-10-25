@@ -5,7 +5,8 @@
 #   {"mode": "all"}     records every phrase in tools/tts-phrases.json
 #   {"mode": "sample"}  records a few lines in every voice
 #   {"mode": "voices"}  lists which voices have the generative engine
-#   "check": "changed" (default), "short", "all" or "none" picks the clips to listen to.
+#   "check": "changed" (default), "short", "all" or "none" picks the clips to listen to,
+#   "fix": false only reports what the recogniser heard.
 # Needs the repository secrets AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
 name: Record voices with Amazon Polly
 on:
@@ -28,12 +29,14 @@ jobs:
     outputs:
       mode: ${{ steps.cfg.outputs.mode }}
       check: ${{ steps.cfg.outputs.check }}
+      fix: ${{ steps.cfg.outputs.fix }}
     steps:
       - uses: actions/checkout@v4
       - id: cfg
         run: |
           echo "mode=$(jq -r .mode tools/polly-run.json)" >> "$GITHUB_OUTPUT"
           echo "check=$(jq -r '.check // "changed"' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
+          echo "fix=$(jq -r 'if .fix == false then "no" else "yes" end' tools/polly-run.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -99,6 +102,7 @@ jobs:
       - name: Merge the report
         run: python tools/voice-check.py --merge 'parts/*.json'
       - name: Record lone words again
+        if: needs.record.outputs.fix == 'yes'
         run: python tools/polly-build.py --mode fix
       - name: Commit
         if: always()
