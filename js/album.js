@@ -152,6 +152,8 @@ function stickerOf(q) {
   albumWords();
   const known = albumIndex.get(w);
   const pic = /class="(?:big)?pic">([^<]+)</.exec((o && o.html) || '') || /class="clue-pic">([^<]+)</.exec(q.clue || '');
+  // A long vowel word with no picture (cape, tape) is no sticker.
+  if (!known && !pic && /^long/.test(q.kind || '')) return null;
   return { w, e: known ? known.e : pic ? pic[1] : '⭐' };
 }
 

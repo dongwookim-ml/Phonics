@@ -301,7 +301,7 @@ for (const look of Object.keys(KID_MONSTERS)) LOOKS[look] = { draw: (k, f) => ki
 Object.assign(VOICES, {
   kidmon1: { gender: 'male',   tts: 'am_eric',   lift: 1.08, pitch: 1.2,  rate: 1.0,  voice: ['Fred', 'Microsoft Guy', 'Google US English'] },
   kidmon2: { gender: 'female', tts: 'af_sky',    lift: 1.12, pitch: 1.6,  rate: 1.08, voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
-  kidmon3: { gender: 'male',   tts: 'bm_fable',  lift: 0.94, pitch: 0.9,  rate: 0.95, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
+  kidmon3: { gender: 'male',   tts: 'am_adam',  lift: 0.94, pitch: 0.9,  rate: 0.95, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
   kidmon4: { gender: 'female', tts: 'af_aoede',  pitch: 1.35, rate: 0.95, voice: ['Samantha', 'Karen', 'Microsoft Aria'] },
   kidmon5: { gender: 'female', tts: 'af_kore',   lift: 1.06, pitch: 1.4,  rate: 1.0,  voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
 });

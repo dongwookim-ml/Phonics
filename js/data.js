@@ -890,15 +890,15 @@ const SKILL = { window: 6, promoteAt: 5, placementRun: 3, demoteAfter: 2, review
 const LONG_VOWELS = [
   { team: 'a_e', says: 'A', words: [
     ['cake', '🎂', 2, ['c', 'A', 'k']], ['snake', '🐍', 2, ['s', 'n', 'A', 'k']], ['skate', '⛸️', 2, ['s', 'k', 'A', 't']],
-    ['plane', '✈️', 2, ['p', 'l', 'A', 'n']], ['cape', '', 0, ['c', 'A', 'p']], ['cane', '', 0, ['c', 'A', 'n']],
-    ['mane', '', 0, ['m', 'A', 'n']], ['tape', '', 0, ['t', 'A', 'p']]] },
+    ['plane', '✈️', 2, ['p', 'l', 'A', 'n']], ['cape', '', 0, ['c', 'A', 'p']], ['tape', '', 0, ['t', 'A', 'p']]] },
   { team: 'i_e', says: 'I', words: [
     ['kite', '🪁', 2, ['k', 'I', 't']], ['bike', '🚲', 2, ['b', 'I', 'k']], ['five', '5️⃣', 2, ['f', 'I', 'v']],
     ['nine', '9️⃣', 2, ['n', 'I', 'n']], ['pine', '🌲', 1, ['p', 'I', 'n']], ['bite', '', 0, ['b', 'I', 't']]] },
   { team: 'o_e', says: 'O', words: [
     ['bone', '🦴', 2, ['b', 'O', 'n']], ['nose', '👃', 2, ['n', 'O', 'z']], ['rose', '🌹', 2, ['r', 'O', 'z']],
-    ['note', '🎵', 1, ['n', 'O', 't']], ['hope', '', 0, ['h', 'O', 'p']], ['rode', '', 0, ['r', 'O', 'd']]] },
-  { team: 'u_e', says: 'U', words: [['cube', '🧊', 1, ['c', 'U', 'b']], ['tube', '', 0, ['t', 'U', 'b']], ['cute', '', 0, ['c', 'U', 't']]] },
+    ['note', '🎵', 1, ['n', 'O', 't']], ['hope', '', 0, ['h', 'O', 'p']]] },
+  // Only where u_e says "yoo", the name of U (tube is "toob" to the narrator).
+  { team: 'u_e', says: 'U', words: [['cube', '🧊', 1, ['c', 'U', 'b']], ['cute', '', 0, ['c', 'U', 't']]] },
   { team: 'ee', says: 'E', words: [
     ['bee', '🐝', 2, ['b', 'E']], ['tree', '🌳', 2, ['t', 'r', 'E']], ['three', '3️⃣', 2, ['th', 'r', 'E']],
     ['sheep', '🐑', 2, ['sh', 'E', 'p']], ['feed', '', 0, ['f', 'E', 'd']]] },
@@ -914,14 +914,14 @@ const LONG_VOWELS = [
   { team: 'igh', says: 'I', words: [['light', '💡', 2, ['l', 'I', 't']], ['night', '🌃', 1, ['n', 'I', 't']]] },
   { team: 'ie', says: 'I', words: [['pie', '🥧', 2, ['p', 'I']], ['tie', '👔', 1, ['t', 'I']]] },
   { team: 'ar', says: 'R', words: [
-    ['star', '⭐', 2, ['s', 't', 'R']], ['car', '🚗', 2, ['c', 'R']], ['yarn', '🧶', 2, ['y', 'R', 'n']],
+    ['star', '⭐', 2, ['s', 't', 'R']], ['car', '🚗', 2, ['c', 'R']],
     ['shark', '🦈', 2, ['sh', 'R', 'k']], ['scarf', '🧣', 2, ['s', 'c', 'R', 'f']]] },
 ];
 // Short and long twins for hearing a magic e or a vowel team (longWord): the
 // same letters, but one more makes the vowel say its name. [short, long]
 const LONG_TWINS = [
-  ['kit', 'kite'], ['cap', 'cape'], ['pin', 'pine'], ['tub', 'tube'], ['hop', 'hope'], ['not', 'note'], ['cub', 'cube'],
-  ['can', 'cane'], ['man', 'mane'], ['rod', 'rode'], ['bit', 'bite'], ['plan', 'plane'], ['cut', 'cute'], ['tap', 'tape'],
+  ['kit', 'kite'], ['cap', 'cape'], ['pin', 'pine'], ['hop', 'hope'], ['not', 'note'], ['cub', 'cube'],
+  ['bit', 'bite'], ['plan', 'plane'], ['cut', 'cute'], ['tap', 'tape'],
   ['cot', 'coat'], ['got', 'goat'], ['ran', 'rain'], ['set', 'seat'], ['met', 'meat'], ['rod', 'road'], ['fed', 'feed'],
 ];
 // More rhymes with a long vowel, beside RHYME_SETS' own (cake, bee, kite,
@@ -935,8 +935,13 @@ Object.assign(ALIAS, {
   plane: ['airplane', 'jet'], skate: ['skates'], bike: ['bicycle'], pine: ['tree'], note: ['music'], cube: ['ice'],
   sheep: ['lamb'], beach: ['umbrella', 'sand'], meat: ['bone', 'chicken'], seat: ['chair'], rain: ['cloud'], coat: ['jacket'],
   road: ['street'], snow: ['snowflake'], bowl: ['cereal', 'spoon'], light: ['lamp'], night: ['city'], tie: ['shirt'],
-  shark: ['fish'], yarn: ['ball'],
+  shark: ['fish'],
+  // Pictures she may mix up, never on one question.
+  pie: ['cake'], goat: ['sheep'],
 });
+// Rhyme pictures she may not name for sure (🏞️ "park", 🍦 "ice cream"):
+// never the word she rhymes with or the answer in longRhyme.
+const LONG_RHYME_UNSURE = new Set(['lake', 'chain', 'plate', 'cone', 'night', 'tie']);
 
 // The Monster Village and its tower ask only about long vowels (js/quiz.js):
 //   longBlend  hear "/k/ … A … /k/" and pick the picture
@@ -945,8 +950,10 @@ Object.assign(ALIAS, {
 //              beside it at the top tier
 //   longRhyme  pick the picture that rhymes with a long vowel word
 QUIZ_TYPES.monster = ['longBlend', 'longRead', 'longWord', 'longRhyme'];
-// Their tiers. NAME1 are long vowel words with one sound before the vowel
-// (cake, sheep), NAME all of them (snake, tree, star too). `mark` colours the
+// Their tiers, one spelling at a time: NAME0 the magic e and ee words with
+// one sound before the vowel (cake, kite, bone, bee), NAME1 all such words
+// but ar (rain, boat, light too), NAME all of them (snake, tree, star too);
+// `easy` (longWord) only magic e and ee words. `mark` colours the
 // letters that make the vowel say its name (c a k e) and shows that letter
 // among the sound dots; `twin` puts the short twin beside the long word;
 // `endSound` puts in a rhyme card that ends the same after a short vowel
@@ -954,9 +961,9 @@ QUIZ_TYPES.monster = ['longBlend', 'longRead', 'longWord', 'longRhyme'];
 // sound, and `near` one card that shares all but one of the sounds (boat:
 // goat, or bat).
 Object.assign(TIERS, {
-  longBlend: [{ n: 2, far: true, mark: true, words: 'NAME1' }, { n: 3, mark: true, words: 'NAME1' }, { n: 3, words: 'NAME' }, { n: 3, near: true, words: 'NAME' }],
-  longRead:  [{ n: 2, far: true, mark: true, words: 'NAME1' }, { n: 3, mark: true, words: 'NAME1' }, { n: 3, words: 'NAME' }, { n: 3, near: true, words: 'NAME' }],
-  longWord:  [{ n: 2, far: true }, { n: 3 }, { n: 3, twin: true }],
+  longBlend: [{ n: 2, far: true, mark: true, words: 'NAME0' }, { n: 3, mark: true, words: 'NAME1' }, { n: 3, words: 'NAME' }, { n: 3, near: true, words: 'NAME' }],
+  longRead:  [{ n: 2, far: true, mark: true, words: 'NAME0' }, { n: 3, mark: true, words: 'NAME1' }, { n: 3, words: 'NAME' }, { n: 3, near: true, words: 'NAME' }],
+  longWord:  [{ n: 2, far: true, easy: true }, { n: 3, easy: true }, { n: 3, twin: true }],
   longRhyme: [{ n: 2, far: true }, { n: 3, endSound: true }, { n: 3, sameVowel: true }],
 });
 TIER_BAND.monster = [1, 4];
@@ -1255,7 +1262,7 @@ Object.assign(VOICES, {
   mvSlime:  { gender: 'female', tts: 'af_nova',   lift: 1.1,  pitch: 1.6, rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   mvGhost:  { gender: 'female', tts: 'bf_lily',   lift: 1.06, pitch: 1.4, rate: 0.9,  voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
   mvBat:    { gender: 'male',   tts: 'am_liam',   lift: 1.1,  pitch: 1.4, rate: 1.05, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
-  mvShroom: { gender: 'male',   tts: 'bm_lewis',  lift: 1.04, pitch: 1.2, rate: 0.95, voice: ['Daniel', 'Fred', 'Microsoft Guy'] },
+  mvShroom: { gender: 'male',   tts: 'am_michael', lift: 1.04, pitch: 1.2, rate: 0.95, voice: ['Daniel', 'Fred', 'Microsoft Guy'] },
 });
 Object.assign(PERSONA, {
   mvSlime:  ['Bloop! Welcome to the Monster Village, {title} {name}!', 'Wiggle, wiggle! Monsters love long vowels!', 'Hello! I am squishy and friendly.'],

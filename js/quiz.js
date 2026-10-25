@@ -74,11 +74,14 @@ const Quiz = (() => {
     FAM: famWords,
     // Long vowels with a picture she names for sure: one sound before the
     // vowel (cake, sheep), or any (snake, tree, star too).
-    NAME1: () => longWords().filter(x => clear(x) && x.long.indexOf(x.says) === 1),
+    NAME0: () => longWords().filter(x => clear(x) && EASY_TEAMS.has(x.team) && x.long.indexOf(x.says) === 1),
+    NAME1: () => longWords().filter(x => clear(x) && x.says !== 'R' && x.long.indexOf(x.says) === 1),
     NAME: () => longWords().filter(clear),
   };
   // Every word whose vowel says its name, with or without a picture.
   const longWords = () => LONG_VOWELS.flatMap(g => g.words.map(entry));
+  // The first spellings: magic e, and ee (cake, kite, bee).
+  const EASY_TEAMS = new Set(['a_e', 'i_e', 'o_e', 'u_e', 'ee']);
   // The short twin of a long word (kit for kite), if it has one.
   const twinOf = w => (LONG_TWINS.find(([, long]) => long === w) || [])[0];
   const minimalWords = () => [...new Set(MINIMAL_SETS.flat())].map(w => words()[w]);
@@ -105,6 +108,9 @@ const Quiz = (() => {
   // Village asks about (longRhyme), RHYME_SETS' long ones and LONG_RHYMES.
   const NAMED = { 'eɪ': 'A', i: 'E', 'aɪ': 'I', 'oʊ': 'O', 'ɑr': 'R' };
   const longRhymes = () => RHYME_SETS.filter(r => NAMED[r.v]).concat(LONG_RHYMES);
+  // A set's words she names for sure from the picture (LONG_RHYME_UNSURE):
+  // the ones a long rhyme question asks about.
+  const sureRhymes = r => r.set.filter(([w]) => clear(words()[w]) && !LONG_RHYME_UNSURE.has(w));
   // The last sound of a rhyme (ake: k, ell: l, ee: none), to find words that
   // end the same after another vowel (kite, bat).
   const lastSound = rime => {
@@ -152,8 +158,8 @@ const Quiz = (() => {
     // ones with a short twin).
     longBlend: (npc, cfg) => withId('longBlend', BANK[cfg.words]()),
     longRead: (npc, cfg) => withId('longRead', BANK[cfg.words]()),
-    longWord: (npc, cfg) => withId('longWord', longWords().filter(x => !cfg.twin || twinOf(x.w))),
-    longRhyme: () => withId('longRhyme', longRhymes().map(r => ({ r, w: r.set[0][0] }))),
+    longWord: (npc, cfg) => withId('longWord', longWords().filter(x => (!cfg.easy || EASY_TEAMS.has(x.team)) && (!cfg.twin || twinOf(x.w)))),
+    longRhyme: () => withId('longRhyme', longRhymes().filter(r => sureRhymes(r).length >= 2).map(r => ({ r, w: r.set[0][0] }))),
   };
   const history = () => (typeof state !== 'undefined' && state.history) || {};
   const solved = id => (history()[id] || {}).right > 0;
@@ -538,7 +544,7 @@ const Quiz = (() => {
   // from `ends` instead: another vowel that ends in the same sound (kite, bat).
   function rhymeQuestion(kind, npc, cfg, sets, ends = []) {
     const { r, id } = take(kind, npc, cfg);
-    const [base, ans] = shuffle(r.set.slice()).map(([w]) => words()[w]);
+    const [base, ans] = shuffle((kind === 'longRhyme' ? sureRhymes(r) : r.set).slice()).map(([w]) => words()[w]);
     const fromSet = s => Object.assign({ v: s.v, rime: s.rime }, words()[pick(s.set)[0]]);
     const pool = sets.filter(s => s !== r).map(fromSet);
     const end = lastSound(r.rime);
@@ -733,19 +739,12 @@ const Quiz = (() => {
     const diff = x.map((s, i) => [s, y[i]]).filter(([p, q]) => p !== q);
     return diff.length === 1 && hardPair(diff[0][0], diff[0][1]);
   }
-  // How many of its sounds two words share, in order (boat, goat: 2).
-  function shared(a, b) {
-    const y = heard(b);
-    const row = new Array(y.length + 1).fill(0);
-    for (const s of heard(a)) {
-      let diag = 0;
-      for (let j = 1; j <= y.length; j++) {
-        const up = row[j];
-        row[j] = s === y[j - 1] ? diag + 1 : Math.max(up, row[j - 1]);
-        diag = up;
-      }
-    }
-    return row[y.length];
+  // Sounds that differ by one swapped, added or dropped sound.
+  function oneApart(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return false;
+    if (a.length === b.length) return a.filter((s, i) => s !== b[i]).length === 1;
+    const [long, short] = a.length > b.length ? [a, b] : [b, a];
+    return long.some((s, i) => long.slice(0, i).concat(long.slice(i + 1)).every((x, j) => x === short[j]));
   }
   // Another first sound, and not one she can't tell from it, and another
   // vowel's name (bone, cake).
@@ -773,10 +772,10 @@ const Quiz = (() => {
     const out = [];
     const add = cands => { for (const x of shuffle(cands.slice())) if (out.length < n && ok(x, out)) out.push(x); };
     if (cfg.near) {
-      const cands = list.concat(BANK.CVC(), BANK.BLEND4(), DIGRAPH.map(entry)).filter(x => ok(x, out));
-      const best = Math.max(0, ...cands.map(x => shared(x, t)));
-      const close = shuffle(cands.filter(x => shared(x, t) === best))[0];
-      if (close && best >= heard(t).length - 1) out.push(close);
+      // One sound swapped, added or dropped (boat: goat, bat; bee: beach).
+      const cands = list.concat(BANK.CVC(), BANK.BLEND4(), DIGRAPH.map(entry)).filter(x => ok(x, out) && oneApart(heard(x), heard(t)));
+      const close = shuffle(cands)[0];
+      if (close) out.push(close);
     }
     if (cfg.far) add(list.filter(x => farLong(x, t)));
     add(list.filter(x => sameSound(heard(x)[0], heard(t)[0])));
@@ -836,10 +835,15 @@ const Quiz = (() => {
     longWord(npc, cfg) {
       const t = take('longWord', npc, cfg);
       const out = cfg.twin ? [{ w: twinOf(t.w), twin: true }] : [];
-      const ok = x => x.w !== t.w && !sameHeard(x, t) && !hardTwin(x, t) && (!cfg.far || farLong(x, t)) &&
+      // Never a word whose picture she may call by the other's name (pine, tree).
+      const calls = (a, b) => ((words()[a.w] || {}).aka || []).includes(b.w) || ((words()[b.w] || {}).aka || []).includes(a.w);
+      const ok = x => x.w !== t.w && !sameHeard(x, t) && !hardTwin(x, t) && !calls(x, t) && (!cfg.far || farLong(x, t)) &&
         !out.some(o => o.w === x.w || sameHeard(o, x) || hardTwin(o, x));
       const add = cands => { for (const x of shuffle(cands)) if (out.length < cfg.n - 1 && ok(x)) out.push(x); };
-      add(longWords().filter(x => sameSound(heard(x)[0], heard(t)[0])));
+      // At the easy tiers, the other cards are magic e and ee words too.
+      const pool = cfg.easy ? longWords().filter(x => EASY_TEAMS.has(x.team)) : longWords();
+      add(pool.filter(x => sameSound(heard(x)[0], heard(t)[0])));
+      add(pool);
       add(longWords());
       return {
         id: t.id, target: t.w, clue: '',
