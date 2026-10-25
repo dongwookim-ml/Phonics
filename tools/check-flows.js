@@ -42,6 +42,12 @@
 //    sleep; the questions come at her tier, capped like the village asks
 //    it, and playing moves no tier and records no answer; no page errors,
 //    and every line said is listed for recording;
+//  - presents, for a girl, a boy and the robot: every villager gives in
+//    turn until nobody has anything new; never a repeat (also from a
+//    villager whose own unicorn or fairy is hers), always something that
+//    suits the hero, a village's treasures only from there, and the
+//    wardrobe's count full at the end; the shop and wardrobe only show
+//    things that suit the hero;
 //  - the background music (js/music.js), in both editions: it starts only
 //    after the first tap, and only once the town is on screen; it drops
 //    quickly while a line is said and comes back slowly after, stays down
@@ -1085,6 +1091,80 @@ async function littleGames(browser, edition) {
   await ctx.close();
 }
 
+// Presents (offerReward in js/game.js) for a girl, a boy and the robot:
+// every villager in turn gives until nobody has anything new left. Each
+// present is new (never a repeat), also from villagers whose own unicorn or
+// fairy is hers already; it suits the hero; a village's own treasures come
+// only from that village; and at the end the wardrobe's count is full.
+// Nothing that doesn't suit her is in the shop or the wardrobe either.
+async function presents(browser, edition, look) {
+  const { page, ctx, errors } = await game(browser, { edition, seed: { edition, stars: 99 } });
+  const r = await page.evaluate(look => {
+    if (!Sound.muted) Sound.toggleMute();
+    if (look !== 'robot') {
+      setPlayer({ title: look === 'boy' ? 'prince' : 'princess', look });
+      wearLook();
+    }
+    const out = { repeats: [], notNew: [], wrongLook: [], wrongVillage: [], ownAgain: [], gifts: 0, shelf: 0 };
+    const givers = ['town', 'forest', 'unicorn', 'fairy'].flatMap(n => sceneFor(n).npcs.filter(p => !p.mount && !p.shop && !p.monster));
+    const allowed = { forest: [2, 3, 4], unicorn: [3, 4], fairy: [5] };
+    // The villagers' own unicorns and fairies are hers already.
+    for (const p of givers) {
+      if (p.unicorn && UNICORNS[p.unicorn]) state.owned.ride.push(p.unicorn);
+      if (p.gives && FAIRIES[p.gives]) state.owned.fairy.push(p.gives);
+    }
+    const before = collected().have;
+    const seen = new Set();
+    for (let round = 0; round < 1000; round++) {
+      const left = givers.filter(p => hasNewGift(p));
+      if (!left.length) break;
+      const npc = left[round % left.length];
+      offerReward(npc);
+      const g = state.gift;
+      const key = `${g.slot}:${g.value}`;
+      const item = WARDROBE.find(w => w.slot === g.slot).items[g.value];
+      const level = npc.level || 1;
+      if (seen.has(key)) out.repeats.push(key);
+      if (!g.isNew) out.notNew.push(key);
+      if (!suits(item)) out.wrongLook.push(key);
+      for (const [mark, levels] of Object.entries(allowed)) if (item[mark] && !levels.includes(level)) out.wrongVillage.push(`${key} from level ${level}`);
+      if ((npc.unicorn && g.value === npc.unicorn && g.slot === 'ride') || (npc.gives && g.value === npc.gives && g.slot === 'fairy')) out.ownAgain.push(key);
+      if (npc.unicorn || npc.gives) out.fromOwners = (out.fromOwners || 0) + 1;
+      if (isShelf(g.slot)) out.shelf++;
+      seen.add(key);
+      acceptReward(round % 2 === 0);
+    }
+    out.gifts = seen.size;
+    out.count = collected();
+    out.before = before;
+    out.stuck = givers.filter(p => hasNewGift(p)).map(p => p.name);
+    // The shop and the wardrobe: only things that suit her.
+    for (const w of WARDROBE) state.owned[w.slot] = state.owned[w.slot].filter(v => w.shelf ? false : v === 'none' || v === state.outfit[w.slot]);
+    out.shopWrong = shopItems().filter(it => !suits(it.item)).map(it => `${it.slot}:${it.value}`);
+    out.wardrobeWrong = [];
+    changeScene('yuna');
+    openWardrobe();
+    for (const w of wardrobeTabs()) {
+      wdTab = w.slot;
+      renderWardrobe();
+      const shown = document.querySelectorAll('#wd-slots .wd-item').length;
+      const fit = Object.values(w.items).filter(item => suits(item)).length;
+      if (shown !== fit) out.wardrobeWrong.push(`${w.slot}: ${shown} pictures for ${fit} things`);
+    }
+    closeWardrobe();
+    return out;
+  }, look);
+  const tag = `presents (${edition} ${look})`;
+  check(`${tag}: every present is new, none twice (${r.gifts} presents, ${r.shelf} treasures)`, !r.repeats.length && !r.notNew.length && r.gifts > 30, { repeats: r.repeats, notNew: r.notNew, gifts: r.gifts });
+  check(`${tag}: a villager whose own unicorn or fairy is hers gives something else new (${r.fromOwners} presents)`, !r.ownAgain.length && r.fromOwners > 0, r.ownAgain);
+  check(`${tag}: nothing that doesn't suit the hero`, !r.wrongLook.length, r.wrongLook);
+  check(`${tag}: a village's own treasures come only from there`, !r.wrongVillage.length, r.wrongVillage);
+  check(`${tag}: once nobody has anything new, every present is hers (모은 선물 ${r.count.have} / ${r.count.total})`, !r.stuck.length && r.count.have === r.count.total && r.count.have - r.before === r.gifts, r);
+  check(`${tag}: the shop and the wardrobe show only things that suit the hero`, !r.shopWrong.length && !r.wardrobeWrong.length, { shop: r.shopWrong, wardrobe: r.wardrobeWrong });
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 // The background music (js/music.js), watched through musicInfo, with real
 // taps and real clips.
 async function musicFlows(browser, edition) {
@@ -1297,6 +1377,7 @@ async function musicFlows(browser, edition) {
     questEdges: b => questEdges(b, 'princess'), questEdgesCaptain: b => questEdges(b, 'captain'), caveFight,
     cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
     games: b => littleGames(b, 'princess'), gamesCaptain: b => littleGames(b, 'captain'),
+    presentsGirl: b => presents(b, 'princess', 'girl'), presentsBoy: b => presents(b, 'princess', 'boy'), presentsRobot: b => presents(b, 'captain', 'robot'),
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);

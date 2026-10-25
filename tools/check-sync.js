@@ -19,7 +19,9 @@
 //    tablet each on one account (both editions, both ways round), a guest
 //    tablet updated to this version then logging in, a signed-in tablet
 //    updated to this version, and answers the deployed game drops put back
-//    when this version signs out;
+//    when this version signs out; a save with this version's new clothes
+//    and treasures loads in the deployed game without an error, and the
+//    treasure shelf it drops comes back with this version's next save;
 //  - a tab still on the first release (FIRST_REF, default eee606ec) next to
 //    the parent's settings: they stay.
 // Run: node tools/check-sync.js  (needs the playwright package and Chromium,
@@ -636,6 +638,52 @@ async function firstRelease(browser, first) {
   for (const t of [N, O, F]) await t.ctx.close();
 }
 
+async function deployedWardrobe(browser, deployed) {
+  // This version dresses a boy in a suit and a helmet and gives him
+  // treasures; the deployed game on the same account loads that save, wears
+  // what it knows instead, keeps the new things in its lists and opens its
+  // wardrobe without an error. It saves without the treasure shelf (a slot
+  // it doesn't know); this version's next save puts the shelf back.
+  const acct = await newAccount();
+  const N = await tablet(browser);
+  await login(N, acct);
+  await N.page.evaluate(() => {
+    document.getElementById('start-btn').click();
+    setPlayer({ title: 'knight', look: 'boy' });
+    wearLook();
+    const now = { shape: 'suit', head: 'helmet', hand: 'shield', back: 'redcape', hair: 'mint', dress: 'navy' };
+    for (const [slot, v] of Object.entries(now)) state.owned[slot].push(v);
+    state.owned.treasure.push('shell', 'kite');
+    state.outfit = Object.assign({}, state.outfit, now);
+    save();
+  });
+  await settle(N);
+  const O = await tablet(browser, { dir: deployed });
+  await login(O, acct);
+  await O.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
+  const old = await O.page.evaluate(() => {
+    state.scene = sceneFor('yuna');
+    openWardrobe();
+    closeWardrobe();
+    const known = Object.entries(state.outfit).every(([slot, v]) => !WARDROBE.some(w => w.slot === slot) || WARDROBE.find(w => w.slot === slot).items[v]);
+    return { look: PLAYER.look, known, kept: state.owned.shape.includes('suit') && state.owned.head.includes('helmet') };
+  });
+  await earnOld(O, 'o');
+  await settle(O).catch(() => {});
+  const shelf = save => (editionOf(save, 'princess').owned || {}).treasure || [];
+  const afterOld = shelf((await serverSave(acct)).save).length;
+  await earn(N, 1, 'n');
+  await settle(N);
+  const s = editionOf((await serverSave(acct)).save, 'princess');
+  const owned = s.owned || {};
+  check('deployed tab loads a save with new clothes: a boy in things it knows, the new ones kept in its lists', old.look === 'boy' && old.known && old.kept, old);
+  check(`deployed tab + this version: the treasure shelf (${afterOld} after the deployed tab saved) and the new clothes are all there after both save`,
+    ['shell', 'kite'].every(v => (owned.treasure || []).includes(v)) && (owned.shape || []).includes('suit'), owned);
+  check('deployed tab + this version\'s wardrobe: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
+  await O.ctx.close();
+  await N.ctx.close();
+}
+
 (async () => {
   let server = null;
   let browser = null;
@@ -663,6 +711,7 @@ async function firstRelease(browser, first) {
       deployedGuestUpdated: b => guestUpdated(b, deployed),
       deployedSignedInUpdated: b => signedInUpdated(b, deployed),
       deployedLogout: b => deployedLogout(b, deployed),
+      deployedWardrobe: b => deployedWardrobe(b, deployed),
     });
   }
   if (first) parts.firstRelease = b => firstRelease(b, first);
