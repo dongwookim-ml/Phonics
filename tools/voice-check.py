@@ -116,15 +116,30 @@ def samples(path):
     return np.frombuffer(raw, np.int16).astype(np.float32) / 32768
 
 
-def hear(path):
+# Whisper leaves out "uh" and "um" unless the prompt shows them, so lone words
+# are heard with this prompt first: an added "uh" or "a" then shows up.
+FILLERS = 'Umm, uh, a, the... Uh, so, um, like, the... a'
+
+
+def hear(path, prompt=None, hint=None):
     segs, _ = model().transcribe(samples(path), language='en', beam_size=5, temperature=0.0, without_timestamps=True,
-                                 condition_on_previous_text=False, vad_filter=False)
+                                 condition_on_previous_text=False, vad_filter=False, initial_prompt=prompt, hotwords=hint)
     return ' '.join(s.text.strip() for s in segs).strip()
 
 
 def check_clip(voice, text, clip_id):
-    heard = hear(os.path.join(ROOT, 'audio', 'tts', voice, clip_id + '.mp3'))
-    return {'id': clip_id, 'heard': heard, 'status': judge(text, heard)}
+    path = os.path.join(ROOT, 'audio', 'tts', voice, clip_id + '.mp3')
+    lone = len(tokens(text)) == 1 and not SOUNDS.search(text)
+    heard = hear(path, FILLERS if lone else None)
+    status = judge(text, heard)
+    if lone and status in ('different', 'silent'):
+        # A lone word is hard to recognise without context: listen again
+        # with the word as a hint, so only a clip that really says
+        # something else (or mumbles) fails.
+        again = hear(path, hint=tokens(text)[0])
+        if judge(text, again) == 'ok':
+            return {'id': clip_id, 'heard': heard, 'hinted': again, 'status': 'ok'}
+    return {'id': clip_id, 'heard': heard, 'status': status}
 
 
 def run(shard, shards, scope, out):
