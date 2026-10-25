@@ -6,11 +6,16 @@
 //    saving in turn: no reload, and every tablet's stars are kept;
 //  - a guest's stars join an account that already has some (with a backup
 //    and a note), someone else's synced save is replaced, unsent kept;
+//  - a guest who played the other edition joins: her level and the
+//    parent's settings stay, in both editions;
+//  - a setting and a tier the parent changes on one tablet stay when the
+//    other tablet's open tab saves next;
 //  - a newer save on the server goes into the game on boot, in place;
 //  - the deployed game (OLD_REF, default origin/main) next to this one: one
 //    tablet each on one account (both editions, both ways round), a guest
-//    tablet updated to this version then logging in, and a signed-in
-//    tablet updated to this version.
+//    tablet updated to this version then logging in, a signed-in tablet
+//    updated to this version, and answers the deployed game drops put back
+//    when this version signs out.
 // Run: node tools/check-sync.js  (needs the playwright package and Chromium,
 // git, and Python with fastapi and uvicorn; PYTHON picks the interpreter).
 // SYNC_SERVER_REF=origin/main plays against that version of server/app.py
@@ -135,6 +140,19 @@ const earn = (t, n, tag) => t.page.evaluate(([n, tag]) => {
 }, [n, tag]);
 // Lets a tablet send what it has (and merge what the server has).
 const settle = t => t.page.evaluate(async () => { save(); for (let i = 0; i < 3 && Account._dirty; i++) await Account._upload(); });
+// The parent panel, opened with the account's password: `use` taps in it.
+async function parentPanel(t, acct, use) {
+  await t.page.evaluate(() => document.getElementById('parent').click());
+  await t.page.fill('.parent-pw', acct.pw);
+  await t.page.click('.parent-go');
+  await t.page.waitForSelector('.parent-kinds');
+  await use(t.page);
+  await t.page.evaluate(() => document.querySelector('.parent-close').click());
+}
+const spellTier = (page, step) => page.click(`.tier-btn[data-kind="spell"][data-step="${step}"]`);
+// Her spelling tier and the two-syllable setting, live or in a save's edition.
+const parentView = t => t.page.evaluate(() => ({ spell: Quiz.skill('spell').t, two: !!(state.settings || {}).twoSyllables }));
+const parentSaved = e => ({ spell: ((e.skill || {}).spell || {}).t, two: !!(e.settings || {}).twoSyllables });
 const live = t => t.page.evaluate(() => ({ stars: state.stars, coins: state.coins, history: Object.keys(state.history).length, name: PLAYER.shown,
   start: !document.getElementById('start').classList.contains('hidden'), dirty: !!localStorage.getItem('pixeltown-dirty') }));
 
@@ -240,6 +258,67 @@ async function otherOwner(browser) {
   after = await live(t);
   check('another owner\'s unsent save is carried, not dropped', after.stars === 9 && (await serverSave(acct2)).save.stars === 9 && t.loads === loads, after);
   await t.ctx.close();
+}
+
+async function guestOtherEdition(browser) {
+  // The account has princess progress only, and the parent set spelling to
+  // tier 3 and two-syllable spelling there.
+  const acct = await newAccount();
+  const A = await tablet(browser);
+  await login(A, acct);
+  await A.page.evaluate(() => document.getElementById('start-btn').click());
+  await parentPanel(A, acct, async page => { await page.click('.set-two'); await spellTier(page, 1); await spellTier(page, 1); });
+  await earn(A, 2, 'a');
+  await settle(A);
+  await A.ctx.close();
+  // A guest plays the robot game on another tablet, then the parent signs in there.
+  const t = await tablet(browser, { edition: 'captain', seed: { 'pixeltown-guest': '1' } });
+  await t.page.evaluate(() => document.getElementById('start-btn').click());
+  await earn(t, 2, 'g');
+  await login(t, acct);
+  await sleep(1000);
+  await settle(t);
+  const after = await parentView(t);
+  const s = (await serverSave(acct)).save;
+  const saved = ['princess', 'captain'].map(ed => parentSaved(editionOf(s, ed)));
+  check('guest in the other edition → login: her level and the parent\'s settings stay, in both editions', [after].concat(saved).every(v => v.spell === 3 && v.two),
+    { live: after, server: saved });
+  check('guest in the other edition → login: no page errors', !A.errors.length && !t.errors.length, A.errors.concat(t.errors));
+  await t.ctx.close();
+}
+
+async function parentChanges(browser) {
+  // Two tablets in step: two-syllable spelling on, spelling at tier 3.
+  const acct = await newAccount();
+  const A = await tablet(browser);
+  await login(A, acct);
+  await A.page.evaluate(() => document.getElementById('start-btn').click());
+  await parentPanel(A, acct, async page => { await page.click('.set-two'); await spellTier(page, 1); await spellTier(page, 1); });
+  await settle(A);
+  const B = await tablet(browser);
+  await login(B, acct);
+  await B.page.evaluate(() => document.getElementById('start-btn').click());
+  // A reloads; the parent turns two syllables off and lowers spelling to 2.
+  await A.page.reload();
+  await A.page.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
+  await A.page.evaluate(() => document.getElementById('start-btn').click());
+  await parentPanel(A, acct, async page => { await page.click('.set-two'); await spellTier(page, -1); });
+  await settle(A);
+  // The child answers on B's open tab, on its old copy: one save.
+  const loads = B.loads;
+  await earn(B, 1, 'b');
+  await settle(B);
+  const s = (await serverSave(acct)).save;
+  const b = await parentView(B);
+  await A.page.reload();
+  await A.page.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
+  const a = await parentView(A);
+  const want = v => v.spell === 2 && !v.two;
+  check('parent changes on one tablet: the other tablet\'s next save keeps them', want(parentSaved(s)) && want(b) && want(a) && B.loads === loads,
+    { server: parentSaved(s), B: b, A: a });
+  check('parent changes on one tablet: no page errors', !A.errors.length && !B.errors.length, A.errors.concat(B.errors));
+  await A.ctx.close();
+  await B.ctx.close();
 }
 
 async function newerOnBoot(browser) {
@@ -369,6 +448,41 @@ async function signedInUpdated(browser, deployed) {
   await t.ctx.close();
 }
 
+async function deployedLogout(browser, deployed) {
+  // This version answers questions of a kind the deployed game doesn't know
+  // (blend, before M2), and the parent changes a setting and a tier here; a
+  // deployed tab on the same account and edition drops the answers from the
+  // server's copy when it saves, and puts back its older tier. This tablet
+  // then signs out while in step: its copy goes back up first.
+  const acct = await newAccount();
+  const N = await tablet(browser);
+  const O = await tablet(browser, { dir: deployed });
+  await login(N, acct);
+  await login(O, acct);
+  for (const t of [N, O]) await t.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
+  await parentPanel(N, acct, async page => { await page.click('.set-two'); await spellTier(page, 1); });
+  await N.page.evaluate(() => {
+    for (const w of ['sun', 'hat']) state.history[`blend:${w}`] = { kind: 'blend', tries: 1, right: 1, wrong: 0, last: Date.now() };
+    save();
+  });
+  await settle(N);
+  for (let i = 0; i < 2; i++) {
+    await earnOld(O, 'o');
+    await settle(O).catch(() => {});
+  }
+  const blends = save => Object.keys(editionOf(save, 'princess').history || {}).filter(k => k.startsWith('blend:')).length;
+  const before = blends((await serverSave(acct)).save);
+  await Promise.all([N.page.waitForNavigation({ timeout: 15000 }), N.page.evaluate(() => Account.logout())]).catch(() => {});
+  const s = (await serverSave(acct)).save;
+  const p = parentSaved(editionOf(s, 'princess'));
+  check('deployed tab drops answers it doesn\'t know: this version signing out puts them back', blends(s) === 2 && tagged(s, 'princess', 'o').answers === 2,
+    { before, after: blends(s), deployed: tagged(s, 'princess', 'o') });
+  check('deployed tab next to the parent\'s changes: they are kept', p.spell === 2 && p.two, p);
+  check('deployed tab + this version signing out: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
+  await O.ctx.close();
+  await N.ctx.close();
+}
+
 (async () => {
   let server = null;
   let browser = null;
@@ -384,13 +498,14 @@ async function signedInUpdated(browser, deployed) {
   try { deployed = deployedGame(); } catch (e) { check('the deployed game could be unpacked', false, e.message); }
   if (!deployed) check(`the deployed game (${OLD_REF}) is here`, !process.env.CI, `git has no ${OLD_REF}; fetch it (CI checks out with fetch-depth 0)`);
   // ONLY=guest node tools/check-sync.js runs the parts whose name has "guest".
-  const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, newerOnBoot };
+  const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, guestOtherEdition, parentChanges, newerOnBoot };
   if (deployed) {
     Object.assign(parts, {
       deployedPrincess: b => withDeployed(b, deployed, 'princess'),
       deployedCaptain: b => withDeployed(b, deployed, 'captain'),
       deployedGuestUpdated: b => guestUpdated(b, deployed),
       deployedSignedInUpdated: b => signedInUpdated(b, deployed),
+      deployedLogout: b => deployedLogout(b, deployed),
     });
   }
   try {
