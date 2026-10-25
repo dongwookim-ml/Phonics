@@ -1,117 +1,186 @@
 """Records every phrase in tools/tts-phrases.json with Amazon Polly.
 
 Runs in GitHub Actions (.github/workflows/polly.yml) with the AWS keys kept in
-the repository's secrets: change "mode" in tools/polly-run.json and push.
-It can also run anywhere with AWS keys in the environment:
+the repository's secrets: change tools/polly-run.json and push. It can also
+run anywhere with AWS keys in the environment (needs boto3, numpy, ffmpeg):
     node tools/tts-phrases.js
-    python tools/polly-build.py --mode all      # every phrase, for the game
-    python tools/polly-build.py --mode sample   # a few lines in every voice
+    python tools/polly-build.py --mode all        # every phrase, for the game
+    python tools/polly-build.py --mode fix        # record again what the checks failed
+    python tools/polly-build.py --mode normalise  # even out the voices' loudness
+    python tools/polly-build.py --mode sample     # a few lines in every voice
+    python tools/polly-build.py --mode voices     # which voices have which engines
 
-Writes audio/tts/<voice>/<id>.mp3 and audio/tts/index.js like tts-build.py,
-so the game finds the clips by the same voice names. Phrases name Kokoro
-voices (af_heart...), and VOICES below says which Polly voice says each.
-Clips already recorded are kept. Needs boto3 and ffmpeg.
+Writes audio/tts/<voice>/<id>.mp3 and audio/tts/index.js, so the game finds
+the clips by the same voice names. Phrases name Kokoro voices (af_heart...),
+and VOICES below says which Polly voice says each, all on the generative
+engine. A line the engine refuses fails and keeps the clip it had: it is
+never recorded on another engine.
 
-    python tools/polly-build.py --mode voices   # which voices have which engines
-    python tools/polly-build.py --mode fix      # record again the lone words that
-                                                # tools/voice-check.py heard wrong
+Every recording is high-passed at 70 Hz and trimmed at both ends; a lone
+b/d/g/j word loses a long hum before its burst; each voice gets one gain
+(tools/polly-gains.json, set by --mode normalise towards -20 LUFS) and a
+peak limiter. A lone word is said as a sentence ("Cat."). Pure letter
+sounds ("/m/") are cut from the narrator's own words (tools/letter-sounds.json,
+tools/clipaudio.py), and in a line like "M says mmm." the speaker says
+"M says" and the narrator's /m/ follows.
 
-tools/polly-clips.json says which engine recorded each clip (generative
-falls back to neural when a voice rejects the SSML), and
-tools/polly-variants.json which way of saying a lone word passed the check.
+tools/polly-clips.json says how each clip was made (engine, gain, variant,
+the word a sound was cut from), tools/polly-variants.json which way of
+saying a line passed the checks (tools/clip-check.py, tools/voice-check.py).
 """
 import argparse
 import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
-import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from html import escape
 
+import numpy as np
+
+import clipaudio as ca
+
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 OUT = os.path.join(ROOT, 'audio', 'tts')
 SAMPLES = os.path.join(ROOT, 'audio', 'polly-samples')
-TRIM = ('silenceremove=start_periods=1:start_threshold=-45dB,areverse,'
-        'silenceremove=start_periods=1:start_threshold=-45dB,areverse,apad=pad_dur=0.08')
+TOOLS = os.path.join(ROOT, 'tools')
 
-# Kokoro voice name in the game -> (Polly voice, engine). Generative sounds the
-# most natural; the child voices (Ivy, Justin, Kevin) and a few others only
-# come as neural.
+# Kokoro voice name in the game -> (Polly voice, engine). All generative, the
+# most natural engine. Characters that share a Polly voice are told apart
+# by a playback `lift` in js VOICES (only on chit-chat, never on quiz words).
 VOICES = {
     'af_heart':    ('Ruth', 'generative'),      # the narrator
     'af_bella':    ('Salli', 'generative'),     # flower girl, unicorns
     'af_jessica':  ('Danielle', 'generative'),
     'af_river':    ('Joanna', 'generative'),
     'af_nova':     ('Tiffany', 'generative'),
-    'af_aoede':    ('Kimberly', 'neural'),
+    'af_aoede':    ('Jasmine', 'generative'),
     'af_kore':     ('Aria', 'generative'),
-    'af_sarah':    ('Ivy', 'neural'),
-    'af_sky':      ('Ivy', 'neural'),           # the little girl
+    'af_sarah':    ('Tiffany', 'generative'),
+    'af_sky':      ('Tiffany', 'generative'),   # the little girl
     'af_nicole':   ('Olivia', 'generative'),
     'bf_alice':    ('Amy', 'generative'),       # the queen
-    'bf_emma':     ('Emma', 'neural'),
+    'bf_emma':     ('Amy', 'generative'),
     'bf_isabella': ('Niamh', 'generative'),     # granny
-    'bf_lily':     ('Kendra', 'neural'),        # the maid
+    'bf_lily':     ('Danielle', 'generative'),  # the maid
     'am_michael':  ('Matthew', 'generative'),   # the knight
     'am_eric':     ('Stephen', 'generative'),
-    'am_adam':     ('Gregory', 'neural'),
-    'am_liam':     ('Joey', 'neural'),
-    'am_puck':     ('Kevin', 'neural'),         # elf, race car
-    'am_fenrir':   ('Justin', 'neural'),        # the baby dragon
+    'am_adam':     ('Kenneth', 'generative'),
+    'am_liam':     ('Russell', 'generative'),   # the farmer
+    'am_puck':     ('Curtis', 'generative'),    # elf, race car
+    'am_fenrir':   ('Stephen', 'generative'),   # the baby dragon
     'am_santa':    ('Kenneth', 'generative'),
     'bm_fable':    ('Nate', 'generative'),      # the bard, the pirate
-    'bm_george':   ('Arthur', 'neural'),        # the king
+    'bm_george':   ('Brian', 'generative'),     # the king
     'bm_lewis':    ('Brian', 'generative'),     # the librarian
 }
+NARRATOR = 'af_heart'  # TTS_NARRATOR in js/data.js; the pure letter sounds are cut from its words
 
-# Letter names and letter sounds, said from phonemes so they come out right
-# inside a sentence ("the A house" is not "the a house").
+# What is done to a recording after Polly. It is part of every clip id, so
+# change it whenever the processing changes: every clip then gets a new URL
+# (browsers keep old ones cached) and is recorded again.
+RECIPE = 'r2 hp70 trim-45 bdgj-hum30 limit-2 word-as-sentence sounds-1'
+TARGET_LUFS = -20.0
+PAUSE = '600ms'  # between a carrier phrase and the line
+
+# Letter names, said from phonemes so they come out right inside a sentence
+# ("the A house" is not "the a house").
 LETTER_IPA = {
     'A': 'ˈeɪ', 'B': 'ˈbi', 'C': 'ˈsi', 'D': 'ˈdi', 'E': 'ˈi', 'F': 'ˈɛf', 'G': 'ˈdʒi', 'H': 'ˈeɪtʃ', 'I': 'ˈaɪ',
     'J': 'ˈdʒeɪ', 'K': 'ˈkeɪ', 'L': 'ˈɛl', 'M': 'ˈɛm', 'N': 'ˈɛn', 'O': 'ˈoʊ', 'P': 'ˈpi', 'Q': 'ˈkju', 'R': 'ˈɑɹ',
     'S': 'ˈɛs', 'T': 'ˈti', 'U': 'ˈju', 'V': 'ˈvi', 'W': 'ˈdʌbəlju', 'X': 'ˈɛks', 'Y': 'ˈwaɪ', 'Z': 'ˈzi',
 }
+# Letter sounds from phonemes: only a fallback for a "says" line whose pure
+# sound could not be cut (they come out with a vowel: "muh").
 SOUND_IPA = {
     'ah': 'ˈæ', 'eh': 'ˈɛ', 'ih': 'ˈɪ', 'aw': 'ˈɑ', 'uh': 'ˈʌ',
     'buh': 'ˈbʌ', 'kuh': 'ˈkʌ', 'duh': 'ˈdʌ', 'guh': 'ˈɡʌ', 'puh': 'ˈpʌ', 'tuh': 'ˈtʌ',
     'fff': 'ˈfə', 'hhh': 'ˈhə', 'mmm': 'ˈmə', 'nnn': 'ˈnə', 'sss': 'ˈsə', 'lll': 'ˈlə', 'rrr': 'ˈɹə', 'ks': 'ks',
+    'vvv': 'ˈvə', 'wuh': 'ˈwʌ', 'zzz': 'ˈzə', 'juh': 'ˈdʒʌ', 'yuh': 'ˈjʌ',
 }
 # A capital letter is a letter (not the word "A" or "I") on its own, before
 # "house", "workshop" or "says", or at the end after "with".
 LETTER = re.compile(r'^[A-Z](?=[.!?]?$)|(?<=\bwith )[A-Z](?=[.!?]?$)|\b[A-Z](?= (?:house|workshop|says)\b)')
 SOUND = re.compile(r'(?<= says )(' + '|'.join(SOUND_IPA) + r')\b')
 
+# Pure letter sounds: "/m/" is the sound alone; "M says mmm." gets it spliced in.
+SOUNDS = json.load(open(os.path.join(TOOLS, 'letter-sounds.json')))['sounds']
+SPELLING = {}
+for _key, _s in SOUNDS.items():
+    for _sp in _s['spell']:
+        SPELLING.setdefault(_sp, _key)
+PURE = re.compile(r'^/([a-z]{1,2})/$')
+SAYS = re.compile(r"(?<![\w'])([A-Z]) says (" + '|'.join(sorted(SPELLING, key=len, reverse=True)) + r')(?![\w])')
+
+
+def sound_key(letter, spelling):
+    """Which pure sound "<letter> says <spelling>" means: the letter's own
+    sound when it is spelled that way (C says kuh -> c), else the spelling's."""
+    k = letter.lower()
+    if k in SOUNDS and spelling in SOUNDS[k]['spell']:
+        return k
+    return SPELLING.get(spelling)
+
+
+def says_parts(text):
+    """A "says" line as [('text', ...), ('sound', key), ('text', ...)]."""
+    out, pos = [], 0
+    for m in SAYS.finditer(text):
+        out.append(('text', text[pos:m.start(2)].strip()))
+        out.append(('sound', sound_key(m.group(1), m.group(2))))
+        pos = m.end(2)
+    out.append(('text', re.sub(r'^[\s.,!?;:]+', '', text[pos:])))
+    return out
+
+
+def kind_of(p):
+    """plain, pure (a sound alone: "/m/") or says (a line with a sound in it)."""
+    t = p['text']
+    m = PURE.match(t)
+    if m and m.group(1) in SOUNDS:
+        return 'pure'
+    if SAYS.search(t):
+        return 'says'
+    return 'plain'
+
 
 def phoneme(word, ipa):
     return f'<phoneme alphabet="ipa" ph="{ipa}">{word}</phoneme>'
 
 
-def ssml(text, speed, rate=True, sentence=False):
-    """The phrase as SSML: letters and letter sounds from phonemes, at its speed."""
+def ssml(text, speed, rate=True, wrap=None, before=None, after=None, sounds=False):
+    """The phrase as SSML: letters from phonemes, at its speed. `wrap` puts it
+    in <s> or <p>; `before`/`after` is a carrier phrase said across a pause
+    (cut off afterwards); `sounds` says letter sounds from phonemes."""
     marks = {}
 
     def keep(m, ipa):
         key = f'\0{len(marks)}\0'
         marks[key] = phoneme(m.group(0), ipa)
         return key
-    t = SOUND.sub(lambda m: keep(m, SOUND_IPA[m.group(1)]), text)
+    t = SOUND.sub(lambda m: keep(m, SOUND_IPA[m.group(1)]), text) if sounds else text
     t = LETTER.sub(lambda m: keep(m, LETTER_IPA[m.group(0)]), t)
     t = escape(t, quote=False)
     for k, v in marks.items():
         t = t.replace(k, v)
-    if sentence:
-        t = f'<s>{t}</s>'
+    if wrap:
+        t = f'<{wrap}>{t}</{wrap}>'
+    if before:
+        t = f'{escape(before)}<break time="{PAUSE}"/>{t}'
+    if after:
+        t = f'{t}<break time="{PAUSE}"/>{escape(after)}'
     if rate:
         t = f'<prosody rate="{round(speed * 100)}%">{t}</prosody>'
     return f'<speak>{t}</speak>'
 
 
-VARIANTS_FILE = os.path.join(ROOT, 'tools', 'polly-variants.json')
-CLIPS_FILE = os.path.join(ROOT, 'tools', 'polly-clips.json')
+VARIANTS_FILE = os.path.join(TOOLS, 'polly-variants.json')
+CLIPS_FILE = os.path.join(TOOLS, 'polly-clips.json')
+GAINS_FILE = os.path.join(TOOLS, 'polly-gains.json')
 
 
 def read_json(path, default):
@@ -123,30 +192,86 @@ def read_json(path, default):
 
 # "voice|text" -> which way of saying it (see spoken()); 0 when not listed.
 VARIANTS = read_json(VARIANTS_FILE, {})
+# voice -> clip id -> how it was made: {engine, gain, variant, ...}
+ENGINES = read_json(CLIPS_FILE, {})
+# voice -> gain in dB, from --mode normalise
+GAINS = read_json(GAINS_FILE, {})
 LONE = re.compile(r'^[a-z]+[!.]?$')
-LAST_VARIANT = 3
+SENTENCES = re.compile(r'[.!?]\s+\S')
+LAST_VARIANT = 2
+
+PHRASES = {}  # (voice, text) -> phrase, filled by load_phrases()
 
 
 def variant(p):
     return VARIANTS.get(f"{p['voice']}|{p['text']}", 0)
 
 
-def clip_id(p, k=None):
+def base_key(p, k=None):
+    """Everything that decides what a clip sounds like, except its gain."""
     voice, engine = VOICES[p['voice']]
     k = variant(p) if k is None else k
-    base = f"polly|{voice}|{engine}|{p['text']}|{p['speed']}" + (f'|v{k}' if k else '')
-    return hashlib.sha1(base.encode()).hexdigest()[:10]
+    base = f"polly|{voice}|{engine}|{p['text']}|{p['speed']}|{RECIPE}" + (f'|v{k}' if k else '')
+    deps = sound_deps(p)
+    return base + ('|' + ','.join(deps) if deps else '')
+
+
+def content_id(p, k=None):
+    return hashlib.sha1(base_key(p, k).encode()).hexdigest()[:10]
+
+
+def clip_id(p, k=None, gain=None):
+    g = GAINS.get(p['voice'], 0.0) if gain is None else gain
+    return hashlib.sha1(f'{base_key(p, k)}|g{g:+.1f}'.encode()).hexdigest()[:10]
+
+
+def fallback_id(p, gain=None):
+    """A "says" line read with phoneme sounds, while its pure sound is missing."""
+    g = GAINS.get(p['voice'], 0.0) if gain is None else gain
+    return hashlib.sha1(f'{base_key(p)}|phonemes|g{g:+.1f}'.encode()).hexdigest()[:10]
+
+
+def path_of(voice, cid):
+    return os.path.join(OUT, voice, cid + '.mp3')
+
+
+def sound_deps(p):
+    """The clips a sound line is made from: for the narrator's "/m/", the
+    words it may be cut from; for any other "/m/" or "M says mmm.", the
+    narrator's "/m/". A new recording of those gives the line a new id."""
+    kind = kind_of(p)
+    if kind == 'plain':
+        return []
+    if kind == 'pure':
+        key = PURE.match(p['text']).group(1)
+        if p['voice'] != NARRATOR:
+            n = PHRASES.get((NARRATOR, p['text']))
+            return [content_id(n) if n else 'none']
+        out = [hashlib.sha1(json.dumps(SOUNDS[key], sort_keys=True).encode()).hexdigest()[:8]]
+        for word, _ in SOUNDS[key]['anchors']:
+            a = PHRASES.get((NARRATOR, word))
+            if a:
+                out.append(content_id(a))
+        return out
+    out = []
+    for what, key in says_parts(p['text']):
+        if what == 'sound':
+            n = PHRASES.get((NARRATOR, f'/{key}/'))
+            out.append(content_id(n) if n else 'none')
+    return out
 
 
 def spoken(text, k):
-    """A lone word said on its own can come out as "a cat" from the
-    generative engine. Variants: 1 says "Cat." as a finished sentence, 2 also
-    wraps it in <s>, 3 uses the neural engine. Returns (text, wrap_s, engine)."""
-    if k == 0 or not LONE.match(text):
-        return text, False, None
-    word = text.rstrip('!.')
-    said = word.capitalize() + (text[len(word):] or '.')
-    return (said, k == 2, 'neural' if k >= 3 else None)
+    """How a line is said on its k-th try: (text, wrap, carrier before it).
+    A lone word is said as a short sentence ("Cat."), which keeps its pitch
+    falling and stops the engine from adding a word. Try 1 wraps the line in
+    <s> (<p> for several sentences); try 2 says it after "Listen." and a
+    pause, which is cut off."""
+    if LONE.match(text):
+        word = text.rstrip('!.')
+        text = word.capitalize() + (text[len(word):] or '.')
+    wrap = ('p' if SENTENCES.search(text) else 's') if k == 1 else None
+    return text, wrap, ('Listen.' if k == 2 else None)
 
 
 polly = None
@@ -163,50 +288,172 @@ def client():
     return polly
 
 
-def synth(voice, engine, text, speed, path, k=0):
-    """Records one line to an mp3 and returns the engine that recorded it.
-    Falls back to plain speed when an engine doesn't take <prosody rate>, and
-    to the neural engine when a voice rejects the SSML on its own engine.
-    `k` is the way a lone word is said (see spoken())."""
+class Refused(Exception):
+    """A line that can't be made this way; trying again won't help."""
+
+
+REFUSED = ('InvalidSsmlException', 'EngineNotSupportedException', 'ValidationException',
+           'SsmlMarksNotSupportedForTextTypeException', 'TextLengthExceededException')
+
+
+def request(voice, engine, make_ssml):
+    """Polly's mp3 for a line on `engine`, with its speed or, if the engine
+    won't take <prosody rate>, without. Never on another engine."""
     from botocore.exceptions import ClientError
-    said, sentence, forced = spoken(text, k)
-    engine = forced or engine
-    tries = [(engine, True), (engine, False)]
-    if engine != 'neural':
-        tries.append(('neural', True))
     err = None
-    for eng, rate in tries:
+    for rate in (True, False):
         try:
-            r = client().synthesize_speech(Text=ssml(said, speed, rate, sentence), TextType='ssml', VoiceId=voice,
-                                           Engine=eng, OutputFormat='mp3', SampleRate='24000')
-            break
+            r = client().synthesize_speech(Text=make_ssml(rate), TextType='ssml', VoiceId=voice, Engine=engine,
+                                           OutputFormat='mp3', SampleRate='24000')
+            return r['AudioStream'].read(), engine if rate else f'{engine} (no rate)'
         except ClientError as e:
-            err = e
-            if e.response['Error']['Code'] not in ('InvalidSsmlException', 'EngineNotSupportedException',
-                                                   'ValidationException', 'SsmlMarksNotSupportedForTextTypeException'):
+            if e.response['Error']['Code'] not in REFUSED:
                 raise
-    else:
-        raise err
-    with tempfile.NamedTemporaryFile(suffix='.mp3') as raw:
-        raw.write(r['AudioStream'].read())
-        raw.flush()
-        # Written beside the clip and moved in place, so a failed run never
-        # leaves half a clip that looks recorded.
-        subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', raw.name, '-af', TRIM,
-                        '-ac', '1', '-ar', '24000', '-b:a', '48k', '-f', 'mp3', path + '.part'], check=True)
-    os.replace(path + '.part', path)
-    return eng if rate else f'{eng} (no rate)'
+            err = e
+    raise Refused(f'{engine} refused it: {err}')
 
 
-def synth_retrying(*args, tries=5):
-    """synth, tried again after a dropped connection or a timeout."""
+def speak(slot, text, speed, k=0, after=None, sounds=False):
+    """One recording, cleaned up (no gain yet): (samples, notes)."""
+    voice, engine = VOICES[slot]
+    said, wrap, before = spoken(text, k)
+    audio, used = request(voice, engine, lambda rate: ssml(said, speed, rate, wrap, before, after, sounds))
+    x = ca.decode(audio)
+    lone = bool(LONE.match(text))
+    try:
+        y, notes = ca.clean(x, lone_bdgj=lone and text[0] in 'bdgj',
+                            carrier='after' if before else 'before' if after else None)
+    except ValueError as e:
+        raise Refused(str(e))
+    if len(y) < 0.05 * ca.SR or ca.active_db(y) < -50:
+        raise Refused('nothing audible')
+    return y, dict(notes, engine=used)
+
+
+def silence(sec):
+    return np.zeros(int(sec * ca.SR))
+
+
+def make_plain(p, k, path, gain):
+    if re.fullmatch(r'/[a-z]+/', p['text']):
+        # Polly would read the slashes; the game says the sound's spelling instead.
+        raise Refused('not a sound in tools/letter-sounds.json')
+    y, rec = speak(p['voice'], p['text'], p['speed'], k)
+    ca.encode(y, path, gain)
+    return dict(rec, gain=gain, variant=k)
+
+
+def make_pure(p, k, path, gain):
+    """"/m/": the narrator's pure sound, cut from its words (any other voice
+    that lists it gets a copy of the narrator's)."""
+    key = PURE.match(p['text']).group(1)
+    if p['voice'] != NARRATOR:
+        n = PHRASES.get((NARRATOR, p['text']))
+        src = n and path_of(NARRATOR, clip_id(n))
+        if not src or not os.path.exists(src):
+            raise Refused('the narrator has no clip of it')
+        shutil.copyfile(src, path + '.part')
+        os.replace(path + '.part', path)
+        return {'engine': 'cut', 'from': NARRATOR, 'gain': gain}
+    spec = SOUNDS[key]
+    anchors = []
+    for word, where in spec['anchors']:
+        a = PHRASES.get((NARRATOR, word))
+        if a and os.path.exists(path_of(NARRATOR, clip_id(a))):
+            anchors.append((word, where, ca.decode(path_of(NARRATOR, clip_id(a)))))
+    y, info = ca.best_cut(spec['kind'], anchors)
+    if y is None:
+        raise Refused('no clean cut: ' + '; '.join(f"{t['word']}: {t['problem']}" for t in info['tried'])
+                      if info['tried'] else 'none of its words is recorded')
+    # The words already have the narrator's gain.
+    ca.encode(y, path, 0.0, pad=0.05)
+    return {'engine': 'cut', 'gain': gain, 'anchor': info['anchor'], 'where': info['where'], 'ms': info['ms'],
+            'source': info['source'], 'tried': [t['word'] for t in info['tried']]}
+
+
+def narrator_sound(key):
+    """The narrator's "/key/" (samples) and the level of the word it was cut
+    from, or None."""
+    n = PHRASES.get((NARRATOR, f'/{key}/'))
+    cid = n and clip_id(n)
+    if not cid or not os.path.exists(path_of(NARRATOR, cid)):
+        return None
+    y = ca.edge_trim(ca.decode(path_of(NARRATOR, cid), highpass=False))
+    rec = ENGINES.get(NARRATOR, {}).get(cid)
+    a = isinstance(rec, dict) and PHRASES.get((NARRATOR, rec.get('anchor')))
+    ref = ca.active_db(ca.decode(path_of(NARRATOR, clip_id(a)), highpass=False)) \
+        if a and os.path.exists(path_of(NARRATOR, clip_id(a))) else None
+    return y, ref
+
+
+def make_says(p, k, path, gain):
+    """"This is the M house. M says mmm.": the speaker says "This is the M
+    house. M says" (recorded with a word after a pause, so it doesn't sound
+    finished, then cut there), then the narrator's pure /m/ follows, as loud
+    next to this voice as it is next to the narrator's own word."""
+    parts = says_parts(p['text'])
+    sounds = {key: narrator_sound(key) for what, key in parts if what == 'sound'}
+    if not all(sounds.values()):
+        raise Refused('missing pure sound ' + ', '.join(f'/{k}/' for k, s in sounds.items() if not s))
+    out, engines, level = [], set(), None
+    for i, (what, val) in enumerate(parts):
+        if what == 'text':
+            if not re.search(r'[A-Za-z0-9]', val):
+                continue
+            nxt = parts[i + 1][1] if i + 1 < len(parts) else None
+            y = None
+            if nxt:
+                try:
+                    y, rec = speak(p['voice'], val, p['speed'], k, after=SOUNDS[nxt]['anchors'][0][0] + '.')
+                except Refused:
+                    y = None
+            if y is None:
+                y, rec = speak(p['voice'], val, p['speed'], k)
+            y = y * 10 ** (gain / 20)
+            engines.add(rec['engine'])
+            level = ca.active_db(y)
+            if out:
+                out.append(silence(0.35))
+            out.append(y)
+        else:
+            y, ref = sounds[val]
+            if level is not None and ref is not None:
+                y = y * 10 ** ((level - ref) / 20)
+            out.append(silence(0.2 if out else 0.0))
+            out.append(y)
+    ca.encode(np.concatenate(out), path, 0.0)
+    return {'engine': ' + '.join(sorted(engines)) or 'cut', 'gain': gain, 'variant': k,
+            'sounds': [v for w, v in parts if w == 'sound']}
+
+
+def make_fallback(p, path, gain):
+    """A "says" line whose pure sound is missing, read with phoneme sounds."""
+    y, rec = speak(p['voice'], p['text'], p['speed'], 0, sounds=True)
+    ca.encode(y, path, gain)
+    return dict(rec, gain=gain, fallback='phoneme sounds')
+
+
+def make(p, k, path):
+    kind = kind_of(p)
+    gain = GAINS.get(p['voice'], 0.0)
+    if kind == 'pure':
+        return make_pure(p, k, path, gain)
+    if kind == 'says':
+        return make_says(p, k, path, gain)
+    return make_plain(p, k, path, gain)
+
+
+def make_retrying(p, k, path, tries=5):
+    """make(), tried again after a dropped connection or a timeout."""
     for i in range(tries):
         try:
-            return synth(*args)
+            return make(p, k, path)
+        except Refused:
+            raise
         except Exception as e:  # botocore raises several kinds for network trouble
             if i == tries - 1:
                 raise
-            print(f'  retry {args[2][:40]!r}: {type(e).__name__}', flush=True)
+            print(f"  retry {p['text'][:40]!r}: {type(e).__name__}", flush=True)
             time.sleep(2 ** i)
 
 
@@ -219,17 +466,29 @@ def old_index():
         return {}
 
 
+def deployed_index():
+    """The index of the build that is live (DEPLOYED_REF, default origin/main):
+    tabs opened before the next deploy still ask for its clips. None if it
+    can't be read."""
+    ref = os.environ.get('DEPLOYED_REF', 'origin/main')
+    try:
+        src = subprocess.run(['git', 'show', f'{ref}:audio/tts/index.js'], cwd=ROOT, capture_output=True,
+                             text=True, check=True).stdout
+        return json.loads(src[src.index('{'):src.rindex('}') + 1])
+    except (OSError, subprocess.CalledProcessError, ValueError):
+        return None
+
+
 def load_phrases():
-    phrases = json.load(open(os.path.join(ROOT, 'tools', 'tts-phrases.json')))
+    phrases = json.load(open(os.path.join(TOOLS, 'tts-phrases.json')))
     missing = sorted({p['voice'] for p in phrases} - set(VOICES))
     if missing:
         sys.exit(f'No Polly voice for {missing}: add them to VOICES')
     for v in {p['voice'] for p in phrases}:
         os.makedirs(os.path.join(OUT, v), exist_ok=True)
+    PHRASES.clear()
+    PHRASES.update({(p['voice'], p['text']): p for p in phrases})
     return phrases
-
-
-ENGINES = read_json(CLIPS_FILE, {})  # voice -> clip id -> engine that recorded it
 
 
 def record(todo, k_of=variant):
@@ -237,13 +496,20 @@ def record(todo, k_of=variant):
     failed = []
 
     def one(p):
-        voice, engine = VOICES[p['voice']]
         k = k_of(p)
         cid = clip_id(p, k)
         try:
-            used = synth_retrying(voice, engine, p['text'], p['speed'], os.path.join(OUT, p['voice'], cid + '.mp3'), k)
-            ENGINES.setdefault(p['voice'], {})[cid] = used
+            rec = make_retrying(p, k, path_of(p['voice'], cid))
+            ENGINES.setdefault(p['voice'], {})[cid] = rec
         except Exception as e:
+            if kind_of(p) == 'says' and k == 0 and isinstance(e, Refused) and 'missing pure sound' in str(e):
+                fid = fallback_id(p)
+                if not os.path.exists(path_of(p['voice'], fid)):
+                    try:
+                        ENGINES.setdefault(p['voice'], {})[fid] = make_fallback(p, path_of(p['voice'], fid),
+                                                                                GAINS.get(p['voice'], 0.0))
+                    except Exception as e2:
+                        e = e2
             failed.append(p)
             print(f'  failed {p["voice"]} {p["text"]!r}: {e}', flush=True)
     with ThreadPoolExecutor(6) as pool:
@@ -253,96 +519,263 @@ def record(todo, k_of=variant):
     return failed
 
 
+def stages(phrases):
+    """Phrases in the order they can be made: words first, then the
+    narrator's pure sounds cut from them, then everything that uses those."""
+    out = [[], [], [], []]
+    for p in phrases:
+        k = kind_of(p)
+        out[0 if k == 'plain' else 3 if k == 'says' else 1 if p['voice'] == NARRATOR else 2].append(p)
+    return out
+
+
+def record_missing(phrases):
+    failed = []
+    for todo in stages(phrases):
+        todo = [p for p in todo if not os.path.exists(path_of(p['voice'], clip_id(p)))]
+        if todo:
+            failed += record(todo)
+    return failed
+
+
+def write_lines(d, path):
+    """A {key: {key: value}} JSON file with one inner entry per line, so
+    merges of it don't fight over one long line."""
+    keys = sorted(d)
+    with open(path, 'w') as f:
+        f.write('{\n')
+        for n, v in enumerate(keys):
+            inner = sorted(d[v].items())
+            body = ',\n'.join(f'{json.dumps(k, ensure_ascii=False)}: '
+                              f'{json.dumps(x, ensure_ascii=False, sort_keys=True)}' for k, x in inner)
+            f.write(f'{json.dumps(v)}: {{\n{body}\n}}' + (',' if n < len(keys) - 1 else '') + '\n')
+        f.write('}\n')
+
+
+def index_hash():
+    """Which index a report was made for (the first 12 hex of its sha1)."""
+    try:
+        return hashlib.sha1(open(os.path.join(OUT, 'index.js'), 'rb').read()).hexdigest()[:12]
+    except OSError:
+        return ''
+
+
 def finish(phrases):
     """Writes the index (every line that has a clip: the new one, or for a line
-    that failed, the one it had before), drops clips nothing uses, and saves
-    which engine and variant made each clip."""
+    that failed, the one it had before), deletes clips that neither this
+    index nor the deployed one uses, and saves how each clip was made."""
     before = old_index()
     index = {}
     for p in phrases:
         ids = [clip_id(p), before.get(p['voice'], {}).get(p['text'])]
-        have = [i for i in ids if i and os.path.exists(os.path.join(OUT, p['voice'], i + '.mp3'))]
+        if kind_of(p) == 'says':
+            ids.insert(1, fallback_id(p))
+        have = [i for i in ids if i and os.path.exists(path_of(p['voice'], i))]
         if have:
             index.setdefault(p['voice'], {})[p['text']] = have[0]
-    # Drop recordings that no phrase uses any more (old Kokoro clips too).
     keep = {(v, i) for v, m in index.items() for i in m.values()}
-    for v in os.listdir(OUT):
-        d = os.path.join(OUT, v)
-        if os.path.isdir(d):
-            for f in os.listdir(d):
-                if (v, f[:-4]) not in keep:
-                    os.remove(os.path.join(d, f))
+    deployed = deployed_index()
+    if deployed is None:
+        print('the deployed index (origin/main) could not be read: no clip is deleted', flush=True)
+    else:
+        keep |= {(v, i) for v, m in deployed.items() for i in m.values()}
+        for v in os.listdir(OUT):
+            d = os.path.join(OUT, v)
+            if os.path.isdir(d):
+                for f in os.listdir(d):
+                    if f.endswith('.mp3') and (v, f[:-4]) not in keep:
+                        os.remove(os.path.join(d, f))
     with open(os.path.join(OUT, 'index.js'), 'w') as f:
-        f.write('// Generated by tools/polly-build.py: voice -> sentence -> recording id.\n')
-        f.write('const TTS_INDEX = ' + json.dumps(index, ensure_ascii=False, separators=(',', ':')) + ';\n')
-    engines = {v: {i: ENGINES[v][i] for i in sorted(m.values()) if i in ENGINES.get(v, {})} for v, m in index.items()}
-    json.dump(engines, open(CLIPS_FILE, 'w'), indent=0, sort_keys=True)
+        f.write('// Generated by tools/polly-build.py: voice -> line -> recording id, one per line.\n')
+        f.write('const TTS_INDEX = ' + json.dumps(index, ensure_ascii=False, indent=0, sort_keys=True) + ';\n')
+    clips = {v: {i: ENGINES[v][i] for i in set(m.values()) if i in ENGINES.get(v, {})} for v, m in index.items()}
+    write_lines(clips, CLIPS_FILE)
     live = {f"{p['voice']}|{p['text']}" for p in phrases}
-    json.dump({k: v for k, v in VARIANTS.items() if k in live and v}, open(VARIANTS_FILE, 'w'), indent=0, sort_keys=True)
+    json.dump({k: v for k, v in VARIANTS.items() if k in live and v}, open(VARIANTS_FILE, 'w'), indent=0,
+              sort_keys=True)
+    write_sounds(index)
     counts = {}
-    for m in engines.values():
-        for e in m.values():
+    for m in clips.values():
+        for r in m.values():
+            e = r.get('engine') if isinstance(r, dict) else r
             counts[e] = counts.get(e, 0) + 1
-    print('clips by engine (of those recorded since tracking began):', counts, flush=True)
+    untracked = sum(len(set(m.values())) for m in index.values()) - sum(len(m) for m in clips.values())
+    print('clips by engine:', counts, f'(and {untracked} from before tracking)' if untracked else '', flush=True)
+
+
+def write_sounds(index):
+    """audio/tts/sounds.js: the narrator's pure sounds and the words they were
+    cut from, for tools/letter-sounds.html."""
+    lines = index.get(NARRATOR, {})
+    out = {}
+    for key, spec in SOUNDS.items():
+        cid = lines.get(f'/{key}/')
+        rec = ENGINES.get(NARRATOR, {}).get(cid) if cid else None
+        if not isinstance(rec, dict):
+            continue
+        word = rec.get('anchor')
+        out[key] = {'clip': cid, 'kind': spec['kind'], 'anchor': word, 'anchorClip': lines.get(word),
+                    'where': rec.get('where'), 'ms': rec.get('ms')}
+    with open(os.path.join(OUT, 'sounds.js'), 'w') as f:
+        f.write('// Generated by tools/polly-build.py: the pure letter sounds (narrator) and the words they were cut '
+                'from.\n')
+        f.write('const TTS_SOUNDS = ' + json.dumps(out, indent=0, sort_keys=True) + ';\n')
 
 
 def record_all():
     phrases = load_phrases()
-    todo = [p for p in phrases if not os.path.exists(os.path.join(OUT, p['voice'], clip_id(p) + '.mp3'))]
-    chars = sum(len(p['text']) for p in todo)
+    todo = [p for p in phrases if not os.path.exists(path_of(p['voice'], clip_id(p)))]
+    chars = sum(len(p['text']) for p in todo if kind_of(p) != 'pure')
     print(f'{len(phrases)} phrases, {len(todo)} to record ({chars} characters)', flush=True)
-    failed = record(todo)
+    failed = record_missing(phrases)
     finish(phrases)
     print(f'done, {len(failed)} failed' if failed else 'done', flush=True)
 
 
-def fix():
-    """Records again the lone words tools/voice-check.py heard wrong (an added
-    "a" or "the", or a different word), trying each way of saying them until
-    the recogniser hears the word alone. A word that never passes keeps the
-    clip it had."""
+def load_tool(name):
     import importlib.util
-    spec = importlib.util.spec_from_file_location('voice_check', os.path.join(ROOT, 'tools', 'voice-check.py'))
-    vc = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(vc)
+    spec = importlib.util.spec_from_file_location(name.replace('-', '_'), os.path.join(TOOLS, name + '.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def fix():
+    """Records again the lines that fail the checks: tools/clip-check.py's
+    acoustic rules, and tools/voice-check.py where the recogniser's finding is
+    backed by the acoustics. Each is tried the next way of saying it
+    (spoken()), on the same engine, until one passes both; a line that never
+    passes keeps the clip it had and is marked unfixable."""
+    cc, vc = load_tool('clip-check'), load_tool('voice-check')
     phrases = load_phrases()
+    idx = old_index()
+    crep, vrep = cc.load_report(), vc.load_report()
+    whisper = vc.available()
+    if whisper and vrep.get('calibration'):
+        vc.prompt = vrep['calibration'].get('prompt')
+
+    def current(key):
+        v, t = key.split('|', 1)
+        return idx.get(v, {}).get(t)
+
+    bad = []
+    for key, p in ((f"{p['voice']}|{p['text']}", p) for p in phrases):
+        cid = current(key)
+        if kind_of(p) != 'plain' or variant(p) >= LAST_VARIANT:
+            continue
+        if not cid:
+            bad.append(key)  # no clip at all (refused, or nothing audible): try the other ways
+            continue
+        c, w = crep['clips'].get(key, {}), vrep['clips'].get(key, {})
+        if c.get('unfixable') or w.get('unfixable'):
+            continue
+        if (c.get('id') == cid and c.get('fails')) or (w.get('id') == cid and w.get('status') in vc.FAILS):
+            bad.append(key)
     by_key = {f"{p['voice']}|{p['text']}": p for p in phrases}
-    rep = vc.load_report()
-    bad = [key for key, c in rep['clips'].items()
-           if c['status'] in ('article', 'extra', 'different', 'silent') and not c.get('unfixable')
-           and key in by_key and LONE.match(by_key[key]['text'])]
-    print(f'{len(bad)} lone words to record again', flush=True)
+    print(f'{len(bad)} lines to record again' + ('' if whisper else ' (no recogniser here: acoustic checks only)'),
+          flush=True)
+    refs = cc.references(crep)
     tried = {key: variant(by_key[key]) for key in bad}
-    for _ in range(LAST_VARIANT):
+    while bad:
         todo = [key for key in bad if tried[key] < LAST_VARIANT]
         if not todo:
             break
         for key in todo:
             tried[key] += 1
         record([by_key[key] for key in todo], lambda p: tried[f"{p['voice']}|{p['text']}"])
-        bad = []
+        bad = [key for key in bad if key not in todo]
         for key in todo:
             p = by_key[key]
             cid = clip_id(p, tried[key])
-            path = os.path.join(OUT, p['voice'], cid + '.mp3')
+            path = path_of(p['voice'], cid)
             if not os.path.exists(path):
-                bad.append(key)  # not recorded (network): try the next way
+                bad.append(key)  # not recorded (refused or network): try the next way
                 continue
-            got = vc.check_clip(p['voice'], p['text'], cid)
-            print(f"  v{tried[key]} {key}: {got['heard']!r} {got['status']}", flush=True)
-            if got['status'] == 'ok':
-                VARIANTS[key] = tried[key]
-                rep['clips'][key] = got
-            else:
+            m = cc.measure(path, p['text'])
+            fails = cc.judge(p['voice'], p['text'], m, refs)
+            heard = None
+            if not fails and whisper:
+                heard = vc.check_clip(p['voice'], p['text'], cid, acoustic=dict(m, fails=fails))
+                if heard['status'] in vc.FAILS:
+                    fails = [f"heard {heard['heard']!r} ({heard['status']})"]
+            print(f"  v{tried[key]} {key}: {'; '.join(fails) or 'ok'}", flush=True)
+            if fails:
                 os.remove(path)
                 bad.append(key)
-    # Nothing passed: they keep the clip they had and aren't tried again.
+            else:
+                VARIANTS[key] = tried[key]
+                crep['clips'][key] = dict(m, id=cid, fails=[])
+                if heard:
+                    vrep['clips'][key] = heard
     for key in bad:
-        rep['clips'][key]['unfixable'] = True
+        crep['clips'].setdefault(key, {})['unfixable'] = True
+        print(f'  unfixable, keeps its clip: {key}', flush=True)
+    # Sounds and "says" lines made from a clip that changed.
+    record_missing(phrases)
     finish(phrases)
-    rep['summary'] = vc.summary(rep['clips'])
-    vc.write_report(rep)
-    print('report:', rep['summary'], flush=True)
+    cc.write_report(crep)
+    vc.write_report(vrep)
+    print(f'fixed {len(tried) - len(bad)} of {len(tried)}', flush=True)
+
+
+def normalise():
+    """Evens out the voices: measures each voice's loudness over all its clips
+    (EBU R128) and, when it is more than 1 LU off TARGET_LUFS, changes its
+    gain by the difference and re-makes its clips at the new gain, under new
+    ids so browsers fetch them again. Later recordings get the same gain
+    (tools/polly-gains.json), so running it again changes nothing."""
+    phrases = load_phrases()
+    idx = old_index()
+    renamed = {}
+    by_voice = {}
+    for p in phrases:
+        if p['text'] in idx.get(p['voice'], {}):
+            by_voice.setdefault(p['voice'], []).append(p)
+
+    def applied(v, cid):
+        r = ENGINES.get(v, {}).get(cid)
+        return r.get('gain', 0.0) if isinstance(r, dict) else 0.0
+
+    for v in sorted(by_voice):
+        lines = [(p, idx[v][p['text']]) for p in by_voice[v]]
+        lines = [(p, cid) for p, cid in lines if os.path.exists(path_of(v, cid))]
+        with ThreadPoolExecutor(4) as pool:
+            clips = list(pool.map(lambda pc: ca.decode(path_of(v, pc[1]), highpass=False).astype(np.float32), lines))
+        level, _ = ca.loudness(np.concatenate(clips))
+        old = GAINS.get(v, 0.0)
+        new = round(old + TARGET_LUFS - level, 1)
+        if abs(TARGET_LUFS - level) < 1.0:
+            print(f'{v}: {level:.1f} LUFS, gain {old:+.1f} dB stays', flush=True)
+            continue
+        print(f'{v}: {level:.1f} LUFS, gain {old:+.1f} -> {new:+.1f} dB', flush=True)
+        GAINS[v] = new
+
+        def redo(pc_x):
+            (p, cid), x = pc_x
+            if cid != clip_id(p, gain=old) and not (kind_of(p) == 'says' and cid == fallback_id(p, old)):
+                return None  # a clip kept from before: it is recorded again anyway
+            nid = clip_id(p) if cid == clip_id(p, gain=old) else fallback_id(p)
+            ca.encode(x * 10 ** ((new - applied(v, cid)) / 20), path_of(v, nid), 0.0, pad=0)
+            return cid, nid
+        with ThreadPoolExecutor(4) as pool:
+            for r in pool.map(redo, zip(lines, clips)):
+                if r:
+                    cid, nid = r
+                    rec = ENGINES.get(v, {}).get(cid)
+                    ENGINES.setdefault(v, {})[nid] = dict(rec if isinstance(rec, dict) else {}, gain=new)
+                    renamed[(v, cid)] = nid
+    json.dump(GAINS, open(GAINS_FILE, 'w'), indent=0, sort_keys=True)
+    finish(phrases)
+    # The checks' findings carry over to the renamed clips.
+    cc, vc = load_tool('clip-check'), load_tool('voice-check')
+    for mod in (cc, vc):
+        rep = mod.load_report()
+        for key, c in rep['clips'].items():
+            nid = renamed.get((key.split('|', 1)[0], c.get('id')))
+            if nid:
+                c['id'] = nid
+        mod.write_report(rep)
+    print(f'{len(renamed)} clips at a new gain', flush=True)
 
 
 def list_voices():
@@ -362,58 +795,58 @@ def list_voices():
         if not token:
             break
     out.sort(key=lambda v: (v['lang'], v['id']))
-    json.dump(out, open(os.path.join(ROOT, 'tools', 'polly-voices.json'), 'w'), indent=1)
+    json.dump(out, open(os.path.join(TOOLS, 'polly-voices.json'), 'w'), indent=1)
     for v in out:
         print(v['lang'], v['id'], v['gender'], ','.join(v['engines']), flush=True)
 
 
-# A few lines in every English voice and engine, to choose voices by ear.
+# A few lines in every generative English voice, to choose voices by ear.
 SAMPLE_LINES = [
     ('Good morning, Princess Yuna! My bread just came out of the oven.', 0.95),
-    ('This is the C house. C says kuh. Which one starts with C?', 0.95),
-    ('This is the A house. A says ah. Which picture starts with A?', 0.95),
-    ('M says mmm. S says sss. F says fff.', 0.9),
+    ('This is the C house. C says', 0.95),
+    ('Cat.', 0.85),
+    ('Which picture starts with A?', 0.95),
 ]
-SAMPLE_VOICES = {
-    'generative': ['Ruth', 'Joanna', 'Danielle', 'Salli', 'Tiffany', 'Matthew', 'Stephen', 'Nate', 'Kenneth',
-                   'Amy', 'Brian', 'Olivia', 'Niamh', 'Aria', 'Ayanda', 'Kajal', 'Jasmine'],
-    'neural': ['Ivy', 'Justin', 'Kevin', 'Joanna', 'Kendra', 'Kimberly', 'Salli', 'Ruth', 'Joey', 'Matthew',
-               'Gregory', 'Stephen', 'Amy', 'Emma', 'Brian', 'Arthur'],
-}
+SAMPLE_VOICES = ['Ruth', 'Joanna', 'Danielle', 'Salli', 'Tiffany', 'Matthew', 'Stephen', 'Nate', 'Kenneth', 'Amy',
+                 'Brian', 'Olivia', 'Niamh', 'Aria', 'Ayanda', 'Kajal', 'Jasmine', 'Russell', 'Curtis', 'Arjun',
+                 'Kiara']
 
 
 def record_samples():
     os.makedirs(SAMPLES, exist_ok=True)
-    jobs = [(engine, voice, i, text, speed) for engine, voices in SAMPLE_VOICES.items() for voice in voices
-            for i, (text, speed) in enumerate(SAMPLE_LINES, 1)]
+    jobs = [(voice, i, text, speed) for voice in SAMPLE_VOICES for i, (text, speed) in enumerate(SAMPLE_LINES, 1)]
     made = []
 
     def one(job):
-        engine, voice, i, text, speed = job
-        name = f'{engine}-{voice}-{i}.mp3'
+        voice, i, text, speed = job
+        name = f'generative-{voice}-{i}.mp3'
         try:
-            synth_retrying(voice, engine, text, speed, os.path.join(SAMPLES, name))
-            made.append({'engine': engine, 'voice': voice, 'line': i, 'text': text, 'file': name})
+            audio, used = request(voice, 'generative', lambda rate: ssml(text, speed, rate))
+            y, _ = ca.clean(ca.decode(audio))
+            ca.encode(y, os.path.join(SAMPLES, name))
+            made.append({'engine': used, 'voice': voice, 'line': i, 'text': text, 'file': name})
         except Exception as e:  # one voice failing shouldn't stop the rest
             print(f'{name}: {e}', flush=True)
     with ThreadPoolExecutor(6) as pool:
         list(pool.map(one, jobs))
-    made.sort(key=lambda m: (m['engine'], m['voice'], m['line']))
+    made.sort(key=lambda m: (m['voice'], m['line']))
     json.dump(made, open(os.path.join(SAMPLES, 'samples.json'), 'w'), ensure_ascii=False, indent=1)
     print(f'{len(made)}/{len(jobs)} samples', flush=True)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--mode', default='', help='all, fix, voices or sample (default: tools/polly-run.json)')
+    ap.add_argument('--mode', default='', help='all, fix, normalise, voices or sample (default: tools/polly-run.json)')
     args = ap.parse_args()
-    mode = args.mode or json.load(open(os.path.join(ROOT, 'tools', 'polly-run.json')))['mode']
+    mode = args.mode or json.load(open(os.path.join(TOOLS, 'polly-run.json')))['mode']
     if mode == 'sample':
         record_samples()
     elif mode == 'all':
         record_all()
     elif mode == 'fix':
         fix()
+    elif mode == 'normalise':
+        normalise()
     elif mode == 'voices':
         list_voices()
     else:
