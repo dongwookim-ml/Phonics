@@ -54,9 +54,7 @@ async function game(browser, { seed, user, server, edition, days, start = true }
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/^https?:/, r => (server ? server(r) : r.abort()));
   await page.addInitScript(([seed, user, fake]) => {
-    // Seeded once per context: a flag in localStorage, which a reload keeps
-    // (sessionStorage for a file:// page sometimes doesn't, and the seed would
-    // then overwrite the save the reload is meant to keep).
+    // Seeded once per context (a flag in localStorage).
     if (localStorage.getItem('test-seeded')) return;
     localStorage.setItem('test-seeded', '1');
     if (user) {
@@ -256,6 +254,9 @@ async function quests(browser, edition) {
     window.cardOpen = () => !document.getElementById('quests').classList.contains('hidden');
   });
   const reload = async () => {
+    // The page's last localStorage writes (a save, test-days) can still be on
+    // their way when a reload starts at once, and the new page would miss them.
+    await page.waitForTimeout(500);
     await page.reload();
     await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
     await page.evaluate(() => document.getElementById('start-btn').click());
