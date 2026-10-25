@@ -83,7 +83,7 @@ NARRATOR = 'af_heart'  # TTS_NARRATOR in js/data.js; the pure letter sounds are 
 # What is done to a recording after Polly. It is part of every clip id, so
 # change it whenever the processing changes: every clip then gets a new URL
 # (browsers keep old ones cached) and is recorded again.
-RECIPE = 'r2 hp70 trim-45 bdgj-hum30 limit-2 word-as-sentence sounds-1'
+RECIPE = 'r2 hp70 trim-45 bdgj-hum30 limit-3 word-as-sentence sounds-1'
 TARGET_LUFS = -20.0
 PAUSE = '600ms'  # between a carrier phrase and the line
 

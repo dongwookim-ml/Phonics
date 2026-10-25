@@ -17,7 +17,7 @@ WIN = SR // 40           # over 25 ms
 HIGHPASS = 'highpass=f=70'
 EDGE_DB = -45            # quieter than this at either end is trimmed (as ffmpeg's silenceremove did)
 PAD = 0.08               # silence left after the last sound
-LIMIT_DB = -2.0          # sample-peak limit, which keeps the true peak under about -1.5 dBTP
+LIMIT_DB = -3.0          # sample-peak limit: after mp3 encoding the true peak stays under about -1.5 dBTP
 
 
 def decode(src, highpass=True):
