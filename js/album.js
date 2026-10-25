@@ -258,10 +258,10 @@ function renderGiftMeter(pop) {
 
 // The gates in the order they open: { key (the scene behind it), stars }.
 function albumGates() {
-  return [['forest', FOREST_STARS], ['fairy', FAIRY_STARS], ['unicorn', UNICORN_STARS], ['dungeon', DUNGEON_STARS]]
+  return [['forest', FOREST_STARS], ['fairy', FAIRY_STARS], ['unicorn', UNICORN_STARS], ['dungeon', DUNGEON_STARS], ['monster', MONSTER_STARS]]
     .map(([key, stars]) => ({ key, stars })).sort((a, b) => a.stars - b.stars);
 }
-const GATE_LINES = { forest: 'openForest', fairy: 'openFairy', unicorn: 'openUnicorn', dungeon: 'openDungeon' };
+const GATE_LINES = { forest: 'openForest', fairy: 'openFairy', unicorn: 'openUnicorn', dungeon: 'openDungeon', monster: 'openMonster' };
 
 // ⭐ 7/10 🌲: the stars needed for the next gate that is still shut, with a
 // bar that fills from the last gate that opened. Hidden once all are open.

@@ -265,6 +265,7 @@ function buildTown() {
   const gp = tileCenter(sc, 19.5, 38);
   sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS, links: toForest });
   addTownFairyGate(sc);
+  addTownMonsterGate(sc, addSideGate); // js/monster-village.js
   renderGround(sc);
   return sc;
 }

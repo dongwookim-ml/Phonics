@@ -20,7 +20,7 @@ const root = path.join(__dirname, '..');
     await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}`);
     await page.click('#login-guest');
     const report = await page.evaluate(() => {
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
       const problems = [];
       // Where she can arrive: each scene's start, every link's landing spot,
       // and the tiles in front of the doors she comes out of.
@@ -31,6 +31,7 @@ const root = path.join(__dirname, '..');
         const sc = sceneFor(n);
         for (const l of sc.links || []) if (l.at) arrive(l.target, Object.assign({ from: `${n} link` }, l.at));
         if (sc.house) arrive('town', { c: sc.house.c + 1, r: sc.house.r + 3, from: `${n} exit` });
+        if (sc.returnTo) arrive(sc.returnTo.scene, Object.assign({ from: `${n} exit` }, sc.returnTo.at));
       }
       arrive('town', { c: 19, r: 10, from: 'castle exit' });
       let checked = 0;

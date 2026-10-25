@@ -974,6 +974,8 @@ body.dino { background: linear-gradient(#9ee4ff, #d4f6c4 50%, #fff0b0); }
 /* ---- Crystal Cave and the shop ---- */
 
 body.dungeon { background: linear-gradient(#2a2050, #4f4288 50%, #7a6cb0); }
+/* The Monster Village at dusk, and its tower. */
+body.monster { background: linear-gradient(#2a2458, #5a4aa0 50%, #9a88d8); }
 
 .counters { display: flex; gap: 8px; }
 .stars.hidden { display: none; }

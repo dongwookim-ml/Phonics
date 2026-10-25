@@ -39,7 +39,7 @@ for (const s of scripts) {
       document.querySelector(`[data-title="${title}"]`).click();
       document.querySelector('.start').classList.add('hidden');
       state.stars = 99;
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`),
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', ...TOWN_HOUSES.map(h => `house-${h.letter}`),
         ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
       const bad = [];
       for (const n of names) {
@@ -48,14 +48,14 @@ for (const s of scripts) {
       }
       // Every door can be walked to from where she arrives, nobody stands on
       // it, and the room behind it leads back out to the scene it is in.
-      for (const n of ['town', 'forest', 'unicorn', 'fairy']) {
+      for (const n of ['town', 'forest', 'unicorn', 'fairy', 'monster']) {
         const sc = sceneFor(n);
         for (const d of sc.doors) {
           const where = `${n} door ${d.c},${d.r} -> ${d.target}`;
           if (!findPath(sc, sc.start, (c, r) => c === d.c && r === d.r)) bad.push(`${where}: can't be reached`);
           if (sc.npcs.some(p => p.c === d.c && p.r === d.r)) bad.push(`${where}: someone stands on it`);
           const room = sceneFor(d.target);
-          if (d.home && (!room.returnTo || room.returnTo.scene !== n)) bad.push(`${where}: leads back to ${room.returnTo && room.returnTo.scene}`);
+          if ((d.home || d.target === 'tower') && (!room.returnTo || room.returnTo.scene !== n)) bad.push(`${where}: leads back to ${room.returnTo && room.returnTo.scene}`);
         }
         const homes = VILLAGE_HOMES.filter(h => h.scene === n);
         for (const h of homes) if (!sc.doors.some(d => d.home === h)) bad.push(`${n}: home ${h.id} has no door`);

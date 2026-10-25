@@ -322,6 +322,8 @@ function sceneFor(target) {
     else if (target === 'unicorn') state.scenes[target] = buildUnicornVillage();
     else if (target === 'dungeon') state.scenes[target] = buildDungeon();
     else if (target === 'fairy') state.scenes[target] = buildFairyVillage();
+    else if (target === 'monster') state.scenes[target] = buildMonsterVillage(); // js/monster-village.js
+    else if (target === 'tower') state.scenes[target] = buildMonsterTower();
     else if (home) state.scenes[target] = buildHomeInterior(home);
     else if (house) state.scenes[target] = buildHouseInterior(house);
     // A place that doesn't exist takes her to the town instead of breaking.
@@ -402,6 +404,7 @@ function changeScene(target, at, label) {
     document.body.classList.toggle('dungeon', state.scene.kind === 'dungeon');
     document.body.classList.toggle('fairy', state.scene.kind === 'fairy');
     document.body.classList.toggle('dino', state.scene.kind === 'dino');
+    document.body.classList.toggle('monster', state.scene.kind === 'monster' || state.scene.kind === 'tower');
     state.fairyAt = null;
     const spot = at || state.scene.start;
     placeHero(spot.c, spot.r);
@@ -452,6 +455,9 @@ function enterDoor(door) {
     room.returnTo = { scene: door.home.scene, at: { c: door.c, r: door.r } };
     changeScene(door.target, null, room.label);
     Sound.say([{ text: line('knock'), narrator: true }, { pause: 500 }, { text: line(`home-${theme}`, {}, HOME_HELLO[theme]) }], voiceOf(room.npcs[0]));
+  } else if (door.target === 'tower') {
+    changeScene('tower', null, place('tower'));
+    Sound.say([{ text: line('tower'), pitch: 1.3 }]);
   } else if (door.obj.info) {
     const info = door.obj.info;
     changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? '공방' : '집'}`);
@@ -1051,6 +1057,9 @@ function followLink(link) {
   } else if (link.target === 'fairy') {
     changeScene('fairy', link.at, place('fairy'));
     Sound.say([{ text: line('fairyland'), pitch: 1.3 }]);
+  } else if (link.target === 'monster') {
+    changeScene('monster', link.at, place('monster'));
+    Sound.say([{ text: line('monster'), pitch: 1.3 }]);
   } else if (link.target === 'town') {
     changeScene('town', link.at, place('town'));
   } else if (link.target === 'castle2') {
@@ -1915,8 +1924,8 @@ function drawScene(now) {
     vctx.globalAlpha = 1;
   }
 
-  // Evening light in the forest; glows are added on top afterwards.
-  if (sc.kind === 'forest' || sc.kind === 'dungeon') {
+  // Evening light in the forest (and the Monster Village); glows are added on top afterwards.
+  if (sc.kind === 'forest' || sc.kind === 'dungeon' || sc.kind === 'monster') {
     vctx.setTransform(1, 0, 0, 1, 0, 0);
     vctx.fillStyle = sc.kind === 'dungeon' ? 'rgba(40,30,120,0.16)' : 'rgba(50,40,130,0.22)';
     vctx.fillRect(0, 0, view.width, view.height);
@@ -1947,8 +1956,9 @@ function drawCharacter(ch, now) {
     const idle = (Math.sin(now / 400 + n.phase) > 0.6 ? -1 : 0) + guideBob(n, now);
     const uni = n.mount ? state.outfit.ride : n.unicorn;
     if (uni && uni !== 'none') drawSprite(vctx, unicornSprite(uni, 0), p.x, p.y + 1 + idle, n.flip);
-    // Crystal Cave monsters float, bounce, blink and cast (js/cave-magic.js).
-    else if (n.monster && !isCaptain()) drawMonster(vctx, n, p.x, p.y + 1 + guideBob(n, now), now);
+    // Crystal Cave monsters float, bounce, blink and cast (js/cave-magic.js);
+    // so do the Monster Village's (`critter`), in both editions.
+    else if ((n.monster && !isCaptain()) || n.critter) drawMonster(vctx, n, p.x, p.y + 1 + guideBob(n, now), now);
     else if (!n.mount) drawSprite(vctx, villagerSprite(n.look, 0), p.x, p.y + 1 + idle, n.flip);
   }
 }
@@ -2239,7 +2249,7 @@ function drawOverlay(now) {
 
   // Light motes.
   ctx.globalCompositeOperation = 'lighter';
-  const forest = sc.kind === 'forest' || sc.kind === 'dungeon';
+  const forest = sc.kind === 'forest' || sc.kind === 'dungeon' || sc.kind === 'monster' || sc.kind === 'tower';
   for (const m of state.motes) {
     const r = (3 + m.s * 5) * s * (0.8 + 0.2 * Math.sin(now / 500 + m.ph)) * (forest ? 0.7 : 1);
     ctx.globalAlpha = (forest ? 0.45 : 0.18) + 0.12 * Math.sin(now / (forest ? 300 : 700) + m.ph);

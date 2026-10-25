@@ -13,7 +13,8 @@ const root = path.join(__dirname, '..');
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
-  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS'];
+  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
+  'MONSTER_NPCS', 'TOWER_NPCS', 'MONSTER_STARS'];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -63,8 +64,11 @@ function collect(D) {
   const unicorn = new Set([...D.UNICORN_NPCS, ...D.DUNGEON_NPCS].map(n => n.look));
   const monsters = new Set(D.DUNGEON_NPCS.map(n => n.look));
   const fairies = new Set(D.FAIRY_NPCS.map(n => n.look));
+  // The Monster Village and its tower (js/monster-village.js).
+  const monsterVillage = new Set([...(D.MONSTER_NPCS || []), ...(D.TOWER_NPCS || [])].map(n => n.look));
   const kindsOf = look => new Set([].concat(town.has(look) ? D.QUIZ_TYPES.town.concat(D.QUIZ_TYPES.house) : [],
-    forest.has(look) ? D.QUIZ_TYPES.forest : [], unicorn.has(look) ? D.QUIZ_TYPES.unicorn : [], fairies.has(look) ? D.QUIZ_TYPES.fairy : []));
+    forest.has(look) ? D.QUIZ_TYPES.forest : [], unicorn.has(look) ? D.QUIZ_TYPES.unicorn : [], fairies.has(look) ? D.QUIZ_TYPES.fairy : [],
+    monsterVillage.has(look) ? D.QUIZ_TYPES.monster || [] : []));
   const first = list => list.map(([w]) => w);
   const cvc = first(D.CVC_A1.concat(D.CVC_A2));
   const sentences = D.SENTENCES.concat(D.SENTENCES_L1, D.SENTENCES_L2);
@@ -116,7 +120,7 @@ function collect(D) {
     if (fairies.has(look)) lines(v, ['newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'poorPond', 'soldOut']);
     // Anyone who gives presents (not the cave villains), and the shop.
-    const gives = town.has(look) || forest.has(look) || fairies.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
+    const gives = town.has(look) || forest.has(look) || fairies.has(look) || monsterVillage.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
     if (gives) for (const t of partShow) add(v, t);
   }
   const robots = D.TITLES.captain.look === 'robot';
@@ -160,7 +164,7 @@ function collect(D) {
   for (const g of Object.keys(D.PART_SOUNDS)) if (g.length > 1) add(N, `/${g}/`, 0.8);
   lines(N, ['levelUp'].concat((D.CAVE_LINES && D.CAVE_LINES.narrator) || []));
   for (const r of D.RHYME_SETS) for (const [a] of r.set) for (const [b] of r.set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
-  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
+  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
   // The villages' little games (js/village-games.js): the narrator says
@@ -176,12 +180,12 @@ function collect(D) {
   // Gates opening, medals and the sticker album (js/album.js). A sticker says
   // what its word starts with, unless it starts with two letters that make
   // one sound (chair, ship, three) or one that sounds like another (one).
-  lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'medalVillage', 'album']);
+  lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'openMonster', 'medalVillage', 'album']);
   for (const l of D.TOWN_HOUSES) lines(N, ['medalHouse'], { letter: l.letter });
   const stickers = [...D.WORD_FAMILIES.flat(), ...D.RHYME_SETS.flatMap(r => r.set), ...sentences.map(x => x.w),
     ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat()].map(([w]) => w);
   for (const w of stickers) if (/^[a-z]+$/.test(w) && !/^(ch|sh|th|wh|ph|gh|kn|wr)/.test(w) && w !== 'one') add(N, `${w} starts with ${w[0].toUpperCase()}.`);
-  for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
+  for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS, D.MONSTER_STARS]) lines(N, ['locked'], { stars });
   for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 
   // The royal library: the librarian's welcome, then the narrator reads each

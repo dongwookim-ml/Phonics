@@ -99,7 +99,7 @@ const MUSIC_TUNES = {
 
 // Which tune a scene plays, by its kind; the castle has the town's, and any
 // room (a letter house, a village home, her room) the lullaby.
-const MUSIC_PLACES = { town: 'town', forest: 'forest', dino: 'forest', fairy: 'fairy', unicorn: 'unicorn', dungeon: 'cave' };
+const MUSIC_PLACES = { town: 'town', forest: 'forest', dino: 'forest', fairy: 'fairy', unicorn: 'unicorn', dungeon: 'cave', monster: 'cave', tower: 'cave' };
 
 // How the band sounds, per edition. Voices: the melody, the broken chord and
 // the bass, each with its loudest `gain` and how long a note may `ring` (it
