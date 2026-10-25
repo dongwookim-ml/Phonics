@@ -19,7 +19,9 @@ line is one word ("cat", "cat!", "The"). The rules:
   peak      true peak above -1 dBTP
   letter    a lone letter name ("H") over 900 ms (W, three syllables: 1200),
             said as several sounds ("h-i-h") or with something added; the
-            letters take 420-730 ms when they are right
+            letters take 420-730 ms when they are right. F, H, S and X end
+            on their hiss: a voiced tail over 100 ms after it ("aitch-ay")
+            fails too
 tools/polly-build.py --mode fix records the failing lines again.
 Needs numpy and ffmpeg.
 """
@@ -88,6 +90,10 @@ def measure(path, text):
     m['db'] = round(ca.active_db(x), 1)
     quiet = ca.runs(f['rel'][first:last + 1] < -45)
     m['gap'] = max((ca.ms(b - a) for a, b in quiet), default=0)
+    # A letter name that should end on its hiss ("aitch"): a vowel after it.
+    letter = LETTER.match(text)
+    if letter and letter.group(1) in ca.HISS_NAMES:
+        m['tail'] = ca.hiss_tail(x)[0]
     if len(words(text)) == 1:
         bs = bursts(f)
         main = max(range(len(bs)), key=lambda i: bs[i]['peak'] + bs[i]['ms'] / 100) if bs else 0
@@ -142,7 +148,7 @@ def judge(voice, text, m, refs):
     if m.get('gap', 0) > (500 if lone and not sound else 1500):
         fails.append('gap')
     letter = LETTER.match(text)
-    if letter and m.get('dur', 0) > LETTER_MAX_MS.get(letter.group(1), 900):
+    if letter and (m.get('dur', 0) > LETTER_MAX_MS.get(letter.group(1), 900) or m.get('tail', 0) > 100):
         fails.append('letter')
     if sound:
         return fails

@@ -375,6 +375,15 @@ def speak(slot, text, speed, k=0, after=None, sounds=False):
         raise Refused(str(e))
     if len(y) < 0.05 * ca.SR or ca.active_db(y) < -50:
         raise Refused('nothing audible')
+    # A letter name that ends on a hiss ("aitch") ends there: the engine
+    # sometimes says a vowel after it ("aitch-ay").
+    alone = LETTER_ALONE.match(text)
+    if alone and alone.group(1) in ca.HISS_NAMES:
+        tail, end = ca.hiss_tail(y)
+        if tail > 100:
+            y = y[:end + int(0.02 * ca.SR)].copy()
+            y[end:] *= np.linspace(1, 0, len(y) - end)  # a 20 ms fade
+            notes = dict(notes, hiss_tail_ms=tail)
     return y, dict(notes, engine=used)
 
 

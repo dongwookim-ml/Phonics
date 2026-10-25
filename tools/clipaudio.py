@@ -803,3 +803,28 @@ def best_cut(kind, anchors):
                 info['lenient'] = True
             return y, info
     return None, {'tried': tried}
+
+# Letter names that end on a hiss: "ef", "aitch", "ess", "ex".
+HISS_NAMES = set('FHSX')
+
+
+def hiss_tail(x):
+    """How long a voiced sound goes on after the last hiss of a letter name
+    that should end on it (ms), and the sample where that hiss ends: "aitch"
+    said as "aitch-ay" has a long one. 20 ms frames: voiced when the band
+    under 1 kHz holds three times the energy over 2.5 kHz, a hiss the other
+    way round."""
+    n = 320 * SR // 16000
+    kinds = []
+    for i in range(len(x) // n):
+        seg = x[i * n:(i + 1) * n] * np.hanning(n)
+        sp = np.abs(np.fft.rfft(seg)) ** 2
+        fq = np.fft.rfftfreq(n, 1 / SR)
+        lo, hi = sp[(fq > 100) & (fq < 1000)].sum(), sp[fq > 2500].sum()
+        loud = 10 * np.log10(sp.sum() + 1e-12) > -25 + 10 * np.log10(n / 320)
+        kinds.append(('V' if lo > 3 * hi else 'F' if hi > 3 * lo else '-') if loud else '_')
+    s = ''.join(kinds)
+    end = s.rfind('F')
+    if end < 0 or 'V' not in s[:end]:
+        return 0, len(x)
+    return 20 * s[end + 1:].count('V'), (end + 1) * n
