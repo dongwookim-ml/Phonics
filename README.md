@@ -200,6 +200,7 @@ node tools/tts-phrases.js                # lists every line the game can say
 python tools/polly-build.py --mode all   # then: --mode fix, --mode normalise
 python tools/clip-check.py
 python tools/letter-sounds.py --sheet sheet.png   # try the letter-sound cutter (Pillow)
+python tools/letter-sounds.py --built --sheet sheet.png   # spectrograms of the recorded sounds
 ```
 
 `tools/tts-build.py` can still record everything with the open-source
