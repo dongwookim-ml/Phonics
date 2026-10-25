@@ -256,6 +256,17 @@ npx http-server -p 8080 .
   game's own short words where every letter says its sound (`spell` in
   `js/quiz.js`). Between spelling questions the fairies also ask the
   easier reading and sound-blending ones.
+- **Monster Village (level 6)**: a gate at the west end of town's upper road
+  opens at 40 stars (`MONSTER_STARS`), the same village in both editions.
+  Lavender grass at dusk, glowing mushrooms, crystals and lanterns; four
+  friendly monsters (👾 bubble) ask the next step after short vowels: long
+  vowels, the ones that say their name (`QUIZ_TYPES.monster`). In the
+  middle stands the Monster Tower, with a monster's face (round-window
+  eyes, the doorway for a mouth). Inside live the monsters the child drew
+  herself (🖍️ bubble, `js/kid-monsters.js`): talking to one shows her
+  drawing in the dialog. Each is pixel art from a drawing, kept in one
+  place (`KID_MONSTERS`) so a parent's own drawings can replace them later.
+  Built in `js/monster-village.js`.
 - **Fairy friends**: presents in the Fairy Village (a full gift meter) are
   its six little fairies and its treasures first (a petal dress, a leaf
   tunic for a boy, butterfly wings, a fairy teapot and a tulip; each fairy
@@ -737,3 +748,4 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
 - `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations
 - `js/cave-magic.js`: the Crystal Cave monsters' idle moves and their magic, and hers (princess edition)
+- `js/monster-village.js`: the Monster Village, its tower and the gate to it in town (both editions)
