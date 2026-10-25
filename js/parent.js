@@ -2,6 +2,8 @@
 // (the account's login password, or 0000 without an account) and then shows
 // how she is doing in each kind of question, from state.history.
 
+// Where the long vowels are asked: the Monster Village (PLACES.monster).
+const parentMonster = PLACES.monster ? placeName('monster') : '몬스터 마을';
 const PARENT_KINDS = [
   ['word', '단어 듣기', '마을'],
   ['start', '첫소리', '마을'],
@@ -15,6 +17,10 @@ const PARENT_KINDS = [
   ['sentence', '문장 듣기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
   ['meaning', '뜻 맞추기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
   ['spell', '스펠링', placeName('fairy')],
+  ['longBlend', '긴 모음 소리 합치기', parentMonster],
+  ['longRead', '긴 모음 읽기', parentMonster],
+  ['longWord', '긴 모음 단어 듣기 (매직 e)', parentMonster],
+  ['longRhyme', '긴 모음 라임', parentMonster],
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 
@@ -146,8 +152,9 @@ function parentLabel(id) {
     const x = SENTENCES.concat(SENTENCES_L1, SENTENCES_L2).find(s => s.s === key);
     return `${key.replace('{}', '___')}${x ? ` (${x.w[0]})` : ''}`;
   }
+  // A written-only word (longWord: hope) has no picture.
   const hit = Quiz.words()[key];
-  return hit ? `${hit.e} ${key}` : key;
+  return hit && hit.e ? `${hit.e} ${key}` : key;
 }
 
 // Her tier in a kind (js/quiz.js): "단계 2 / 4" with − and + to set it, the

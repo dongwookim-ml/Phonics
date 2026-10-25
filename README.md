@@ -94,6 +94,34 @@ npx http-server -p 8080 .
   `MINIMAL_SETS`, `RHYME_SETS`, `SENTENCES_L1`/`_L2`); `ALIAS` lists other
   names for pictures so a wrong card is never right by her name for it, and
   `WEAK_PICTURES` keeps pictures with another name off picture-only cards.
+- **Long vowels (the Monster Village's questions)**: the next step after
+  short vowels and blends, where the vowel says its own name: a magic e
+  (cake, kite, bone, cube), the vowel teams ee and ea (bee, leaf), ai and ay
+  (rain, tray), oa and ow (boat, snow), igh (light) and ie (pie), and ar,
+  which says the name of R (star). Everyone in the Monster Village and its
+  tower (`level: 6`, the place `monster`) asks four kinds of them
+  (`QUIZ_TYPES.monster`), each with its own tiers and skill (`TIERS`,
+  `TIER_BAND.monster`), so they never move her short vowel tiers:
+  - hear "/k/ … A … /k/" and pick the picture (`longBlend`): the pure sounds
+    around the vowel and the vowel as the narrator's own letter name, never
+    "/k/ /a/ /k/ /e/";
+  - read the word and pick its picture (`longRead`), the letters that make
+    the vowel say its name coloured at the first tiers (c**a**k**e**,
+    r**ai**n);
+  - hear a word and find it among written words, no pictures (`longWord`),
+    with its short twin beside it at the top tier (kit, kite; cot, coat);
+  - rhymes among long vowel words (`longRhyme`), with a card that ends the
+    same after a short vowel (kite, bat), then one that says the same vowel
+    (cake, rain).
+  Tiers go from two cards far apart (another first sound and another
+  vowel) to three that start alike, then blends (snake, tree, star), then one
+  card that shares all but one sound (boat: goat, or the short bat). After a
+  miss the narrator gives the rule where it helps ("Magic e makes the A say
+  its name!", "O A says O!"); a hint never says the word she has to find.
+  Two words she hears the same (road, rode) or that differ only in a sound
+  she can't tell apart yet (peach, beach; tree, three) never share a
+  question. The words are `LONG_VOWELS` (by spelling, with each word's
+  sounds: c-A-k), `LONG_TWINS` and `LONG_RHYMES` in `js/data.js`.
 - **Solved questions and review**: every question has a stable id
   (`rhyme:cat`, `sentence:The {} says moo.`) and each kind has a pool of all
   its ids at the tiers the parent's settings allow (`reviewPool(kind, npc)`;
@@ -615,8 +643,10 @@ The other checks, all run by
 
 - `node tools/check-merge.js`: the save merge rules (no browser).
 - `ROUNDS=30 node tools/quiz-test.js`: thousands of questions from every
-  asker, under an empty, a finished and a mixed history; first it runs
-  `tools/check-books.js` (every word of her own books readable at its level).
+  asker, under an empty, a finished and a mixed history (the Monster
+  Village's from whoever the scenes put there, or a stand-in until they are
+  in); first it runs `tools/check-books.js` (every word of her own books
+  readable at its level).
 - `node tools/check-tts.js`: every recording has its file, and nothing the
   game says while playing both editions (every little game too) lacks a
   recording.

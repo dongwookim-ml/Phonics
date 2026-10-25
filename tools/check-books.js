@@ -117,4 +117,4 @@ if (require.main === module) {
   process.exit(problems.length ? 1 : 0);
 }
 
-module.exports = { check };
+module.exports = { check, NEW_EMOJI };
