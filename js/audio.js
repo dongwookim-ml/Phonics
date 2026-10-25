@@ -175,6 +175,19 @@ const Sound = (() => {
     wrong: () => notes([[300, 0, 0.12], [250, 0.12, 0.2]], 'triangle', 0.08),
     door: () => notes([[392, 0, 0.08], [523, 0.08, 0.08], [659, 0.16, 0.14]], 'triangle', 0.07),
     party: () => notes([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.4], [784, 0.5, 0.1], [1047, 0.6, 0.5]]),
+    // Little sounds for things she taps on the map (js/touch.js).
+    tune(name) {
+      const t = {
+        chime: [[[1047, 0, 0.12], [1319, 0.08, 0.12], [1568, 0.16, 0.25]], 'triangle'],
+        boing: [[[220, 0, 0.08], [330, 0.06, 0.08], [440, 0.12, 0.12]], 'square'],
+        splash: [[[880, 0, 0.05], [660, 0.04, 0.05], [990, 0.08, 0.06], [740, 0.12, 0.08]], 'triangle'],
+        clink: [[[1568, 0, 0.06], [2093, 0.07, 0.14]], 'triangle'],
+        harp: [[[523, 0, 0.3], [659, 0.1, 0.3], [784, 0.2, 0.3], [1047, 0.3, 0.3], [1319, 0.4, 0.5]], 'triangle'],
+        honk: [[[392, 0, 0.12], [392, 0.18, 0.18]], 'square'],
+        rumble: [[[82, 0, 0.3], [73, 0.2, 0.4], [65, 0.45, 0.4]], 'square'],
+      }[name];
+      if (t) notes(t[0], t[1], 0.05);
+    },
     toggleMute() {
       muted = !muted;
       if (muted) { generation++; if ('speechSynthesis' in window) speechSynthesis.cancel(); if (player) player.pause(); }

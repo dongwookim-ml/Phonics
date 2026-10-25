@@ -38,6 +38,7 @@ const ROUNDS = Number(process.env.ROUNDS || 150);
       for (const n of UNICORN_NPCS) askers.push(Object.assign({ level: 3 }, n));
       for (const n of DUNGEON_NPCS) askers.push(Object.assign({ level: 4, monster: true }, n));
       for (const n of FAIRY_NPCS) askers.push(Object.assign({ level: 5 }, n));
+      for (const h of VILLAGE_HOMES) askers.push({ name: h.who, look: h.look, unicorn: h.unicorn, gives: h.gives, level: HOME_LEVEL[h.scene] });
       const kinds = {};
       for (const npc of askers) {
         const who = voiceOf(npc);

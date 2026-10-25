@@ -16,8 +16,20 @@ const DINO_VILLAGE_NPCS = [
   { name: '아기 공룡',         look: 'dinoBaby',   c: 12, r: 20 },
 ];
 
+// The egg huts are homes (see VILLAGE_HOMES in js/data.js), each with one
+// of the dino families inside; the doors face the front-left.
+const DINO_HOMES = [
+  { id: 'egg1', scene: 'forest', c: 4,  r: 3,  w: 2, door: [[5, 5], [4, 5]],     theme: 'egg', color: '#8fd3ff', who: '아기 공룡 꼬물이', look: 'dinoBaby' },
+  { id: 'egg2', scene: 'forest', c: 25, r: 9,  w: 2, door: [[26, 11], [25, 11]], theme: 'egg', color: '#ff9ec4', who: '프테라 동생',     look: 'dinoPtero' },
+  { id: 'egg3', scene: 'forest', c: 9,  r: 8,  w: 2, door: [[10, 10], [9, 10]],  theme: 'egg', color: '#b48cf0', who: '스테고 동생',     look: 'dinoStego' },
+  { id: 'egg4', scene: 'forest', c: 3,  r: 21, w: 2, door: [[4, 23], [3, 23]],   theme: 'egg', color: '#ffd34d', who: '안킬로 삼촌',     look: 'dinoAnky' },
+  { id: 'egg5', scene: 'forest', c: 3,  r: 7,  w: 2, door: [[4, 9], [3, 9]],     theme: 'egg', color: '#9be070', who: '트리케라 언니',   look: 'dinoTops' },
+];
+
 if (isCaptain()) {
   FOREST_NPCS.splice(0, FOREST_NPCS.length, ...DINO_VILLAGE_NPCS);
+  captainHomes('forest', DINO_HOMES);
+  HOME_HELLO.egg = ['Welcome to my egg house, {title} {name}!', 'Come in! Mind the baby eggs.', 'Peep peep! Our house used to be a giant egg!'];
   // `dino` picks the sprite in dinoFolkSprite (see villagerSprite).
   Object.assign(LOOKS, {
     dinoRex: { dino: 'rex' }, dinoTops: { dino: 'tops' }, dinoStego: { dino: 'stego' }, dinoBronto: { dino: 'bronto' },
@@ -663,6 +675,8 @@ function dinoPlant(kind) {
     palm: () => makePlant('palm'),
     tropic: () => makeBush(['#4cc060', '#2f9a50', '#a0ec72', '#1f6a3a'], ['#ff5a6a', '#ffd34d', '#ff9a3a']),
   }[kind]();
+  const [word, fx] = { fern: ['leaf', 'leaves'], boulder: ['rock', 'hop'], tropic: ['bush', 'petals'] }[kind] || ['tree', 'leaves'];
+  if (!p.canvas.touch) touchable(p, word, fx);
   dinoPlants.set(kind, p);
   return p;
 }
@@ -696,22 +710,26 @@ CAPTAIN_SCENES.forest = function buildDinoVillage() {
   block(sc, V.c, V.r, V.w, V.d);
   reserveBox(V.c - 1, V.r - 1, V.c + V.w, V.r + V.d);
   const vc = tileCenter(sc, V.c + 1.5, V.r + 2.5);
-  addObject(sc, V, { x: vc.x - 74, y: vc.y - 100, w: 150, h: 120 }, ctx => drawVolcano(ctx, Math.round(vc.x), Math.round(vc.y)));
+  addObject(sc, V, { x: vc.x - 74, y: vc.y - 100, w: 150, h: 120 }, ctx => drawVolcano(ctx, Math.round(vc.x), Math.round(vc.y)),
+    { react: { word: 'volcano', fx: 'rumble' } });
   sc.objects.push({ c0: V.c, r0: V.r, c1: V.c + V.w - 1, r1: V.r + V.d - 1, x: vc.x - 40, y: vc.y - 170, w: 100, h: 80,
     animated: (ctx, t) => drawVolcanoSmoke(ctx, Math.round(vc.x), Math.round(vc.y) - 92, t) });
   sc.lamps.push({ x: vc.x, y: vc.y - 92 });
 
-  // Eggshell homes.
+  // Eggshell homes, each with a little sign over its round door.
   for (const [c, r, spot] of [[4, 3, '#8fd3ff'], [25, 9, '#ff9ec4'], [9, 8, '#b48cf0'], [3, 21, '#ffd34d'], [3, 7, '#9be070']]) {
     block(sc, c, r, 2, 2);
     reserveBox(c - 1, r - 1, c + 2, r + 2);
     const m = tileCenter(sc, c + 0.5, r + 0.5);
-    addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 44, y: m.y - 80, w: 90, h: 92 }, ctx => drawEggHut(ctx, Math.round(m.x), Math.round(m.y), spot));
+    const obj = addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 44, y: m.y - 80, w: 90, h: 92 }, ctx => drawEggHut(ctx, Math.round(m.x), Math.round(m.y), spot));
+    addHomeDoors(sc, obj, homeAt('forest', c, r));
+    sc.signs.push({ x: m.x - 6, y: m.y - 22, text: '🥚', color: spot, plain: true });
   }
   // Lily pads on the lagoon.
   for (const [c, r, flower] of [[20, 22, '#ff9ec4'], [24, 24, null], [22, 25, '#ffffff'], [25, 21, null]]) {
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 8, y: p.y - 8, w: 16, h: 12 }, ctx => drawLilyPad(ctx, Math.round(p.x), Math.round(p.y), flower));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 8, y: p.y - 8, w: 16, h: 12 }, ctx => drawLilyPad(ctx, Math.round(p.x), Math.round(p.y), flower),
+      { react: { word: 'frog', fx: 'frog' } });
   }
 
   // Nests full of eggs.
@@ -719,7 +737,8 @@ CAPTAIN_SCENES.forest = function buildDinoVillage() {
     block(sc, c, r, 1, 1);
     reserveBox(c - 1, r - 1, c + 1, r + 1);
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 18, y: p.y - 16, w: 36, h: 24 }, ctx => drawDinoNest(ctx, Math.round(p.x), Math.round(p.y), eggs));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 18, y: p.y - 16, w: 36, h: 24 }, ctx => drawDinoNest(ctx, Math.round(p.x), Math.round(p.y), eggs),
+      { react: { word: 'egg', fx: 'hop' } });
   }
 
   const cave = addDinoCave(sc);
@@ -783,14 +802,16 @@ CAPTAIN_SCENES.forest = function buildDinoVillage() {
     sc.npcs.push(npc);
   }
   // Gate back to Robot Town in the north, and to Car Village in the south.
-  addGate(sc, [13, 16], 1, '#ffc8a0');
-  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🤖', style: 'gate' }));
+  const toTown = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🤖', style: 'gate' }));
+  sc.links = [...toTown];
+  addGate(sc, [13, 16], 1, '#ffc8a0', toTown);
   const tg = tileCenter(sc, 14.5, 1);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#5aa6e0' });
-  addGate(sc, [14, 17], 28, '#ffd34d');
-  for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🚗', style: 'gate', needStars: UNICORN_STARS });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#5aa6e0', links: toTown });
+  const toCars = [15, 16].map(c => ({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🚗', style: 'gate', needStars: UNICORN_STARS }));
+  sc.links.push(...toCars);
+  addGate(sc, [14, 17], 28, '#ffd34d', toCars);
   const ug = tileCenter(sc, 15.5, 28);
-  sc.signs.push({ x: ug.x, y: ug.y - 64, text: place('unicorn'), color: '#ff8a3a', needStars: UNICORN_STARS });
+  sc.signs.push({ x: ug.x, y: ug.y - 64, text: place('unicorn'), color: '#ff8a3a', needStars: UNICORN_STARS, links: toCars });
   sc.links.push(...cave);
   sc.npcs.push(shop.keeper);
   sc.start = { c: 14, r: 1 };
@@ -804,10 +825,12 @@ function addDinoCave(sc) {
   for (let c = 2; c <= 4; c++) tileAt(sc, c, 17).dirt = true;
   tileAt(sc, 2, 16).dirt = true;
   block(sc, 0, 15, 2, 4);
+  const links = [16, 17].map(r => ({ c: 2, r, target: 'dungeon', at: { c: 7 + (r - 16), r: 12 }, icon: '😈', needStars: DUNGEON_STARS }));
   const m = tileCenter(sc, 1.5, 16.5);
-  addObject(sc, { c: 0, r: 15, w: 2, d: 4 }, { x: m.x - 48, y: m.y - 64, w: 96, h: 80 }, ctx => drawVillainCaveMouth(ctx, Math.round(m.x), Math.round(m.y)), { kind: 'cave' });
-  sc.signs.push({ x: m.x, y: m.y - 70, text: place('dungeon'), color: '#8a5ac0', needStars: DUNGEON_STARS });
-  return [16, 17].map(r => ({ c: 2, r, target: 'dungeon', at: { c: 7 + (r - 16), r: 12 }, icon: '😈', needStars: DUNGEON_STARS }));
+  // The hill and its doorway both lead in.
+  addObject(sc, { c: 0, r: 15, w: 2, d: 4 }, { x: m.x - 48, y: m.y - 64, w: 96, h: 80 }, ctx => drawVillainCaveMouth(ctx, Math.round(m.x), Math.round(m.y)), { kind: 'cave', links });
+  sc.signs.push({ x: m.x, y: m.y - 70, text: place('dungeon'), color: '#8a5ac0', needStars: DUNGEON_STARS, links });
+  return links;
 }
 
 // The parts shop: a leaf-roofed hut on the cross path, its keeper outside

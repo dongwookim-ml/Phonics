@@ -542,7 +542,7 @@ LOOKS.keeper = { hair: '#c04a4a', shirt: '#ff9ec4', pants: '#8fd3ff', hat: 'stra
 const UNICORN_NPCS = [
   { name: '무지개 유니콘', look: 'unicorn', unicorn: 'rainbow', c: 17, r: 8 },
   { name: '목장 언니',     look: 'keeper', c: 9, r: 10 },
-  { name: '솜사탕 유니콘', look: 'unicorn', unicorn: 'pink', c: 21, r: 14 },
+  { name: '솜사탕 유니콘', look: 'unicorn', unicorn: 'pink', c: 23, r: 14 },
   { name: '무지개 요정',   look: 'fairy', c: 8, r: 19 },
   { name: '구름 유니콘',   look: 'unicorn', unicorn: 'snow', c: 23, r: 21 },
   { name: '달빛 유니콘',   look: 'unicorn', unicorn: 'night', c: 12, r: 24 },
@@ -688,3 +688,47 @@ QUIZ_TYPES.fairy = ['spell'];
 LINES.spell = ['Can you spell it?', 'Spell the word you hear!', 'Tap the letters in order.', 'Which letters make this word?', "Let's spell it together!"];
 LINES.fairyland = ['Welcome to the Fairy Village!', 'Look, the flowers are giant here!', 'Sparkle, sparkle! The fairies are waiting for you.'];
 LINES.newFairy = ['A little fairy wants to fly with you! Shall she come along?', 'This fairy would love to be your friend! Shall she fly with you?', 'Flutter flutter! A fairy friend for you! Shall she come now?'];
+
+// ---- Village homes -----------------------------------------------------------
+
+// Every home in the villages can be entered. c, r is the home's back corner
+// and w its size (w x w tiles); `door` lists the tiles in front of its door.
+// Inside, one resident asks that village's questions (HOME_LEVEL by scene).
+// Residents use the villages' own looks, so their questions are recorded.
+// `theme` picks the room inside (HOME_THEMES in js/world.js) and what the
+// resident says when she comes in (HOME_HELLO). A unicorn resident has
+// `unicorn` (its colour); `gives` is the fairy friend a fairy offers first.
+// The captain files swap in their own homes (captainHomes in js/captain-town.js).
+const HOME_LEVEL = { forest: 2, unicorn: 3, fairy: 5 };
+const VILLAGE_HOMES = [
+  { id: 'mush1', scene: 'forest',  c: 5,  r: 4,  w: 2, door: [[7, 5], [6, 6]],     theme: 'mushroom', color: '#ff6b7f', who: '버섯 아저씨',   look: 'gnome' },
+  { id: 'mush2', scene: 'forest',  c: 22, r: 3,  w: 2, door: [[24, 4], [23, 5]],   theme: 'mushroom', color: '#b98cff', who: '꼬마 엘프',     look: 'elf' },
+  { id: 'mush3', scene: 'forest',  c: 3,  r: 20, w: 2, door: [[5, 21], [4, 22]],   theme: 'mushroom', color: '#ff8fc0', who: '아기 요정',     look: 'fairy' },
+  { id: 'mush4', scene: 'forest',  c: 9,  r: 9,  w: 2, door: [[11, 10], [10, 11]], theme: 'mushroom', color: '#ffb347', who: '숲속 마법사',   look: 'wizard' },
+  { id: 'uni1',  scene: 'unicorn', c: 3,  r: 9,  w: 3, door: [[4, 12]],  theme: 'unicorn', color: '#ff9ec4', who: '라벤더 유니콘', look: 'unicorn', unicorn: 'lavender' },
+  { id: 'uni2',  scene: 'unicorn', c: 21, r: 7,  w: 3, door: [[22, 10]], theme: 'stable',  color: '#b9a0ff', who: '마구간 언니',   look: 'keeper' },
+  { id: 'uni3',  scene: 'unicorn', c: 8,  r: 11, w: 3, door: [[9, 14]],  theme: 'unicorn', color: '#8fd3ff', who: '하늘 유니콘',   look: 'unicorn', unicorn: 'sky' },
+  { id: 'uni4',  scene: 'unicorn', c: 20, r: 11, w: 3, door: [[21, 14]], theme: 'unicorn', color: '#ff9ec4', who: '민트 유니콘',   look: 'unicorn', unicorn: 'mint' },
+  { id: 'uni5',  scene: 'unicorn', c: 8,  r: 2,  w: 3, door: [[9, 5]],   theme: 'unicorn', color: '#b9a0ff', who: '황금 유니콘',   look: 'unicorn', unicorn: 'gold' },
+  { id: 'fae1',  scene: 'fairy',   c: 5,  r: 5,  w: 2, door: [[7, 6], [6, 7]],     theme: 'teacup', color: '#ff9ec4', who: '찻잔 요정',     look: 'pixie' },
+  { id: 'fae2',  scene: 'fairy',   c: 15, r: 1,  w: 2, door: [[17, 2], [16, 3]],   theme: 'tulip',  color: '#c8a8ff', who: '튤립 요정',     look: 'sunny', gives: 'lavender' },
+  { id: 'fae3',  scene: 'fairy',   c: 20, r: 7,  w: 2, door: [[22, 8], [21, 9]],   theme: 'teacup', color: '#8fc8ff', who: '물방울 요정',   look: 'dewfairy' },
+  { id: 'fae4',  scene: 'fairy',   c: 4,  r: 17, w: 2, door: [[5, 19]],            theme: 'tulip',  color: '#ff9ec4', who: '꽃봉오리 요정', look: 'sprout' },
+  { id: 'fae5',  scene: 'fairy',   c: 7,  r: 1,  w: 2, door: [[9, 2], [8, 3]],     theme: 'tulip',  color: '#ffd66b', who: '해바라기 요정', look: 'sunny' },
+  { id: 'fae6',  scene: 'fairy',   c: 18, r: 14, w: 2, door: [[20, 15], [19, 16]], theme: 'teacup', color: '#8fdcc0', who: '민트 요정',     look: 'pixie' },
+];
+
+// What a home's resident says when she comes in, by theme.
+const HOME_HELLO = {
+  mushroom: ['Welcome to my mushroom house, {title} {name}!', 'Come in, come in! It is cozy under my mushroom.', 'Hello! Mind your head, my roof is a mushroom cap!'],
+  unicorn:  ['Neigh! Welcome to my home, {title} {name}!', 'Come in! This is my cozy unicorn home.', 'Hello! Do you like my rainbow carpet?'],
+  stable:   ['Welcome to the unicorn stable, {title} {name}!', 'Come in! The unicorns sleep here on soft hay.', 'Hello! I brush the unicorns every morning.'],
+  teacup:   ['Welcome to my teacup house, {title} {name}!', 'Hello! Would you like some tea in my teacup house?', 'Come in! Everything in here is round, like a cup.'],
+  tulip:    ['Welcome to my tulip house, {title} {name}!', 'Come in! It smells so sweet in here.', 'Hello! My house opens up when the sun comes out.'],
+};
+// Said by the narrator at the door of a home.
+LINES.knock = ['Knock, knock! Hello?', 'Can I come in?', "Let's peek inside!"];
+
+// Tapping a thing says its English word (the narrator). Most of those words
+// are recorded already from the word lists above; these are the extra ones.
+const PROP_WORDS = ['fountain', 'flower', 'bush', 'plant', 'table', 'harp', 'chest', 'coin', 'crystal', 'unicorn', 'drone', 'gear', 'gate'];

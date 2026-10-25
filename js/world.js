@@ -60,8 +60,9 @@ function addObject(sc, foot, bounds, draw, extra = {}) {
   return obj;
 }
 
-// True when world point (wx, wy) lands on a painted pixel of the object.
-function hitObject(obj, wx, wy) {
+// True when world point (wx, wy) lands on a painted pixel of the object
+// (one at least `min` opaque out of 255).
+function hitObject(obj, wx, wy, min = 40) {
   const x = Math.floor(wx - obj.x);
   const y = Math.floor(wy - obj.y);
   if (x < 0 || y < 0 || x >= obj.w || y >= obj.h) return false;
@@ -71,8 +72,30 @@ function hitObject(obj, wx, wy) {
     cv.alphaData = cv.alphaData || cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
     obj.alpha = cv.alphaData;
   }
-  return obj.alpha[(y * obj.w + x) * 4 + 3] > 40;
+  return obj.alpha[(y * obj.w + x) * 4 + 3] > min;
 }
+
+// Animated props (fountains, traffic lights) get one still frame as their
+// canvas so taps can hit them; they are still drawn by `animated`. `draw`
+// can paint a different shape to tap instead.
+function stillFrame(obj, draw = ctx => obj.animated(ctx, 0)) {
+  obj.canvas = makeCanvas(obj.w, obj.h);
+  const ctx = obj.canvas.getContext('2d');
+  ctx.translate(-obj.x, -obj.y);
+  draw(ctx);
+  obj.alpha = ctx.getImageData(0, 0, obj.w, obj.h).data;
+  return obj;
+}
+
+// A home in a village (VILLAGE_HOMES) on the object that draws it: its door
+// tiles lead into its own room, `home-<id>`.
+function addHomeDoors(sc, obj, home) {
+  if (!home) return obj;
+  Object.assign(obj, { kind: 'home', home });
+  for (const [c, r] of home.door) sc.doors.push({ c, r, obj, target: `home-${home.id}`, home });
+  return obj;
+}
+const homeAt = (scene, c, r) => VILLAGE_HOMES.find(h => h.scene === scene && h.c === c && h.r === r);
 
 function footBounds(sc, c0, r0, w, d, up, pad = 8) {
   const k = boxCorners(sc, c0, r0, w, d);
@@ -183,8 +206,8 @@ function buildTown() {
   block(sc, 19, 19, 2, 2);
   for (let r = 18; r <= 21; r++) for (let c = 18; c <= 21; c++) reserve(c, r);
   const fc = tileCenter(sc, 19.5, 19.5);
-  sc.objects.push({ c0: 19, r0: 19, c1: 20, r1: 20, x: fc.x - 30, y: fc.y - 40, w: 60, h: 60,
-    animated: (ctx, t) => drawFountain(ctx, Math.round(fc.x), Math.round(fc.y), t) });
+  sc.objects.push(stillFrame({ c0: 19, r0: 19, c1: 20, r1: 20, x: fc.x - 30, y: fc.y - 40, w: 60, h: 60,
+    animated: (ctx, t) => drawFountain(ctx, Math.round(fc.x), Math.round(fc.y), t), react: { word: 'fountain', fx: 'splash' } }));
 
   // Lamps along the roads.
   const lamp = makeLamp();
@@ -236,10 +259,11 @@ function buildTown() {
   sc.start = { c: 20, r: 12 };
 
   // Gate to the Starlight Forest at the south end of the main road.
-  addGate(sc, [18, 21], 38, '#b8a0e8');
-  sc.links = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', style: 'gate', needStars: FOREST_STARS }));
+  const toForest = [19, 20].map(c => ({ c, r: 39, target: 'forest', at: { c: 14 + (c - 19), r: 1 }, icon: '🌲', style: 'gate', needStars: FOREST_STARS }));
+  sc.links = [...toForest];
+  addGate(sc, [18, 21], 38, '#b8a0e8', toForest);
   const gp = tileCenter(sc, 19.5, 38);
-  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS });
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS, links: toForest });
   addTownFairyGate(sc);
   renderGround(sc);
   return sc;
@@ -252,22 +276,23 @@ function addTownFairyGate(sc) {
   // Trees on the road or right in front of the gate make way.
   sc.objects = sc.objects.filter(o => !(o.tree && o.c0 >= 37 && o.r0 >= 26 && o.r0 <= 29));
   for (let r = 26; r <= 29; r++) for (let c = 37; c <= 39; c++) tileAt(sc, c, r).blocked = false;
-  addSideGate(sc, 38, [25, 28], '#ffb0d8', [38, 39]);
-  for (const r of [26, 27]) sc.links.push({ c: 39, r, target: 'fairy', at: { c: 2, r: r - 14 }, icon: '🧚', style: 'gate', needStars: FAIRY_STARS });
+  const links = [26, 27].map(r => ({ c: 39, r, target: 'fairy', at: { c: 2, r: r - 14 }, icon: '🧚', style: 'gate', needStars: FAIRY_STARS }));
+  sc.links.push(...links);
+  addSideGate(sc, 38, [25, 28], '#ffb0d8', [38, 39], links);
   // The sign hangs a little toward the far post so it clears the T house sign.
   const gp = tileCenter(sc, 39, 25.5);
-  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('fairy'), color: '#e070a8', needStars: FAIRY_STARS });
+  sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('fairy'), color: '#e070a8', needStars: FAIRY_STARS, links });
 }
 
 // Like addGate, for a gate on the left or right edge: the posts stand at
 // rows `rows` of column c, with a mat on columns `mats` between them.
-function addSideGate(sc, c, rows, mat, mats) {
+function addSideGate(sc, c, rows, mat, mats, links) {
   const post = makeGatePost();
   for (const r of rows) {
     const p = tileCenter(sc, c, r);
     sc.objects = sc.objects.filter(o => !(o.tree && o.c0 === c && o.r0 === r));
     block(sc, c, r, 1, 1);
-    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height, links });
     sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
   }
   for (let r = rows[0] + 1; r < rows[1]; r++) for (const cc of mats) if (tileAt(sc, cc, r)) tileAt(sc, cc, r).mat = mat;
@@ -275,25 +300,26 @@ function addSideGate(sc, c, rows, mat, mats) {
   const A = tileCenter(sc, c, rows[1]);
   const B = tileCenter(sc, c, rows[0]);
   const bounds = { x: A.x - 2, y: B.y - 60, w: B.x - A.x + 4, h: A.y - B.y + 34 };
-  addObject(sc, { c, r: rows[0], w: 1, d: rows[1] - rows[0] + 1 }, bounds, ctx => drawGateArch(ctx, A, B, shade(mat, -20)));
+  addObject(sc, { c, r: rows[0], w: 1, d: rows[1] - rows[0] + 1 }, bounds, ctx => drawGateArch(ctx, A, B, shade(mat, -20)), { links });
 }
 
 // Two gate posts at columns `cols` on row r, joined by a garland arch, with
 // a coloured mat between. The caller hangs a destination sign under the arch.
-function addGate(sc, cols, r, mat) {
+// Tapping any part of the gate goes through it to `links`.
+function addGate(sc, cols, r, mat, links) {
   const post = makeGatePost();
   for (const c of cols) {
     const p = tileCenter(sc, c, r);
     sc.objects = sc.objects.filter(o => !(o.tree && o.c0 === c && o.r0 === r));
     block(sc, c, r, 1, 1);
-    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height });
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: post.canvas, x: p.x - post.ax, y: p.y - post.ay, w: post.canvas.width, h: post.canvas.height, links });
     sc.lamps.push({ x: p.x, y: p.y - post.ay + 4 });
   }
   for (let c = cols[0] + 1; c < cols[1]; c++) for (const rr of [r, r + 1]) if (tileAt(sc, c, rr)) tileAt(sc, c, rr).mat = mat;
   const A = tileCenter(sc, cols[0], r);
   const B = tileCenter(sc, cols[1], r);
   const bounds = { x: A.x - 2, y: A.y - 60, w: B.x - A.x + 4, h: B.y - A.y + 34 };
-  addObject(sc, { c: cols[0], r, w: cols[1] - cols[0] + 1, d: 1 }, bounds, ctx => drawGateArch(ctx, A, B, shade(mat, -20)));
+  addObject(sc, { c: cols[0], r, w: cols[1] - cols[0] + 1, d: 1 }, bounds, ctx => drawGateArch(ctx, A, B, shade(mat, -20)), { links });
 }
 
 function makeNpc(def, letter) {
@@ -326,6 +352,20 @@ function addRoomWalls(sc, H, wallColor, trim, extraDraw) {
   return obj;
 }
 
+// What furniture says and does when tapped: its English word and an effect
+// from TOUCH_FX in js/touch.js.
+const FURNITURE = {
+  bed: { word: 'bed', fx: 'zzz' },
+  shelf: { word: 'book', fx: 'hop' },
+  plant: { word: 'plant', fx: 'leaves' },
+  table: { word: 'table', fx: 'hop' },
+  chair: { word: 'chair', fx: 'hop' },
+  chest: { word: 'chest', fx: 'coins' },
+  coins: { word: 'coin', fx: 'coins' },
+  harp: { word: 'harp', fx: 'harp' },
+  toys: { word: 'box', fx: 'toy' },
+};
+
 function buildHouseInterior(h) {
   const info = LETTERS.find(l => l.letter === h.letter);
   const sc = makeScene('room', 8, 7, 110, 50);
@@ -357,22 +397,23 @@ function buildHouseInterior(h) {
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
   const WB = wall(k.T, k.R);
   const poster = wallPt(WB, WB.len * 0.32, 39);
-  sc.signs.push({ x: poster.x, y: poster.y, text: info.letter + info.letter.toLowerCase(), color: info.color, big: true, plain: true });
-  info.words.slice(0, 3).forEach(([, emoji], i) => {
+  // Tapping the poster says the letter; a picture says "apple starts with A."
+  sc.signs.push({ x: poster.x, y: poster.y, text: info.letter + info.letter.toLowerCase(), color: info.color, big: true, plain: true, poster: info });
+  info.words.slice(0, 3).forEach(([word, emoji], i) => {
     const p = wallPt(WB, WB.len * (0.6 + i * 0.13), 40 + (i % 2) * 6);
-    sc.decor.push({ x: p.x, y: p.y, emoji, frame: true });
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, letter: info.letter, frame: true });
   });
 
   // Furniture.
-  const furn = (c, r, w, d, up, draw) => {
+  const furn = (c, r, w, d, up, draw, react) => {
     block(sc, c, r, w, d);
-    addObject(sc, { c, r, w, d }, footBounds(sc, c, r, w, d, up, 6), draw);
+    addObject(sc, { c, r, w, d }, footBounds(sc, c, r, w, d, up, 6), draw, { react });
   };
-  furn(6, 0, 1, 2, 30, ctx => drawBed(ctx, sc, 6, 0, info.color));
-  furn(1, 0, 1, 1, 44, ctx => drawShelf(ctx, sc, 1, 0, info.color));
-  furn(0, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 3));
-  furn(7, 5, 1, 1, 30, ctx => drawPlant(ctx, sc, 7, 5));
-  furn(5, 5, 1, 1, 24, ctx => drawTable(ctx, sc, 5, 5));
+  furn(6, 0, 1, 2, 30, ctx => drawBed(ctx, sc, 6, 0, info.color), FURNITURE.bed);
+  furn(1, 0, 1, 1, 44, ctx => drawShelf(ctx, sc, 1, 0, info.color), FURNITURE.shelf);
+  furn(0, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 3), FURNITURE.plant);
+  furn(7, 5, 1, 1, 30, ctx => drawPlant(ctx, sc, 7, 5), FURNITURE.plant);
+  furn(5, 5, 1, 1, 24, ctx => drawTable(ctx, sc, 5, 5), FURNITURE.table);
 
   sc.npcs.push(makeNpc({ who: h.who, look: h.look, c: 4, r: 2 }, h.letter));
   sc.exit = exit;
@@ -421,17 +462,17 @@ function buildCastleInterior() {
     drawWallDoor(ctx, WA, YUNA_DOOR_X, '#ff8fc0');
   });
 
-  const furn = (c, r, w, d, up, draw) => {
+  const furn = (c, r, w, d, up, draw, react) => {
     block(sc, c, r, w, d);
-    addObject(sc, { c, r, w, d }, footBounds(sc, c, r, w, d, up, 8), draw);
+    addObject(sc, { c, r, w, d }, footBounds(sc, c, r, w, d, up, 8), draw, { react });
   };
-  furn(5, 0, 1, 1, 40, ctx => drawThrone(ctx, sc, 5, 0, '#e8507a'));
-  furn(6, 0, 1, 1, 40, ctx => drawThrone(ctx, sc, 6, 0, '#b98cff'));
+  furn(5, 0, 1, 1, 40, ctx => drawThrone(ctx, sc, 5, 0, '#e8507a'), FURNITURE.chair);
+  furn(6, 0, 1, 1, 40, ctx => drawThrone(ctx, sc, 6, 0, '#b98cff'), FURNITURE.chair);
   for (const [c, r] of [[2, 2], [9, 2], [2, 6], [9, 6]]) {
-    furn(c, r, 1, 1, 80, ctx => { const p = tileCenter(sc, c, r); drawPillar(ctx, p.x, p.y); });
+    furn(c, r, 1, 1, 80, ctx => { const p = tileCenter(sc, c, r); drawPillar(ctx, p.x, p.y); }, { word: 'castle', fx: 'sparkle' });
   }
-  furn(0, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 4));
-  furn(11, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 11, 4));
+  furn(0, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 4), FURNITURE.plant);
+  furn(11, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 11, 4), FURNITURE.plant);
 
   sc.npcs.push(makeNpc({ who: '임금님', look: 'king', c: 4, r: 1 }, null));
   sc.npcs.push(makeNpc({ who: '왕비님', look: 'queen', c: 7, r: 1 }, null));
@@ -444,12 +485,12 @@ function buildCastleInterior() {
   const door = wallPt(wall(k.L, k.T), YUNA_DOOR_X, 28);
   tileAt(sc, 0, 6).rug = '#ff8fc0';
   sc.links = [{ c: 0, r: 6, target: 'yuna', icon: '🎀', style: 'door', door }];
-  sc.signs.push({ x: door.x, y: door.y - 46, text: place('room'), color: '#ff6fa8' });
+  sc.signs.push({ x: door.x, y: door.y - 46, text: place('room'), color: '#ff6fa8', links: sc.links });
   // A staircase in the back-right corner climbs to the second floor.
   addStairs(sc, 10, 0, 2, 3, ctx => drawCastleStairs(ctx, sc, 10, 0, 2, 3),
     [10, 11].map(c => ({ c, r: 3, target: 'castle2', at: { c: 7, r: 4 }, icon: '⬆️' })));
   const up = tileCenter(sc, 10.5, 1);
-  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#b98cff' });
+  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#b98cff', links: sc.links.filter(l => l.target === 'castle2') });
   renderGround(sc);
   return sc;
 }
@@ -518,17 +559,17 @@ function buildCastleUpstairs() {
   const shelf = r => ({ kind: 'bookcase', front: [{ c: 1, r }, { c: 1, r: r + 1 }] });
   furn(0, 1, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 1, 2), shelf(1));
   furn(0, 4, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 4, 2), shelf(4));
-  furn(1, 0, 1, 1, 44, ctx => drawShelf(ctx, sc, 1, 0, '#b98cff'));
-  furn(3, 7, 1, 1, 24, ctx => drawTable(ctx, sc, 3, 7));
-  furn(7, 2, 1, 1, 44, ctx => drawHarp(ctx, sc, 7, 2));
-  furn(8, 0, 1, 1, 34, ctx => drawTreasureChest(ctx, sc, 8, 0));
-  furn(9, 0, 1, 1, 34, ctx => drawTreasureChest(ctx, sc, 9, 0));
-  furn(9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1));
-  furn(9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3));
+  furn(1, 0, 1, 1, 44, ctx => drawShelf(ctx, sc, 1, 0, '#b98cff'), { react: FURNITURE.shelf });
+  furn(3, 7, 1, 1, 24, ctx => drawTable(ctx, sc, 3, 7), { react: FURNITURE.table });
+  furn(7, 2, 1, 1, 44, ctx => drawHarp(ctx, sc, 7, 2), { react: FURNITURE.harp });
+  furn(8, 0, 1, 1, 34, ctx => drawTreasureChest(ctx, sc, 8, 0), { react: FURNITURE.chest });
+  furn(9, 0, 1, 1, 34, ctx => drawTreasureChest(ctx, sc, 9, 0), { react: FURNITURE.chest });
+  furn(9, 1, 1, 1, 20, ctx => drawCoinPile(ctx, sc, 9, 1), { react: FURNITURE.coins });
+  furn(9, 3, 1, 1, 30, ctx => drawPlant(ctx, sc, 9, 3), { react: FURNITURE.plant });
   const lib = tileCenter(sc, 0, 3);
   sc.signs.push({ x: lib.x - 4, y: lib.y - 84, text: place('library'), color: '#4a6ab8' });
   const gem = tileCenter(sc, 8.5, 0);
-  sc.signs.push({ x: gem.x, y: gem.y - 44, text: '💎', color: '#ffd34d', plain: true });
+  sc.signs.push({ x: gem.x, y: gem.y - 44, text: '💎', color: '#ffd34d', plain: true, react: FURNITURE.chest });
 
   // Stairs back down in the front-right corner.
   addStairs(sc, 7, 6, 2, 3, ctx => drawStairwell(ctx, sc, 7, 6, 2, 3),
@@ -570,9 +611,9 @@ function buildYunaRoom() {
   });
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
   const WB = wall(k.T, k.R);
-  ['🦄', '🌈', '⭐'].forEach((emoji, i) => {
+  [['🦄', 'unicorn'], ['🌈', 'rainbow'], ['⭐', 'star']].forEach(([emoji, word], i) => {
     const p = wallPt(WB, WB.len * (0.62 + i * 0.12), 40 + (i % 2) * 5);
-    sc.decor.push({ x: p.x, y: p.y, emoji, frame: true });
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, frame: true });
   });
 
   const furn = (c, r, w, d, up, draw, extra) => {
@@ -581,13 +622,115 @@ function buildYunaRoom() {
   };
   furn(1, 0, 2, 0.5, 64, ctx => drawWardrobe(ctx, sc, 1, 0), { kind: 'wardrobe', front: [{ c: 1, r: 1 }, { c: 2, r: 1 }] });
   furn(0, 3, 0.5, 1, 64, ctx => drawVanity(ctx, sc, 0, 3), { kind: 'wardrobe', front: [{ c: 1, r: 3 }] });
-  furn(7, 0, 1, 2, 30, ctx => drawBed(ctx, sc, 7, 0, '#ff8fc0'));
-  furn(8, 4, 1, 1, 30, ctx => drawToyChest(ctx, sc, 8, 4));
-  furn(0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6));
-  furn(5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0));
+  furn(7, 0, 1, 2, 30, ctx => drawBed(ctx, sc, 7, 0, '#ff8fc0'), { react: FURNITURE.bed });
+  furn(8, 4, 1, 1, 30, ctx => drawToyChest(ctx, sc, 8, 4), { react: FURNITURE.toys });
+  furn(0, 6, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 6), { react: FURNITURE.plant });
+  furn(5, 0, 1, 1, 30, ctx => drawPlant(ctx, sc, 5, 0), { react: FURNITURE.plant });
 
   sc.links = [{ c: 4, r: sc.D - 1, target: 'castle', at: { c: 1, r: 6 }, icon: '🚪', style: 'mat' }];
   sc.start = { c: 4, r: sc.D - 2 };
+  renderGround(sc);
+  return sc;
+}
+
+// ---- Village homes inside ---------------------------------------------------
+
+// How each kind of village home (VILLAGE_HOMES) looks inside. `label` shows
+// on the way in, `rug` is the floor in the middle of the room, `pictures`
+// hang on the wall and say their word when tapped, and `big` is the thing
+// in the corner: [draw(ctx, x, y, color), what it says and does].
+const HOME_THEMES = {
+  mushroom: { label: '🍄 버섯 집', tint: '#d8b48a', trim: '#c89060', rug: 'moss',
+    pictures: [['🌙', 'moon'], ['🔔', 'bell'], ['⭐', 'star']],
+    big: [(ctx, x, y, col) => drawBigShroom(ctx, x, y, col), { word: 'mushroom', fx: 'boing' }] },
+  unicorn: { label: '🦄 유니콘 집', tint: '#f0d4e4', trim: '#e0a8c8', rug: 'rainbow',
+    pictures: [['🌈', 'rainbow'], ['⭐', 'star'], ['☁️', 'cloud']],
+    big: [(ctx, x, y) => drawCloudPuff(ctx, x, y - 6, 1.1), { word: 'cloud', fx: 'puff' }] },
+  stable: { label: '🐴 유니콘 마구간', tint: '#e8c890', trim: '#c8905a', rug: 'rainbow', bed: '#ffd66b',
+    pictures: [['🐴', 'horse'], ['🌈', 'rainbow'], ['🍎', 'apple']],
+    big: [(ctx, x, y) => drawCloudPuff(ctx, x, y - 6, 1.1), { word: 'cloud', fx: 'puff' }] },
+  teacup: { label: '🫖 찻잔 집', tint: '#f4dce8', trim: '#e0b0c8', rug: 'petals',
+    pictures: [['🐝', 'bee'], ['☕', 'mug'], ['🌙', 'moon']],
+    big: [(ctx, x, y, col) => drawGiantFlower(ctx, x, y, col, 30), { word: 'flower', fx: 'petals' }] },
+  tulip: { label: '🌷 튤립 집', tint: '#f0e0c8', trim: '#d8b070', rug: 'petals',
+    pictures: [['🌹', 'rose'], ['🐝', 'bee'], ['☀️', 'sun']],
+    big: [(ctx, x, y, col) => drawGiantFlower(ctx, x, y, col, 30), { word: 'flower', fx: 'petals' }] },
+};
+
+// Inside a village home: a cozy room in the home's colours with its
+// resident, who asks the questions of the village outside. Leaving puts her
+// back on the door tile she came in by (enterDoor sets sc.returnTo).
+function buildHomeInterior(home) {
+  const theme = HOME_THEMES[home.theme];
+  const sc = makeScene('room', 8, 7, 110, 50);
+  sc.floorTint = theme.tint;
+  for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'wood');
+  let band = 0;
+  for (let r = 2; r <= 4; r++) for (let c = 2; c <= 5; c++) Object.assign(tileAt(sc, c, r), { type: theme.rug, band: band++, flowers: (c + r) % 3 === 0 });
+  const exit = { c: 3, r: sc.D - 1 };
+  tileAt(sc, exit.c, exit.r).rug = shade(home.color, -20);
+
+  addRoomWalls(sc, 64, mix(home.color, '#ffffff', 0.72), theme.trim, (ctx, WA, WB) => {
+    // A window on the left wall, like the letter houses.
+    const wx = WA.len * 0.5;
+    wallRect(ctx, WA, wx - 12, wx + 12, 24, 50, '#f8f2ff');
+    wallRect(ctx, WA, wx - 10, wx + 10, 26, 48, '#a8dcff');
+    wallRect(ctx, WA, wx - 1, wx + 1, 26, 48, '#f8f2ff');
+    wallRect(ctx, WA, wx - 10, wx + 10, 36, 37, '#f8f2ff');
+    wallRect(ctx, WA, wx - 14, wx - 10, 22, 52, home.color);
+    wallRect(ctx, WA, wx + 10, wx + 14, 22, 52, home.color);
+    if (home.theme === 'mushroom') {
+      // White spots high up, like the cap outside.
+      for (const W of [WA, WB]) for (let x = 8; x < W.len - 6; x += 19) wallRect(ctx, W, x, x + 5, 54 + (x % 3), 58 + (x % 3), '#ffffff');
+    } else if (home.theme === 'unicorn' || home.theme === 'stable') {
+      // A painted rainbow on the right wall.
+      const rx = WB.len * 0.86;
+      RAINBOW.forEach((col, i) => {
+        const R = 14 - i * 2;
+        for (let x = -R; x <= R; x++) {
+          const h = Math.sqrt(R * R - x * x);
+          wallRect(ctx, WB, rx + x, rx + x + 1, 36 + h - 2, 36 + h, col);
+        }
+      });
+    } else {
+      // Little flowers painted along the wall.
+      for (const W of [WA, WB]) for (let x = 7; x < W.len - 4; x += 13) {
+        wallRect(ctx, W, x, x + 3, 56, 59, home.color);
+        wallRect(ctx, W, x + 1, x + 2, 57, 58, '#ffe066');
+      }
+    }
+  });
+  const k = boxCorners(sc, 0, 0, sc.W, sc.D);
+  const WB = wall(k.T, k.R);
+  theme.pictures.forEach(([emoji, word], i) => {
+    const p = wallPt(WB, WB.len * (0.3 + i * 0.15), 40 + (i % 2) * 6);
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, frame: true });
+  });
+
+  const furn = (c, r, up, draw, react) => {
+    block(sc, c, r, 1, 1);
+    addObject(sc, { c, r, w: 1, d: 1 }, footBounds(sc, c, r, 1, 1, up, 6), draw, { react });
+  };
+  block(sc, 6, 0, 1, 2);
+  addObject(sc, { c: 6, r: 0, w: 1, d: 2 }, footBounds(sc, 6, 0, 1, 2, 30, 6), ctx => drawBed(ctx, sc, 6, 0, theme.bed || home.color), { react: FURNITURE.bed });
+  furn(1, 0, 44, ctx => drawShelf(ctx, sc, 1, 0, home.color), FURNITURE.shelf);
+  furn(5, 5, 24, ctx => drawTable(ctx, sc, 5, 5), FURNITURE.table);
+  furn(7, 5, 30, ctx => drawPlant(ctx, sc, 7, 5), FURNITURE.plant);
+  const [draw, react] = theme.big;
+  const p = tileCenter(sc, 0, 3);
+  furn(0, 3, 40, ctx => draw(ctx, Math.round(p.x), Math.round(p.y), home.color), react);
+
+  const npc = makeNpc({ who: home.who, look: home.look, c: 4, r: 2 }, null);
+  npc.level = HOME_LEVEL[home.scene];
+  if (home.unicorn) npc.unicorn = home.unicorn;
+  if (home.gives) npc.gives = home.gives;
+  if (npc.level === 5) npc.badge = '✨';
+  sc.npcs.push(npc);
+  sc.exit = exit;
+  sc.start = { c: exit.c, r: exit.r - 1 };
+  sc.home = home;
+  sc.label = theme.label;
+  sc.returnTo = { scene: home.scene, at: { c: home.door[0][0], r: home.door[0][1] } };
   renderGround(sc);
   return sc;
 }
@@ -649,15 +792,17 @@ function buildForest() {
   block(sc, 18, 10, 2, 2);
   for (let r = 9; r <= 12; r++) for (let c = 17; c <= 20; c++) reserve(c, r);
   const gc = tileCenter(sc, 18.5, 10.5);
-  sc.objects.push({ c0: 18, r0: 10, c1: 19, r1: 11, tree: true, canvas: giant.canvas, x: gc.x - giant.ax, y: gc.y - giant.ay, w: giant.canvas.width, h: giant.canvas.height });
+  sc.objects.push({ c0: 18, r0: 10, c1: 19, r1: 11, tree: true, canvas: giant.canvas, x: gc.x - giant.ax, y: gc.y - giant.ay, w: giant.canvas.width, h: giant.canvas.height, react: { word: 'star', fx: 'stars' } });
   sc.lamps.push({ x: gc.x, y: gc.y - giant.ay * 0.7, big: true });
   sc.signs.push({ x: gc.x, y: gc.y - giant.ay - 6, text: '⭐', color: '#ffd34d', plain: true, big: true });
-  // Mushroom cottages.
+  // Mushroom cottages, each a home with a little sign over its round door.
   for (const [c, r, cap] of [[5, 4, '#ff6b7f'], [22, 3, '#b98cff'], [3, 20, '#ff8fc0'], [9, 9, '#ffb347']]) {
     block(sc, c, r, 2, 2);
     for (let rr = r - 1; rr <= r + 2; rr++) for (let cc = c - 1; cc <= c + 2; cc++) reserve(cc, rr);
     const m = tileCenter(sc, c + 0.5, r + 0.5);
-    addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 44, y: m.y - 80, w: 90, h: 92 }, ctx => drawMushroomHouse(ctx, Math.round(m.x), Math.round(m.y), cap));
+    const obj = addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 44, y: m.y - 80, w: 90, h: 92 }, ctx => drawMushroomHouse(ctx, Math.round(m.x), Math.round(m.y), cap));
+    addHomeDoors(sc, obj, homeAt('forest', c, r));
+    sc.signs.push({ x: m.x, y: m.y - 21, text: '🍄', color: cap, plain: true });
     sc.lamps.push({ x: m.x + 15, y: m.y - 17 });
   }
   // The Crystal Cave at the west end of the cross path, and the shop beside it.
@@ -709,14 +854,16 @@ function buildForest() {
     sc.npcs.push(npc);
   }
   // Gate back to the town at the north end, and to the Unicorn Village at the south end.
-  addGate(sc, [13, 16], 1, '#c8b0f0');
-  sc.links = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰', style: 'gate' }));
+  const toTown = [14, 15].map(c => ({ c, r: 0, target: 'town', at: { c: 19 + (c - 14), r: 37 }, icon: '🏰', style: 'gate' }));
+  sc.links = [...toTown];
+  addGate(sc, [13, 16], 1, '#c8b0f0', toTown);
   const tg = tileCenter(sc, 14.5, 1);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#ff8fc0' });
-  addGate(sc, [14, 17], 28, '#ff9ec4');
-  for (const c of [15, 16]) sc.links.push({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', style: 'gate', needStars: UNICORN_STARS });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#ff8fc0', links: toTown });
+  const toUnicorn = [15, 16].map(c => ({ c, r: 29, target: 'unicorn', at: { c: c - 1, r: 1 }, icon: '🦄', style: 'gate', needStars: UNICORN_STARS }));
+  sc.links.push(...toUnicorn);
+  addGate(sc, [14, 17], 28, '#ff9ec4', toUnicorn);
   const ug = tileCenter(sc, 15.5, 28);
-  sc.signs.push({ x: ug.x, y: ug.y - 64, text: place('unicorn'), color: '#ff6fa8', needStars: UNICORN_STARS });
+  sc.signs.push({ x: ug.x, y: ug.y - 64, text: place('unicorn'), color: '#ff6fa8', needStars: UNICORN_STARS, links: toUnicorn });
   sc.links.push(...cave);
   sc.npcs.push(shop.keeper);
   sc.start = { c: 14, r: 1 };
@@ -755,13 +902,15 @@ function buildUnicornVillage() {
   block(sc, 17, 3, 1, 1);
   for (const [c, r] of [[13, 7], [17, 3], [12, 7], [13, 8], [17, 2], [18, 3]]) reserve(c, r);
   const ac = tileCenter(sc, 15, 5);
-  addObject(sc, { c: 13, r: 3, w: 5, d: 5 }, { x: ac.x - 74, y: ac.y - 84, w: 148, h: 100 }, ctx => drawRainbowArch(ctx, Math.round(ac.x), Math.round(ac.y), 64));
+  addObject(sc, { c: 13, r: 3, w: 5, d: 5 }, { x: ac.x - 74, y: ac.y - 84, w: 148, h: 100 }, ctx => drawRainbowArch(ctx, Math.round(ac.x), Math.round(ac.y), 64),
+    { react: { word: 'rainbow', fx: 'rainbow' } });
   // Unicorn homes, each one different.
   for (const [c, r, shape, roof] of [[3, 9, 'cloud', '#ff9ec4'], [21, 7, 'stable', '#b9a0ff'], [8, 11, 'crystal', '#8fd3ff'], [20, 11, 'candy', '#ff9ec4'], [8, 2, 'star', '#b9a0ff']]) {
     block(sc, c, r, 3, 3);
     for (let rr = r - 1; rr <= r + 3; rr++) for (let cc = c - 1; cc <= c + 3; cc++) reserve(cc, rr);
-    addObject(sc, { c, r, w: 3, d: 3 }, footBounds(sc, c, r, 3, 3, houseUp(shape), 12),
+    const obj = addObject(sc, { c, r, w: 3, d: 3 }, footBounds(sc, c, r, 3, 3, houseUp(shape), 12),
       ctx => drawHouse(ctx, boxCorners(sc, c, r, 3, 3), { roof, wall: '#fffaf4', door: 'left', shape }));
+    addHomeDoors(sc, obj, homeAt('unicorn', c, r));
     const k = boxCorners(sc, c, r, 3, 3);
     const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 30);
     sc.signs.push({ x: sign.x, y: sign.y, text: '🦄', color: roof, plain: true });
@@ -770,8 +919,8 @@ function buildUnicornVillage() {
   block(sc, 9, 21, 2, 2);
   for (let r = 20; r <= 23; r++) for (let c = 8; c <= 11; c++) reserve(c, r);
   const fc = tileCenter(sc, 9.5, 21.5);
-  sc.objects.push({ c0: 9, r0: 21, c1: 10, r1: 22, x: fc.x - 30, y: fc.y - 40, w: 60, h: 60,
-    animated: (ctx, t) => drawFountain(ctx, Math.round(fc.x), Math.round(fc.y), t) });
+  sc.objects.push(stillFrame({ c0: 9, r0: 21, c1: 10, r1: 22, x: fc.x - 30, y: fc.y - 40, w: 60, h: 60,
+    animated: (ctx, t) => drawFountain(ctx, Math.round(fc.x), Math.round(fc.y), t), react: { word: 'fountain', fx: 'splash' } }));
   // Flower arches over the rainbow road: only their feet block the way.
   for (const [a, b] of [[[9, 15], [9, 17]], [[4, 21], [6, 21]], [[24, 19], [26, 19]]]) {
     for (const [c, r] of [a, b]) { block(sc, c, r, 1, 1); reserve(c, r); }
@@ -782,14 +931,16 @@ function buildUnicornVillage() {
     const foot = { c: c0, r: r0, w: Math.abs(a[0] - b[0]) + 1, d: Math.abs(a[1] - b[1]) + 1 };
     const x0 = Math.min(pa.x, pb.x) - 10;
     const y0 = Math.min(pa.y, pb.y) - 70;
-    addObject(sc, foot, { x: x0, y: y0, w: Math.abs(pa.x - pb.x) + 20, h: Math.abs(pa.y - pb.y) + 80 }, ctx => drawFlowerArch(ctx, pa, pb));
+    addObject(sc, foot, { x: x0, y: y0, w: Math.abs(pa.x - pb.x) + 20, h: Math.abs(pa.y - pb.y) + 80 }, ctx => drawFlowerArch(ctx, pa, pb),
+      { react: { word: 'flower', fx: 'petals' } });
   }
   // Clouds resting on the meadow.
   for (const [c, r] of [[3, 2], [25, 3], [2, 14], [27, 17], [9, 28], [22, 28], [27, 24]]) {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 20, y: p.y - 18, w: 40, h: 32 }, ctx => drawCloudPuff(ctx, Math.round(p.x), Math.round(p.y - 4), 1));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 20, y: p.y - 18, w: 40, h: 32 }, ctx => drawCloudPuff(ctx, Math.round(p.x), Math.round(p.y - 4), 1),
+      { react: { word: 'cloud', fx: 'puff' } });
   }
   for (const n of UNICORN_NPCS) reserve(n.c, n.r);
   for (let r = 0; r <= 2; r++) for (let c = 13; c <= 17; c++) reserve(c, r);
@@ -821,10 +972,10 @@ function buildUnicornVillage() {
     if (n.unicorn) npc.unicorn = n.unicorn;
     sc.npcs.push(npc);
   }
-  addGate(sc, [13, 16], 1, '#b8a0e8');
   sc.links = [14, 15].map(c => ({ c, r: 0, target: 'forest', at: { c: c + 1, r: 27 }, icon: '🌲', style: 'gate' }));
+  addGate(sc, [13, 16], 1, '#b8a0e8', sc.links);
   const fg = tileCenter(sc, 14.5, 1);
-  sc.signs.push({ x: fg.x, y: fg.y - 64, text: place('forest'), color: '#8f70e0' });
+  sc.signs.push({ x: fg.x, y: fg.y - 64, text: place('forest'), color: '#8f70e0', links: sc.links });
   sc.start = { c: 14, r: 1 };
   renderGround(sc);
   return sc;
@@ -838,11 +989,13 @@ function addForestCave(sc) {
   for (let c = 2; c <= 4; c++) setTile(sc, c, 17, 'path');
   setTile(sc, 2, 16, 'path');
   block(sc, 0, 15, 2, 4);
+  const links = [16, 17].map(r => ({ c: 2, r, target: 'dungeon', at: { c: 7 + (r - 16), r: 12 }, icon: '💎', needStars: DUNGEON_STARS }));
   const m = tileCenter(sc, 1.5, 16.5);
-  addObject(sc, { c: 0, r: 15, w: 2, d: 4 }, { x: m.x - 48, y: m.y - 64, w: 96, h: 80 }, ctx => drawCaveMouth(ctx, Math.round(m.x), Math.round(m.y)), { kind: 'cave' });
+  // The rock and its doorway both lead in.
+  addObject(sc, { c: 0, r: 15, w: 2, d: 4 }, { x: m.x - 48, y: m.y - 64, w: 96, h: 80 }, ctx => drawCaveMouth(ctx, Math.round(m.x), Math.round(m.y)), { kind: 'cave', links });
   sc.lamps.push({ x: m.x, y: m.y - 8 });
-  sc.signs.push({ x: m.x, y: m.y - 70, text: place('dungeon'), color: '#8f70e0', needStars: DUNGEON_STARS });
-  return [16, 17].map(r => ({ c: 2, r, target: 'dungeon', at: { c: 7 + (r - 16), r: 12 }, icon: '💎', needStars: DUNGEON_STARS }));
+  sc.signs.push({ x: m.x, y: m.y - 70, text: place('dungeon'), color: '#8f70e0', needStars: DUNGEON_STARS, links });
+  return links;
 }
 
 // The Starlight Shop: a golden cottage on the cross path, its keeper outside.
@@ -896,21 +1049,21 @@ function buildDungeon() {
   addCaveWalls(sc, 84);
 
   // Props stand on single tiles.
-  const prop = (c, r, up, draw) => {
+  const prop = (c, r, up, draw, react) => {
     block(sc, c, r, 1, 1);
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
   for (const [c, r, col] of [[1, 1, '#7fe8ff'], [14, 1, '#ff9cf0'], [0, 7, '#c8a0ff'], [15, 9, '#7fe8ff'], [4, 12, '#ff9cf0'], [6, 8, '#c8a0ff']]) {
-    const p = prop(c, r, 30, (ctx, x, y) => drawCrystal(ctx, x, y, col));
+    const p = prop(c, r, 30, (ctx, x, y) => drawCrystal(ctx, x, y, col), { word: 'crystal', fx: 'sparkle' });
     sc.lamps.push({ x: p.x, y: p.y - 12 });
   }
   for (const [c, r, col] of [[2, 6, '#7fe8ff'], [11, 4, '#ff9cf0'], [14, 12, '#fff6a8'], [8, 2, '#c8a0ff']]) {
-    const p = prop(c, r, 26, (ctx, x, y) => drawBigShroom(ctx, x, y, col));
+    const p = prop(c, r, 26, (ctx, x, y) => drawBigShroom(ctx, x, y, col), { word: 'mushroom', fx: 'boing' });
     sc.lamps.push({ x: p.x, y: p.y - 18 });
   }
-  for (const [c, r] of [[5, 2], [12, 9], [1, 10]]) prop(c, r, 28, drawStalagmite);
+  for (const [c, r] of [[5, 2], [12, 9], [1, 10]]) prop(c, r, 28, drawStalagmite, { word: 'rock', fx: 'hop' });
   const torch = makeTorch();
   for (const [c, r] of [[6, 13], [9, 13]]) {
     block(sc, c, r, 1, 1);
@@ -983,13 +1136,14 @@ function buildFairyVillage() {
   }
 
   // Props on single tiles: giant flowers, toadstools and lily pads.
-  const prop = (c, r, up, draw, w = 32) => {
+  const prop = (c, r, up, draw, w = 32, react) => {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - w / 2, y: p.y - up, w, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - w / 2, y: p.y - up, w, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
+  const flower = { word: 'flower', fx: 'petals' };
   // A giant flower in the middle of the plaza.
   block(sc, 12, 12, 2, 2);
   for (let r = 11; r <= 14; r++) for (let c = 11; c <= 14; c++) reserve(c, r);
@@ -998,29 +1152,33 @@ function buildFairyVillage() {
     drawGiantFlower(ctx, Math.round(mid.x) - 12, Math.round(mid.y) + 2, '#c8a8ff', 36);
     drawGiantFlower(ctx, Math.round(mid.x) + 12, Math.round(mid.y) + 2, '#8fd3ff', 32);
     drawGiantFlower(ctx, Math.round(mid.x), Math.round(mid.y) + 6, '#ff9ec4', 60);
-  });
+  }, { react: flower });
   sc.lamps.push({ x: mid.x, y: mid.y - 66, big: true });
   const petals = ['#ff9ec4', '#c8a8ff', '#ffd66b', '#8fd3ff', '#ffb0b0', '#ffffff'];
   [[3, 9], [10, 3], [16, 6], [22, 10], [10, 16], [2, 21], [15, 23], [23, 15], [7, 11], [16, 9]].forEach(([c, r], i) => {
-    const p = prop(c, r, 56, (ctx, x, y) => drawGiantFlower(ctx, x, y, petals[i % petals.length], 38 + (i % 3) * 5));
+    const p = prop(c, r, 56, (ctx, x, y) => drawGiantFlower(ctx, x, y, petals[i % petals.length], 38 + (i % 3) * 5), 32, flower);
     sc.lamps.push({ x: p.x, y: p.y - 44 - (i % 3) * 5, small: true });
   });
   [[10, 6], [2, 6], [21, 4], [9, 22], [23, 18], [15, 10]].forEach(([c, r], i) => {
-    prop(c, r, 46, (ctx, x, y) => drawTallShroom(ctx, x, y, ['#ff8fb8', '#b9a0ff', '#ffb347', '#8fd3ff'][i % 4]), 34);
+    prop(c, r, 46, (ctx, x, y) => drawTallShroom(ctx, x, y, ['#ff8fb8', '#b9a0ff', '#ffb347', '#8fd3ff'][i % 4]), 34, { word: 'mushroom', fx: 'boing' });
   });
   for (const [c, r, fl] of [[17, 19, '#ff9ec4'], [20, 18, null], [21, 21, '#ffffff'], [18, 21, null], [19, 19, '#ffd0ec'], [16, 20, null], [22, 20, null]]) {
     if (tileAt(sc, c, r).type !== 'water') continue;
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 10, y: p.y - 10, w: 20, h: 16 }, ctx => drawLilyPad(ctx, Math.round(p.x), Math.round(p.y + 1), fl));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 10, y: p.y - 10, w: 20, h: 16 }, ctx => drawLilyPad(ctx, Math.round(p.x), Math.round(p.y + 1), fl),
+      { react: { word: 'frog', fx: 'frog' } });
   }
 
-  // Fairy cottages: teacups and tulips, each on a 2 x 2 footprint.
+  // Fairy cottages: teacups and tulips, each on a 2 x 2 footprint, each a
+  // home with a little sign over its door.
   for (const [c, r, kind, col] of [[5, 5, 'cup', '#ff9ec4'], [15, 1, 'tulip', '#c8a8ff'], [20, 7, 'cup', '#8fc8ff'], [4, 17, 'tulip', '#ff9ec4'], [7, 1, 'tulip', '#ffd66b'], [18, 14, 'cup', '#8fdcc0']]) {
     block(sc, c, r, 2, 2);
     for (let rr = r - 1; rr <= r + 2; rr++) for (let cc = c - 1; cc <= c + 2; cc++) reserve(cc, rr);
     const m = tileCenter(sc, c + 0.5, r + 0.5);
-    addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 46, y: m.y - 86, w: 92, h: 100 },
+    const obj = addObject(sc, { c, r, w: 2, d: 2 }, { x: m.x - 46, y: m.y - 86, w: 92, h: 100 },
       ctx => (kind === 'cup' ? drawTeacupHouse : drawFlowerHouse)(ctx, Math.round(m.x), Math.round(m.y), col));
+    addHomeDoors(sc, obj, homeAt('fairy', c, r));
+    sc.signs.push({ x: m.x - 2, y: m.y - 26, text: kind === 'cup' ? '🫖' : '🌷', color: col, plain: true });
     sc.lamps.push({ x: m.x + 15, y: m.y - 24 });
   }
 
@@ -1032,7 +1190,8 @@ function buildFairyVillage() {
     const foot = { c: Math.min(a[0], b[0]), r: Math.min(a[1], b[1]), w: Math.abs(a[0] - b[0]) + 1, d: Math.abs(a[1] - b[1]) + 1 };
     const x0 = Math.min(pa.x, pb.x) - 10;
     const y0 = Math.min(pa.y, pb.y) - 70;
-    addObject(sc, foot, { x: x0, y: y0, w: Math.abs(pa.x - pb.x) + 20, h: Math.abs(pa.y - pb.y) + 80 }, ctx => drawFlowerArch(ctx, pa.x < pb.x ? pa : pb, pa.x < pb.x ? pb : pa));
+    addObject(sc, foot, { x: x0, y: y0, w: Math.abs(pa.x - pb.x) + 20, h: Math.abs(pa.y - pb.y) + 80 }, ctx => drawFlowerArch(ctx, pa.x < pb.x ? pa : pb, pa.x < pb.x ? pb : pa),
+      { react: flower });
   }
   for (const n of FAIRY_NPCS) reserve(n.c, n.r);
   for (let r = 10; r <= 15; r++) for (let c = 0; c <= 3; c++) reserve(c, r);
@@ -1077,10 +1236,10 @@ function buildFairyVillage() {
     sc.npcs.push(npc);
   }
   // Gate back to town on the west edge.
-  addSideGate(sc, 1, [11, 14], '#ffd0ec', [0, 1]);
   sc.links = [12, 13].map(r => ({ c: 0, r, target: 'town', at: { c: 37, r: r + 14 }, icon: '🌸', style: 'gate' }));
+  addSideGate(sc, 1, [11, 14], '#ffd0ec', [0, 1], sc.links);
   const tg = tileCenter(sc, 1, 12.5);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#ff8fc0' });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: '#ff8fc0', links: sc.links });
   sc.start = { c: 2, r: 12 };
   renderGround(sc);
   return sc;

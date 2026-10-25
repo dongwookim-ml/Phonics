@@ -118,6 +118,24 @@ npx http-server -p 8080 .
   re-reading is free but can't farm coins. A wrong answer gets a second try,
   then the answer is shown. Books live in `BOOKS` in `js/books.js`; the
   reader is `js/library.js`.
+- **Village homes**: every home in the villages opens too: the forest's
+  mushroom houses, the unicorn homes and stable, and the fairies' teacup
+  and tulip cottages (🍄 🦄 🫖 🌷 over their doors). Tap one to walk to its
+  door and knock; inside, its resident says hello and asks that village's
+  questions. The mat inside leads back out to the same door. Homes live in
+  `VILLAGE_HOMES` and their hellos in `HOME_HELLO` (`js/data.js`), the rooms
+  in `HOME_THEMES` (`js/world.js`). In the robot edition the Car Village's
+  garage, fire station, car wash, gas station and car homes, the dino egg
+  huts and the drone hangars and labs open the same way (`captainHomes` in
+  `js/captain-town.js`).
+- **Touch and hear**: tap anything else (a tree, the fountain, a bed, a
+  picture on the wall) and it wiggles or sparkles while the narrator says
+  its English word, shown big with the first letter in colour. Pictures in
+  a letter house say "apple starts with A." and the poster says its letter.
+  Every part of a gate or the cave (arch, posts, sign, padlock, mat) goes
+  through it, or says how many stars it needs. Taps never give stars or
+  coins. Code in `js/touch.js`; words not in the word lists are in
+  `PROP_WORDS`.
 - 🖼️ toggles picture hints on the answer cards (easier). With it off, the
   child has to read the first letter.
 
@@ -163,8 +181,9 @@ device's own voice.
 ## Before deploying
 
 `node tools/smoke.js` (needs the `playwright` package) checks that no two
-scripts define the same global and that every scene builds without errors,
-for both a girl and a boy hero.
+scripts define the same global and that every scene (village homes too)
+builds without errors, for both a girl and a boy hero and the robot, and
+that every door can be reached and leads back out where it was.
 
 ### Live speech server (optional)
 
@@ -225,6 +244,7 @@ These win over the Kokoro recordings; any missing file falls back to them.
 - `js/account.js`: login / sign-up and the server save
 - `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
 - `js/world.js`: town and room layouts, pathfinding
+- `js/touch.js`: what things on the map do and say when tapped
 - `js/audio.js`: speech and sound effects
 - `js/books.js`: the library's story books and their questions
 - `js/library.js`: the book list, the reader and the book quiz

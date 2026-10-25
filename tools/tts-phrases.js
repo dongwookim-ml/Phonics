@@ -12,7 +12,8 @@ const root = path.join(__dirname, '..');
 // js/captain-*.js files, which change those tables and add their own).
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYMES', 'SENTENCES', 'FOREST_STARS',
-  'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS'];
+  'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
+  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS'];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -98,6 +99,9 @@ function collect(D) {
     if (gives) for (const t of partShow) add(v, t);
   }
   const robots = D.TITLES.captain.look === 'robot';
+  // Village home residents say hello as she comes in (enterDoor in game.js).
+  // Their questions are their village's, recorded above by their look.
+  for (const h of D.VILLAGE_HOMES) for (const l of D.HOME_HELLO[h.theme]) for (const t of fills(l)) add(D.VOICES[h.look].tts, t);
   // Each letter house's host: "This is the C house. C says kuh." (houseHello in game.js)
   for (const h of D.TOWN_HOUSES) {
     const l = D.LETTERS.find(x => x.letter === h.letter);
@@ -111,12 +115,14 @@ function collect(D) {
   for (const f of D.WORD_FAMILIES) for (const [w] of f) words.add(w);
   for (const r of D.RHYMES) for (const [w] of r) words.add(w);
   for (const x of D.SENTENCES) { words.add(x.w[0]); x.alike.forEach(w => words.add(w)); x.other.forEach(([w]) => words.add(w)); }
+  // Words said when she taps a thing on the map (js/touch.js).
+  for (const w of D.PROP_WORDS) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
   for (const l of D.LETTERS) for (const [w] of l.words) add(N, `${w} starts with ${l.letter}.`);
   // Letter names: spelling tiles and spelled-out answers, and a wrong letter picked.
   for (const l of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') add(N, l, 0.8);
   for (const set of D.RHYMES) for (const [a] of set) for (const [b] of set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
-  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland']);
+  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
   for (const t of partShow) add(N, t);
   for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });

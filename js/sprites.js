@@ -265,6 +265,14 @@ const TREE_PALETTES = {
   violet:  { dark: '#6a4aa8', mid: '#9070d8', light: '#c8b0ff', spark: '#fff6a8', line: '#45307a', sparks: 0.05 },
 };
 
+// What a shared sprite (a tree, plant or lamp) says and does when tapped:
+// its English word and an effect from TOUCH_FX in js/touch.js.
+function touchable(sprite, word, fx) {
+  sprite.canvas.touch = { word, fx };
+  return sprite;
+}
+const TREE_FX = { blossom: 'petals', cotton: 'petals', candy: 'petals', lilac: 'petals', star: 'stars', violet: 'stars' };
+
 // Round fluffy tree. `k` scales it, so the forest can have a giant one.
 function makeTree(variant, k = 1) {
   const W = Math.round(34 * k);
@@ -299,7 +307,7 @@ function makeTree(variant, k = 1) {
       px(ctx, x, y, 1, 1, col);
     }
   }
-  return { canvas: cv, ax: Math.round(cx), ay: Math.round(41 * k) };
+  return touchable({ canvas: cv, ax: Math.round(cx), ay: Math.round(41 * k) }, 'tree', TREE_FX[variant] || 'leaves');
 }
 
 function drawMoss(ctx, ox, oy, c, r, flowers) {
@@ -405,7 +413,7 @@ function makeLamp() {
   px(ctx, 4, 5, 2, 3, '#ffffff');
   px(ctx, 1, 2, 10, 1, '#5a4a6a');
   px(ctx, 4, 0, 4, 2, '#5a4a6a');
-  return { canvas: cv, ax: 6, ay: 31, glow: { x: 6, y: 6 } };
+  return touchable({ canvas: cv, ax: 6, ay: 31, glow: { x: 6, y: 6 } }, 'lamp', 'glow');
 }
 
 // ---- More trees and plants -------------------------------------------------
@@ -434,9 +442,15 @@ function makePlant(kind) {
     lollipop: makeLollipopTree,
   }[kind];
   const p = f ? f() : makeTree('green');
+  const [word, fx] = PLANT_TOUCH[kind] || ['tree', 'leaves'];
+  if (!p.canvas.touch || PLANT_TOUCH[kind]) touchable(p, word, fx);
   plantCache.set(kind, p);
   return p;
 }
+const PLANT_TOUCH = {
+  tulips: ['flower', 'petals'], bluebells: ['flower', 'petals'], bush: ['bush', 'leaves'], berryBush: ['bush', 'leaves'],
+  heartBush: ['bush', 'petals'], lollipop: ['lollipop', 'sparkle'], starPine: ['tree', 'stars'], mintPine: ['tree', 'petals'],
+};
 
 function plantShadow(ctx, cx, cy, rx) {
   ctx.fillStyle = 'rgba(40,30,60,0.18)';
@@ -2798,7 +2812,7 @@ function makeTorch() {
   px(ctx, 5, 0, 2, 2, '#ffd34d');
   px(ctx, 4, 6, 4, 4, '#ffe680');
   px(ctx, 5, 7, 2, 2, '#ffffff');
-  return { canvas: cv, ax: 6, ay: 31, glow: { x: 6, y: 6 } };
+  return touchable({ canvas: cv, ax: 6, ay: 31, glow: { x: 6, y: 6 } }, 'fire', 'glow');
 }
 
 // Rocky hill with a round, glowing doorway, seen from the forest.

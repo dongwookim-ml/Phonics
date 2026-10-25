@@ -246,39 +246,41 @@ function buildVillainCave() {
   caveLairWalls(sc, 84);
 
   // Props stand on single tiles; `anim` ones are drawn every frame.
-  const prop = (c, r, up, draw, anim) => {
+  const prop = (c, r, up, draw, anim, react) => {
     block(sc, c, r, 1, 1);
     const p = tileCenter(sc, c, r);
     const bounds = { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 };
-    if (anim) sc.objects.push(Object.assign({ c0: c, r0: r, c1: c, r1: r }, bounds, { animated: (ctx, t) => anim(ctx, Math.round(p.x), Math.round(p.y), t) }));
-    else addObject(sc, { c, r, w: 1, d: 1 }, bounds, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)));
+    // Animated ones get a still frame so they can be tapped (stillFrame in js/world.js).
+    if (anim) sc.objects.push(stillFrame(Object.assign({ c0: c, r0: r, c1: c, r1: r }, bounds, { animated: (ctx, t) => anim(ctx, Math.round(p.x), Math.round(p.y), t), react })));
+    else addObject(sc, { c, r, w: 1, d: 1 }, bounds, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
-  for (const [c, r] of [[1, 2], [14, 1], [1, 12], [15, 4]]) prop(c, r, 26, caveScrapHeap);
+  for (const [c, r] of [[1, 2], [14, 1], [1, 12], [15, 4]]) prop(c, r, 26, caveScrapHeap, null, { word: 'bolt', fx: 'hop' });
   for (const [c, r, col] of [[0, 6, '#ff9a4a'], [4, 1, '#6fb8ff'], [15, 7, '#ff6fa8'], [10, 12, '#6fb8ff']]) {
     const p = prop(c, r, 24, (ctx, x, y) => caveBarrel(ctx, x, y, col));
     sc.lamps.push({ x: p.x, y: p.y - 18, small: true });
   }
   for (const [c, r] of [[3, 7], [14, 9]]) {
-    const p = prop(c, r, 40, null, caveTeslaCoil);
+    const p = prop(c, r, 40, null, caveTeslaCoil, { fx: 'sparkle' });
     sc.lamps.push({ x: p.x, y: p.y - 34 });
   }
   const lab = prop(13, 2, 30, caveLabTable);
   sc.lamps.push({ x: lab.x, y: lab.y - 20 });
-  prop(11, 1, 26, caveBigButton);
+  prop(11, 1, 26, caveBigButton, null, { fx: 'boing' });
   for (const [c, r] of [[6, 13], [9, 13]]) {
-    const p = prop(c, r, 36, null, caveBeacon);
+    const p = prop(c, r, 36, null, caveBeacon, { word: 'light', fx: 'glow' });
     sc.lamps.push({ x: p.x, y: p.y - 30 });
   }
   // The boss's golden throne, and the pirate's treasure.
   block(sc, 7, 2, 1, 1);
-  addObject(sc, { c: 7, r: 2, w: 1, d: 1 }, footBounds(sc, 7, 2, 1, 1, 44), ctx => drawThrone(ctx, sc, 7, 2, '#9a7ae0'));
+  addObject(sc, { c: 7, r: 2, w: 1, d: 1 }, footBounds(sc, 7, 2, 1, 1, 44), ctx => drawThrone(ctx, sc, 7, 2, '#9a7ae0'), { react: FURNITURE.chair });
   block(sc, 3, 11, 1, 1);
-  addObject(sc, { c: 3, r: 11, w: 1, d: 1 }, footBounds(sc, 3, 11, 1, 1, 30), ctx => drawTreasureChest(ctx, sc, 3, 11));
+  addObject(sc, { c: 3, r: 11, w: 1, d: 1 }, footBounds(sc, 3, 11, 1, 1, 30), ctx => drawTreasureChest(ctx, sc, 3, 11), { react: FURNITURE.chest });
 
-  // Bubbles popping in the goo pool.
+  // Bubbles popping in the goo pool. A tap anywhere on the pool bubbles too.
   const gp = tileCenter(sc, 11.5, 8);
-  sc.objects.push({ c0: 10, r0: 7, c1: 13, r1: 9, x: gp.x - 40, y: gp.y - 30, w: 80, h: 50, animated: (ctx, t) => caveGooBubbles(ctx, gp.x, gp.y, t) });
+  sc.objects.push(stillFrame({ c0: 10, r0: 7, c1: 13, r1: 9, x: gp.x - 44, y: gp.y - 30, w: 88, h: 54,
+    animated: (ctx, t) => caveGooBubbles(ctx, gp.x, gp.y, t), react: { fx: 'bubbles' } }, ctx => caveGooPool(ctx, gp.x, gp.y)));
   sc.lamps.push({ x: gp.x - 14, y: gp.y - 2, small: true }, { x: gp.x + 12, y: gp.y + 3, small: true }, { x: gp.x, y: gp.y - 6 });
 
   // Rock floor, a riveted steel walkway with hazard stripes, the goo pool

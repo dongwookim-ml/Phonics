@@ -50,6 +50,19 @@ const CAR_NPCS = [
   { name: '몬스터 트럭 쿵쾅', look: 'monstertruck', unicorn: 'monster', c: 20, r: 23 },
 ];
 
+// Homes in Car Village (see VILLAGE_HOMES in js/data.js): the four signed
+// buildings and three car family homes. The door tiles are in front of the
+// painted doors. Talking cars use the looks (voices) of the cars outside.
+const CAR_HOMES = [
+  { id: 'garage',   scene: 'unicorn', c: 6,  r: 7,  w: 4, door: [[7, 10], [8, 10]], theme: 'garage',  color: '#3a6fd8', who: '정비소 사장님',    look: 'mechanic' },
+  { id: 'firehall', scene: 'unicorn', c: 6,  r: 17, w: 3, door: [[7, 20]],  theme: 'fire',    color: '#ec4a3c', who: '소방차 빵빵',      look: 'firetruck', unicorn: 'fire' },
+  { id: 'carwash',  scene: 'unicorn', c: 10, r: 17, w: 3, door: [[11, 20]], theme: 'wash',    color: '#4a9ad8', who: '택시 씽씽',        look: 'racecar', unicorn: 'taxi' },
+  { id: 'gasshop',  scene: 'unicorn', c: 21, r: 4,  w: 3, door: [[22, 7]],  theme: 'gas',     color: '#ec4a3c', who: '주유소 언니',      look: 'attendant' },
+  { id: 'carhome1', scene: 'unicorn', c: 2,  r: 2,  w: 3, door: [[4, 5]],   theme: 'carhome', color: '#5a8fe0', who: '로켓 자동차 슝슝', look: 'racecar', unicorn: 'rocket' },
+  { id: 'carhome2', scene: 'unicorn', c: 8,  r: 1,  w: 3, door: [[10, 4]],  theme: 'carhome', color: '#ff8a5a', who: '덤프트럭 뚝딱',    look: 'monstertruck', unicorn: 'dump' },
+  { id: 'carhome3', scene: 'unicorn', c: 25, r: 8,  w: 3, door: [[27, 11]], theme: 'carhome', color: '#4fbf70', who: '경찰차 순찰이',    look: 'policecar', unicorn: 'police' },
+];
+
 if (isCaptain()) {
   // The ride slot's items become cars, in place, so the wardrobe, rewards,
   // shop and save all keep working with the same keys and flags.
@@ -81,6 +94,14 @@ if (isCaptain()) {
     mount: ['Buckle up!', "Let's roll!", 'Vroom! Off we go!'],
     dismount: ['Park here, car. I will be right back!', 'Wait here, car!', 'Cars wait outside. See you soon!'],
     newUnicorn: ['Beep, beep! Will you drive me?', 'I want to be your car! Shall we go for a ride?', 'Vroom! Hop in, {title}! Want to drive now?'],
+  });
+  captainHomes('unicorn', CAR_HOMES);
+  Object.assign(HOME_HELLO, {
+    garage:  ['Welcome to my garage, {title} {name}!', 'Come in! I fix cars in here all day.', 'Hello! Every tool has its own hook.'],
+    fire:    ['Welcome to the fire station, {title} {name}!', 'Nee-naw! This is where the fire trucks sleep.', 'Come in! Our helmets are all shiny.'],
+    wash:    ['Welcome to the car wash, {title} {name}!', 'Splish, splash! Bubbles everywhere!', 'Come in! Do you want to be squeaky clean?'],
+    gas:     ['Welcome to the gas station shop, {title} {name}!', 'Come in! The cars stop here for a drink.', 'Hello! We have snacks for robots and cars.'],
+    carhome: ['Beep beep! Welcome to my home, {title} {name}!', 'Come in! This is my cozy garage home.', 'Honk, honk! Make yourself at home!'],
   });
   CAPTAIN_SCENES.unicorn = () => buildCarVillage();
   // The ride button shows a car.
@@ -985,11 +1006,13 @@ function buildCarVillage() {
   for (let r = 0; r <= 2; r++) for (let c = 12; c <= 17; c++) reserve(c, r);
 
   // Buildings: footprint, how tall, how to draw, a sign over the door wall.
+  // Each one is a home (CAR_HOMES) with a room inside.
   const building = (c, r, w, d, up, draw, sign) => {
     block(sc, c, r, w, d);
     for (let rr = r - 1; rr <= r + d; rr++) for (let cc = c - 1; cc <= c + w; cc++) reserve(cc, rr);
     const k = boxCorners(sc, c, r, w, d);
     const obj = addObject(sc, { c, r, w, d }, footBounds(sc, c, r, w, d, up, 12), ctx => draw(ctx, k));
+    addHomeDoors(sc, obj, homeAt('unicorn', c, r));
     if (sign) {
       const p = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, sign.v);
       sc.signs.push({ x: p.x, y: p.y, text: sign.text, color: sign.color, plain: sign.plain });
@@ -1013,23 +1036,24 @@ function buildCarVillage() {
   const pumps = [[19, 5, '#ec4a3c'], [19, 7, '#3a6fd8']];
   const posts = [[18, 4], [20, 4], [18, 8], [20, 8]];
   for (const [c, r] of posts.concat(pumps.map(([c, r]) => [c, r]))) { block(sc, c, r, 1, 1); reserve(c, r); }
-  addObject(sc, { c: 18, r: 4, w: 3, d: 5 }, footBounds(sc, 18, 4, 3, 5, 64, 14), ctx => drawCanopy(ctx, sc, 18, 4, 3, 5, pumps));
+  addObject(sc, { c: 18, r: 4, w: 3, d: 5 }, footBounds(sc, 18, 4, 3, 5, 64, 14), ctx => drawCanopy(ctx, sc, 18, 4, 3, 5, pumps), { react: { word: 'gas', fx: 'hop' } });
 
   // Small things standing on single tiles.
-  const prop = (c, r, sprite) => {
+  const prop = (c, r, sprite, react) => {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: sprite.canvas, x: p.x - sprite.ax, y: p.y - sprite.ay, w: sprite.canvas.width, h: sprite.canvas.height });
+    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, canvas: sprite.canvas, x: p.x - sprite.ax, y: p.y - sprite.ay, w: sprite.canvas.width, h: sprite.canvas.height, react });
   };
   const cone = makeCone();
   const tyres = makeTyres(3);
   const lamp = makeLamp();
-  for (const [c, r] of [[17, 21], [23, 21], [17, 24], [23, 24], [11, 10], [12, 21]]) prop(c, r, cone);
-  for (const [c, r] of [[5, 10], [10, 9], [9, 21], [22, 3]]) prop(c, r, makeTyres(2 + ((c + r) % 3)));
+  const tire = { word: 'tire', fx: 'boing' };
+  for (const [c, r] of [[17, 21], [23, 21], [17, 24], [23, 24], [11, 10], [12, 21]]) prop(c, r, cone, { word: 'cone', fx: 'hop' });
+  for (const [c, r] of [[5, 10], [10, 9], [9, 21], [22, 3]]) prop(c, r, makeTyres(2 + ((c + r) % 3)), tire);
   prop(17, 10, makeDrum('#3a6fd8'));
   prop(23, 9, makeDrum('#ec4a3c'));
-  prop(5, 11, tyres);
+  prop(5, 11, tyres, tire);
   for (const [c, r] of [[13, 5], [16, 9], [13, 22], [16, 24], [6, 13], [9, 16], [22, 16], [24, 12], [2, 18], [27, 21], [8, 25], [21, 25]]) {
     prop(c, r, lamp);
     const p = tileCenter(sc, c, r);
@@ -1040,30 +1064,31 @@ function buildCarVillage() {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    sc.objects.push({ c0: c, r0: r, c1: c, r1: r, x: p.x - 6, y: p.y - 42, w: 12, h: 46,
-      animated: (ctx, t) => drawTrafficLight(ctx, Math.round(p.x), Math.round(p.y), t, off) });
+    sc.objects.push(stillFrame({ c0: c, r0: r, c1: c, r1: r, x: p.x - 6, y: p.y - 42, w: 12, h: 46,
+      animated: (ctx, t) => drawTrafficLight(ctx, Math.round(p.x), Math.round(p.y), t, off), react: { word: 'light', fx: 'glow' } }));
   });
   // The race flag by the start line.
   {
     const p = tileCenter(sc, 19, 13);
     block(sc, 19, 13, 1, 1);
     reserve(19, 13);
-    sc.objects.push({ c0: 19, r0: 13, c1: 19, r1: 13, x: p.x - 3, y: p.y - 40, w: 18, h: 42,
-      animated: (ctx, t) => drawFlag(ctx, Math.round(p.x), Math.round(p.y), t) });
+    sc.objects.push(stillFrame({ c0: 19, r0: 13, c1: 19, r1: 13, x: p.x - 3, y: p.y - 40, w: 18, h: 42,
+      animated: (ctx, t) => drawFlag(ctx, Math.round(p.x), Math.round(p.y), t), react: { word: 'flag', fx: 'shake' } }));
   }
   // Jumps in the dirt yard.
   for (const [c, r] of [[18, 22], [22, 23]]) {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 18, y: p.y - 24, w: 36, h: 34 }, ctx => drawRamp(ctx, sc, c, r));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 18, y: p.y - 24, w: 36, h: 34 }, ctx => drawRamp(ctx, sc, c, r), { react: { fx: 'boing' } });
   }
   // A couple of sleepy cars in the parking lot (just for looks).
   for (const [c, r, car, flip] of [[18, 19, 'taxi', false], [22, 19, 'ambulance', true]]) {
     block(sc, c, r, 1, 1);
     reserve(c, r);
     const p = tileCenter(sc, c, r);
-    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 26, y: p.y - 34, w: 52, h: 40 }, ctx => drawCaptainCar(ctx, Math.round(p.x), Math.round(p.y), car, 0, { flip, eyes: false }));
+    addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 26, y: p.y - 34, w: 52, h: 40 }, ctx => drawCaptainCar(ctx, Math.round(p.x), Math.round(p.y), car, 0, { flip, eyes: false }),
+      { react: { word: car, fx: 'honk' } });
   }
   const lotSign = tileCenter(sc, 20, 17);
   sc.signs.push({ x: lotSign.x, y: lotSign.y - 20, text: '🅿️ 주차장', color: '#3a6fd8' });
@@ -1090,10 +1115,10 @@ function buildCarVillage() {
     if (n.unicorn) npc.unicorn = n.unicorn;
     sc.npcs.push(npc);
   }
-  addGate(sc, [13, 16], 1, '#9fb4d8');
   sc.links = [14, 15].map(c => ({ c, r: 0, target: 'forest', at: { c: c + 1, r: 27 }, icon: '🦖', style: 'gate' }));
+  addGate(sc, [13, 16], 1, '#9fb4d8', sc.links);
   const fg = tileCenter(sc, 14.5, 1);
-  sc.signs.push({ x: fg.x, y: fg.y - 64, text: place('forest'), color: '#4f9f58' });
+  sc.signs.push({ x: fg.x, y: fg.y - 64, text: place('forest'), color: '#4f9f58', links: sc.links });
   sc.start = { c: 14, r: 1 };
   sc.paintGround = g => paintCarGround(sc, g);
   renderGround(sc);
