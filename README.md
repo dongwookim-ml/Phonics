@@ -127,8 +127,8 @@ npx http-server -p 8080 .
 The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid) and the hint setting are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
-  (3–20 lowercase letters, digits or _) and a password (4 or more
-  characters). Signed in, the whole save is kept on the server as well, so
+  (3–20 lowercase letters, digits or _) and a password (6 or more
+  characters; accounts made before with 4 or 5 keep working). Signed in, the whole save is kept on the server as well, so
   another tablet that logs into the same account gets the same progress.
   Two tablets can play at once, say one the princess and one the captain
   edition: when one saves after the other, the two saves are put together
@@ -198,9 +198,21 @@ Amazon Polly). To run it on [Railway](https://railway.app):
 4. Put that address in `TTS_SERVER` in `js/data.js`, for example
    `const TTS_SERVER = 'https://pixeltown-tts.up.railway.app';`, and push.
 
-Optional variables: `ALLOWED_ORIGINS=https://dongwookim-ml.github.io` to
-accept calls only from the game, and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` to use Amazon Polly instead.
+Optional variables: `ALLOWED_ORIGINS` lists the sites that may call it
+(comma separated, or `*`; by default the game's site
+`https://dongwookim-ml.github.io` and `localhost` / `127.0.0.1` on any port,
+so opening `index.html` as a file needs `ALLOWED_ORIGINS=*` to use the
+accounts), and `ENGINE=polly` with `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` and `AWS_REGION` uses Amazon Polly instead.
+
+`/tts` takes only the game's voices (`POLLY_VOICES`), about 60 lines a
+minute per address, makes at most two lines at a time in its own threads
+(so the accounts stay quick; more than 8 waiting get a 503 and the game
+uses the device's voice) and caches 50 MB of them. Request bodies over
+1 MB are refused before they are read. Wrong passwords: 10 per id from one
+address, then 429 for that address; from many addresses an id's logins
+only slow down (doubling waits up to a minute), and the parent panel's
+check is never held up by someone else's tries.
 
 ### Accounts on Railway
 
@@ -215,6 +227,15 @@ database once:
 3. Redeploy the service. The home page should now show `"db":"postgres"`.
 
 Pushing to `main` redeploys the server, and the accounts stay in Postgres.
+The last 20 saves of each account are kept in the `save_history` table, to
+roll back by hand, for example
+`SELECT updated, length(data) FROM save_history WHERE user_id = 'yuna' ORDER BY updated DESC;`
+then `UPDATE saves SET data = (SELECT data FROM save_history WHERE user_id = 'yuna' AND updated = …), updated = <now in ms> WHERE user_id = 'yuna';`.
+A tab still running an older version of the game (its saves have no
+`fmt`) gets one 409 once the stored save is `fmt: 2`, so it reloads into
+the new version; at most once every 10 minutes, so a tab still served the
+old files never keeps reloading. `pytest server` tests it all (SQLite, or
+the Postgres at `DATABASE_URL`).
 Without `DATABASE_URL` the server uses SQLite at `$DATA_DIR/pixeltown.db`
 (default `./data`), which is fine locally or with a Railway Volume mounted
 at `DATA_DIR`. The game talks to the server at `TTS_SERVER`.

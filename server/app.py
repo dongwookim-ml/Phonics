@@ -6,16 +6,23 @@ spoken here. GET /tts?voice=af_heart&text=Hello returns a WAV.
 ENGINE=kokoro (default) runs the Kokoro model on this machine; the model is
 loaded on the first /tts call. ENGINE=polly uses Amazon Polly instead; set
 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_REGION. Kokoro voice names
-are mapped to Polly voices in POLLY_VOICES.
+are mapped to Polly voices in POLLY_VOICES, which is also the list of voices
+/tts accepts. Each address gets about TTS_PER_MIN lines a minute, at most
+SYNTH_SLOTS lines are made at once (in their own threads, so the accounts
+stay quick), and the made lines are cached up to CACHE_BYTES.
 
 Accounts: POST /auth/signup and /auth/login take {id, pw} and return a token;
 POST /auth/verify {pw} checks the password again (the parent panel);
-GET /save and PUT /save {save, updated} keep the game's save on the server.
+GET /save and PUT /save {save, base} keep the game's save on the server, and
+the last SAVE_HISTORY saves per player stay in save_history for rollback.
 Data goes to Postgres when DATABASE_URL is set (Railway's Postgres plugin),
 otherwise to SQLite at $DATA_DIR/pixeltown.db (default ./data).
 
-ALLOWED_ORIGINS limits which sites may call it (comma separated, default *).
+ALLOWED_ORIGINS limits which sites may call it (comma separated, or *); by
+default the game's site and localhost. Request bodies over MAX_BODY are
+turned away before they are read.
 """
+import asyncio
 import hashlib
 import hmac
 import io
@@ -26,17 +33,53 @@ import secrets
 import threading
 import time
 from collections import OrderedDict, defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 ENGINE = os.environ.get('ENGINE', 'kokoro')
 MAX_CHARS = 200
+MAX_BODY = 1024 * 1024
+GAME_ORIGINS = ['https://dongwookim-ml.github.io']
+LOCAL_ORIGINS = r'https?://(localhost|127\.0\.0\.1|\[::1\])(:\d+)?'
+
+
+class BodyLimit:
+    """Turns away a request body over MAX_BODY before anything reads it: by
+    its Content-Length, or while it streams in without one."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope['type'] != 'http':
+            return await self.app(scope, receive, send)
+        length = dict(scope['headers']).get(b'content-length')
+        if length is not None and (not length.isdigit() or int(length) > MAX_BODY):
+            return await JSONResponse({'detail': 'request too big'}, 413)(scope, receive, send)
+        seen = 0
+
+        async def limited():
+            nonlocal seen
+            message = await receive()
+            if message['type'] == 'http.request':
+                seen += len(message.get('body', b''))
+                if seen > MAX_BODY:
+                    raise HTTPException(413, 'request too big')
+            return message
+
+        await self.app(scope, limited, send)
+
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=os.environ.get('ALLOWED_ORIGINS', '*').split(','),
+app.add_middleware(BodyLimit)
+# Added last, so it is the outermost: even a refusal carries the CORS headers.
+_origins = [o.strip() for o in os.environ.get('ALLOWED_ORIGINS', '').split(',') if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_origins or GAME_ORIGINS,
+                   allow_origin_regex=None if _origins else LOCAL_ORIGINS,
                    allow_methods=['GET', 'POST', 'PUT'], allow_headers=['*', 'Authorization'])
 
 # ---- Speech --------------------------------------------------------------
@@ -47,12 +90,24 @@ POLLY_VOICES = {
     'af_river': 'Ruth', 'af_jessica': 'Danielle', 'bf_isabella': 'Amy', 'bf_alice': 'Emma', 'bf_lily': 'Amy',
     'am_michael': 'Matthew', 'am_eric': 'Stephen', 'am_adam': 'Gregory', 'am_liam': 'Joey', 'am_puck': 'Kevin',
     'am_santa': 'Gregory', 'bm_fable': 'Brian', 'bm_george': 'Arthur', 'bm_lewis': 'Brian',
-    'af_kore': 'Ivy', 'af_aoede': 'Kimberly', 'bf_emma': 'Emma', 'am_fenrir': 'Justin',
+    'af_kore': 'Ivy', 'af_aoede': 'Kimberly', 'bf_emma': 'Emma', 'am_fenrir': 'Justin', 'af_sarah': 'Ivy',
 }
+TTS_PER_MIN = 60           # lines a minute per address, in bursts of up to as many
+SYNTH_SLOTS = 2            # lines made at the same time
+SYNTH_QUEUE = 8            # more waiting than this: 503, and the game uses the device's voice
+CACHE_BYTES = 50 * 1024 * 1024
 
 engine = {}
 engine_lock = threading.Lock()
-cache = OrderedDict()
+cache = OrderedDict()      # (voice, text, speed) -> WAV bytes, least recently used first
+cache_size = [0]
+cache_lock = threading.Lock()
+# Lines are made in these threads only, so a burst never takes the threads
+# that serve the accounts.
+synth_pool = ThreadPoolExecutor(max_workers=SYNTH_SLOTS, thread_name_prefix='synth')
+synth_waiting = [0]        # lines being made or waiting for a thread
+tts_buckets = {}           # address -> (tokens, time)
+tts_lock = threading.Lock()
 
 
 def tts_engine():
@@ -89,19 +144,63 @@ def synth(voice, text, speed):
     return buf.getvalue()
 
 
+def cache_get(key):
+    with cache_lock:
+        data = cache.get(key)
+        if data is not None:
+            cache.move_to_end(key)
+        return data
+
+
+def cache_put(key, data):
+    if len(data) > CACHE_BYTES:
+        return
+    with cache_lock:
+        if key in cache:
+            return
+        cache[key] = data
+        cache_size[0] += len(data)
+        while cache_size[0] > CACHE_BYTES:
+            cache_size[0] -= len(cache.popitem(last=False)[1])
+
+
+def tts_allowed(ip):
+    """A token bucket per address: TTS_PER_MIN lines a minute, in bursts."""
+    t = time.monotonic()
+    with tts_lock:
+        if len(tts_buckets) > 10000:
+            for k in [k for k, (_, last) in tts_buckets.items() if t - last > 60]:
+                del tts_buckets[k]
+        tokens, last = tts_buckets.get(ip, (TTS_PER_MIN, t))
+        tokens = min(TTS_PER_MIN, tokens + (t - last) * TTS_PER_MIN / 60)
+        ok = tokens >= 1
+        tts_buckets[ip] = (tokens - 1 if ok else tokens, t)
+        return ok
+
+
 @app.get('/tts')
-def tts(text: str = Query(..., max_length=MAX_CHARS), voice: str = 'af_heart', speed: float = 0.95):
+async def tts(request: Request, text: str = Query(..., max_length=MAX_CHARS), voice: str = 'af_heart', speed: float = 0.95):
     text = ' '.join(text.split())
     if not text:
         raise HTTPException(400, 'empty text')
-    speed = min(1.3, max(0.6, speed))
+    if voice not in POLLY_VOICES:
+        raise HTTPException(400, 'unknown voice')
+    if not tts_allowed(client_ip(request)):
+        raise HTTPException(429, 'too many lines', headers={'Retry-After': '5'})
+    speed = round(min(1.3, max(0.6, speed)), 2)
     key = (voice, text, speed)
-    if key not in cache:
-        cache[key] = synth(voice, text, speed)
-        if len(cache) > 500:
-            cache.popitem(last=False)
-    cache.move_to_end(key)
-    return Response(cache[key], media_type='audio/wav', headers={'Cache-Control': 'public, max-age=604800'})
+    data = cache_get(key)
+    if data is None:
+        if synth_waiting[0] >= SYNTH_QUEUE:
+            raise HTTPException(503, 'busy', headers={'Retry-After': '5'})
+        synth_waiting[0] += 1
+        try:
+            data = await asyncio.get_running_loop().run_in_executor(synth_pool, synth, voice, text, speed)
+        finally:
+            synth_waiting[0] -= 1
+        cache_put(key, data)
+    # Private: a child's name in the line is nobody else's business.
+    return Response(data, media_type='audio/wav', headers={'Cache-Control': 'private, max-age=604800'})
 
 
 @app.get('/')
@@ -115,6 +214,9 @@ SCHEMA = [
     'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, salt TEXT NOT NULL, hash TEXT NOT NULL, created BIGINT NOT NULL)',
     'CREATE TABLE IF NOT EXISTS tokens (hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, created BIGINT NOT NULL)',
     'CREATE TABLE IF NOT EXISTS saves (user_id TEXT PRIMARY KEY, data TEXT NOT NULL, updated BIGINT NOT NULL)',
+    # Earlier saves, the last SAVE_HISTORY per player, to roll back to by hand.
+    'CREATE TABLE IF NOT EXISTS save_history (user_id TEXT NOT NULL, updated BIGINT NOT NULL, data TEXT NOT NULL, '
+    'PRIMARY KEY (user_id, updated))',
 ]
 
 
@@ -165,9 +267,10 @@ db = Db()
 # ---- Accounts ------------------------------------------------------------
 
 ID_RE = re.compile(r'^[a-z0-9_]{3,20}$')
-MIN_PW = 4
+MIN_PW = 6  # for new accounts; older ones may have 4 and keep working
 MAX_PW = 200
 MAX_SAVE = 512 * 1024
+SAVE_HISTORY = 20
 TOKEN_DAYS = 3650  # a family tablet stays signed in
 
 
@@ -219,11 +322,17 @@ def current_user(authorization: str = Header('')):
     return row[0]
 
 
-# Failed logins, in memory: at most 10 per id and 30 per address in 10 minutes,
-# and at most 5 new accounts per address an hour.
+# Failed tries, in memory, over 10 minutes: at most 10 per id from one
+# address and 30 per address, and at most 5 new accounts per address an
+# hour. Someone guessing an id from elsewhere doesn't lock its owner out:
+# after ID_FREE failures for an id from anywhere, its logins only slow down,
+# each try waiting twice as long as the last, up to ID_MAX_WAIT seconds. The
+# parent panel's check (/auth/verify, signed in already) never waits for them.
 LIMIT_WINDOW = 600
-LIMITS = {'id': 10, 'ip': 30, 'signup': 5}
+LIMITS = {'pair': 10, 'ip': 30, 'signup': 5}
 WINDOWS = {'signup': 3600}
+ID_FREE = 10
+ID_MAX_WAIT = 60
 failures = defaultdict(deque)
 fail_lock = threading.Lock()
 
@@ -244,6 +353,18 @@ def limited(keys):
     return False
 
 
+def id_wait(uid):
+    """Seconds before the next login try for this id may be checked."""
+    t = time.time()
+    with fail_lock:
+        q = failures.get(('id', uid))
+        while q and t - q[0] > LIMIT_WINDOW:
+            q.popleft()
+        if not q or len(q) < ID_FREE:
+            return 0
+        return max(0.0, min(ID_MAX_WAIT, 2 ** (len(q) - ID_FREE)) - (t - q[-1]))
+
+
 def note_failure(keys):
     with fail_lock:
         for k in keys:
@@ -257,6 +378,10 @@ def client_ip(request):
     return fwd.split(',')[-1].strip() or (request.client.host if request.client else '?')
 
 
+def too_many(wait=600):
+    return HTTPException(429, 'too many tries', headers={'Retry-After': str(max(1, int(wait + 0.999)))})
+
+
 @app.post('/auth/signup')
 def signup(body: Creds, request: Request):
     uid = body.id.strip().lower()
@@ -267,7 +392,7 @@ def signup(body: Creds, request: Request):
     ip = client_ip(request)
     keys = [('ip', ip)]
     if limited(keys + [('signup', ip)]):
-        raise HTTPException(429, 'too many tries')
+        raise too_many()
     if db.run('SELECT 1 FROM users WHERE id = ?', (uid,), one=True):
         note_failure(keys)
         raise HTTPException(409, 'id taken')
@@ -283,20 +408,25 @@ def signup(body: Creds, request: Request):
 @app.post('/auth/login')
 def login(body: Creds, request: Request):
     uid = body.id.strip().lower()
-    keys = [('id', uid), ('ip', client_ip(request))]
+    ip = client_ip(request)
+    keys = [('pair', f'{uid}|{ip}'), ('ip', ip)]
     if limited(keys):
-        raise HTTPException(429, 'too many tries')
+        raise too_many()
+    wait = id_wait(uid)
+    if wait > 0:
+        raise too_many(wait)
     if not ID_RE.match(uid) or not check_pw(uid, body.pw[:MAX_PW]):
-        note_failure(keys)
+        note_failure(keys + [('id', uid)])
         raise HTTPException(401, 'wrong id or pw')
     return {'ok': True, 'id': uid, 'token': new_token(uid)}
 
 
 @app.post('/auth/verify')
 def verify(body: Verify, request: Request, uid: str = Depends(current_user)):
-    keys = [('id', uid), ('ip', client_ip(request))]
+    ip = client_ip(request)
+    keys = [('pair', f'{uid}|{ip}'), ('ip', ip)]
     if limited(keys):
-        raise HTTPException(429, 'too many tries')
+        raise too_many()
     ok = check_pw(uid, body.pw[:MAX_PW])
     if not ok:
         note_failure(keys)
@@ -319,11 +449,47 @@ def get_save(uid: str = Depends(current_user)):
     return {'save': json.loads(row[0]), 'updated': row[1]}
 
 
+# Saves from the game since it counts stars per device have fmt 2 (see
+# js/progress.js). An older game in some tab sends saves without it: once
+# the stored save has fmt 2, such a save gets 409, and that tab fetches the
+# save and reloads, coming back as the new game. At most once per
+# OLD_TAB_NUDGE seconds per player, so a tab still served the old files (a
+# cache, or the site not deployed yet) is never stuck reloading; its saves
+# are then stored, and the new game takes their totals as a floor.
+OLD_TAB_NUDGE = 600
+nudged = {}
+nudge_lock = threading.Lock()
+
+
+def save_fmt(save):
+    fmt = save.get('fmt') if isinstance(save, dict) else None
+    return fmt if isinstance(fmt, (int, float)) and not isinstance(fmt, bool) else 0
+
+
+def nudge_old_tab(uid):
+    t = time.time()
+    with nudge_lock:
+        if t - nudged.get(uid, 0) < OLD_TAB_NUDGE:
+            return False
+        if len(nudged) > 10000:
+            for k in [k for k, v in nudged.items() if t - v > OLD_TAB_NUDGE]:
+                del nudged[k]
+        nudged[uid] = t
+        return True
+
+
 @app.put('/save')
 def put_save(body: SaveBody, uid: str = Depends(current_user)):
     data = json.dumps(body.save, separators=(',', ':'))
     if len(data) > MAX_SAVE:
         raise HTTPException(413, 'save too big')
+    if save_fmt(body.save) < 2:
+        row = db.run('SELECT data FROM saves WHERE user_id = ?', (uid,), one=True)
+        if row and save_fmt(json.loads(row[0])) >= 2 and nudge_old_tab(uid):
+            raise HTTPException(409, 'saved by a newer game: reload')
+    # The save being replaced goes to the history first (once).
+    db.run('INSERT INTO save_history (user_id, updated, data) SELECT user_id, updated, data FROM saves WHERE user_id = ? '
+           'ON CONFLICT (user_id, updated) DO NOTHING', (uid,))
     # The server stamps each save with its own clock. A save built on an older
     # version than the stored one means another device saved first: 409.
     row = db.run('SELECT updated FROM saves WHERE user_id = ?', (uid,), one=True)
@@ -334,4 +500,6 @@ def put_save(body: SaveBody, uid: str = Depends(current_user)):
     row = db.run('SELECT updated FROM saves WHERE user_id = ?', (uid,), one=True)
     if row[0] != stamp:
         raise HTTPException(409, 'newer save on the server')
+    db.run('DELETE FROM save_history WHERE user_id = ? AND updated NOT IN '
+           '(SELECT updated FROM save_history WHERE user_id = ? ORDER BY updated DESC LIMIT ?)', (uid, uid, SAVE_HISTORY))
     return {'ok': True, 'updated': stamp}

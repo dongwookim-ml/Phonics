@@ -339,7 +339,7 @@ let accountTab = 'login';
 const ACCOUNT_ID_RE = /^[a-z0-9_]{3,20}$/;
 const ACCOUNT_ERRORS = {
   badId: '아이디는 영어 소문자, 숫자, _ 로 3~20자예요',
-  badPw: '비밀번호는 4자 이상이에요',
+  badPw: '비밀번호는 6자 이상이에요', // new accounts; older ones may have 4
   taken: '이미 있는 아이디예요. 다른 아이디를 써 주세요',
   wrong: '아이디나 비밀번호가 틀렸어요',
   many: '너무 많이 틀렸어요. 10분 뒤에 다시 해 보세요',
@@ -372,7 +372,7 @@ async function accountSubmit() {
   const id = accountUi.id.value.trim().toLowerCase();
   const pw = accountUi.pw.value;
   if (!ACCOUNT_ID_RE.test(id)) return accountSay(ACCOUNT_ERRORS.badId);
-  if (pw.length < 4) return accountSay(ACCOUNT_ERRORS.badPw);
+  if (pw.length < (accountTab === 'signup' ? 6 : 4)) return accountSay(accountTab === 'signup' ? ACCOUNT_ERRORS.badPw : ACCOUNT_ERRORS.wrong);
   accountUi.go.disabled = true;
   accountSay('잠깐만요…', true);
   const r = await accountFetch('POST', accountTab === 'login' ? '/auth/login' : '/auth/signup', { id, pw });
