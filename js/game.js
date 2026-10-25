@@ -1150,8 +1150,36 @@ function cameraTarget() {
   let y = p.y - vh * 0.55;
   x = sc.width <= vw ? (sc.width - vw) / 2 : Math.max(0, Math.min(sc.width - vw, x));
   y = sc.height <= vh ? (sc.height - vh) / 2 : Math.max(0, Math.min(sc.height - vh, y));
+  // In a room, look up far enough to show the name signs on the wall below
+  // the HUD, as long as she stays in the top three quarters of the screen.
+  const signs = sc.outdoor ? [] : sc.signs.filter(g => !g.plain).map(g => g.y - 12);
+  if (signs.length) y = Math.max(Math.min(y, 0), p.y - vh * 0.75, Math.min(y, Math.min(...signs) - screenBox.hud / state.scale));
+  // While she talks, keep her and the person she talks to in the space above
+  // the dialog. On an iPad they usually are already; on a phone the dialog
+  // covers most of the screen, so the picture moves up as far as needed.
+  const top = state.talking ? dialogTop() : 0;
+  if (top > 0) {
+    const n = tileCenter(sc, state.talking.c, state.talking.r);
+    const head = Math.min(p.y, n.y) - 44;
+    const feet = Math.max(p.y, n.y) + 4;
+    const y0 = y;
+    if (feet - head > top - 8) y = (head + feet - top) / 2;
+    else if (feet - y > top - 4) y = feet - top + 4;
+    else if (head - y < 4) y = head - 4;
+    // The scene's bottom edge may go up behind the dialog, but no further.
+    y = Math.max(Math.min(y0, 0), Math.min(Math.max(sc.height - vh, sc.height - top), y));
+  }
   return { x, y };
 }
+
+// The top of the open dialog in world pixels from the top of the view.
+function dialogTop() {
+  if (ui.dialog.classList.contains('hidden')) return 0;
+  return (ui.dialog.getBoundingClientRect().top - screenBox.top) * screenBox.k / state.scale;
+}
+
+// CSS pixels to canvas pixels, and where the HUD ends (for room signs).
+const screenBox = { top: 0, k: 1, hud: 0 };
 
 // The canvas fills whatever the browser actually shows. On iPad, 100vh is
 // taller than the visible area while the toolbar is up, which stretched the
@@ -1161,6 +1189,9 @@ function resize() {
   const box = screen.getBoundingClientRect();
   screen.width = Math.round(box.width * dpr);
   screen.height = Math.round(box.height * dpr);
+  screenBox.top = box.top;
+  screenBox.k = box.height ? screen.height / box.height : dpr;
+  screenBox.hud = (document.querySelector('.hud').getBoundingClientRect().bottom - box.top) * screenBox.k;
   // Integer zoom keeps the pixels square; aim for ~270 world pixels tall.
   state.scale = Math.max(2, Math.round(Math.min(screen.height / 270, screen.width / 300)));
   view.width = Math.ceil(screen.width / state.scale);
@@ -1419,6 +1450,16 @@ function watchFrames(ms) {
   if (FX.slow > 2000) Object.assign(FX, { level: FX.level - 1, slow: 0, avg: 16.7 });
 }
 
+// Text colours from the page's CSS, so the captain edition's blue is used too.
+let overlayInk = null;
+function inkColors() {
+  if (!overlayInk) {
+    const css = getComputedStyle(document.body);
+    overlayInk = { ink: css.getPropertyValue('--ink').trim() || '#4a2c4f', accent: css.getPropertyValue('--accent-ink').trim() || '#c92a72' };
+  }
+  return overlayInk;
+}
+
 function drawOverlay(now) {
   const sc = state.scene;
   const s = state.scale;
@@ -1448,6 +1489,12 @@ function drawOverlay(now) {
       const text = sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text;
       const w = ctx.measureText(text).width + 8 * s;
       const h = 14 * s;
+      // A room's name sign stays on screen and below the HUD, so the door
+      // it names is never labelled "-아의 방".
+      if (!sc.outdoor) {
+        p.x = Math.max(w / 2 + 4 * s, Math.min(screen.width - w / 2 - 4 * s, p.x));
+        p.y = Math.max(screenBox.hud + h / 2 + 6 * s, Math.min(screen.height - h / 2 - 4 * s, p.y));
+      }
       ctx.strokeStyle = '#6f4430';
       ctx.lineWidth = s;
       ctx.beginPath();
@@ -1486,7 +1533,7 @@ function drawOverlay(now) {
       const p = toScreen(w.x, w.y - 40 + Math.sin(now / 300 + n.phase) * 1.5);
       const wait = waiting(n);
       ctx.fillStyle = wait ? '#e4dce8' : '#ffffff';
-      ctx.strokeStyle = '#4a2c4f';
+      ctx.strokeStyle = inkColors().ink;
       ctx.lineWidth = s * 0.8;
       roundRect(ctx, p.x - 7 * s, p.y - 5 * s, 14 * s, 10 * s, 4 * s);
       ctx.fill();
@@ -1496,7 +1543,7 @@ function drawOverlay(now) {
       ctx.lineTo(p.x, p.y + 8 * s);
       ctx.lineTo(p.x + 2 * s, p.y + 5 * s - 1);
       ctx.fill();
-      ctx.fillStyle = wait ? '#9a8aa3' : '#ff6fa8';
+      ctx.fillStyle = wait ? '#9a8aa3' : inkColors().accent;
       ctx.font = `800 ${7 * s}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1796,6 +1843,22 @@ function setPictures(on) {
   ui.choices.querySelectorAll('.choice[data-words]').forEach(b => b.classList.toggle('pictures', on));
   save();
 }
+
+// Long words get smaller so they fit their card. CSS does it with container
+// query units; this covers iPads older than iPadOS 16 and a fallback font
+// that runs wider.
+function fitWords() {
+  for (const w of ui.choices.querySelectorAll('.choice .w')) {
+    w.style.fontSize = '';
+    const card = getComputedStyle(w.parentElement);
+    const room = w.parentElement.clientWidth - parseFloat(card.paddingLeft) - parseFloat(card.paddingRight);
+    let px = parseFloat(getComputedStyle(w).fontSize);
+    while (w.offsetWidth > room && px > 14) w.style.fontSize = `${px -= 2}px`;
+  }
+}
+new MutationObserver(fitWords).observe(ui.choices, { childList: true, subtree: true });
+addEventListener('resize', fitWords);
+if (document.fonts) document.fonts.addEventListener('loadingdone', fitWords);
 
 resize();
 addEventListener('resize', resize);
