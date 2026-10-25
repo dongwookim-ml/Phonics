@@ -12,8 +12,8 @@ line is one word ("cat", "cat!", "The"). The rules:
   repeat    a lone word with a second word-like burst (said twice, or an added word)
   duration  far shorter or longer than the same line in the other voices,
             allowing for how fast each voice speaks
-  lead-in   a lone word with over 80 ms more voiced sound before its loud
-            part than in the other voices (a hum, "uh" or "the" before it)
+  lead-in   a lone b/d/g/j word with over 80 ms more voiced sound before its
+            loud part than in the other voices (a hum, "uh" or "the" before it)
   rising    a lone word whose pitch rises at the end, like a question
   gap       a silence inside a lone word over 0.5 s (in a longer line, 1.5 s)
   peak      true peak above -1 dBTP
@@ -151,7 +151,9 @@ def judge(voice, text, m, refs):
         others = [x for v, x in refs['lead'].get(text, {}).items() if v != voice]
         if len(others) >= 3:
             m['lead_x'] = int(m['lead'] - np.median(others))
-            if m['lead_x'] > 80:
+            # Only where the word starts with a burst: before l, r, w, y or an
+            # unstressed first syllable a longer voiced start is normal.
+            if m['lead_x'] > 80 and text[0] in 'bdgj':
                 fails.append('lead-in')
     if LONE.match(text) and m.get('rise', 0) > 1.15:
         fails.append('rising')
