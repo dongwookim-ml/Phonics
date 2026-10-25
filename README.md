@@ -136,7 +136,11 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, re
   and the game keeps working offline and uploads again later (one upload
   at a time). "계정 없이 할래요" plays with the
   browser-only save; 🔑 로그인 / 로그아웃 is at the top right of the start
-  screen. The first login carries the progress so far into the account.
+  screen. Logging in on a tablet that was played as a guest adds that
+  progress to the account (its stars count on top of the account's) and
+  says so in a short note ("이 기기의 별 42개를 계정에 합쳤어요"); a copy of
+  the tablet's old save stays in its browser as `pixeltown-v2-backup-<time>`
+  (the last three).
   The account password is also the parent password (`Account.verify` in
   `js/account.js`); without an account it is `0000`.
 

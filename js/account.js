@@ -12,10 +12,11 @@
 // the login screen with ?guest or window.ACCOUNT_SKIP.
 const ACCOUNT_SERVER = (window.ACCOUNT_SERVER || TTS_SERVER || '').replace(/\/$/, '');
 const ACCOUNT_SAVE_KEY = 'pixeltown-v2'; // the game's own save (SAVE_KEY in game.js)
-const ACCOUNT_KEYS = { token: 'pixeltown-token', user: 'pixeltown-user', guest: 'pixeltown-guest', updated: 'pixeltown-updated', snap: 'pixeltown-synced', dirty: 'pixeltown-dirty', owner: 'pixeltown-owner' };
+const ACCOUNT_KEYS = { token: 'pixeltown-token', user: 'pixeltown-user', guest: 'pixeltown-guest', updated: 'pixeltown-updated', snap: 'pixeltown-synced', dirty: 'pixeltown-dirty', owner: 'pixeltown-owner', join: 'pixeltown-join' };
 // updated: the server version the local save builds on (the server's clock).
 // dirty:   the local save has changes the server has not seen.
 // owner:   whose progress the local save is; empty for a guest or an old save.
+// join:    a login whose first sync has not happened yet (it was offline).
 const ACCOUNT_GUEST_PW = '0000'; // parent password when playing without an account
 
 const accountUi = {
@@ -37,6 +38,29 @@ function accountSet(key, value) {
   } catch (e) { /* private mode */ }
 }
 function accountLocalSave() { try { return localStorage.getItem(ACCOUNT_SAVE_KEY); } catch (e) { return null; } }
+
+// A copy of the local save before a login replaces or joins it, as
+// 'pixeltown-v2-backup-<time>'; the last three are kept.
+function accountBackup(json) {
+  try {
+    const prefix = `${ACCOUNT_SAVE_KEY}-backup-`;
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix)).sort();
+    if (keys.length && localStorage.getItem(keys[keys.length - 1]) === json) return;
+    keys.push(prefix + Date.now());
+    localStorage.setItem(keys[keys.length - 1], json);
+    for (const k of keys.slice(0, -3)) localStorage.removeItem(k);
+  } catch (e) { /* storage full or private mode */ }
+}
+
+// A short note for the parent at the bottom of the screen.
+function accountToast(text) {
+  const el = document.createElement('div');
+  el.className = 'account-toast';
+  el.setAttribute('role', 'status');
+  el.textContent = text;
+  document.body.append(el);
+  setTimeout(() => el.remove(), 6500);
+}
 
 // Talks to the server. Resolves to { status, data }; status 0 means offline.
 async function accountFetch(method, path, body, opts = {}) {
@@ -159,43 +183,58 @@ const Account = {
     return true;
   },
 
-  // Makes the server's save the local one, and reloads the page with it.
-  _adopt(data) {
-    const json = JSON.stringify(data.save);
-    try { localStorage.setItem(ACCOUNT_SAVE_KEY, json); } catch (e) { return false; }
-    accountSet('snap', json);
-    accountSet('updated', data.updated);
-    accountSet('dirty', null);
+  // Makes the server's save the local one, in place.
+  _take(data) {
+    try { localStorage.setItem(ACCOUNT_SAVE_KEY, JSON.stringify(data.save)); } catch (e) { return false; }
     accountSet('owner', this.user);
-    this._leaving = true;
-    location.reload();
+    accountSet('updated', data.updated);
+    accountSet('snap', null);
+    accountSet('dirty', null);
+    if (accountInGame()) applyProgress(data.save);
     return true;
   },
 
   // After signing in (or on boot with a saved token). This account's local
-  // save is put together with a newer one on the server, in place; a guest's
-  // or an old save is carried into an account that has no save yet.
+  // save is put together with a newer one on the server. A guest's progress
+  // on this device (or someone else's that never reached the server) joins
+  // the account instead of being replaced: every star counts on top, a copy
+  // of the old save stays on the device, and a toast tells the parent.
   async _sync() {
     const r = await accountFetch('GET', '/save', null, { timeout: 5000 });
     if (r.status === 401) { this._expired(); return 'expired'; }
     if (r.status !== 200 || !r.data) return 'offline';
     const owner = accountGet('owner') || '';
-    const mine = owner === this.user;
-    if (mine && r.data.save && r.data.updated > this.base) {
-      this._merge(r.data, this._dirty ? 'mine' : 'theirs');
-    } else if (r.data.save && !mine) {
-      return this._adopt(r.data) ? 'reload' : 'offline';
-    } else if (!r.data.save && owner && !mine) {
-      // Someone else's progress is on this device: a new account starts fresh.
-      try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { return 'offline'; }
-      ['snap', 'updated', 'dirty'].forEach(k => accountSet(k, null));
-      accountSet('owner', this.user);
-      location.reload();
-      return 'reload';
+    // No owner and no login just now: a save from before owners were noted.
+    const mine = owner === this.user || (!owner && !accountGet('join'));
+    if (mine) {
+      if (r.data.save && r.data.updated > this.base) this._merge(r.data, this._dirty ? 'mine' : 'theirs');
+      else accountSet('owner', this.user);
+    } else {
+      if (accountInGame()) save();
+      const json = accountLocalSave();
+      const local = accountParse(json);
+      const carry = !!local && Progress.played(local) && (!owner || this._dirty);
+      if (json) accountBackup(json);
+      if (r.data.save) {
+        if (!(carry ? this._merge(r.data, 'foreign') : this._take(r.data))) return 'offline';
+      } else {
+        accountSet('owner', this.user);
+        accountSet('updated', 0);
+        ['snap', 'dirty'].forEach(k => accountSet(k, null));
+        if (carry) accountSet('dirty', '1');
+        else if (owner) {
+          // Someone else's progress, already on the server: a new account starts fresh.
+          try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { /* private mode */ }
+          if (accountInGame()) applyProgress(null);
+        }
+      }
+      if (carry) {
+        const n = Progress.stars(local);
+        accountToast(n ? `이 기기의 별 ${n}개를 계정에 합쳤어요` : '이 기기의 기록을 계정에 합쳤어요');
+      }
     }
-    accountSet('owner', this.user);
-    if (!mine) accountSet('updated', 0);
-    if (accountLocalSave() && (this._dirty || !r.data.save)) {
+    accountSet('join', null);
+    if (this._dirty || (accountLocalSave() && !r.data.save)) {
       accountSet('dirty', '1');
       await this._upload();
     }
@@ -231,7 +270,7 @@ const Account = {
       try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { /* private mode */ }
       ['snap', 'updated', 'owner'].forEach(k => accountSet(k, null));
     }
-    ['token', 'user', 'guest'].forEach(k => accountSet(k, null));
+    ['token', 'user', 'guest', 'join'].forEach(k => accountSet(k, null));
     location.reload();
   },
 };
@@ -302,11 +341,12 @@ async function accountSubmit() {
     accountSet('token', r.data.token);
     accountSet('user', r.data.id);
     accountSet('guest', null);
+    accountSet('join', '1'); // until the first sync, even if it waits for the next visit
     Account.user = r.data.id;
     accountSay('불러오는 중…', true);
-    const how = await Account._sync();
+    await Account._sync();
     accountUi.go.disabled = false;
-    if (how !== 'reload') Account._done();
+    Account._done();
     return;
   }
   accountUi.go.disabled = false;
@@ -364,7 +404,7 @@ accountUi.guest.addEventListener('click', () => {
 });
 
 // Send what is left when the page goes away; try again when back online.
-addEventListener('pagehide', () => { if (Account._dirty && !Account._leaving) Account._upload(true); });
+addEventListener('pagehide', () => { if (Account._dirty) Account._upload(true); });
 addEventListener('online', () => { if (Account._dirty) Account._upload(); });
 
 // ---- Boot ----------------------------------------------------------------
@@ -377,7 +417,6 @@ addEventListener('online', () => { if (Account._dirty) Account._upload(); });
     accountUi.screen.classList.add('hidden');
     accountRenderBar();
     Account._sync().then(how => {
-      if (how === 'reload') return;
       if (how === 'expired') accountShowLogin();
       else Account._done();
     });

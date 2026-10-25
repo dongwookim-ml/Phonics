@@ -124,6 +124,7 @@ function editionSave(s) {
   other[had] = rest;
   return Object.assign({}, mine, { edition: EDITION, other });
 }
+const PLAYER_START = Object.assign({}, PLAYER); // before a save changes it
 let otherEditions = {};
 let savedRest = {}; // fields of the save this version doesn't use, kept as they are
 // `raw` is a save object (from js/account.js), else the one in localStorage.
@@ -173,7 +174,7 @@ function save() {
 // place, without a reload: counters, presents, answers and books, and the
 // outfit and name it carries.
 function applyProgress(s) {
-  const p = load(s);
+  const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
   Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures });
   const ride = state.outfit.ride;
   state.worn = PLAYER.look;
