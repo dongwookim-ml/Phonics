@@ -5,8 +5,9 @@
 // round it that fills toward the next stage; every tap feeds it one. At
 // FRIEND_STAGES it grows: a brighter glow, then a crown (an antenna on a
 // buddy), then a little dance now and then. A grown friend sparkles in the
-// world. How much each friend has eaten is saved in state.friends; nothing
-// is ever taken away and it never gets hungry.
+// world. How much each friend has eaten is saved in state.friends, per
+// tablet so two tablets on one account add up; nothing is ever taken away
+// and it never gets hungry.
 
 const friendUi = {
   card: document.getElementById('feed'),
@@ -24,13 +25,16 @@ const friendUi = {
   nom: 0,        // when the last bite landed
   last: 0,
   loop: 0,
-  wasBusy: false,
   saidEmpty: false,
 };
 const FRIEND_PARTY_MS = 1800;
 const FRIEND_FLY_MS = 420;
 
-const friendFed = key => ((state.friends || {})[key] | 0);
+// state.friends[key] is { [device]: n } (a plain number in an earlier save).
+function friendFed(key) {
+  const v = (state.friends || {})[key];
+  return v && typeof v === 'object' ? Object.values(v).reduce((a, x) => a + (x | 0), 0) : v | 0;
+}
 const friendStageOf = fed => FRIEND_STAGES.filter(n => fed >= n).length;
 const friendStage = key => friendStageOf(friendFed(key));
 // How far from the last stage to the next one, 0 to 1 (1 once grown).
@@ -187,8 +191,11 @@ function openFeed() {
   const key = friendWorn();
   if (!key) return;
   if (!state.friends) state.friends = {};
-  friendUi.wasBusy = state.busy; // the wardrobe may be open under it
-  state.busy = true;
+  state.busy = true; // the wardrobe may be open under it too
+  // She stops where she is: she doesn't walk out of the room under the card.
+  const h = state.hero;
+  h.onArrive = null;
+  h.path = h.path.slice(0, 1);
   Object.assign(friendUi, { key, shown: friendProgressOf(friendFed(key)), flies: [], burst: [], party: null, saidEmpty: false, last: 0 });
   const info = FAIRIES[key];
   friendUi.title.textContent = `${info.icon} ${info.name}`;
@@ -207,11 +214,19 @@ function openFeed() {
 function closeFeed() {
   if (friendUi.card.classList.contains('hidden')) return;
   Sound.tap();
-  Sound.say([]);
+  // Dust still on its way lands now: a stage it reaches is still celebrated.
+  const key = friendUi.key;
+  const fed = friendFed(key);
+  const grew = friendStageOf(fed) > friendStageOf(fed - friendUi.flies.length) ? friendStageOf(fed) : 0;
+  Sound.say(grew ? [{ pause: 300 }, { text: fill(LINES.friendGrow[grew - 1], {}), narrator: true }] : []);
+  if (grew) {
+    Sound.party();
+    if (state.fairyAt) friendBurstAt(state.fairyAt.x, state.fairyAt.y, FAIRIES[key].glow, 24);
+  }
   friendUi.card.classList.add('hidden');
   friendUi.flies = [];
   friendUi.party = null;
-  state.busy = friendUi.wasBusy;
+  state.busy = busyNow(); // js/game.js
   save();
   if (!ui.wardrobe.classList.contains('hidden')) renderWardrobe();
 }
@@ -249,7 +264,10 @@ function feedOnce() {
     return;
   }
   state.dust--;
-  state.friends[key] = friendFed(key) + 1;
+  const was = state.friends[key];
+  const fed = was && typeof was === 'object' ? was : was ? { _: was | 0 } : {};
+  fed[Progress.device] = (fed[Progress.device] | 0) + 1;
+  state.friends[key] = fed;
   questAdd('feed'); // today's adventures (js/quest.js)
   friendUi.flies.push({ t0: now, side: Math.random() < 0.5 ? -1 : 1 });
   renderDust(true);

@@ -69,16 +69,25 @@ function miniClash(a, b) {
   const y = b.toLowerCase();
   return clash(x, y) || clash(k(x), k(y));
 }
-// A different letter each round, and fish whose words start with letters
-// that don't sound like it or like each other.
+// The first letters of what she may call a fish's picture: its letter, and
+// its other names (ALIAS: 🐂 ox is a cow to her, 🚐 van a car).
+const miniHeads = f => [f.letter].concat((ALIAS[f.w] || []).map(m => m[0]));
+// Two fish she could take for each other: the same picture, or names that
+// start with letters that clash.
+const miniLike = (a, b) => a.e === b.e || miniHeads(a).some(x => miniHeads(b).some(y => miniClash(x, y)));
+// A different letter each round, and fish whose words (by any name she
+// may use for them) start with letters that don't sound like it or like
+// each other.
 function miniRounds() {
   const all = miniWords();
+  const fishOf = x => shuffle(x.words.map(([w, e]) => ({ w, e, letter: x.info.letter })));
   return shuffle(all.slice()).slice(0, FISHING.rounds).map(t => {
-    const fish = [t];
+    const fish = [pick(fishOf(t))];
     for (const o of shuffle(all.filter(x => x !== t))) {
-      if (fish.length < FISHING.fish && !fish.some(f => miniClash(f.info.letter, o.info.letter))) fish.push(o);
+      const f = fish.length < FISHING.fish && fishOf(o).find(y => !fish.some(x => miniLike(x, y)));
+      if (f) fish.push(f);
     }
-    return { info: t.info, fish: fish.map((x, i) => { const [w, e] = pick(x.words); return { w, e, letter: x.info.letter, right: i === 0 }; }) };
+    return { info: t.info, fish: fish.map((f, i) => Object.assign(f, { right: i === 0 })) };
   });
 }
 // "/m/": the letter's pure sound, in the narrator's voice (js/audio.js).
@@ -104,8 +113,10 @@ function miniGo() {
   return true;
 }
 
+// Not once today's play time is used up: 🔁 (or 🎣 in his dialog) closes
+// one card and opens the next at once, so the town could never fall asleep.
 function openMini(npc) {
-  if (!npc || state.busy) return;
+  if (!npc || state.busy || guideTimeUp()) return;
   state.busy = true;
   miniClear();
   Object.assign(mini, { npc, rounds: miniRounds(), round: -1, items: [], caught: [], anim: null, splashes: [], ripples: [], last: 0, trolley: 104 });
@@ -125,7 +136,7 @@ function closeMini() {
   mini.el.classList.add('hidden');
   mini.items = [];
   mini.anim = null;
-  state.busy = false;
+  state.busy = busyNow(); // js/game.js
 }
 
 // ---- Playing -------------------------------------------------------------

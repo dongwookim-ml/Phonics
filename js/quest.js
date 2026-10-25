@@ -259,7 +259,7 @@ function closeQuests() {
   questSkip();
   questUi.box.classList.add('hidden');
   questUi.chest.classList.remove('burst');
-  state.busy = false;
+  state.busy = busyNow(); // js/game.js
   Sound.tap();
   renderQuestHud();
 }
