@@ -42,6 +42,13 @@ function staticCheck() {
   const quietFs = Object.assign({}, fs, { writeFileSync: (f, data) => { listed = JSON.parse(data); } });
   const src = fs.readFileSync(path.join(__dirname, 'tts-phrases.js'), 'utf8');
   new Function('require', '__dirname', 'console', src)(m => (m === 'fs' ? quietFs : require(m)), __dirname, { log() {} });
+  // A pure sound ("/m/") is cut from the narrator's own words, so only the
+  // ones tools/letter-sounds.json has can ever be recorded.
+  const sounds = JSON.parse(fs.readFileSync(path.join(__dirname, 'letter-sounds.json'), 'utf8')).sounds;
+  for (const p of listed) {
+    const m = /^\/([a-z]+)\/$/.exec(norm(p.text));
+    if (m && !sounds[m[1]]) fail(`${p.voice} "${p.text}" is listed, but tools/letter-sounds.json has no such sound to cut`);
+  }
   const now = listed.filter(p => !(index[p.voice] && index[p.voice][norm(p.text)]));
   for (const p of now.slice(0, 30)) toRecord(`not recorded: ${p.voice} "${p.text}"`);
   if (now.length > 30) toRecord(`... ${now.length - 30} more lines not recorded`);
