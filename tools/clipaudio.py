@@ -163,11 +163,13 @@ def prevoice_trim(x, keep_ms=30, min_ms=60):
     return y, ms(i - first) - keep_ms
 
 
-def carrier_cut(x, keep='after', min_gap=0.25, carrier_max=1.6):
+def carrier_cut(x, keep='after', min_gap=0.4):
     """A line recorded with a short carrier phrase and a pause ("Listen.
     <pause> Cat." keeps what comes after; "M says <pause> ham." keeps what
-    comes before) cut at the pause next to the carrier. Returns None when
-    there is no such pause."""
+    comes before) cut at the pause next to the carrier, which is longer than
+    a pause between sentences. Returns None when there is no such pause (the
+    line is then recorded without a carrier)."""
+    carrier_max = 1.6 if keep == 'after' else 0.9   # "Listen." / one word
     f = frames(x)
     quiet = f['rel'] < -45
     gaps = [(a, b) for a, b in runs(quiet) if a > 0 and b < f['n'] and ms(b - a) >= min_gap * 1000]
