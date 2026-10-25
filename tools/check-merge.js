@@ -1,9 +1,10 @@
 // Unit checks of the save merge (js/progress.js), in Node, no browser:
 // two devices on the new format, an older game version (no fmt) on either
-// side, a guest's progress joining an account, editions, today's quests,
-// play time, stickers, dust fed to a friend, unknown fields, and the
-// parent's settings, tiers and picture hints next to tabs still on the two
-// older releases (their own merge code, from git).
+// side, a guest's progress joining an account, editions, today's quests
+// and the day's chest, play time and a parent's wake, stickers, dust fed to
+// a friend, unknown fields, and the parent's settings, tiers and picture
+// hints, also next to tabs still on the two older releases (their own merge
+// code, from git).
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -34,6 +35,10 @@ function device(edition, id, rev) {
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } },
   };
   return vm.runInNewContext(`${src}\nProgress`, ctx);
+}
+// The same on a version of the game in git (`ref`), or null when git doesn't have it here.
+function deviceAt(ref, edition, id) {
+  return device(edition, id, ref);
 }
 
 // What save() in js/game.js writes after playing on top of a save `s`
@@ -150,6 +155,22 @@ const C = device('captain', 'dC');
   check('guest → login: into an account an older version saved, also in full', A.merge(guest, oldAcct, 'foreign').stars === 52);
   const newGuest = play(A, { edition: 'princess' }, 5, 0);
   check('guest → login: a guest on this device and this device\'s own count in the account add up', A.merge(newGuest, play(A, { edition: 'princess' }, 2, 0), 'foreign').stars === 7);
+}
+
+// ---- The day's chest (js/quest.js) --------------------------------------------------
+{
+  // What questOpenChest does to a save: the coins under the day's own entry,
+  // the same on every tablet, and the chest open.
+  const open = (P, s, day) => play(P, Object.assign({}, s, { coins: (s.coins | 0) + 5, earned: Object.assign({}, s.earned, { [`chest:${day}`]: { coins: 5 } }),
+    quests: { day, picks: ['stars', 'fish', 'house'], got: {}, chest: true } }), 0, 0);
+  const start = play(A, { edition: 'princess' }, 10, 2);
+  // Both tablets showed it ready, and it was opened on each before they synced.
+  const a = open(A, play(A, start, 1, 0), '2026-10-25');
+  const b = open(B, play(B, start, 2, 0), '2026-10-25');
+  check('chest: each tablet\'s own opening pays its 5 coins', a.coins === 7 && b.coins === 7, [a.coins, b.coins]);
+  const m = A.merge(a, b, 'mine');
+  check('chest: opened on two tablets before they synced, it pays once (2 + 5)', m.coins === 7 && B.merge(b, a, 'theirs').coins === 7 && m.stars === 13, [m.coins, m.stars]);
+  check('chest: the next day\'s pays again', A.merge(open(A, m, '2026-10-26'), b, 'mine').coins === 12);
 }
 
 // ---- Today's quests (js/quest.js) ------------------------------------------------
@@ -344,6 +365,46 @@ if (M1 && M23) {
   check('playtime: same day: the most played and the most wakes, whichever is preferred', m2.playtime.ms === 900000 && m2.playtime.wakes === 1 &&
     A.same(A.merge(ed(pt('2026-10-25', 900000, 1)), ed(pt('2026-10-25', 180000, 0)), 'theirs'), m2), m2.playtime);
   check('playtime: a copy without it (an older version of the game) keeps it', A.merge({ edition: 'princess', stars: 1 }, ed(pt('2026-10-25', 5, 0)), 'mine').playtime.ms === 5);
+  // A wake notes the minutes played when it came (woke): the town sleeps a
+  // whole limit after it. Neither copy can take it back.
+  const woke = (p, ms, day = p.day) => Object.assign({}, p, { woke: { day, ms } });
+  const awake = woke(pt('2026-10-25', 2500000, 1), 2400000);
+  const other = pt('2026-10-25', 2600000, 0); // the other tablet: no wake, a little more played
+  const ok = (m, ms) => m.playtime.woke && m.playtime.woke.ms === ms && m.playtime.wakes === 1 && m.playtime.ms === 2600000;
+  check('playtime: a wake\'s minutes stay, whichever copy is preferred', ['mine', 'theirs'].every(how => ok(A.merge(ed(awake), ed(other), how), 2400000) && ok(A.merge(ed(other), ed(awake), how), 2400000)));
+  check('playtime: two wakes: the later one', ok(A.merge(ed(awake), ed(woke(other, 2550000)), 'mine'), 2550000) && ok(A.merge(ed(woke(other, 2550000)), ed(awake), 'mine'), 2550000));
+  check('playtime: a wake from another day doesn\'t count', ok(A.merge(ed(woke(other, 9000000, '2026-10-24')), ed(awake), 'mine'), 2400000));
+}
+
+// ---- Older versions of the game next to this one ------------------------------------
+// Tabs still on an older version (M1, eee606ec, and M2+M3, 144e11e1) share
+// the account until they reload: what this version adds to a save stays
+// through their merges, even of their own older copy ('mine').
+{
+  const OLD = [['M1', 'eee606ec'], ['M2+M3', '144e11e1']].map(([name, ref]) => [name, deviceAt(ref, 'princess', 'dO')]);
+  if (OLD.some(([, P]) => !P)) console.log('skip older versions: git has no eee606ec or 144e11e1 here');
+  else {
+    const day = '2026-10-25';
+    // Their copy from before: today's first two quests done, the chest shut.
+    const before = play(A, { edition: 'princess', quests: { day, picks: ['stars', 'fish', 'house'], got: { dA: { stars: 5, fish: 3 } }, chest: false },
+      playtime: { day, ms: 2450000, wakes: 0 } }, 40, 0);
+    // Then on this version: the house, the chest opened (+5), and the parent's wake.
+    const now = play(A, Object.assign({}, before, { coins: 5, earned: Object.assign({}, before.earned, { [`chest:${day}`]: { coins: 5 } }),
+      quests: { day, picks: ['stars', 'fish', 'house'], got: { dA: { stars: 5, fish: 3, house: 1 } }, chest: true },
+      playtime: { day, ms: 2500000, wakes: 1, woke: { day, ms: 2400000 } } }), 0, 0);
+    for (const [name, P] of OLD) {
+      // The old tab answers one question on its copy from before: 409, merged as 'mine'.
+      const m = P.merge(play(P, before, 1, 0), now, 'mine');
+      check(`${name} tab: the day's chest stays paid once (its entry kept)`, m.earned[`chest:${day}`].coins === 5 && m.coins === 5, [m.coins, m.earned]);
+      check(`${name} tab: the parent's wake (woke) is kept`, !!m.playtime.woke && m.playtime.woke.ms === 2400000, m.playtime);
+      // Another tablet on this version, its own copy from before, merges what
+      // the old tab sent: the chest paid once and the wake are there (M1
+      // puts back its own count of wakes, but the woke minutes still hold).
+      const back = B.merge(play(B, before, 0, 0), m, 'theirs');
+      check(`${name} tab, then this version: coins once, the wake kept`, back.coins === 5 && back.playtime.woke.ms === 2400000 && back.stars === 41,
+        [back.coins, back.stars, back.playtime]);
+    }
+  }
 }
 
 // ---- Stickers (js/album.js) ----------------------------------------------------------

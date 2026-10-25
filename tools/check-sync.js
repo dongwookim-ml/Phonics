@@ -14,6 +14,7 @@
 //    there to one setting keeps the other tablet's to another, and a tap
 //    right after a sync came in counts;
 //  - a newer save on the server goes into the game on boot, in place;
+//  - the day's chest opened on two tablets before they sync pays once;
 //  - the deployed game (OLD_REF, default origin/main) next to this one: one
 //    tablet each on one account (both editions, both ways round), a guest
 //    tablet updated to this version then logging in, a signed-in tablet
@@ -414,6 +415,45 @@ async function newerOnBoot(browser) {
   await t.ctx.close();
 }
 
+async function chestTwice(browser) {
+  // Today's three quests done on A; B hears of them on its next save, so
+  // both show the chest ready. It is opened on A, then on B before B hears
+  // of that: each tablet shows its coins, and the chest pays once.
+  const acct = await newAccount();
+  const A = await tablet(browser);
+  const B = await tablet(browser);
+  await login(A, acct);
+  await login(B, acct);
+  for (const t of [A, B]) await t.page.evaluate(() => { document.getElementById('start-btn').click(); if (!Sound.muted) Sound.toggleMute(); });
+  const loads = [A.loads, B.loads];
+  await A.page.evaluate(() => { for (const k of questsToday().picks) questAdd(k, QUESTS[k].n); });
+  await settle(A);
+  await earn(B, 1, 'b');
+  await settle(B);
+  const ready = await B.page.evaluate(() => questReady());
+  const before = (await serverSave(acct)).save.coins;
+  const open = t => t.page.evaluate(async () => {
+    const coins = state.coins;
+    openQuests();
+    document.querySelector('#quests .qs-chest').click();
+    await new Promise(r => setTimeout(r, 300));
+    closeQuests();
+    return state.coins - coins;
+  });
+  const paid = [await open(A)];
+  await settle(A);
+  paid.push(await open(B));
+  await settle(B);
+  await settle(A);
+  const s = (await serverSave(acct)).save;
+  const [a, b] = [await live(A), await live(B)];
+  check('the day\'s chest opened on both tablets before they synced: each shows its coins, and it pays once', ready && paid.join() === '5,5' &&
+    s.coins === before + 5 && a.coins === s.coins && b.coins === s.coins && s.quests.chest === true, { ready, paid, before, server: s.coins, a: a.coins, b: b.coins });
+  check('the day\'s chest on both tablets: no reload, no page errors', A.loads === loads[0] && B.loads === loads[1] && !A.errors.length && !B.errors.length, A.errors.concat(B.errors));
+  await A.ctx.close();
+  await B.ctx.close();
+}
+
 // ---- The deployed game next to this one --------------------------------------
 
 // The game as deployed (OLD_REF, default origin/main) in a folder of its own,
@@ -615,7 +655,7 @@ async function firstRelease(browser, first) {
   if (!first) check(`the first release (${FIRST_REF}) is here`, !process.env.CI, `git has no ${FIRST_REF}; fetch it (CI checks out with fetch-depth 0)`);
   // ONLY=guest node tools/check-sync.js runs the parts whose name has "guest".
   const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, guestOtherEdition, parentChanges,
-    stalePanel, panelAfterSync, newerOnBoot };
+    stalePanel, panelAfterSync, newerOnBoot, chestTwice };
   if (deployed) {
     Object.assign(parts, {
       deployedPrincess: b => withDeployed(b, deployed, 'princess'),

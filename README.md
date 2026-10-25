@@ -245,7 +245,9 @@ npx http-server -p 8080 .
   a finished quest gets a tick and a chime once she is free, and when all
   three are done the chest glows ("All done! Open the treasure chest!").
   Tapping it opens it (about 2 seconds, a tap skips) and 5 🪙 coins
-  (`QUEST_CHEST`) fly into the purse, once a day. Tapping a picture says
+  (`QUEST_CHEST`) fly into the purse, once a day (counted under the day's
+  own entry, `chest:<day>` in `earned`, so opening it on two tablets
+  before they sync pays once). Tapping a picture says
   its word. A day she doesn't play changes nothing: no streak, nothing
   lost. The robot edition has missions, boxes, batteries and a blue chest.
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
@@ -485,16 +487,21 @@ The other checks, all run by
 - `node tools/check-flows.js`: the parent panel pauses the game, its
   password messages, a broken save, the first tap after ▶, today's
   adventures played through in both editions (picked, ticked, the chest
-  paying once, kept over a reload, new ones the next day), reading one
+  paying once, kept over a reload, new ones the next day) and at their
+  edges (a pick she can no longer do swapped when the account's copy
+  comes in, a card left open overnight, a chest an older tab says is
+  shut), the robot's cave fight with the parent panel over it, reading one
   of her own books to the end (a star once, a locked one stays locked),
   and the background music in both editions (it starts only after the
   first tap, ducks under a line and for a whole question, follows 🔊, the
   parent panel and its setting, a hidden page and the sleeping town, and
   plays nothing and breaks nothing without Web Audio).
 - `node tools/check-sync.js`: tablets on one account against a local
-  server (needs Python with `fastapi` and `uvicorn`), also next to the
-  deployed game (`origin/main`) and the first release (`eee606ec`); with `SYNC_SERVER_REF=origin/main`
-  against the server still deployed.
+  server (needs Python with `fastapi` and `uvicorn`), among them the
+  day's chest opened on two tablets before they sync (it pays once), also
+  next to the deployed game (`origin/main`) and the first release
+  (`eee606ec`); with `SYNC_SERVER_REF=origin/main` against the server still
+  deployed.
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 
 Lines not recorded yet are listed; one the game actually says without a

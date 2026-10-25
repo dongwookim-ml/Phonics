@@ -21,9 +21,11 @@ const Progress = (() => {
   // Save format 2 (fmt: 2): counters per edition, earned[device] and
   // spent[device], which only ever grow; each device adds to its own entry,
   // so putting two copies together takes the larger of each entry (a
-  // grow-only counter). Totals are earned minus spent, and are written too
-  // (stars, coins, dust), so an older version of the game can still read
-  // the save.
+  // grow-only counter). An entry can also be for one thing, written the
+  // same on every device (the day's chest, `chest:2026-10-25`, in
+  // js/quest.js), and is then counted once however many devices wrote it.
+  // Totals are earned minus spent, and are written too (stars, coins,
+  // dust), so an older version of the game can still read the save.
   //
   // A copy without them (no fmt: an older version of the game wrote it, or a
   // save from before) only has totals. Those totals are one "old client"
@@ -280,15 +282,17 @@ const Progress = (() => {
     return at;
   }
   // Play time today (js/guide.js): the later day, whole; on the same day the
-  // most played and the most wakes, so neither the count nor a parent's
-  // wake is undone. Days are 2026-9-30, so they compare as numbers.
+  // most played, the most wakes and the day's latest wake (`woke`, the
+  // minutes played when it came), so neither the count nor a parent's wake
+  // is undone. Days are 2026-9-30, so they compare as numbers.
   function joinPlaytime(a, b) {
     const ok = x => isObj(x) && typeof x.day === 'string';
     if (!ok(a) || !ok(b)) return ok(a) ? a : ok(b) ? b : join(a, b);
     const [x, y] = [a, b].map(p => p.day.split('-').map(n));
     const later = x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
     if (later) return later > 0 ? a : b;
-    return Object.assign({}, b, a, { ms: Math.max(n(a.ms), n(b.ms)), wakes: Math.max(n(a.wakes), n(b.wakes)) });
+    const woke = [a.woke, b.woke].filter(w => isObj(w) && w.day === a.day).sort((v, w) => n(w.ms) - n(v.ms))[0];
+    return Object.assign({}, b, a, { ms: Math.max(n(a.ms), n(b.ms)), wakes: Math.max(n(a.wakes), n(b.wakes)) }, woke ? { woke } : {});
   }
   // Stickers (js/album.js): each word's count the larger, found when it was
   // first found, and no longer new once she has seen it on either copy
