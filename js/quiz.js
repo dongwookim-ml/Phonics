@@ -327,6 +327,8 @@ const Quiz = (() => {
     npc.lastQuiz = kind;
     const review = reviewing(kind, npc);
     const q = builders[kind](npc);
+    // Questions, hints and answers are said plainly, never lifted (js/audio.js).
+    for (const p of [].concat(q.ask, q.replay, q.answer)) if (p && typeof p === 'object') p.plain = true;
     if (!q.prompt) q.prompt = q.ask.find(p => p.text && !p.file).text;
     remember(q.target);
     return Object.assign(q, { kind, review, done: false, misses: 0 });

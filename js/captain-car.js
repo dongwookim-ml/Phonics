@@ -64,7 +64,7 @@ if (isCaptain()) {
     policecar:    { gender: 'male', tts: 'am_eric', lift: 1.06, pitch: 1.1, rate: 1.0, voice: ['Fred', 'Microsoft Guy', 'Google US English'] },
     firetruck:    { gender: 'male', tts: 'am_adam', pitch: 0.95, rate: 1.0, voice: ['Alex', 'Microsoft Andrew', 'Google US English'] },
     racecar:      { gender: 'male', tts: 'am_puck', lift: 1.1, pitch: 1.3, rate: 1.08, voice: ['Junior', 'Microsoft Guy', 'Google US English'] },
-    monstertruck: { gender: 'male', tts: 'am_santa', pitch: 0.7, rate: 0.95, voice: ['Ralph', 'Fred', 'Microsoft Christopher'] },
+    monstertruck: { gender: 'male', tts: 'am_santa', lift: 0.94, pitch: 0.7, rate: 0.95, voice: ['Ralph', 'Fred', 'Microsoft Christopher'] },
     mechanic:     { gender: 'male', tts: 'am_liam', pitch: 0.9, rate: 0.95, voice: ['Aaron', 'Fred', 'Microsoft Christopher'] },
     attendant:    { gender: 'female', tts: 'af_nova', pitch: 1.2, rate: 1.0, voice: ['Samantha', 'Microsoft Aria', 'Google US English'] },
   });

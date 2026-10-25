@@ -1,4 +1,4 @@
-// Speech (letter sounds, words) and small synthesized sound effects.
+// Speech (recorded lines, words, letter sounds) and small synthesized sound effects.
 
 const Sound = (() => {
   let voice = null;
@@ -39,20 +39,43 @@ const Sound = (() => {
     return { voice: v || null, pitch: style.pitch, rate: style.rate, tts: style.tts, lift: style.lift };
   }
 
-  // Pre-recorded lines (audio/tts, made with the Kokoro voice model). The
-  // index maps each voice's sentences to a file. Anything not recorded, such
-  // as a custom name, comes from TTS_SERVER if set, else the device voice.
+  // Pre-recorded lines (audio/tts, recorded with Amazon Polly by
+  // tools/polly-build.py). The index maps each voice's sentences to a file.
+  // Anything not recorded, such as a custom name, comes from TTS_SERVER if
+  // set, else the device voice.
   const index = typeof TTS_INDEX !== 'undefined' ? TTS_INDEX : {};
   const norm = t => String(t).trim().replace(/\s+/g, ' ');
+  const voiceFor = (item, who) => (item.narrator || !who.tts ? TTS_NARRATOR : who.tts);
+  const clipId = (item, who) => { const m = index[voiceFor(item, who)]; return m && m[norm(item.text)]; };
   function recorded(item, who) {
-    const v = item.narrator || !who.tts ? TTS_NARRATOR : who.tts;
+    const v = voiceFor(item, who);
     const text = norm(item.text);
-    const id = index[v] && index[v][text];
+    const id = clipId(item, who);
     if (id) return { url: `audio/tts/${v}/${id}.mp3` };
     if (!TTS_SERVER) return null;
     const speed = item.narrator ? 0.8 : 0.95;
     return { url: `${TTS_SERVER.replace(/\/$/, '')}/tts?voice=${v}&speed=${speed}&text=${encodeURIComponent(text)}`, live: true };
   }
+
+  // "/m/" is a pure letter sound, cut from the narrator's own words when the
+  // clips are recorded. Without a recording it is said the old way ("mmm",
+  // "kuh"), never as "slash m slash".
+  const PURE = /^\/[a-z]+\/$/;
+  const DIGRAPHS = { sh: 'shh', ch: 'ch', th: 'th', ck: 'kuh', ng: 'ng', q: 'kwuh', qu: 'kwuh' };
+  function spelledSound(text) {
+    const l = text.slice(1, -1);
+    const letter = typeof LETTERS !== 'undefined' && LETTERS.find(x => x.letter === l.toUpperCase());
+    return (typeof PART_SOUNDS !== 'undefined' && PART_SOUNDS[l]) || DIGRAPHS[l] || (letter && letter.sound) || l;
+  }
+
+  // `lift` plays a voice faster and higher so characters who share a voice
+  // sound apart. It is for chit-chat only: speeding up shifts the vowels a
+  // listener needs, so never on the narrator, quiz words (`file`, `word`),
+  // questions and teaching (`plain`) or letter sounds.
+  const TEACH = /\b[A-Z] says |^\/[a-z]+\/$/;
+  const liftFor = (item, who) =>
+    (item.narrator || item.plain || item.file || item.word || TEACH.test(norm(item.text)) ? 0 : who.lift);
+
   // One audio element, reused so iPad keeps it unlocked after the first tap.
   const player = typeof Audio !== 'undefined' ? new Audio() : null;
   let unlocked = false;
@@ -66,9 +89,9 @@ const Sound = (() => {
   // device voice so nobody waits on a slow server.
   function playFile(url, done, fail, live, lift) {
     const timer = live ? setTimeout(fail, 4000) : null;
-    player.onplaying = () => clearTimeout(timer);
-    player.onended = () => { clearTimeout(timer); done(); };
-    player.onerror = () => { clearTimeout(timer); fail(); };
+    player.onplaying = () => { clearTimeout(timer); duck(true); };
+    player.onended = () => { clearTimeout(timer); duck(false); done(); };
+    player.onerror = () => { clearTimeout(timer); duck(false); fail(); };
     player.src = url;
     // A lifted voice plays faster without keeping its pitch, so it sounds higher.
     player.preservesPitch = player.webkitPreservesPitch = !lift;
@@ -77,16 +100,23 @@ const Sound = (() => {
   }
 
   // Speak a list of phrases in order. Each item is a string or
-  // { text, rate, pitch, file } where `file` is an optional recording,
+  // { text, rate, pitch, file, narrator, plain } where `file` is an optional
+  // recording and `plain` marks a question or teaching line (never lifted),
   // or { pause: ms } for a short silence, or { call: fn } to run fn when
   // the queue gets there. `who` is a profile() result.
+  // Speech never starts on top of a sound effect: it waits for a short one
+  // to end, and a longer one is turned down while the voice plays.
   function say(parts, who) {
     if (muted) return;
     if ('speechSynthesis' in window) speechSynthesis.cancel();
     if (player) { player.onended = null; player.onerror = null; player.onplaying = null; player.pause(); }
     clearTimeout(pauseTimer);
+    duck(false);
     const queue = (Array.isArray(parts) ? parts : [parts]).map(p => typeof p === 'string' ? { text: p } : p);
-    playNext(queue, who || {}, ++generation);
+    const gen = ++generation;
+    const wait = sfxEnd - now();
+    if (wait > 120) pauseTimer = setTimeout(() => playNext(queue, who || {}, gen), Math.min(wait, 600) + 40);
+    else playNext(queue, who || {}, gen);
   }
 
   let generation = 0;
@@ -94,10 +124,13 @@ const Sound = (() => {
 
   function playNext(queue, who, gen) {
     if (gen !== generation) return; // a newer say() took over
-    const item = queue.shift();
+    let item = queue.shift();
     if (!item) return;
     const next = () => playNext(queue, who, gen);
-    // Your own recordings (USE_RECORDINGS) come first, then Kokoro's.
+    if (item.text && PURE.test(norm(item.text)) && !clipId(item, who)) {
+      item = Object.assign({}, item, { text: spelledSound(norm(item.text)), plain: true });
+    }
+    // Your own recordings (USE_RECORDINGS) come first, then Polly's.
     const own = USE_RECORDINGS && item.file && player ? { url: item.file } : null;
     const file = own || (item.text && player ? recorded(item, who) : null);
     if (item.call) {
@@ -113,7 +146,7 @@ const Sound = (() => {
         player.onended = null;
         player.pause();
         speak(item, who, next);
-      }, file.live, item.narrator ? 0 : who.lift);
+      }, file.live, liftFor(item, who));
     } else {
       speak(item, who, next);
     }
@@ -127,19 +160,29 @@ const Sound = (() => {
     u.lang = v ? v.lang : 'en-US';
     u.rate = Math.max(0.62, Math.min(1.6, (item.rate || 0.9) * (who.rate || 1)));
     u.pitch = Math.max(0, Math.min(2, item.pitch || who.pitch || 1.15));
-    u.onend = done;
-    u.onerror = done;
+    u.onstart = () => duck(true);
+    u.onend = () => { duck(false); done(); };
+    u.onerror = () => { duck(false); done(); };
     speechSynthesis.speak(u);
   }
 
+  // Sound effects go through one gain, turned down while speech plays.
+  let sfxBus = null;
+  let sfxEnd = 0;
+  const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
   function ctx() {
     if (!audioCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       audioCtx = new AC();
+      sfxBus = audioCtx.createGain();
+      sfxBus.connect(audioCtx.destination);
     }
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
+  }
+  function duck(on) {
+    if (sfxBus) sfxBus.gain.setTargetAtTime(on ? 0.25 : 1, audioCtx.currentTime, 0.04);
   }
 
   // Play a short sequence of notes: [[frequency, startSec, durationSec], ...]
@@ -148,6 +191,7 @@ const Sound = (() => {
     const ac = ctx();
     if (!ac) return;
     const t0 = ac.currentTime;
+    let end = 0;
     for (const [f, s, d] of seq) {
       const o = ac.createOscillator();
       const g = ac.createGain();
@@ -155,10 +199,12 @@ const Sound = (() => {
       o.frequency.value = f;
       g.gain.setValueAtTime(gain, t0 + s);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + s + d);
-      o.connect(g).connect(ac.destination);
+      o.connect(g).connect(sfxBus);
       o.start(t0 + s);
       o.stop(t0 + s + d + 0.02);
+      end = Math.max(end, s + d);
     }
+    sfxEnd = Math.max(sfxEnd, now() + end * 1000);
   }
 
   return {
@@ -166,8 +212,14 @@ const Sound = (() => {
     profile,
     tap: () => notes([[660, 0, 0.08]]),
     step: () => notes([[220, 0, 0.04]], 'triangle', 0.03),
+    // correct and wrong are for answers only.
     correct: () => notes([[523, 0, 0.12], [659, 0.1, 0.12], [784, 0.2, 0.25]]),
     wrong: () => notes([[300, 0, 0.12], [250, 0.12, 0.2]], 'triangle', 0.08),
+    // A soft rising twinkle: dressing up, getting on the unicorn, taking a present.
+    sparkle: () => notes([[784, 0, 0.08], [988, 0.07, 0.08], [1319, 0.14, 0.18]], 'triangle', 0.05),
+    // Two soft low blips: a gate that is still locked, not enough coins.
+    locked: () => notes([[262, 0, 0.07], [247, 0.12, 0.1]], 'triangle', 0.06),
+    coin: () => notes([[988, 0, 0.07], [1319, 0.07, 0.22]], 'square', 0.04),
     door: () => notes([[392, 0, 0.08], [523, 0.08, 0.08], [659, 0.16, 0.14]], 'triangle', 0.07),
     party: () => notes([[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.4], [784, 0.5, 0.1], [1047, 0.6, 0.5]]),
     toggleMute() {
