@@ -6,15 +6,18 @@ Postgres at DATABASE_URL when it is set (CI runs both).
     pytest server
 """
 import asyncio
+import atexit
 import importlib.util
 import json
 import os
+import shutil
 import tempfile
 import threading
 import time
 
 if not os.environ.get('DATABASE_URL'):
     os.environ['DATA_DIR'] = tempfile.mkdtemp(prefix='pixeltown-test-')
+    atexit.register(shutil.rmtree, os.environ['DATA_DIR'], True)
 os.environ.pop('ALLOWED_ORIGINS', None)
 
 import httpx  # noqa: E402

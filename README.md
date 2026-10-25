@@ -183,7 +183,28 @@ device's own voice.
 
 `node tools/smoke.js` (needs the `playwright` package) checks that no two
 scripts define the same global and that every scene builds without errors,
-for both a girl and a boy hero.
+for both a girl and a boy hero. The other checks, all run by
+`.github/workflows/ci.yml` on every push and pull request:
+
+- `node tools/check-merge.js`: the save merge rules (no browser).
+- `ROUNDS=30 node tools/quiz-test.js`: thousands of questions from every
+  asker, under an empty, a finished and a mixed history.
+- `node tools/check-tts.js`: every recording has its file, and nothing the
+  game says while playing both editions lacks a recording.
+- `node tools/check-reach.js`: every villager, door and way out can be
+  walked to, also with the ride parked.
+- `node tools/check-flows.js`: the parent panel pauses the game, its
+  password messages, a broken save, the first tap after ▶.
+- `node tools/check-sync.js`: tablets on one account against a local
+  server (needs Python with `fastapi` and `uvicorn`), also next to the
+  deployed game (`origin/main`).
+- `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
+
+Lines not recorded yet are listed and only fail with `TTS_STRICT=1` (CI
+sets it on `main`). The game is served from `main`, so stamp a build
+before merging there: `node tools/stamp.js`, then commit `index.html` and
+`version.json` (CI on `main` runs `node tools/check-build.js`, which fails
+on an unstamped `dev` build). Open tabs then see the new version.
 
 ### Live speech server (optional)
 

@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('playwright');
+const { launch } = require('./browser');
 
 const root = path.join(__dirname, '..');
 const scripts = [...fs.readFileSync(path.join(root, 'index.html'), 'utf8').matchAll(/<script src="([^"?]+)/g)].map(m => m[1]);
@@ -23,7 +23,7 @@ for (const s of scripts) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium' });
+  const browser = await launch();
   for (const [edition, look, title] of [['princess', 'girl', 'princess'], ['princess', 'boy', 'prince'], ['captain', 'robot', 'captain']]) {
     const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
     const errors = [];
