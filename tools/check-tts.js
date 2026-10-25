@@ -3,9 +3,10 @@
 //  - every line tools/tts-phrases.js lists today is recorded, and
 //    tools/tts-phrases.json (what the recording workflow reads) is up to date;
 //  - while playing both editions (dialogs right and wrong, presents, the
-//    shop, the cave, doors and links, riding, the wardrobe, the library) with
-//    the default name, nothing is said that has no recording (it would come
-//    from the live server, or the device's own voice).
+//    shop, the cave, doors and links, riding, the wardrobe, the library, and
+//    every little game with two misses and to the end) with the default
+//    name, nothing is said that has no recording (it would come from the
+//    live server, or the device's own voice).
 // A missing file or a page error always fails. Lines listed but not
 // recorded yet (new lines wait for .github/workflows/polly.yml; the game
 // may hold them back until then, see Sound.hasClip) are a to-do list. A
@@ -88,6 +89,7 @@ async function play(browser, edition) {
     };
     const queue = [];
     later = (ms, fn) => { queue.push(fn); };
+    miniLater = (ms, fn) => { queue.push(fn); };
     const flush = () => { for (let i = 0; i < 500 && queue.length; i++) queue.shift()(); };
     const step = (what, fn) => { try { fn(); flush(); } catch (e) { steps.push(`${what}: ${e.message}`); } };
     Sound.toggleMute(); // quicker book timers; what is said is still noted
@@ -160,6 +162,27 @@ async function play(browser, edition) {
           getOff();
         });
       }
+    }
+    // Every little game (js/minigame.js, js/village-games.js): two misses
+    // in the first round, then each round won, to the end.
+    for (const [key, g] of Object.entries(MINI_GAMES)) {
+      step(`${key} game`, () => {
+        changeScene(g.scene);
+        flush();
+        state.busy = false;
+        openMini(g.host());
+        flush();
+        const want = x => (g.tap ? vgWants(x) : x.right);
+        const tap = it => { mini.locked = false; if (g.tap) g.tap(it); else if (it.right) miniCatch(it); else miniMiss(it); flush(); };
+        let misses = 0;
+        for (let i = 0; i < 30 && document.getElementById('mini-end').classList.contains('hidden'); i++) {
+          const live = mini.items.filter(x => x.state === 'live');
+          if (mini.round === 0 && misses < 2 && live.some(x => !want(x))) { misses++; tap(live.find(x => !want(x))); continue; }
+          tap(live.find(want));
+        }
+        if (document.getElementById('mini-end').classList.contains('hidden')) throw new Error('did not get to the end');
+        closeMini();
+      });
     }
     // Ways in and out.
     step('town', () => changeScene('town'));

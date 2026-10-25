@@ -971,6 +971,29 @@ LINES.fishDone = isCaptain()
   ? ['Great job! Here are some coins for you!', 'All the boxes are loaded! Coins for you!']
   : ['What a great catch! Here are some coins for you!', 'A full bucket! These coins are for you!'];
 
+// A little game in each village (js/village-games.js), from one villager's
+// dialog there: `rounds` rounds of the village's own kind of question at
+// her tier, `choices` pictures to pick from (four letters to spell), and
+// the fishing game's coins at the end. `host` is that villager's look.
+//   forest   rhyme  hop on the mushroom that rhymes (hatch the egg)
+//   fairy    spell  tap the letters of a word she hears, in order
+//   unicorn  blend  hear /c/ /a/ /t/, tap the unicorn (car) with its picture
+//   dungeon  read   read a word, open the chest (free the crystal) with its picture
+const VILLAGE_GAMES = {
+  rounds: FISHING.rounds, choices: 3, coins: FISHING.coins,
+  forest:  { kind: 'rhyme', host: isCaptain() ? 'dinoTops' : 'gnome' },
+  fairy:   { kind: 'spell', host: isCaptain() ? 'droneDoc' : 'pixie' },
+  unicorn: { kind: 'blend', host: isCaptain() ? 'mechanic' : 'keeper' },
+  dungeon: { kind: 'read', host: isCaptain() ? 'canbot' : 'dragon' },
+};
+// The narrator says what to do as a village's game starts, and hands over
+// the coins at the end. Everything else in them is already recorded.
+LINES.miniRhyme = isCaptain() ? ['Hatch the egg that rhymes!'] : ['Hop on the mushroom that rhymes!'];
+LINES.miniSpell = ['Tap the letters in order!'];
+LINES.miniBlend = ['Listen to the sounds. Tap the picture!'];
+LINES.miniRead = ['Read the word. Tap its picture!'];
+LINES.miniDone = ['Hooray! Coins for you!'];
+
 // A villager calls her over when nothing has been tapped for a while
 // (js/guide.js); recorded in every voice, like the PERSONA lines.
 LINES.nudge = ['{title} {name}, over here!'];
@@ -981,9 +1004,11 @@ LINES.sleep = ['Time to rest! See you tomorrow.'];
 
 // Three little quests a day, one from each group (answering, playing,
 // going somewhere), picked among the ones she can do with what is open.
-// Each is a picture and `n` dots she fills: stars she earns, fish she
-// catches, stickers new to her album, fairy dust she earns, letter houses
-// she goes into... counted from what she does that day. `stars` keeps a
+// Each is a picture and `n` dots she fills: stars she earns, rounds she
+// wins in the little games (fishing and the villages' games; the quest is
+// still called `fish`, as saved quests have it), stickers new to her album,
+// fairy dust she earns, letter houses she goes into... counted from what
+// she does that day. `stars` keeps a
 // quest back until that many stars open its gate; a quest with `place` is
 // going through that gate, and shows the place's own picture. `word` is
 // said when she taps the picture (only once it is recorded). The robot
@@ -993,7 +1018,7 @@ const QUESTS = {
   gift:    { group: 'learn', icon: '🎁', n: 1, word: 'gift' },
   sticker: { group: 'learn', icon: '📒', n: 2 },
   dust:    { group: 'learn', icon: isCaptain() ? '⚡' : '✨', n: 5, stars: FAIRY_STARS },
-  fish:    { group: 'play', icon: isCaptain() ? '📦' : '🐟', n: 3, word: isCaptain() ? 'box' : 'fish' },
+  fish:    { group: 'play', icon: isCaptain() ? '🕹️' : '🎮', n: 3 },
   book:    { group: 'play', icon: '📖', n: 1, word: 'book' },
   feed:    { group: 'play', icon: isCaptain() ? '🤖' : '🧚', n: 1, word: isCaptain() ? 'robot' : 'fairy' }, // shows her friend itself
   house:   { group: 'go', icon: isCaptain() ? '🔧' : '🏠', n: 1, word: isCaptain() ? null : 'house' },

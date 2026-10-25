@@ -415,7 +415,7 @@ const Quiz = (() => {
       const list = others(pool, cfg.n - 1, ok, cfg.sameVowel && (x => x.v === r.v));
       const ask = line('rhyme');
       return {
-        id, target: r.set[0][0], clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
+        id, target: r.set[0][0], base: base.w, clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
         prompt: `${ask} "${base.w}"?`,
         ask: [{ text: ask }, { pause: 300 }, voiced(base.w), READY],
         replay: [voiced(base.w)],
@@ -658,7 +658,9 @@ const Quiz = (() => {
   });
 
   // Picks a kind of question this person didn't ask last time, at her tier.
-  // `force` ({ kind, tier }) is for tests.
+  // `force` ({ kind, tier }) is for tests and the village games
+  // (js/village-games.js), whose `cfg` changes that tier's settings (more
+  // cards); a forced question never moves her tier.
   function make(npc, force) {
     const kinds = QUIZ_TYPES[placeOf(npc)];
     let kind = force && force.kind;
@@ -667,7 +669,7 @@ const Quiz = (() => {
       kind = pick(choices.length ? choices : kinds);
     }
     npc.lastQuiz = kind;
-    const tier = force && force.tier ? { t: force.tier, cfg: TIERS[kind][force.tier - 1], counts: false } : tierFor(kind, npc);
+    const tier = force && force.tier ? { t: force.tier, cfg: Object.assign({}, TIERS[kind][force.tier - 1], force.cfg), counts: false } : tierFor(kind, npc);
     return build(kind, npc, tier);
   }
   function build(kind, npc, tier) {
