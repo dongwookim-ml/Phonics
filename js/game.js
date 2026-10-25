@@ -1104,7 +1104,7 @@ function showSpelled(q) {
 
 function spellTap(i) {
   const q = state.question;
-  if (!q || !q.tiles || q.done || q.locked || q.picked.includes(i) || (q.glow >= 0 && i !== q.glow)) return;
+  if (!q || !q.tiles || !q.tiles[i] || q.done || q.locked || q.picked.includes(i) || (q.glow >= 0 && i !== q.glow)) return;
   const at = q.picked.length;
   if (at >= q.slots.length) return;
   const t = q.tiles[i];
