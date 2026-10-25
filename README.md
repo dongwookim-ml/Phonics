@@ -125,9 +125,16 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, re
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (4 or more
   characters). Signed in, the whole save is kept on the server as well, so
-  another tablet that logs into the same account gets the same progress;
-  the newer save wins. The tablet stays signed in, and the game keeps
-  working offline and uploads again later. "계정 없이 할래요" plays with the
+  another tablet that logs into the same account gets the same progress.
+  Two tablets can play at once, say one the princess and one the captain
+  edition: when one saves after the other, the two saves are put together
+  in place, without a reload (`js/progress.js`). Answers, presents and books
+  are joined, and stars, coins and fairy dust are counted per device
+  (`earned` / `spent` in the save), so both tablets' stars add up. The
+  outfit and name come from the tablet playing that edition, or else from
+  the copy saved on the newer server version. The tablet stays signed in,
+  and the game keeps working offline and uploads again later (one upload
+  at a time). "계정 없이 할래요" plays with the
   browser-only save; 🔑 로그인 / 로그아웃 is at the top right of the start
   screen. The first login carries the progress so far into the account.
   The account password is also the parent password (`Account.verify` in
@@ -222,6 +229,7 @@ These win over the Kokoro recordings; any missing file falls back to them.
 
 - `js/data.js`: content and settings
 - `js/account.js`: login / sign-up and the server save
+- `js/progress.js`: putting two copies of the save together (account sync)
 - `js/sprites.js`: pixel-art drawing (tiles, cottages, castle, furniture, characters)
 - `js/world.js`: town and room layouts, pathfinding
 - `js/audio.js`: speech and sound effects

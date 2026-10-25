@@ -125,17 +125,22 @@ function editionSave(s) {
   return Object.assign({}, mine, { edition: EDITION, other });
 }
 let otherEditions = {};
-function load() {
+let savedRest = {}; // fields of the save this version doesn't use, kept as they are
+// `raw` is a save object (from js/account.js), else the one in localStorage.
+function load(raw) {
   try {
-    const s = editionSave(JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
+    const s = editionSave(raw || JSON.parse(localStorage.getItem(SAVE_KEY) || '{}'));
     otherEditions = s.other || {};
+    savedRest = Object.assign({}, s);
+    delete savedRest.other;
     let outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
     outfit = fitOutfit(outfit);
-    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, pictures: !!s.pictures, looks: s.looks || {}, history: s.history || {}, books: s.books || {} };
+    // Stars, coins and dust are also counted per device (js/progress.js).
+    return { outfit, owned: ownedFrom(s.owned, outfit), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures: !!s.pictures, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {} };
   } catch (e) {
-    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, pictures: false, history: {}, books: {} };
+    return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: false, history: {}, books: {} };
   }
 }
 
@@ -156,9 +161,37 @@ function ownedFrom(saved, outfit) {
 }
 function save() {
   state.looks[state.worn] = state.outfit;
-  const data = { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, at: Date.now() };
+  // `ver`: the server version this was written on (js/account.js), the
+  // server's clock, so another device can tell which copy is newer.
+  const data = Object.assign({}, savedRest, { outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, recent: Quiz.recent, history: state.history, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now() }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
+}
+
+// A save that js/account.js put together with the account's (another
+// tablet's progress, or the account's own) goes into the running game in
+// place, without a reload: counters, presents, answers and books, and the
+// outfit and name it carries.
+function applyProgress(s) {
+  const p = load(s);
+  Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures });
+  const ride = state.outfit.ride;
+  state.worn = PLAYER.look;
+  state.outfit = p.outfit;
+  if (state.outfit.ride !== ride) {
+    if (state.outfit.ride === 'none') state.mounted = false;
+    if (!state.mounted && state.scene) parkUnicorn();
+  }
+  ui.pictures.classList.toggle('active', state.pictures);
+  renderStars(false);
+  renderRide();
+  if (!ui.wardrobe.classList.contains('hidden')) renderWardrobe();
+  if (!ui.start.classList.contains('hidden')) {
+    ui.nameInput.value = PLAYER.shown;
+    ui.spokenInput.value = PLAYER.spoken;
+    spokenEdited = PLAYER.spoken !== romanize(PLAYER.shown);
+    renderStart();
+  }
 }
 
 // ---- State ---------------------------------------------------------------
@@ -173,6 +206,7 @@ const state = {
   stars: saved.stars,
   coins: saved.coins,
   dust: saved.dust,  // fairy dust from the Fairy Village
+  tally: saved.tally, // the same three, counted per device: { earned, spent }
   history: saved.history, // { questionId: { kind, tries, right, wrong, last } }
   books: saved.books, // reading log: { [bookId]: { read, quizRight, got } }
   pictures: saved.pictures,

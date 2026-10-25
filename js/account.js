@@ -58,22 +58,10 @@ async function accountFetch(method, path, body, opts = {}) {
   }
 }
 
-// One edition's progress in a save (see editionSave in game.js), and a save
-// with one edition's progress put back.
-function accountEditionOf(save, edition) {
-  if ((save.edition || 'princess') !== edition) return (save.other || {})[edition] || null;
-  const own = Object.assign({}, save);
-  delete own.other;
-  return own;
-}
-function accountKeepMine(server) {
-  let local = null;
-  try { local = JSON.parse(accountLocalSave()); } catch (e) { /* unreadable */ }
-  const mine = local && accountEditionOf(local, EDITION);
-  const theirs = accountEditionOf(server, EDITION);
-  if (!mine || (theirs && (theirs.at || 0) >= (mine.at || 0))) return server;
-  if ((server.edition || 'princess') === EDITION) return Object.assign({}, mine, { other: server.other });
-  return Object.assign({}, server, { other: Object.assign({}, server.other, { [EDITION]: mine }) });
+function accountParse(json) { try { return JSON.parse(json); } catch (e) { return null; } }
+// Whether js/game.js is running (so a merged save can go into it in place).
+function accountInGame() {
+  try { return typeof state !== 'undefined' && typeof applyProgress === 'function'; } catch (e) { return false; }
 }
 
 const Account = {
@@ -85,6 +73,8 @@ const Account = {
   _inflight: null, // the upload on its way, if any
   _again: false,   // something changed while it was: send again after it
   get _dirty() { return !!accountGet('dirty'); },
+  // The server version the local save builds on.
+  get base() { return Number(accountGet('updated')) || 0; },
 
   async verify(pw) {
     if (!this.user) return pw === ACCOUNT_GUEST_PW;
@@ -130,42 +120,60 @@ const Account = {
     return this._inflight;
   },
 
+  // When another device saved first (409), both saves are put together and
+  // sent again on top of the server's version; the game goes on, with the
+  // other device's progress added in place. Never a reload.
   async _send(keepalive) {
-    const json = accountLocalSave();
-    if (!this.user || !json || !this._dirty) return;
-    const body = { save: JSON.parse(json), base: Number(accountGet('updated')) || 0 };
-    // Browsers cap keepalive bodies at 64 KB.
-    const r = await accountFetch('PUT', '/save', body, { keepalive: keepalive && json.length < 60000 });
-    if (r.status === 200 && r.data) {
-      accountSet('updated', r.data.updated);
-      if (accountLocalSave() === json) accountSet('dirty', null); // nothing changed meanwhile
-    } else if (r.status === 409 && !keepalive) {
-      // Another device saved first: its save wins and this one reloads with it.
+    for (let tries = 0; tries < 3; tries++) {
+      const json = accountLocalSave();
+      const save = accountParse(json);
+      if (!this.user || !save || !this._dirty) return;
+      // Browsers cap keepalive bodies at 64 KB.
+      const r = await accountFetch('PUT', '/save', { save, base: this.base }, { keepalive: keepalive && json.length < 60000 });
+      if (r.status === 200 && r.data) {
+        accountSet('updated', r.data.updated);
+        if (accountLocalSave() === json) accountSet('dirty', null); // nothing changed meanwhile
+        return;
+      }
+      if (r.status === 401) { this._expired(); return; }
+      if (r.status !== 409 || keepalive) return;
       const s = await accountFetch('GET', '/save');
-      if (s.status === 200 && s.data && s.data.save) this._adopt(s.data, true);
-    } else if (r.status === 401) this._expired();
+      if (s.status !== 200 || !s.data || !s.data.save || !this._merge(s.data, 'mine')) return;
+    }
+  },
+
+  // Puts the server's save together with the local one (js/progress.js; `how`
+  // is 'mine' when this device has unsent progress, 'theirs' when the server's
+  // copy is simply newer), stores the result as the local save on top of the
+  // server's version, and shows it in the running game.
+  _merge(data, how) {
+    if (accountInGame()) save(); // the very latest progress goes in too
+    const local = accountParse(accountLocalSave());
+    const merged = local ? Progress.merge(local, data.save, how) : data.save;
+    try { localStorage.setItem(ACCOUNT_SAVE_KEY, JSON.stringify(merged)); } catch (e) { return false; }
+    accountSet('owner', this.user);
+    accountSet('updated', data.updated);
+    accountSet('snap', null);
+    accountSet('dirty', Progress.same(merged, data.save) ? null : '1');
+    if (accountInGame()) applyProgress(merged);
+    return true;
   },
 
   // Makes the server's save the local one, and reloads the page with it.
-  // With `mine`, unsent progress in the game being played here survives when
-  // it is newer than the server's copy of that game (another device may have
-  // been playing the other edition on the same account).
-  _adopt(data, mine) {
-    const save = mine && this._dirty ? accountKeepMine(data.save) : data.save;
-    const json = JSON.stringify(save);
+  _adopt(data) {
+    const json = JSON.stringify(data.save);
     try { localStorage.setItem(ACCOUNT_SAVE_KEY, json); } catch (e) { return false; }
-    accountSet('snap', save === data.save ? json : null);
+    accountSet('snap', json);
     accountSet('updated', data.updated);
-    accountSet('dirty', save === data.save ? null : '1');
+    accountSet('dirty', null);
     accountSet('owner', this.user);
-    // The next page sends any kept progress, against the version just stored.
     this._leaving = true;
     location.reload();
     return true;
   },
 
-  // After signing in (or on boot with a saved token). The local save is kept
-  // only when it is this account's and the server has nothing newer; a guest's
+  // After signing in (or on boot with a saved token). This account's local
+  // save is put together with a newer one on the server, in place; a guest's
   // or an old save is carried into an account that has no save yet.
   async _sync() {
     const r = await accountFetch('GET', '/save', null, { timeout: 5000 });
@@ -173,11 +181,11 @@ const Account = {
     if (r.status !== 200 || !r.data) return 'offline';
     const owner = accountGet('owner') || '';
     const mine = owner === this.user;
-    const base = mine ? Number(accountGet('updated')) || 0 : 0;
-    if (r.data.save && (!mine || r.data.updated > base)) {
-      return this._adopt(r.data, mine) ? 'reload' : 'offline';
-    }
-    if (!r.data.save && owner && !mine) {
+    if (mine && r.data.save && r.data.updated > this.base) {
+      this._merge(r.data, this._dirty ? 'mine' : 'theirs');
+    } else if (r.data.save && !mine) {
+      return this._adopt(r.data) ? 'reload' : 'offline';
+    } else if (!r.data.save && owner && !mine) {
       // Someone else's progress is on this device: a new account starts fresh.
       try { localStorage.removeItem(ACCOUNT_SAVE_KEY); } catch (e) { return 'offline'; }
       ['snap', 'updated', 'dirty'].forEach(k => accountSet(k, null));
