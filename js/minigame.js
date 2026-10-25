@@ -249,6 +249,10 @@ function miniHint(parts, ms) {
   miniSay(parts.concat({ call: ready }), ms, ready);
 }
 
+// How long the end card lets taps outside it go by (js/game.js): her finger
+// may still be tapping the last fish as it comes up.
+const MINI_END_HOLD = 1500;
+
 // The end: coins, a little party and the 🔁 / 👋 card.
 function miniFinish() {
   const g = mini.game;
@@ -262,6 +266,7 @@ function miniFinish() {
   mini.catch.textContent = `${g.bag()} ${mini.caught.map(it => it.prize || it.e).join(' ')}`;
   mini.coins.textContent = `🪙 +${FISHING.coins}`;
   mini.end.classList.remove('hidden');
+  mini.endAt = performance.now();
   Sound.say([{ pause: 400 }].concat(g.done()), voiceOf(mini.npc));
 }
 

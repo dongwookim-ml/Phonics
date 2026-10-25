@@ -543,7 +543,9 @@ const selfWord = t => {
 function selfPlay() {
   if (library.mode !== 'self' || !library.self.ready[library.page]) return;
   const text = libraryEl('rd-text');
+  // A word cut off by ▶ never hears its end: it goes dark here.
   text.querySelectorAll('.rd-word').forEach(x => x.classList.remove('on'));
+  text.querySelectorAll('.g').forEach(x => x.classList.remove('lit'));
   text.classList.add('now');
   bookSay([{ text: library.book.pages[library.page].text, narrator: true, rate: 0.85 }], () => text.classList.remove('now'));
 }

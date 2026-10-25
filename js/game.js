@@ -2531,14 +2531,16 @@ function worldToTile(sc, wx, wy) {
 // end card over the pond. One without `close` stays: a question to answer,
 // a present to choose, the book being read, fish still to catch, the
 // sleeping town. `skip` says the tap ended something still playing on the
-// card (the chest opening, stickers flying in, her friend's party): that is
-// all it does, and the next tap outside closes it.
+// card (the chest opening, stickers flying in, her friend's party), or came
+// just as the card came up (the little game's end, with her finger still
+// tapping the last fish): that is all it does, and a later tap outside
+// closes it.
 const OUTSIDE_CARDS = [
   { id: 'sleep' },
   { id: 'reward' },
   { id: 'dialog' },
   { id: 'feed', close: closeFeed, skip: friendSkip },
-  { id: 'mini-end', close: closeMini },
+  { id: 'mini-end', close: closeMini, skip: () => performance.now() - mini.endAt < MINI_END_HOLD },
   { id: 'mini' },
   { id: 'reader' },
   { id: 'wardrobe', close: closeWardrobe },

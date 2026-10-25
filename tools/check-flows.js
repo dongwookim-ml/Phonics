@@ -1435,6 +1435,10 @@ async function outsideTaps(browser, edition) {
     });
     const endBefore = await now('mini');
     await tap(pond);
+    const endSoon = await now('mini');
+    note('a tap on the pond as the end card comes up (her finger still going) leaves it', endSoon.open && endSoon.busy, { size, pond, endSoon });
+    await ev('mini.endAt -= MINI_END_HOLD');
+    await tap(pond);
     const endAfter = await now('mini');
     note('a tap outside the fishing game\'s end card closes the game and frees it', endBefore.open && !endAfter.open && endAfter.busy === false && !endAfter.walking, { size, pond, endBefore, endAfter });
 
