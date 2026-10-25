@@ -76,12 +76,13 @@ function hitObject(obj, wx, wy, min = 40) {
 }
 
 // Animated props (fountains, traffic lights) get one still frame as their
-// canvas so taps can hit them; they are still drawn by `animated`.
-function stillFrame(obj) {
+// canvas so taps can hit them; they are still drawn by `animated`. `draw`
+// can paint a different shape to tap instead.
+function stillFrame(obj, draw = ctx => obj.animated(ctx, 0)) {
   obj.canvas = makeCanvas(obj.w, obj.h);
   const ctx = obj.canvas.getContext('2d');
   ctx.translate(-obj.x, -obj.y);
-  obj.animated(ctx, 0);
+  draw(ctx);
   obj.alpha = ctx.getImageData(0, 0, obj.w, obj.h).data;
   return obj;
 }

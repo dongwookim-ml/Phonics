@@ -277,9 +277,10 @@ function buildVillainCave() {
   block(sc, 3, 11, 1, 1);
   addObject(sc, { c: 3, r: 11, w: 1, d: 1 }, footBounds(sc, 3, 11, 1, 1, 30), ctx => drawTreasureChest(ctx, sc, 3, 11), { react: FURNITURE.chest });
 
-  // Bubbles popping in the goo pool.
+  // Bubbles popping in the goo pool. A tap anywhere on the pool bubbles too.
   const gp = tileCenter(sc, 11.5, 8);
-  sc.objects.push({ c0: 10, r0: 7, c1: 13, r1: 9, x: gp.x - 40, y: gp.y - 30, w: 80, h: 50, animated: (ctx, t) => caveGooBubbles(ctx, gp.x, gp.y, t) });
+  sc.objects.push(stillFrame({ c0: 10, r0: 7, c1: 13, r1: 9, x: gp.x - 44, y: gp.y - 30, w: 88, h: 54,
+    animated: (ctx, t) => caveGooBubbles(ctx, gp.x, gp.y, t), react: { fx: 'bubbles' } }, ctx => caveGooPool(ctx, gp.x, gp.y)));
   sc.lamps.push({ x: gp.x - 14, y: gp.y - 2, small: true }, { x: gp.x + 12, y: gp.y + 3, small: true }, { x: gp.x, y: gp.y - 6 });
 
   // Rock floor, a riveted steel walkway with hazard stripes, the goo pool
