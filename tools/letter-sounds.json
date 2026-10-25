@@ -18,7 +18,7 @@
 "m":  {"kind": "nasal", "spell": ["mmm"], "anchors": [["ham", "final"], ["drum", "final"], ["yum", "final"], ["map", "initial"]]},
 "n":  {"kind": "nasal", "spell": ["nnn"], "anchors": [["ten", "final"], ["pen", "final"], ["hen", "final"], ["nut", "initial"]]},
 "p":  {"kind": "stop", "spell": ["puh"], "anchors": [["pig", "initial"], ["pot", "initial"], ["pen", "initial"], ["pan", "initial"]]},
-"q":  {"kind": "glide", "spell": ["kwuh", "kw"], "anchors": [["queen", "initial"], ["quilt", "initial"], ["quack", "initial"]]},
+"q":  {"kind": "kw", "spell": ["kwuh", "kw"], "anchors": [["queen", "initial"], ["quilt", "initial"], ["quack", "initial"]]},
 "r":  {"kind": "liquid", "spell": ["rrr"], "anchors": [["bird", "vowel"], ["purple", "vowel"], ["turtle", "vowel"], ["girl", "vowel"]]},
 "s":  {"kind": "fricative", "spell": ["sss"], "anchors": [["bus", "final"], ["gas", "final"], ["kiss", "final"], ["sun", "initial"]]},
 "t":  {"kind": "stop", "spell": ["tuh"], "anchors": [["top", "initial"], ["ten", "initial"], ["tub", "initial"], ["tap", "initial"]]},

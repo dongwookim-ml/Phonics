@@ -17,12 +17,16 @@ engine. A line the engine refuses fails and keeps the clip it had: it is
 never recorded on another engine.
 
 Every recording is high-passed at 70 Hz and trimmed at both ends; a lone
-b/d/g/j word loses a long hum before its burst; each voice gets one gain
+b/d/g/j word (and the lone letter names B, D, G, J) loses a long hum before
+its burst; each voice gets one gain
 (tools/polly-gains.json, set by --mode normalise towards -20 LUFS) and a
 peak limiter. A lone word is said as a sentence ("Cat."). Pure letter
 sounds ("/m/") are cut from the narrator's own words (tools/letter-sounds.json,
 tools/clipaudio.py), and in a line like "M says mmm." the speaker says
-"M says" and the narrator's /m/ follows.
+"M says" and the narrator's /m/ follows. How a kind of sound is cut is part
+of its clip id (clipaudio.KINDS), so a new cut gives the sounds and every
+line made from them new clips. A lone letter ("H") is said from phonemes
+first and by its name in plain words ("Aitch.") on its later tries.
 
 tools/polly-clips.json says how each clip was made (engine, gain, variant,
 the word a sound was cut from), tools/polly-variants.json which way of
@@ -94,6 +98,15 @@ LETTER_IPA = {
     'J': 'ˈdʒeɪ', 'K': 'ˈkeɪ', 'L': 'ˈɛl', 'M': 'ˈɛm', 'N': 'ˈɛn', 'O': 'ˈoʊ', 'P': 'ˈpi', 'Q': 'ˈkju', 'R': 'ˈɑɹ',
     'S': 'ˈɛs', 'T': 'ˈti', 'U': 'ˈju', 'V': 'ˈvi', 'W': 'ˈdʌbəlju', 'X': 'ˈɛks', 'Y': 'ˈwaɪ', 'Z': 'ˈzi',
 }
+# A letter on its own ("H", the sticker book's tabs) on its later tries
+# (spoken()): its name written as a word, which the engine says as it says
+# words, should it make the phonemes into something else ("h-i-h").
+LETTER_ALONE = re.compile(r'^([A-Z])[.!?]?$')
+LETTER_SAID = {
+    'A': 'A', 'B': 'Bee', 'C': 'See', 'D': 'Dee', 'E': 'E', 'F': 'Eff', 'G': 'Gee', 'H': 'Aitch', 'I': 'Eye',
+    'J': 'Jay', 'K': 'Kay', 'L': 'Ell', 'M': 'Em', 'N': 'En', 'O': 'Oh', 'P': 'Pea', 'Q': 'Cue', 'R': 'R',
+    'S': 'Ess', 'T': 'Tee', 'U': 'You', 'V': 'Vee', 'W': 'Double you', 'X': 'Ex', 'Y': 'Wye', 'Z': 'Zee',
+}
 # Letter sounds from phonemes: only a fallback for a "says" line whose pure
 # sound could not be cut (they come out with a vowel: "muh").
 SOUND_IPA = {
@@ -152,10 +165,11 @@ def phoneme(word, ipa):
     return f'<phoneme alphabet="ipa" ph="{ipa}">{word}</phoneme>'
 
 
-def ssml(text, speed, rate=True, wrap=None, before=None, after=None, sounds=False):
-    """The phrase as SSML: letters from phonemes, at its speed. `wrap` puts it
-    in <s> or <p>; `before`/`after` is a carrier phrase said across a pause
-    (cut off afterwards); `sounds` says letter sounds from phonemes."""
+def ssml(text, speed, rate=True, wrap=None, before=None, after=None, sounds=False, letters=True):
+    """The phrase as SSML: letters from phonemes (unless `letters` is
+    false), at its speed. `wrap` puts it in <s> or <p>; `before`/`after` is a
+    carrier phrase said across a pause (cut off afterwards); `sounds` says
+    letter sounds from phonemes."""
     marks = {}
 
     def keep(m, ipa):
@@ -163,7 +177,8 @@ def ssml(text, speed, rate=True, wrap=None, before=None, after=None, sounds=Fals
         marks[key] = phoneme(m.group(0), ipa)
         return key
     t = SOUND.sub(lambda m: keep(m, SOUND_IPA[m.group(1)]), text) if sounds else text
-    t = LETTER.sub(lambda m: keep(m, LETTER_IPA[m.group(0)]), t)
+    if letters:
+        t = LETTER.sub(lambda m: keep(m, LETTER_IPA[m.group(0)]), t)
     t = escape(t, quote=False)
     for k, v in marks.items():
         t = t.replace(k, v)
@@ -216,6 +231,8 @@ def base_key(p, k=None):
     voice, engine = VOICES[p['voice']]
     k = variant(p) if k is None else k
     base = f"polly|{voice}|{engine}|{p['text']}|{p['speed']}|{RECIPE}" + (f'|v{k}' if k else '')
+    if hum_letter(p['text']):
+        base += '|letter-hum30'
     deps = sound_deps(p)
     return base + ('|' + ','.join(deps) if deps else '')
 
@@ -235,6 +252,13 @@ def fallback_id(p, gain=None):
     return hashlib.sha1(f'{base_key(p)}|phonemes|g{g:+.1f}'.encode()).hexdigest()[:10]
 
 
+def hum_letter(text):
+    """A lone letter name that starts with a voiced burst (B, D, G, J): its
+    hum before the burst is cut short as a lone b/d/g/j word's is."""
+    m = LETTER_ALONE.match(text)
+    return bool(m) and m.group(1) in 'BDGJ'
+
+
 def path_of(voice, cid):
     return os.path.join(OUT, voice, cid + '.mp3')
 
@@ -252,6 +276,10 @@ def sound_deps(p):
             n = PHRASES.get((NARRATOR, p['text']))
             return [content_id(n) if n else 'none']
         out = [hashlib.sha1(json.dumps(SOUNDS[key], sort_keys=True).encode()).hexdigest()[:8]]
+        cut = ca.KINDS[SOUNDS[key]['kind']]
+        if 'cut' in cut:
+            # How this kind is cut (clipaudio.KINDS): a new way gets new clips.
+            out.append(hashlib.sha1(json.dumps(cut, sort_keys=True).encode()).hexdigest()[:8])
         for word, _ in SOUNDS[key]['anchors']:
             a = PHRASES.get((NARRATOR, word))
             if a:
@@ -272,7 +300,14 @@ def spoken(text, k):
     <s> (<p> for several sentences); try 2 says it after "Listen." and a
     pause, which is cut off. Try 3 says a lone word as "Cat!", which the
     engine says more crisply (a final t that "Cat." swallowed), and other
-    lines wrapped after the carrier; try 4 is try 2 said slower (SLOWER)."""
+    lines wrapped after the carrier; try 4 is try 2 said slower (SLOWER).
+    A lone letter ("H") is said from phonemes on try 0; on tries 1, 2 and 4
+    its name is written as a word ("Aitch.", LETTER_SAID) and on try 3 it is
+    the bare letter ("H."), both without phonemes (speak())."""
+    letter = LETTER_ALONE.match(text)
+    if letter and k:
+        said = (letter.group(1) if k == 3 else LETTER_SAID[letter.group(1)]) + '.'
+        return said, 's' if k in (1, 3) else None, 'Listen.' if k in (2, 4) else None
     lone = LONE.match(text)
     if lone:
         word = text.rstrip('!.')
@@ -329,11 +364,12 @@ def speak(slot, text, speed, k=0, after=None, sounds=False):
     voice, engine = VOICES[slot]
     said, wrap, before = spoken(text, k)
     speed *= SLOWER.get(k, 1)
-    audio, used = request(voice, engine, lambda rate: ssml(said, speed, rate, wrap, before, after, sounds))
+    letters = not (k and LETTER_ALONE.match(text))
+    audio, used = request(voice, engine, lambda rate: ssml(said, speed, rate, wrap, before, after, sounds, letters))
     x = ca.decode(audio)
     lone = bool(LONE.match(text))
     try:
-        y, notes = ca.clean(x, lone_bdgj=lone and text[0] in 'bdgj',
+        y, notes = ca.clean(x, lone_bdgj=lone and text[0] in 'bdgj' or hum_letter(text), letter=hum_letter(text),
                             carrier='after' if before else 'before' if after else None)
     except ValueError as e:
         raise Refused(str(e))
@@ -410,8 +446,12 @@ def make_pure(p, k, path, gain):
                       if info['tried'] else 'none of its words is recorded')
     # The words already have the narrator's gain.
     ca.encode(y, path, 0.0, pad=0.05)
-    return {'engine': 'cut', 'gain': gain, 'anchor': info['anchor'], 'where': info['where'], 'ms': info['ms'],
-            'source': info['source'], 'tried': [t['word'] for t in info['tried']]}
+    rec = {'engine': 'cut', 'gain': gain, 'anchor': info['anchor'], 'where': info['where'], 'ms': info['ms'],
+           'source': info['source'], 'tried': [t['word'] for t in info['tried']]}
+    for k in ('margin', 'lenient'):
+        if k in info:
+            rec[k] = info[k]
+    return rec
 
 
 def narrator_sound(key):

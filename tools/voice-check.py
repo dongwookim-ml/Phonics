@@ -10,7 +10,11 @@ the clip is listed as "unclear". Lone words are heard twice at most: with a
 prompt full of fillers, so an added "uh" or "the" is written down, and with
 the word as a hotword. The filler prompt is calibrated on each run against
 the narrator's lone words that pass the acoustic checks: the strongest
-prompt that hears those as just the word is used.
+prompt that hears those as just the word is used. A lone letter ("H", the
+sticker book's tabs) passes when it is heard as the letter or its name
+("H", "aitch"): a recogniser often mixes up b, d, e, g, p, t, v, z said
+alone, so a different letter only fails it with the acoustics behind it,
+while "h-i-e-j" (several sounds) is backed by its length.
 
 Runs in GitHub Actions after recording (.github/workflows/polly.yml), where the
 model can be downloaded. The report, tools/voice-check.json, keeps one entry
@@ -38,11 +42,25 @@ NUMBERS = {'0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four', '5': 
 ARTICLES = {'a', 'an', 'the', 'uh', 'um'}
 # The hero's default names, which a recogniser rarely spells right.
 NAMES = {'yuna', 'max'}
-# Letter sounds, pure sounds ("/m/") and letter names; a recogniser can't
-# judge them, so those lines are listed but never failed.
+# Letter sounds, pure sounds ("/m/") and letter names in a line; a
+# recogniser can't judge them, so those lines are listed but never failed.
 SOUNDS = re.compile(r'(?<= says )(ah|eh|ih|aw|uh|buh|kuh|duh|guh|puh|tuh|fff|hhh|mmm|nnn|sss|lll|rrr|ks|vvv|wuh|zzz'
                     r'|juh|yuh|kwuh|shh|ch|th|ng)\b|^/[a-z]+/$'
-                    r'|^[A-Z](?=[.!?]?$)|(?<=\bwith )[A-Z](?=[.!?]?$)|\b[A-Z](?= (?:house|workshop|says)\b)')
+                    r'|(?<=\bwith )[A-Z](?=[.!?]?$)|\b[A-Z](?= (?:house|workshop|says)\b)')
+# A letter on its own, and how a recogniser writes it when it is said right:
+# the letter, its name, or a word said the same ("see" for C, "age" for H,
+# whose name ends the same but voiced).
+LETTER = re.compile(r'^([A-Z])[.!?]?$')
+LETTER_HEARD = {
+    'A': ['a', 'ay', 'aye'], 'B': ['b', 'bee', 'be'], 'C': ['c', 'see', 'sea', 'si'], 'D': ['d', 'dee'],
+    'E': ['e', 'ee'], 'F': ['f', 'eff', 'ef'], 'G': ['g', 'gee', 'ji'], 'H': ['h', 'aitch', 'haitch', 'age'],
+    'I': ['i', 'eye', 'aye', 'ai'], 'J': ['j', 'jay'], 'K': ['k', 'kay', 'cay', 'quay'],
+    'L': ['l', 'el', 'ell', 'elle'], 'M': ['m', 'em'], 'N': ['n', 'en'], 'O': ['o', 'oh', 'owe'],
+    'P': ['p', 'pee', 'pea'], 'Q': ['q', 'cue', 'queue', 'kew'], 'R': ['r', 'are', 'ar'], 'S': ['s', 'ess', 'es'],
+    'T': ['t', 'tee', 'tea'], 'U': ['u', 'you', 'yew', 'ewe'], 'V': ['v', 'vee'],
+    'W': ['w', 'double u', 'double you', 'doubleyou'], 'X': ['x', 'ex'], 'Y': ['y', 'why', 'wye'],
+    'Z': ['z', 'zee', 'zed'],
+}
 # Statuses that fail a clip (backed by the acoustics). "unclear" is listed only.
 FAILS = ('article', 'extra', 'silent', 'different')
 
@@ -78,12 +96,15 @@ def distance(a, b):
 def judge(text, heard):
     """What the recogniser alone says: ok, article (a lone word came out as
     "a cat"), extra, silent, different, or phonetic (letters and letter
-    sounds, not judged)."""
+    sounds in a line, not judged)."""
     want, got = tokens(text), tokens(heard)
     if SOUNDS.search(text):
         return 'phonetic'
     if not got:
         return 'silent'
+    letter = LETTER.match(text)
+    if letter:
+        return judge_letter(letter.group(1), got)
     if len(want) == 1:
         w = want[0]
         if len(got) == 1 and sounds_like(got[0], w):
@@ -98,6 +119,21 @@ def judge(text, heard):
     return 'ok' if errors == 0 or errors <= len(want) // 8 else 'different'
 
 
+def judge_letter(letter, got):
+    """A lone letter heard as the words `got`: ok (the letter or its name),
+    article ("a H", "uh, aitch"), extra (it and more: "h i e j"), or
+    different."""
+    names = LETTER_HEARD[letter]
+    if ' '.join(got) in names:
+        return 'ok'
+    for i in range(1, len(got)):
+        if ' '.join(got[i:]) in names and all(g in ARTICLES for g in got[:i]):
+            return 'article'
+    if any(g in names for g in got) or any(' ' in n and n in ' '.join(got) for n in names):
+        return 'extra'
+    return 'different'
+
+
 def backed(status, a):
     """Do the acoustic measures (a tools/clip-check.json entry) agree with the
     recogniser's finding?"""
@@ -107,7 +143,7 @@ def backed(status, a):
     if status == 'article':
         return 'lead-in' in fails or a.get('lead_x', 0) >= 60
     if status == 'extra':
-        return bool(fails & {'repeat', 'duration', 'gap'}) or a.get('dur_r', 1) > 1.5
+        return bool(fails & {'repeat', 'duration', 'gap', 'letter'}) or a.get('dur_r', 1) > 1.5
     if status == 'different':
         return bool(fails) or not 0.7 <= a.get('dur_r', 1) <= 1.4
     return False
@@ -197,8 +233,8 @@ def check_clip(voice, text, clip_id, acoustic=None):
         res['words'] = words
     if lone and res['status'] in FAILS:
         # A lone word is hard to recognise without context: listen again
-        # with the word as a hint.
-        again, _ = hear(path, hint=tokens(text)[0])
+        # with the word (a letter: the letter) as a hint.
+        again, _ = hear(path, hint=text.rstrip('.!?') if LETTER.match(text) else tokens(text)[0])
         res['hinted'] = again
         if judge(text, again) == 'ok' and res['status'] in ('different', 'silent'):
             res['status'] = 'ok'
@@ -239,7 +275,10 @@ def run(shard, shards, scope, out):
     for voice, lines in sorted(idx.items()):
         for text, clip_id in sorted(lines.items()):
             key = f'{voice}|{text}'
-            if scope == 'changed' and old.get(key, {}).get('id') == clip_id and old[key]['status'] != 'error':
+            # Heard again: a clip that errored, and one listed as "phonetic"
+            # that is judged now (a lone letter, since these rules).
+            if scope == 'changed' and old.get(key, {}).get('id') == clip_id and old[key]['status'] != 'error' \
+                    and not (old[key]['status'] == 'phonetic' and not SOUNDS.search(text)):
                 continue
             if scope == 'short' and len(tokens(text)) > 4:
                 continue

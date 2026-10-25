@@ -17,6 +17,9 @@ line is one word ("cat", "cat!", "The"). The rules:
   rising    a lone word whose pitch rises at the end, like a question
   gap       a silence inside a lone word over 0.5 s (in a longer line, 1.5 s)
   peak      true peak above -1 dBTP
+  letter    a lone letter name ("H") over 900 ms (W, three syllables: 1200),
+            said as several sounds ("h-i-h") or with something added; the
+            letters take 420-730 ms when they are right
 tools/polly-build.py --mode fix records the failing lines again.
 Needs numpy and ffmpeg.
 """
@@ -37,7 +40,9 @@ REPORT = os.path.join(ROOT, 'tools', 'clip-check.json')
 OUT = os.path.join(ROOT, 'audio', 'tts')
 LONE = re.compile(r'^[a-z]+[!.]?$')
 SOUND_LINE = re.compile(r'^/[a-z]+/$|\b[A-Z] says ')
-RULES = ['silent', 'repeat', 'duration', 'lead-in', 'rising', 'gap', 'peak']
+LETTER = re.compile(r'^([A-Z])[.!?]?$')
+LETTER_MAX_MS = {'W': 1200}  # others 900
+RULES = ['silent', 'repeat', 'duration', 'lead-in', 'rising', 'gap', 'peak', 'letter']
 
 
 def words(text):
@@ -136,6 +141,9 @@ def judge(voice, text, m, refs):
         fails.append('peak')
     if m.get('gap', 0) > (500 if lone and not sound else 1500):
         fails.append('gap')
+    letter = LETTER.match(text)
+    if letter and m.get('dur', 0) > LETTER_MAX_MS.get(letter.group(1), 900):
+        fails.append('letter')
     if sound:
         return fails
     if lone and m.get('extra', 0):

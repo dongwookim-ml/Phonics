@@ -366,14 +366,23 @@ How a clip is made (`tools/polly-build.py`, `tools/clipaudio.py`):
 
 - A lone word is said as a short sentence ("Cat."), so its pitch falls and
   nothing comes before it. A word starting with b, d, g or j loses any long
-  hum before its burst (which sounded like "uh-bear").
+  hum before its burst (which sounded like "uh-bear"), and so do the letter
+  names B, D, G and J.
+- A letter on its own ("H" on the sticker book's tabs) is said from
+  phonemes; if that fails the checks, the fix step says its name as a word
+  ("Aitch."), then the bare letter.
 - Every clip is high-passed at 70 Hz and trimmed, then gets its voice's gain
   (`tools/polly-gains.json`, set towards -20 LUFS by the normalise step) and
   a peak limiter.
 - Pure letter sounds: a "/m/" line is the narrator's /m/ cut from its own
   recording of a word (`tools/letter-sounds.json`: m from "ham", s from "bus"
-  and so on): continuants held about half a second with no vowel, stops
-  clipped to their burst, short vowels held 0.4 s. In "M says mmm." the
+  and so on): continuants held about half a second with no vowel, short
+  vowels 0.4 s, p/t/k the burst and its breath up to the vowel's voice
+  (drawn out to 130 ms), b/d/g the voice before the burst, the burst and its
+  release (about 100-110 ms), ch, j and q about 180-200 ms, w and y their
+  steady start held 190 ms, never a vowel ("b", not "buh"). How each kind is
+  cut (`KINDS` in `tools/clipaudio.py`) is part of its clips' ids, so a new
+  cut re-cuts the sounds and re-makes the lines built from them. In "M says mmm." the
   speaker says "M says" and the narrator's /m/ follows. The automatic checks
   only catch a cut in the wrong place, so listen to them all on
   `tools/letter-sounds.html` (open it from the repository or the site).
@@ -395,9 +404,11 @@ The checks:
 - `tools/clip-check.py` (acoustic, no model) writes `tools/clip-check.json`:
   silent clips, a lone word said twice, a clip far longer or shorter than the
   same line in other voices, a late start (a hum or "uh" before a word), a
-  lone word rising like a question, long gaps, and true peaks over -1 dBTP.
+  lone word rising like a question, long gaps, true peaks over -1 dBTP, and
+  a lone letter name over 900 ms ("H" said as "h-i-h").
 - `tools/voice-check.py` listens with Whisper as a second opinion, failing a
-  clip only where the acoustic measures agree (`tools/voice-check.json`).
+  clip only where the acoustic measures agree (`tools/voice-check.json`). A
+  lone letter must be heard as the letter or its name ("H", "aitch").
 - The fix step records failing lines again in another way (wrapped in a
   sentence, then after "Listen." with that cut off), never with another
   engine, and keeps the first that passes.
@@ -414,6 +425,8 @@ python tools/polly-build.py --mode all   # then: --mode fix, --mode normalise
 python tools/clip-check.py
 python tools/letter-sounds.py --sheet sheet.png   # try the letter-sound cutter (Pillow)
 python tools/letter-sounds.py --built --sheet sheet.png   # spectrograms of the recorded sounds
+python tools/test-voices.py --plan       # checks of the cutter and the letter rules (no AWS),
+                                         # and what the next workflow run would record
 ```
 
 `tools/tts-build.py` can still record everything with the open-source

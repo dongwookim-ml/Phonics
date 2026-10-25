@@ -138,16 +138,18 @@ def voice_bar(f):
     return (f['mid'] - f['lo'] <= -20) & (f['hi'] - f['lo'] <= -20) & (f['rel'] <= -6)
 
 
-def lead_hum(f, first):
-    """The frame where the hum before a word's burst ends (first if none)."""
+def lead_hum(f, first, onset=0):
+    """The frame where the hum before a word's burst ends (first if none).
+    The first `onset` frames may also be a quiet ramp into the hum (a lone
+    letter name's "B" starts that way)."""
     bar = voice_bar(f)
     i = first
-    while i < f['n'] and (bar[i] or f['rel'][i] <= -35):
+    while i < f['n'] and (bar[i] or f['rel'][i] <= -35 or (i - first < onset and f['rel'][i] <= -20)):
         i += 1
     return i
 
 
-def prevoice_trim(x, keep_ms=30, min_ms=60):
+def prevoice_trim(x, keep_ms=30, min_ms=60, onset=0):
     """For a lone word starting with b/d/g/j: shortens a hum before the burst
     to `keep_ms`. Returns (samples, milliseconds removed)."""
     f = frames(x)
@@ -155,7 +157,7 @@ def prevoice_trim(x, keep_ms=30, min_ms=60):
     if not len(act):
         return x, 0
     first = act[0]
-    i = lead_hum(f, first)
+    i = lead_hum(f, first, onset)
     if ms(i - first) < min_ms or i >= f['n']:
         return x, 0
     start = first * HOP + (i - first) * HOP - keep_ms * SR // 1000
@@ -186,10 +188,11 @@ def carrier_cut(x, keep='after', min_gap=0.4):
     return edge_trim(part)
 
 
-def clean(x, lone_bdgj=False, carrier=None):
+def clean(x, lone_bdgj=False, carrier=None, letter=False):
     """The clean-up every recording gets after the high-pass: the carrier cut
     (when it was recorded in one), the edge trim, and for lone b/d/g/j words
-    the voice-bar trim. Returns (samples, notes)."""
+    the voice-bar trim (for a lone letter name, `letter`, one that may start
+    with a quiet ramp into its hum). Returns (samples, notes)."""
     notes = {}
     if carrier:
         y = carrier_cut(x, carrier)
@@ -198,7 +201,7 @@ def clean(x, lone_bdgj=False, carrier=None):
         x = y
     x = edge_trim(x)
     if lone_bdgj and len(x):
-        x, cut = prevoice_trim(x)
+        x, cut = prevoice_trim(x, onset=3 if letter else 0)
         if cut:
             notes['prevoice_ms'] = int(cut)
     return x, notes
@@ -294,9 +297,66 @@ def stretch(x, n_out, voiced, seed=0):
     return y
 
 
+def stretch_noise(x, n_out, seed=0):
+    """Draws out a breath or a hiss that changes over time (the aspiration
+    after p, the hiss of ch) to n_out samples: its short-time spectra, spread
+    over the new length, said again with random phases. Grains of the sound
+    itself would repeat and buzz like a voice."""
+    x = np.asarray(x, np.float64)
+    if n_out <= len(x):
+        return x[:n_out].copy()
+    n, hop = 256, 64
+    w = np.hanning(n + 1)[:n]
+    xp = np.pad(x, (n // 2, n))
+    k = 1 + len(x) // hop
+    P = np.abs(np.fft.rfft(xp[np.arange(n)[None, :] + hop * np.arange(k)[:, None]] * w, axis=1)) ** 2
+    j = 1 + n_out // hop
+    pos = np.arange(j) * len(x) / n_out
+    i0 = np.clip(np.floor(pos).astype(int), 0, k - 1)
+    t = (pos - np.floor(pos))[:, None]
+    mag = np.sqrt(P[i0] * (1 - t) + P[np.minimum(i0 + 1, k - 1)] * t)
+    rng = np.random.default_rng(seed)
+    F = np.fft.irfft(mag * np.exp(2j * np.pi * rng.random(mag.shape)), n, axis=1) * w
+    out = np.zeros(j * hop + n)
+    for i in range(j):
+        out[i * hop:i * hop + n] += F[i]
+    y = out[n // 2:n // 2 + n_out]
+    return y * np.sqrt(np.mean(x ** 2) / max(float(np.mean(y ** 2)), 1e-20))
+
+
+def join(a, b, xf):
+    """a then b, b's first xf samples laid over a's last with a crossfade."""
+    xf = min(xf, len(a), len(b))
+    r = np.linspace(0, np.pi / 2, xf)
+    mid = a[len(a) - xf:] * np.cos(r) ** 2 + b[:xf] * np.sin(r) ** 2
+    return np.concatenate([a[:len(a) - xf], mid, b[xf:]])
+
+
+MS = SR // 1000
+
+
+def band_env(x, a, b, win=0.01):
+    """Level (dB) of x between a and b Hz every millisecond: entry i is the
+    window of `win` seconds centred on i ms."""
+    x = np.asarray(x, np.float64)
+    n, k = int(win * SR), len(x) // MS
+    if k < 1:
+        return np.full(1, -120.0)
+    xp = np.pad(x, (n // 2, n))
+    S = np.abs(np.fft.rfft(xp[np.arange(n)[None, :] + MS * np.arange(k)[:, None]] * np.hanning(n), 2 * n,
+                           axis=1)) ** 2
+    fr = np.fft.rfftfreq(2 * n, 1 / SR)
+    return db(S[:, (fr >= a) & (fr < b)].sum(1))
+
+
 # What each kind of sound is, how it is found in its anchor word and how long
-# it is held. `where`: the sound starts the word (initial), ends it (final),
-# or is the word's first vowel (vowel).
+# it is held (`hold`, a steady sound) or lasts (`length`, a consonant that
+# starts its word, see cut_onset()). `where`: the sound starts the word
+# (initial), ends it (final), or is the word's first vowel (vowel).
+# `cut` names the way a kind is cut: tools/polly-build.py puts the kind's
+# entry in the clip id of its sounds, so changing `cut` or `length` gives
+# those sounds, and every line made from them, new clips (and new URLs).
+# `range`: the lengths check_sound() accepts.
 KINDS = {
     'nasal':     {'hold': 0.55, 'voiced': True},
     'liquid':    {'hold': 0.55, 'voiced': True},
@@ -304,13 +364,15 @@ KINDS = {
     'vfricative': {'hold': 0.55, 'voiced': True},
     'breath':    {'hold': 0.40, 'voiced': False},
     'vowel':     {'hold': 0.40, 'voiced': True},
-    'stop':      {'voiced': False},
-    'vstop':     {'voiced': True},
-    'affricate': {'voiced': False},
-    'vaffricate': {'voiced': True},
-    'glide':     {'voiced': True},
-    'cluster':   {'voiced': False},
+    'stop':      {'voiced': False, 'length': 0.13, 'range': [0.10, 0.17], 'cut': 'onset-2'},
+    'vstop':     {'voiced': True, 'length': 0.115, 'range': [0.08, 0.15], 'cut': 'onset-2'},
+    'affricate': {'voiced': False, 'length': 0.20, 'range': [0.15, 0.26], 'cut': 'onset-2'},
+    'vaffricate': {'voiced': True, 'length': 0.18, 'range': [0.14, 0.25], 'cut': 'onset-2'},
+    'kw':        {'voiced': False, 'length': 0.19, 'range': [0.14, 0.25], 'cut': 'onset-2'},
+    'glide':     {'voiced': True, 'length': 0.19, 'range': [0.14, 0.25], 'cut': 'onset-2'},
+    'cluster':   {'voiced': False, 'range': [0.08, 0.36]},
 }
+ONSET = ('stop', 'vstop', 'affricate', 'vaffricate', 'kw', 'glide')
 
 
 def runs(mask, gap=0):
@@ -332,12 +394,16 @@ def runs(mask, gap=0):
     return out
 
 
+def formants(f):
+    """Frames with a vowel's formants: as much above 500 Hz as under it, near enough."""
+    return (f['mid'] - f['lo'] > -15) | (f['f1'] - f['lo'] > -8)
+
+
 def labels(f):
     """Frame classes used to find sounds in a word."""
     active = f['rel'] > -40
     voiced = (f['per'] > 0.6) & (f['rel'] > -35)
-    formant = (f['mid'] - f['lo'] > -15) | (f['f1'] - f['lo'] > -8)
-    vowel = voiced & formant & (f['rel'] > -18)
+    vowel = voiced & formants(f) & (f['rel'] > -18)
     hiss = active & ~voiced & (f['hi'] > f['lo'] - 3)
     return {'active': active, 'voiced': voiced, 'vowel': vowel, 'hiss': hiss}
 
@@ -355,11 +421,162 @@ def burst_sample(x, start, end):
     return max(0, start) + i
 
 
-def cut_sound(x, kind, where):
+def find_burst(x, start, end):
+    """The sample where a stop's burst begins within [start, end): where the
+    level above 2 kHz first comes within 20 dB of its peak there, followed
+    back down its rise. The voice before a b, d, g or j has hardly anything
+    that high, so it isn't taken for the burst."""
+    hf = band_env(x, 2000, 10000, win=0.004)
+    i0 = max(0, start // MS)
+    seg = hf[i0:max(i0 + 2, end // MS)]
+    peak = seg.max()
+    i = int(np.argmax(seg >= peak - 20))
+    while i > 0 and seg[i - 1] < seg[i] - 0.3 and seg[i - 1] > peak - 40:
+        i -= 1
+    return (i0 + i) * MS
+
+
+def established(f, start):
+    """The first frame from `start` where the vowel is established: voiced,
+    with formants, within 8 dB of the word's loudest, three frames running."""
+    ok = (f['per'] > 0.6) & (f['rel'] > -8) & formants(f)
+    for k in range(start, f['n'] - 2):
+        if ok[k:k + 3].all():
+            return k
+    raise CutError('no vowel after it')
+
+
+def cut_onset(x, kind, lenient=False):
+    """A consonant that starts its word, cut to about KINDS[kind]['length']
+    with no vowel in it (phonics: /b/, not "buh"):
+      stop        p t k: the burst and the breath after it (aspiration) up
+                  to where the vowel's voice starts; the breath is drawn
+                  out (stretch_noise) when the word's is shorter
+      affricate   ch: the same, with its hiss
+      kw          q: the same, k and the breath through rounded lips
+      vstop       b d g: the voice before the burst (held longer: a longer
+                  breath after the burst would make it p, t or k), the burst
+                  and the release, faded out before the vowel's formants come
+                  within 6 dB of their level in the vowel
+      vaffricate  j: the voice before the burst, the burst, and the hiss
+                  drawn out with that voice under it (a hiss alone is ch)
+      glide       w y: the steady start, before it glides into the vowel, held
+    `lenient` (when no anchor word cuts cleanly) lets b d g j go without the
+    voice before the burst (b d g are then short and fade out a little into
+    the vowel, j has no voice under its hiss) and a glide hold a less steady
+    start of 20 ms.
+    Returns (samples, info); info['margin'] is how far (dB) the cut stays
+    from the vowel: under it in the band that tells (under 500 Hz for the
+    vowel's voice, 500 Hz-3 kHz for b d g's formants), and for a glide how
+    unlike the vowel's spectrum the held part is. Raises CutError."""
+    f = frames(x)
+    lab = labels(f)
+    act = np.nonzero(lab['active'])[0]
+    if not len(act):
+        raise CutError('silent')
+    first = int(act[0])
+    est = established(f, first + 2)
+    lo, form = band_env(x, 80, 500), band_env(x, 500, 3000)
+    v = (est * HOP + WIN // 2) // MS
+    lo_ref, form_ref = float(np.median(lo[v:v + 30])), float(np.median(form[v:v + 30]))
+    length = int(KINDS[kind]['length'] * SR)
+    info = {'kind': kind, 'where': 'initial'}
+
+    def span(a, b):
+        return float(np.max(a[max(0, b[0] // MS):max(b[0] // MS + 1, b[1] // MS)]))
+
+    if kind == 'glide':
+        loud = np.nonzero(lab['voiced'][first:est] & (f['rel'][first:est] > -15))[0]
+        if not len(loud):
+            raise CutError('no voiced start')
+        a = first + int(loud[0])
+        prof = np.stack([f['f1'] - f['lo'], f['mid'] - f['lo'], f['hi'] - f['lo']], 1)
+        ref = np.median(prof[a:a + 3], 0)
+        b = a
+        tol = 9 if lenient else 6
+        while b < est and lab['voiced'][b] and f['rel'][b] > -20 and np.abs(prof[b] - ref).max() <= tol:
+            b += 1
+        if b - a < (2 if lenient else 3):
+            raise CutError(f'steady start of {ms(b - a)} ms')
+        s, e = a * HOP + WIN // 2 - HOP // 2, b * HOP + WIN // 2 - HOP // 2
+        # How unlike the vowel (30-70 ms into it) the held part is.
+        vs = est * HOP + WIN // 2 + 30 * MS
+        margin = float(np.sqrt(np.mean((shape(x[s:e]) - shape(x[vs:vs + 40 * MS])) ** 2)))
+        if margin < 3:
+            raise CutError(f'its start is like the vowel ({margin:.1f} dB apart)')
+        y = fade(stretch(x[s:e], length, True, seed=e - s), fin=0.015, fout=0.06)
+        info.update(ms=round(1000 * len(y) / SR), source=[s // MS, e // MS], margin=round(margin, 1))
+        return y, info
+
+    s0 = find_burst(x, first * HOP, est * HOP)
+    start = max(0, s0 - 3 * MS)
+    pre = None
+    if kind in ('vstop', 'vaffricate'):
+        # The voice before the burst (a voice bar: low, no formants).
+        p0, p1 = first * HOP + 3 * MS, s0 - 4 * MS
+        centres = [k for k in range(f['n']) if p0 <= k * HOP + WIN // 2 <= p1 + HOP]
+        if p1 - p0 < 15 * MS:
+            problem = f'voice before the burst of {max(0, p1 - p0) // MS} ms'
+        elif not centres or (lab['voiced'] | voice_bar(f))[centres].mean() < 0.5:
+            problem = 'no voice before the burst'
+        else:
+            problem = None
+            pre = x[p0:p1]
+        if problem and not lenient:
+            raise CutError(problem)
+    if kind == 'vstop':
+        i = s0 // MS + 5
+        while i < len(form) and form[i] < form_ref - (3 if lenient and pre is None else 6):
+            i += 1
+        end = (i - 2) * MS
+        if end - s0 < 5 * MS:
+            raise CutError(f'release of {max(0, end - s0) // MS} ms')
+        rel = fade(x[start:end], fin=0, fout=min(0.012, 0.5 * (end - start) / SR))
+        if pre is None:
+            y = fade(rel, fin=0.002, fout=0)
+        else:
+            n_pre = int(np.clip(length - len(rel), len(pre), min(0.08 * SR, 3 * len(pre))))
+            y = join(fade(stretch(pre, n_pre, True, seed=len(pre)), fin=0.012, fout=0), rel, 3 * MS)
+        info.update(ms=round(1000 * len(y) / SR), source=[(start if pre is None else s0 - len(pre) - 4 * MS) // MS,
+                                                          end // MS], margin=round(form_ref - span(form, (s0, end)), 1))
+        return y, info
+    # Voiceless after the burst: up to where the vowel's voice starts (the
+    # level under 500 Hz within 10 dB of the vowel's).
+    i = s0 // MS + (15 if kind == 'vaffricate' else 10)
+    while i < len(lo) and lo[i] < lo_ref - 10:
+        i += 1
+    end = (i - 2) * MS
+    if end - s0 < 25 * MS:
+        raise CutError(f'release of {max(0, end - s0) // MS} ms')
+    margin = lo_ref - span(lo, (s0 + (15 if kind == 'vaffricate' else 0) * MS, end))
+    if margin < 8:
+        raise CutError(f'the voice of the vowel {margin:.0f} dB under it')
+    keep = s0 + 15 * MS                       # the burst itself, as it was said
+    n_pre = int(min(0.06 * SR, 3 * len(pre))) if pre is not None else 0
+    tail = x[keep:end]
+    n_tail = int(np.clip(length - n_pre - (keep - start), len(tail), 2.5 * len(tail)))
+    if kind == 'vaffricate' and pre is None:
+        n_tail = len(tail)   # a longer hiss with no voice under it would be ch
+    y = join(x[start:keep + 4 * MS], stretch_noise(tail, n_tail, seed=len(tail)), 4 * MS)
+    y = fade(y, fin=0.002, fout=0.03 if kind == 'stop' else 0.05)
+    if pre is not None:
+        buzz = stretch(pre, len(y), True, seed=len(pre) + 1) * 10 ** (-3 / 20)
+        y = y + fade(buzz, fin=0.01, fout=0.06)
+        y = join(fade(stretch(pre, n_pre, True, seed=len(pre)), fin=0.012, fout=0), y, 3 * MS)
+    info.update(ms=round(1000 * len(y) / SR), source=[(start if pre is None else s0 - len(pre) - 4 * MS) // MS,
+                                                      end // MS], margin=round(margin, 1))
+    return y, info
+
+
+def cut_sound(x, kind, where, lenient=False):
     """Cuts a pure sound of `kind` (see KINDS) out of the samples of its anchor
     word, where it is the word's first sound (initial), its last (final) or
     its first vowel (vowel). Returns (samples, info). Raises CutError when
     the word doesn't show the sound clearly enough."""
+    if kind in ONSET:
+        if where != 'initial':
+            raise CutError(f'a {kind} is only cut where it starts its word')
+        return cut_onset(x, kind, lenient)
     f = frames(x)
     lab = labels(f)
     act = np.nonzero(lab['active'])[0]
@@ -431,30 +648,6 @@ def cut_sound(x, kind, where):
             a, b = pick(first, v0, pred, trim=(0, 1) if kind == 'liquid' else (1, 2), min_frames=3)
         else:
             a, b = pick(v1, last + 1, pred, trim=(3, 3), min_frames=4)
-    elif kind in ('stop', 'vstop', 'affricate', 'vaffricate', 'glide'):
-        if where != 'initial':
-            raise CutError('only initial stops are cut')
-        # Before the burst: silence, or for b/d/g/j a short hum.
-        i = min(lead_hum(f, first), v0)
-        s0 = burst_sample(x, i * HOP - HOP, i * HOP + WIN) if kind != 'glide' else first * HOP
-        vstart = v0 * HOP + WIN // 2
-        if kind == 'stop':
-            end = min(s0 + int(0.06 * SR), vstart)
-            if end - s0 < int(0.015 * SR):
-                end = s0 + int(0.03 * SR)
-            y = fade(x[max(0, s0 - SR // 200):end], fin=0.002, fout=0.012)
-        elif kind == 'vstop':
-            y = fade(x[max(0, s0 - int(0.015 * SR)):s0 + int(0.05 * SR)], fin=0.005, fout=0.025)
-        elif kind in ('affricate', 'vaffricate'):
-            start = max(0, s0 - (int(0.015 * SR) if kind == 'vaffricate' else SR // 200))
-            end = min(vstart + int(0.01 * SR), start + int(0.18 * SR))
-            y = fade(x[start:end], fin=0.003, fout=0.025)
-        else:
-            end = min(vstart + int(0.03 * SR), s0 + int(0.2 * SR))
-            y = fade(x[s0:end], fin=0.01, fout=0.04)
-        info.update(ms=round(1000 * len(y) / SR), source=[round(1000 * max(0, s0) / SR), round(1000 * end / SR)]
-                    if kind != 'vstop' else [round(1000 * s0 / SR)])
-        return y, info
     elif kind == 'cluster':
         # x = k + s at the end of the word: after the last vowel, the closure,
         # then the burst and the hiss.
@@ -493,26 +686,30 @@ def cut_sound(x, kind, where):
     return y, info
 
 
+def shape(z):
+    """The spectrum's shape (dB in 12 bands from 300 Hz to 5 kHz, less their
+    mean) averaged over samples z."""
+    edges = np.geomspace(300, 5000, 13)
+    z = np.pad(np.asarray(z, np.float64), (0, max(0, WIN - len(z))))
+    k = 1 + (len(z) - WIN) // HOP
+    F = z[np.arange(WIN)[None, :] + HOP * np.arange(k)[:, None]] * np.hanning(WIN)
+    S = (np.abs(np.fft.rfft(F, axis=1)) ** 2).mean(0)
+    fr = np.fft.rfftfreq(WIN, 1 / SR)
+    b = db(np.array([S[(fr >= a) & (fr < c)].sum() for a, c in zip(edges[:-1], edges[1:])]))
+    return b - b.mean()
+
+
 def drift(y):
     """How much the spectrum's shape (300 Hz-5 kHz) changes from the first
     third of a held sound to the last, in dB: a held sound that still
     glides into a vowel changes a lot."""
     n = len(y) // 3
-    edges = np.geomspace(300, 5000, 13)
-
-    def shape(z):
-        k = 1 + max(0, (len(z) - WIN) // HOP)
-        F = z[np.arange(WIN)[None, :] + HOP * np.arange(k)[:, None]] * np.hanning(WIN)
-        S = (np.abs(np.fft.rfft(F, axis=1)) ** 2).mean(0)
-        fr = np.fft.rfftfreq(WIN, 1 / SR)
-        b = db(np.array([S[(fr >= a) & (fr < c)].sum() for a, c in zip(edges[:-1], edges[1:])]))
-        return b - b.mean()
     if n < WIN:
         return 0.0
     return float(np.sqrt(np.mean((shape(y[:n]) - shape(y[-n:])) ** 2)))
 
 
-def check_sound(y, kind):
+def check_sound(y, kind, lenient=False):
     """Acoustic checks on a cut sound. Returns a list of problems (empty when
     it looks right). They catch a cut in the wrong place (a vowel left after
     a consonant, voicing in p/t/k, a broken hold); they can't tell whether it
@@ -534,6 +731,9 @@ def check_sound(y, kind):
     hold = KINDS[kind].get('hold')
     if hold and abs(dur - hold) > 0.08:
         probs.append(f'held {dur:.2f} s, not {hold:.2f} s')
+    span = KINDS[kind].get('range')
+    if span and not (0 if lenient else span[0]) <= dur <= span[1]:
+        probs.append(f'{dur * 1000:.0f} ms long')
     if kind in ('nasal',):
         if vf < 0.8:
             probs.append(f'voiced in {vf:.0%} of the hold')
@@ -553,16 +753,23 @@ def check_sound(y, kind):
             probs.append(f'voiced in {vf:.0%} of the vowel')
         if formant[core].mean() < 0.7:
             probs.append('weak vowel formants')
-    elif kind in ('stop', 'cluster', 'affricate'):
-        lim = {'stop': 0.09, 'affricate': 0.2, 'cluster': 0.36}[kind]
-        if dur > lim:
-            probs.append(f'{dur * 1000:.0f} ms long')
-        if kind == 'stop' and voiced[:max(1, f['n'] - 1)].sum() > 1:
+    elif kind in ('stop', 'affricate'):
+        # p t k ch are voiceless to the end: a voice there is the vowel's.
+        if voiced[:max(1, f['n'] - 1)].sum() > 1:
             probs.append('voicing after the burst')
-    elif kind in ('vstop', 'vaffricate', 'glide'):
-        lim = {'vstop': 0.09, 'vaffricate': 0.22, 'glide': 0.22}[kind]
-        if dur > lim:
-            probs.append(f'{dur * 1000:.0f} ms long')
+    elif kind in ('vstop', 'vaffricate'):
+        # The voice before the burst is low and has no formants; a vowel has both.
+        if (voiced & formants(f) & (f['rel'] > -6)).sum() > 1:
+            probs.append('a vowel after the burst')
+        mid = slice(f['n'] // 4, max(f['n'] // 4 + 1, 3 * f['n'] // 4))
+        if kind == 'vaffricate' and not lenient and np.median((f['lo'] - f['hi'])[mid]) < -15:
+            probs.append('no voice under the hiss (that is ch)')
+    elif kind == 'glide':
+        if vf < 0.8:
+            probs.append(f'voiced in {vf:.0%} of the hold')
+        d = drift(y[int(0.03 * SR):len(y) - int(0.06 * SR)])
+        if d > 6:
+            probs.append(f'spectrum drifts {d:.1f} dB')
     if hold and core.sum() > 4:
         # A held sound should hold steady: no pumping, no glide into a vowel.
         e = f['e'][core]
@@ -575,20 +782,24 @@ def check_sound(y, kind):
 
 
 def best_cut(kind, anchors):
-    """The first clean cut from a list of (word, where, samples). Returns
-    (samples, info); samples is None when no anchor gave a clean cut, and
-    info['tried'] says why each one failed."""
+    """The first clean cut from a list of (word, where, samples); when none
+    cuts cleanly, the first that cuts leniently (see cut_onset(); then
+    info['lenient'] is True). Returns (samples, info); samples is None when
+    no anchor gave a cut, and info['tried'] says why each one failed."""
     tried = []
-    for word, where, x in anchors:
-        try:
-            y, info = cut_sound(x, kind, where)
-        except CutError as e:
-            tried.append({'word': word, 'problem': str(e)})
-            continue
-        probs = check_sound(y, kind)
-        if probs:
-            tried.append({'word': word, 'problem': '; '.join(probs)})
-            continue
-        info.update(anchor=word, tried=tried)
-        return y, info
+    for lenient in (False, True) if kind in ONSET else (False,):
+        for word, where, x in anchors:
+            try:
+                y, info = cut_sound(x, kind, where, lenient)
+            except CutError as e:
+                tried.append({'word': word, 'problem': str(e)})
+                continue
+            probs = check_sound(y, kind, lenient)
+            if probs:
+                tried.append({'word': word, 'problem': '; '.join(probs)})
+                continue
+            info.update(anchor=word, tried=tried)
+            if lenient:
+                info['lenient'] = True
+            return y, info
     return None, {'tried': tried}
