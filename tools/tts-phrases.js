@@ -8,12 +8,17 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
+// The people of the Monster Village and its tower (level 6), who ask its
+// long vowel questions (QUIZ_TYPES.monster): these tables in js/data.js
+// (a captain file may splice its own people into them, as for the others).
+const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS'];
 // Content constants read from js/data.js (and, for the robot edition, the
 // js/captain-*.js files, which change those tables and add their own).
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
-  'VILLAGE_HOMES', 'HOME_HELLO', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS'];
+  'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
+  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', ...MONSTER_TABLES];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -63,15 +68,25 @@ function collect(D) {
   const unicorn = new Set([...D.UNICORN_NPCS, ...D.DUNGEON_NPCS].map(n => n.look));
   const monsters = new Set(D.DUNGEON_NPCS.map(n => n.look));
   const fairies = new Set(D.FAIRY_NPCS.map(n => n.look));
+  // The Monster Village and its tower, and any home there.
+  const monsterVillage = new Set([...MONSTER_TABLES.flatMap(k => D[k] || []),
+    ...D.VILLAGE_HOMES.filter(h => (D.HOME_LEVEL || {})[h.scene] === 6)].map(n => n.look));
   const kindsOf = look => new Set([].concat(town.has(look) ? D.QUIZ_TYPES.town.concat(D.QUIZ_TYPES.house) : [],
-    forest.has(look) ? D.QUIZ_TYPES.forest : [], unicorn.has(look) ? D.QUIZ_TYPES.unicorn : [], fairies.has(look) ? D.QUIZ_TYPES.fairy : []));
+    forest.has(look) ? D.QUIZ_TYPES.forest : [], unicorn.has(look) ? D.QUIZ_TYPES.unicorn : [], fairies.has(look) ? D.QUIZ_TYPES.fairy : [],
+    monsterVillage.has(look) ? D.QUIZ_TYPES.monster : []));
   const first = list => list.map(([w]) => w);
   const cvc = first(D.CVC_A1.concat(D.CVC_A2));
   const sentences = D.SENTENCES.concat(D.SENTENCES_L1, D.SENTENCES_L2);
+  // Long vowels (the Monster Village): every word, and the rhymes it asks
+  // about (RHYME_SETS' long ones, by the vowel sounds that say a letter's
+  // name, and LONG_RHYMES).
+  const longWords = D.LONG_VOWELS.flatMap(g => first(g.words));
+  const longRhymes = D.RHYME_SETS.filter(r => ['eɪ', 'i', 'aɪ', 'oʊ', 'ɑr'].includes(r.v)).concat(D.LONG_RHYMES);
   // The lines each kind of question says in the asker's voice (js/quiz.js),
   // and the words it says in that voice (`voiced`).
   const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
-    ending: ['ending'], read: ['read'], blend: ['blend'], sentence: ['sentence'], meaning: ['meaning', 'silly'], spell: ['spell'] };
+    ending: ['ending'], read: ['read'], blend: ['blend'], sentence: ['sentence'], meaning: ['meaning', 'silly'], spell: ['spell'],
+    longBlend: ['longBlend'], longRead: ['read'], longWord: ['ask'], longRhyme: ['rhyme', 'rhymeEnd'] };
   const kindWords = {
     word: D.LETTERS.flatMap(l => first(l.words)),
     start: D.LETTERS.flatMap(l => first(l.words)),
@@ -80,6 +95,8 @@ function collect(D) {
     vowel: cvc,
     ending: cvc,
     spell: cvc.concat(first(D.CCVC), first(D.CVCC), first(D.LONG), first(D.DIGRAPH)),
+    longWord: longWords,
+    longRhyme: longRhymes.flatMap(r => first(r.set)),
   };
   for (const [look, style] of Object.entries(D.VOICES)) {
     const v = style.tts;
@@ -141,6 +158,8 @@ function collect(D) {
   for (const r of D.RHYME_SETS) for (const [w] of r.set) words.add(w);
   for (const list of [D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH]) for (const [w] of list) words.add(w);
   for (const x of sentences) { words.add(x.w[0]); x.alike.forEach(w => words.add(w)); x.other.forEach(([w]) => words.add(w)); }
+  // Long vowels: every word, its short twin (what she picked, "kit…") and the rhymes.
+  for (const w of longWords.concat(first(D.LONG_TWINS), longRhymes.flatMap(r => first(r.set)))) words.add(w);
   // Words said when she taps a thing on the map (js/touch.js).
   for (const w of D.PROP_WORDS) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
@@ -159,7 +178,13 @@ function collect(D) {
   // Letter pairs with one sound (sh, ck...) on spelling tiles.
   for (const g of Object.keys(D.PART_SOUNDS)) if (g.length > 1) add(N, `/${g}/`, 0.8);
   lines(N, ['levelUp'].concat((D.CAVE_LINES && D.CAVE_LINES.narrator) || []));
-  for (const r of D.RHYME_SETS) for (const [a] of r.set) for (const [b] of r.set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
+  for (const r of D.RHYME_SETS.concat(D.LONG_RHYMES)) for (const [a] of r.set) for (const [b] of r.set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
+  // What makes a vowel say its name, after a miss on a long vowel: "Magic e
+  // makes the A say its name!", "O A says O!" (rule in js/quiz.js).
+  for (const g of D.LONG_VOWELS) {
+    if (g.team.includes('_')) lines(N, ['magicE'], { letter: g.says });
+    else lines(N, ['vowelTeam'], { team: g.team.toUpperCase().split('').join(' '), letter: g.says });
+  }
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
@@ -179,7 +204,7 @@ function collect(D) {
   lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'medalVillage', 'album']);
   for (const l of D.TOWN_HOUSES) lines(N, ['medalHouse'], { letter: l.letter });
   const stickers = [...D.WORD_FAMILIES.flat(), ...D.RHYME_SETS.flatMap(r => r.set), ...sentences.map(x => x.w),
-    ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat()].map(([w]) => w);
+    ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat(), ...D.LONG_VOWELS.flatMap(g => g.words), ...D.LONG_RHYMES.flatMap(r => r.set)].map(([w]) => w);
   for (const w of stickers) if (/^[a-z]+$/.test(w) && !/^(ch|sh|th|wh|ph|gh|kn|wr)/.test(w) && w !== 'one') add(N, `${w} starts with ${w[0].toUpperCase()}.`);
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS]) lines(N, ['locked'], { stars });
   for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);

@@ -28,6 +28,9 @@ const Quiz = (() => {
   //   words don't); aka: other names she may use for the picture (ALIAS);
   //   parts: its sounds when a letter pair is one sound (f-i-sh);
   //   syl: its syllables (rab-bit).
+  // A word whose vowel says its name (LONG_VOWELS) also has `long`, its
+  // sounds with that vowel as a capital letter (c-A-k), `team`, how the
+  // vowel is spelled (a_e, oa), and `says`, the letter whose name it says.
   let index = null;
   function words() {
     if (index) return index;
@@ -39,9 +42,15 @@ const Quiz = (() => {
       if (bank) x.bank = true; // every letter (or letter pair) says its usual sound
     };
     for (const list of [CVC_A1, CVC_A2, CCVC, CVCC, LONG, DIGRAPH]) for (const [w, e, pic, parts] of list) add(w, e, pic, parts, true);
+    for (const g of LONG_VOWELS) {
+      for (const [w, e, pic, long] of g.words) {
+        add(w, e, pic);
+        Object.assign(index[w], { long, team: g.team, says: g.says });
+      }
+    }
     LETTERS.forEach(l => l.words.forEach(([w, e]) => add(w, e)));
     WORD_FAMILIES.forEach(f => f.forEach(([w, e]) => add(w, e)));
-    RHYME_SETS.forEach(r => r.set.forEach(([w, e]) => add(w, e)));
+    RHYME_SETS.concat(LONG_RHYMES).forEach(r => r.set.forEach(([w, e]) => add(w, e)));
     for (const x of SENTENCES.concat(SENTENCES_L1, SENTENCES_L2)) { add(x.w[0], x.w[1]); x.other.forEach(([w, e]) => add(w, e)); }
     return index;
   }
@@ -63,7 +72,15 @@ const Quiz = (() => {
     ONE5: () => LONG.filter(x => !x[3]).concat(DIGRAPH.filter(([w]) => w.length >= 5 && syllables(w) === 1)).map(entry),
     TWO: () => LONG.filter(x => x[3]).concat(DIGRAPH.filter(([w]) => syllables(w) > 1)).map(entry),
     FAM: famWords,
+    // Long vowels with a picture she names for sure: one sound before the
+    // vowel (cake, sheep), or any (snake, tree, star too).
+    NAME1: () => longWords().filter(x => clear(x) && x.long.indexOf(x.says) === 1),
+    NAME: () => longWords().filter(clear),
   };
+  // Every word whose vowel says its name, with or without a picture.
+  const longWords = () => LONG_VOWELS.flatMap(g => g.words.map(entry));
+  // The short twin of a long word (kit for kite), if it has one.
+  const twinOf = w => (LONG_TWINS.find(([, long]) => long === w) || [])[0];
   const minimalWords = () => [...new Set(MINIMAL_SETS.flat())].map(w => words()[w]);
   const letterWords = () => LETTERS.flatMap(info => info.words.map(([w]) => Object.assign({ info }, words()[w])));
   const clear = x => x.pic >= 2;
@@ -84,6 +101,16 @@ const Quiz = (() => {
   // The letter of each short vowel sound (RHYME_SETS v), to find rhymes she
   // hears as the same (at, et).
   const SHORT = { 'æ': 'a', 'ɛ': 'e', 'ɪ': 'i', 'ɑ': 'o', 'ʌ': 'u' };
+  // The letter whose name each long vowel sound says: the rhymes the Monster
+  // Village asks about (longRhyme), RHYME_SETS' long ones and LONG_RHYMES.
+  const NAMED = { 'eɪ': 'A', i: 'E', 'aɪ': 'I', 'oʊ': 'O', 'ɑr': 'R' };
+  const longRhymes = () => RHYME_SETS.filter(r => NAMED[r.v]).concat(LONG_RHYMES);
+  // The last sound of a rhyme (ake: k, ell: l, ee: none), to find words that
+  // end the same after another vowel (kite, bat).
+  const lastSound = rime => {
+    const m = /[^aeiouwy]+$/.exec(rime.replace(/e$/, ''));
+    return m ? m[0].replace(/^(.)\1$/, '$1').replace('ck', 'k') : '';
+  };
   // Two words that differ only in such a letter (pan, pen).
   function nearWords(a, b) {
     if (a.length !== b.length) return false;
@@ -120,6 +147,13 @@ const Quiz = (() => {
     sentence: (npc, cfg) => withId('sentence', sentencesAt(cfg.lv).map(x => ({ x, w: x.w[0] })), y => y.x.s),
     meaning: (npc, cfg) => withId('meaning', sentencesAt(cfg.lv).map(x => ({ x, w: x.w[0] })), y => y.x.s),
     spell: (npc, cfg) => withId('spell', BANK[cfg.words]().filter(x => !(cfg.noX && x.w.includes('x')) && graphemes(x).every(soundOf))),
+    // The Monster Village's long vowels (BANK words have pictures she names
+    // for sure; longWord's are written, so any, and at a `twin` tier the
+    // ones with a short twin).
+    longBlend: (npc, cfg) => withId('longBlend', BANK[cfg.words]()),
+    longRead: (npc, cfg) => withId('longRead', BANK[cfg.words]()),
+    longWord: (npc, cfg) => withId('longWord', longWords().filter(x => !cfg.twin || twinOf(x.w))),
+    longRhyme: () => withId('longRhyme', longRhymes().map(r => ({ r, w: r.set[0][0] }))),
   };
   const history = () => (typeof state !== 'undefined' && state.history) || {};
   const solved = id => (history()[id] || {}).right > 0;
@@ -166,7 +200,8 @@ const Quiz = (() => {
   }
 
   // ---- Tiers -----------------------------------------------------------------
-  const placeOf = npc => (npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
+  // Level 6 is the Monster Village and its tower.
+  const placeOf = npc => (npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
   const settings = () => (typeof state !== 'undefined' && state.settings) || {};
   // Tiers a kind has; a tier with a `setting` only once a parent turns it on.
   const allowed = c => !c.setting || settings()[c.setting];
@@ -282,7 +317,9 @@ const Quiz = (() => {
     [...w].every(soundOf);
   // Its sounds, one tile each: f-i-sh, c-a-t, e-gg; a long word syllable by syllable.
   const graphemes = x => x.parts || (x.syl ? x.syl.join('').split('') : x.w.match(/(.)\1|./g));
-  const soundable = x => !!(x.bank || plain(x.w));
+  // A word whose vowel says its name is never sounded out letter by letter
+  // (no "/k/ /a/ /k/ /e/" for cake): see nameSounds.
+  const soundable = x => !x.long && !!(x.bank || plain(x.w));
   // "/f/ /i/ /sh/", a longer pause between syllables.
   function sounds(x, gap = 160) {
     const out = [];
@@ -296,6 +333,21 @@ const Quiz = (() => {
   // Sounds first, then the word: "/c/ /a/ /t/… cat!"; a word that can't be
   // sounded out is just said.
   const sounded = x => (soundable(x) ? sounds(x).concat({ pause: 250 }) : []).concat(say(`${x.w}!`));
+  // A long vowel's sounds (the Monster Village): the pure sounds around it,
+  // and the vowel said as the narrator's own letter name: "/k/ … A … /k/".
+  const letterName = L => ({ text: L, narrator: true, show: `${L}…` });
+  function nameSounds(x, gap = 160) {
+    const out = [];
+    for (const p of x.long) out.push(/^[A-Z]$/.test(p) ? letterName(p) : sound(p), { pause: gap });
+    return out;
+  }
+  const nameSounded = x => nameSounds(x).concat({ pause: 250 }, say(`${x.w}!`));
+  // What makes the vowel say its name, said by the narrator after a miss:
+  // "Magic e makes the A say its name!", "O A says O!".
+  const rule = x => ({
+    text: x.team.includes('_') ? line('magicE', { letter: x.says }) : line('vowelTeam', { team: x.team.toUpperCase().split('').join(' '), letter: x.says }),
+    narrator: true,
+  });
   // What a letter picked for a blank spells: a real word is said and shown
   // on its card ("c u t" is cut), otherwise the letter's sound is said.
   function filledIn(t, x, at) {
@@ -398,35 +450,7 @@ const Quiz = (() => {
       };
     },
 
-    // The other cards come from rhymes with another vowel; at the top tier
-    // one has the same vowel (cat, can).
-    rhyme(npc, cfg) {
-      const { r, id } = take('rhyme', npc, cfg);
-      const [base, ans] = shuffle(r.set.slice()).map(([w]) => words()[w]);
-      const fromSet = s => words()[pick(s.set)[0]];
-      const pool = RHYME_SETS.filter(s => s !== r).map(s => Object.assign({ v: s.v, rime: s.rime }, fromSet(s)));
-      // Never a picture she may call by a rhyming name (🚐 "car" for star).
-      const rhymes = x => x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
-      // Below the top tier, never one that ends the same after a short vowel
-      // she can't tell from this one yet (hat, jet).
-      const near = x => hardPair(SHORT[x.v], SHORT[r.v]) && x.rime.slice(1) === r.rime.slice(1);
-      const ok = (x, out, partner) => (partner || x.v !== r.v) && (cfg.sameVowel || !near(x)) && !alike(x, base) && !alike(x, ans) && !rhymes(x) &&
-        !out.some(o => o.w === x.w || o.e === x.e || o.v === x.v);
-      const list = others(pool, cfg.n - 1, ok, cfg.sameVowel && (x => x.v === r.v));
-      const ask = line('rhyme');
-      return {
-        id, target: r.set[0][0], base: base.w, clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
-        prompt: `${ask} "${base.w}"?`,
-        ask: [{ text: ask }, { pause: 300 }, voiced(base.w), READY],
-        replay: [voiced(base.w)],
-        options: deal(ans, list, o => ({ html: wordCard(o.w, o.e), wrong: o.w, alwaysPictures: true })),
-        answer: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
-        // "dog… Listen to the end. cat"
-        teach: o => [named(o.wrong), { pause: 300 }, lead('rhymeEnd'), voiced(base.w, 0.85)],
-        picked: o => [named(o.wrong)],
-        model: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
-      };
-    },
+    rhyme: (npc, cfg) => rhymeQuestion('rhyme', npc, cfg, RHYME_SETS),
 
     // Hear a word, find it among words that start the same way, so she has
     // to listen to the middle and the end.
@@ -507,6 +531,43 @@ const Quiz = (() => {
       };
     },
   };
+
+  // Rhymes: the other cards come from rhymes with another vowel; at the top
+  // tier one has the same vowel (cat, can). `sets` are the rhymes a kind
+  // asks about, and the other cards' too; at an `endSound` tier one comes
+  // from `ends` instead: another vowel that ends in the same sound (kite, bat).
+  function rhymeQuestion(kind, npc, cfg, sets, ends = []) {
+    const { r, id } = take(kind, npc, cfg);
+    const [base, ans] = shuffle(r.set.slice()).map(([w]) => words()[w]);
+    const fromSet = s => Object.assign({ v: s.v, rime: s.rime }, words()[pick(s.set)[0]]);
+    const pool = sets.filter(s => s !== r).map(fromSet);
+    const end = lastSound(r.rime);
+    const endings = cfg.endSound && end ? ends.filter(s => s.v !== r.v && lastSound(s.rime) === end).map(fromSet) : [];
+    // Never a picture she may call by a rhyming name (🚐 "car" for star).
+    const rhymes = x => x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
+    // Below the top tier, never one that ends the same after a short vowel
+    // she can't tell from this one yet (hat, jet).
+    const near = x => hardPair(SHORT[x.v], SHORT[r.v]) && x.rime.slice(1) === r.rime.slice(1);
+    // `far`: another last sound too (cake, dog).
+    const ok = (x, out, partner) => (partner || (x.v !== r.v && !endings.includes(x))) && (cfg.sameVowel || !near(x)) &&
+      (!cfg.far || lastSound(x.rime) !== end) && !alike(x, base) && !alike(x, ans) && !rhymes(x) &&
+      !out.some(o => o.w === x.w || o.e === x.e || o.v === x.v);
+    const partner = cfg.sameVowel ? (x => x.v === r.v) : endings.length ? (x => endings.includes(x)) : null;
+    const list = others(pool.concat(endings), cfg.n - 1, ok, partner);
+    const ask = line('rhyme');
+    return {
+      id, target: r.set[0][0], base: base.w, clue: `<span class="clue-pic">${base.e}</span><span class="clue-word">${base.w}</span>`,
+      prompt: `${ask} "${base.w}"?`,
+      ask: [{ text: ask }, { pause: 300 }, voiced(base.w), READY],
+      replay: [voiced(base.w)],
+      options: deal(ans, list, o => ({ html: wordCard(o.w, o.e), wrong: o.w, alwaysPictures: true })),
+      answer: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
+      // "dog… Listen to the end. cat"
+      teach: o => [named(o.wrong), { pause: 300 }, lead('rhymeEnd'), voiced(base.w, 0.85)],
+      picked: o => [named(o.wrong)],
+      model: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
+    };
+  }
 
   // Words for the other cards of family, read and blend: ones that sound
   // much like the target (same first letter, or its minimal set at the top
@@ -655,6 +716,145 @@ const Quiz = (() => {
         need: i => [lead('listen'), sound(own[i])],
       };
     },
+  });
+
+  // ---- Long vowels (the Monster Village) -------------------------------------
+  // How she hears a word: a long one by its sounds (c-A-k), a short one by
+  // its letters (c-a-t); c and k alike, a doubled letter as one.
+  const heardAs = p => { const s = undoubled(p); return s === 'c' || s === 'ck' ? 'k' : s; };
+  const heard = x => (x.long || graphemes(x)).map(heardAs);
+  // Two words she hears as the same (road, rode), or that differ only in a
+  // sound she can't hear apart yet (peach, beach; tree, three).
+  const sameHeard = (a, b) => heard(a).join('-') === heard(b).join('-');
+  function hardTwin(a, b) {
+    const x = heard(a);
+    const y = heard(b);
+    if (x.length !== y.length) return false;
+    const diff = x.map((s, i) => [s, y[i]]).filter(([p, q]) => p !== q);
+    return diff.length === 1 && hardPair(diff[0][0], diff[0][1]);
+  }
+  // How many of its sounds two words share, in order (boat, goat: 2).
+  function shared(a, b) {
+    const y = heard(b);
+    const row = new Array(y.length + 1).fill(0);
+    for (const s of heard(a)) {
+      let diag = 0;
+      for (let j = 1; j <= y.length; j++) {
+        const up = row[j];
+        row[j] = s === y[j - 1] ? diag + 1 : Math.max(up, row[j - 1]);
+        diag = up;
+      }
+    }
+    return row[y.length];
+  }
+  // Another first sound, and not one she can't tell from it, and another
+  // vowel's name (bone, cake).
+  const farLong = (x, t) => {
+    const [a, b] = [heard(x)[0], heard(t)[0]];
+    return !sameSound(a, b) && !nearPair(a, b) && x.says !== t.says;
+  };
+  // The word with the letters that make its vowel say its name in colour:
+  // the vowel and the magic e (c a k e), or the team (r ai n).
+  function marked(x) {
+    const hi = s => `<span class="first">${s}</span>`;
+    if (x.team.includes('_')) return x.w.replace(/([aeiou])([^aeiou]+)e$/, (m, v, c) => hi(v) + c + hi('e'));
+    return x.w.replace(x.team, hi);
+  }
+  // The other cards of longBlend and longRead: pictures she names for sure,
+  // never one she hears as the target or that differs from it only in a
+  // sound she can't hear apart yet. `far`: another first sound and another
+  // vowel's name. `near`: first one that shares all but one of its sounds,
+  // long or short (boat: goat, or bat). Then ones that start with the same
+  // sound (bee, bike, boat), then any.
+  function similarLong(t, cfg, list) {
+    const n = cfg.n - 1;
+    const ok = (x, out) => x.w !== t.w && clear(x) && !alike(x, t) && !sameHeard(x, t) && !hardTwin(x, t) &&
+      !out.some(o => o.w === x.w || o.e === x.e || alike(o, x) || sameHeard(o, x) || hardTwin(o, x));
+    const out = [];
+    const add = cands => { for (const x of shuffle(cands.slice())) if (out.length < n && ok(x, out)) out.push(x); };
+    if (cfg.near) {
+      const cands = list.concat(BANK.CVC(), BANK.BLEND4(), DIGRAPH.map(entry)).filter(x => ok(x, out));
+      const best = Math.max(0, ...cands.map(x => shared(x, t)));
+      const close = shuffle(cands.filter(x => shared(x, t) === best))[0];
+      if (close && best >= heard(t).length - 1) out.push(close);
+    }
+    if (cfg.far) add(list.filter(x => farLong(x, t)));
+    add(list.filter(x => sameSound(heard(x)[0], heard(t)[0])));
+    add(list);
+    return out;
+  }
+
+  Object.assign(builders, {
+    // Hear a long vowel word's sounds, the vowel by its letter's name
+    // ("/k/ … A … /k/"), and pick its picture.
+    longBlend(npc, cfg) {
+      const t = take('longBlend', npc, cfg);
+      const list = similarLong(t, cfg, BANK[cfg.words]());
+      const ask = line('longBlend');
+      const slow = nameSounds(t, 450);
+      const dot = p => (cfg.mark && /^[A-Z]$/.test(p) ? `<span class="dot name">${p}</span>` : '<span class="dot"></span>');
+      return {
+        id: t.id, target: t.w,
+        // A dot for each sound; with `mark`, the vowel's shows its letter.
+        clue: `<span class="clue-sounds">${t.long.map(dot).join('')}</span>`,
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 500 }].concat(slow, READY),
+        replay: slow,
+        options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: nameSounded(t),
+        solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${marked(t)}</span>`,
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(nameSounds(t, 600)),
+        picked: o => [named(o.wrong)],
+        model: nameSounded(t),
+      };
+    },
+
+    // Read a long vowel word and pick its picture; with `mark` the letters
+    // that make the vowel say its name are coloured. She reads it herself,
+    // so a hint gives that rule and sounds it out without saying it.
+    longRead(npc, cfg) {
+      const t = take('longRead', npc, cfg);
+      const list = similarLong(t, cfg, BANK[cfg.words]());
+      const ask = line('read');
+      return {
+        id: t.id, target: t.w, clue: `<span class="clue-word big">${cfg.mark ? marked(t) : t.w}</span>`,
+        ask: [{ text: ask }],
+        replay: [{ text: ask }],
+        options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: [say(`${t.w}!`)],
+        solved: `<span class="clue-word big">${marked(t)}</span>`,
+        // "boat… Magic e makes the A say its name! /k/ … A … /k/"
+        teach: o => [named(o.wrong), { pause: 300 }, rule(t), { pause: 300 }].concat(nameSounds(t)),
+        picked: o => [named(o.wrong)],
+        model: nameSounded(t),
+      };
+    },
+
+    // Hear a long vowel word and find it written: word cards only, so no
+    // picture gives it away. At a `twin` tier one card is its short twin
+    // (kit for kite), and picking it brings the rule.
+    longWord(npc, cfg) {
+      const t = take('longWord', npc, cfg);
+      const out = cfg.twin ? [{ w: twinOf(t.w), twin: true }] : [];
+      const ok = x => x.w !== t.w && !sameHeard(x, t) && !hardTwin(x, t) && (!cfg.far || farLong(x, t)) &&
+        !out.some(o => o.w === x.w || sameHeard(o, x) || hardTwin(o, x));
+      const add = cands => { for (const x of shuffle(cands)) if (out.length < cfg.n - 1 && ok(x)) out.push(x); };
+      add(longWords().filter(x => sameSound(heard(x)[0], heard(t)[0])));
+      add(longWords());
+      return {
+        id: t.id, target: t.w, clue: '',
+        ask: [{ text: line('ask') }, { pause: 750 }, voiced(t.w), READY],
+        replay: [voiced(t.w)],
+        options: deal(t, out, o => ({ html: plainCard(o.w), wrong: o.w, twin: !!o.twin })),
+        answer: [say(`${t.w}!`)],
+        // "kit… Magic e makes the I say its name! Listen. kite"
+        teach: o => [named(o.wrong), { pause: 300 }].concat(o.twin ? [rule(t), { pause: 300 }] : [], lead('listen'), voiced(t.w, 0.85)),
+        picked: o => [named(o.wrong)],
+        model: nameSounded(t),
+      };
+    },
+
+    longRhyme: (npc, cfg) => rhymeQuestion('longRhyme', npc, cfg, longRhymes(), RHYME_SETS.filter(r => SHORT[r.v])),
   });
 
   // Picks a kind of question this person didn't ask last time, at her tier.
