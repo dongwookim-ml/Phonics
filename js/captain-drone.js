@@ -764,6 +764,7 @@ function buildDroneVillage() {
     ctx.fill();
     drawCargoDrone(ctx, p2.x, p2.y, h, Math.floor(t * 9) % 2, '#4fa8ff');
   };
+  stillFrame(hop).react = { word: 'drone', fx: 'hop' };
   for (const n of FAIRY_NPCS) reserve(n.c, n.r);
   for (let r = 10; r <= 15; r++) for (let c = 0; c <= 3; c++) reserve(c, r);
 

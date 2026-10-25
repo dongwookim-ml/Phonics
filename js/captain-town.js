@@ -907,6 +907,7 @@ function rtProp(kind) {
     },
   }[kind];
   const p = make();
+  // What each one says when tapped (js/touch.js).
   const [word, fx] = { solar: ['sun', 'glow'], turbine: ['wind', 'shake'], dish: ['dish', 'hop'], gear: ['gear', 'hop'], crates: ['box', 'hop'],
     cones: ['cone', 'hop'], tires: ['tire', 'boing'], lamp: ['lamp', 'glow'] }[kind] || [];
   if (word) touchable(p, word, fx);

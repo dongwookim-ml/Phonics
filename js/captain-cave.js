@@ -250,7 +250,8 @@ function buildVillainCave() {
     block(sc, c, r, 1, 1);
     const p = tileCenter(sc, c, r);
     const bounds = { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 };
-    if (anim) sc.objects.push(Object.assign({ c0: c, r0: r, c1: c, r1: r }, bounds, { animated: (ctx, t) => anim(ctx, Math.round(p.x), Math.round(p.y), t) }));
+    // Animated ones get a still frame so they can be tapped (stillFrame in js/world.js).
+    if (anim) sc.objects.push(stillFrame(Object.assign({ c0: c, r0: r, c1: c, r1: r }, bounds, { animated: (ctx, t) => anim(ctx, Math.round(p.x), Math.round(p.y), t), react })));
     else addObject(sc, { c, r, w: 1, d: 1 }, bounds, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
@@ -260,14 +261,14 @@ function buildVillainCave() {
     sc.lamps.push({ x: p.x, y: p.y - 18, small: true });
   }
   for (const [c, r] of [[3, 7], [14, 9]]) {
-    const p = prop(c, r, 40, null, caveTeslaCoil);
+    const p = prop(c, r, 40, null, caveTeslaCoil, { fx: 'sparkle' });
     sc.lamps.push({ x: p.x, y: p.y - 34 });
   }
   const lab = prop(13, 2, 30, caveLabTable);
   sc.lamps.push({ x: lab.x, y: lab.y - 20 });
   prop(11, 1, 26, caveBigButton, null, { fx: 'boing' });
   for (const [c, r] of [[6, 13], [9, 13]]) {
-    const p = prop(c, r, 36, null, caveBeacon);
+    const p = prop(c, r, 36, null, caveBeacon, { word: 'light', fx: 'glow' });
     sc.lamps.push({ x: p.x, y: p.y - 30 });
   }
   // The boss's golden throne, and the pirate's treasure.

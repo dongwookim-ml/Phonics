@@ -46,7 +46,11 @@ function touchObject(o, wx, wy) {
 // sparkles start, `label` where the word shows.
 function touchReact(thing, spec, at, label) {
   const now = performance.now();
-  if (thing.touchedAt && now - thing.touchedAt < TOUCH_GAP) return;
+  // Tapped again right away: just a wiggle, not the word again.
+  if (thing.touchedAt && now - thing.touchedAt < TOUCH_GAP) {
+    touchNudge(thing);
+    return;
+  }
   thing.touchedAt = now;
   const fx = TOUCH_FX[spec.fx] || TOUCH_FX.hop;
   thing.touchFx = { move: fx.move, t0: now };
@@ -71,10 +75,10 @@ function touchNudge(o) {
 // ("apple starts with A."), elsewhere just the word.
 function touchPicture(d) {
   const now = performance.now();
-  if (d.touchedAt && now - d.touchedAt < TOUCH_GAP) return;
-  d.touchedAt = now;
   d.touchFx = { move: 'hop', t0: now };
   Sound.tap();
+  if (d.touchedAt && now - d.touchedAt < TOUCH_GAP) return;
+  d.touchedAt = now;
   if (!d.word) return;
   // Under the picture, clear of the letter poster beside it.
   touchShows.push({ text: d.word, x: d.x, y: d.y + 18, t0: now });
@@ -85,10 +89,10 @@ function touchPicture(d) {
 // says what it sounds like (houseHello in js/game.js).
 function touchPoster(sg) {
   const now = performance.now();
-  if (sg.touchedAt && now - sg.touchedAt < TOUCH_GAP) return;
-  sg.touchedAt = now;
   sg.touchFx = { move: 'hop', t0: now };
   Sound.tap();
+  if (sg.touchedAt && now - sg.touchedAt < TOUCH_GAP) return;
+  sg.touchedAt = now;
   const info = sg.poster;
   const host = state.scene.npcs.find(n => n.letter === info.letter);
   Sound.say([{ text: info.letter, narrator: true }, { pause: 300 }, { text: houseHello(info) }], voiceOf(host));
