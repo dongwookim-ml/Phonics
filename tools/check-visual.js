@@ -152,7 +152,7 @@ function ask(kind, scene) {
   const sc = sceneFor(scene);
   state.scene = sc;
   const npc = sc.npcs.find(n => !n.mount && !n.shop && !n.caught && !n.monster);
-  const key = npc.level === 5 ? 'fairy' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town';
+  const key = npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town';
   const kinds = QUIZ_TYPES[key];
   QUIZ_TYPES[key] = [kind];
   Object.assign(npc, { lastQuiz: null, waitUntil: 0, missed: null });
@@ -214,7 +214,7 @@ function ask(kind, scene) {
           if (wide.length) out.push(`${kind}: ${wide.length} word(s) wider than a ${Math.round(room(card))}px card: ${wide.slice(0, 8).join(', ')}`);
         }
         // The person talking and the hero stay above the dialog.
-        for (const [kind, scene] of [['word', 'town'], ['start', 'town'], ['family', 'forest'], ['sentence', 'unicorn'], ['spell', 'fairy']]) {
+        for (const [kind, scene] of [['word', 'town'], ['start', 'town'], ['family', 'forest'], ['sentence', 'unicorn'], ['spell', 'fairy'], ['longRead', 'monster'], ['longBlend', 'tower']]) {
           const npc = ask(kind, scene);
           const top = ui.dialog.getBoundingClientRect().top;
           const k = devicePixelRatio || 1;

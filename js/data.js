@@ -1236,7 +1236,7 @@ PLACES.tower = '🗼 몬스터 탑';
 // Friendly monsters out in the village: the cave monsters' pictures
 // (MONSTERS in js/sprites.js, under these looks) with words of their own.
 const MONSTER_NPCS = [
-  { name: '말랑 슬라임',   look: 'mvSlime',  c: 7,  r: 8 },
+  { name: '말랑 슬라임',   look: 'mvSlime',  c: 5,  r: 10 },
   { name: '부끄럼쟁이 유령', look: 'mvGhost',  c: 18, r: 7 },
   { name: '박쥐 길잡이',   look: 'mvBat',    c: 19, r: 17 },
   { name: '버섯 몬스터',   look: 'mvShroom', c: 10, r: 18 },
@@ -1249,6 +1249,8 @@ const TOWER_NPCS = [
   { look: 'kidmon4', c: 3, r: 7 },
   { look: 'kidmon5', c: 8, r: 7 },
 ];
+// Drawn as the cave monster they look like (villagerSprite, js/sprites.js).
+Object.assign(LOOKS, { mvSlime: { monster: 'slime' }, mvGhost: { monster: 'ghost' }, mvBat: { monster: 'bat' }, mvShroom: { monster: 'shroom' } });
 Object.assign(VOICES, {
   mvSlime:  { gender: 'female', tts: 'af_nova',   lift: 1.1,  pitch: 1.6, rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   mvGhost:  { gender: 'female', tts: 'bf_lily',   lift: 1.06, pitch: 1.4, rate: 0.9,  voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
