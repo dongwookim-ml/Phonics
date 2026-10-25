@@ -59,11 +59,12 @@ const Sound = (() => {
 
   // "/m/" is a pure letter sound, cut from the narrator's own words when the
   // clips are recorded. Without a recording it is said the old way ("mmm",
-  // "kuh"), never as "slash m slash".
+  // "kuh"), never as "slash m slash"; a doubled letter ("/ll/") as the
+  // single one.
   const PURE = /^\/[a-z]+\/$/;
   const DIGRAPHS = { sh: 'shh', ch: 'ch', th: 'th', ck: 'kuh', ng: 'ng', q: 'kwuh', qu: 'kwuh' };
   function spelledSound(text) {
-    const l = text.slice(1, -1);
+    const l = text.slice(1, -1).replace(/^(.)\1$/, '$1');
     const letter = typeof LETTERS !== 'undefined' && LETTERS.find(x => x.letter === l.toUpperCase());
     return (typeof PART_SOUNDS !== 'undefined' && PART_SOUNDS[l]) || DIGRAPHS[l] || (letter && letter.sound) || l;
   }

@@ -6,8 +6,11 @@
 // from its kind's pool, a prompt, and a recording for every line it says (a
 // missing one falls back to the device voice, which sounds like somebody
 // else; it fails only with TTS_STRICT=1, since new lines wait for the
-// recording workflow). Also: every villager in every scene has a voice and
-// a persona, and every LINES / BOOK_LINES kind the code asks for exists.
+// recording workflow), every pure sound one tools/letter-sounds.json can cut,
+// and a word sounded out once per sound. Also: Quiz.pool holds only what the
+// parent's settings let her be asked, an old save never starts a kind at its
+// hardest tier, every villager in every scene has a voice and a persona, and
+// every LINES / BOOK_LINES kind the code asks for exists.
 // First it runs tools/check-books.js: every word of the books she reads
 // herself can be sounded out at the book's level, or is a sight word.
 // Run: node tools/quiz-test.js  (needs the playwright package and Chromium)
@@ -30,6 +33,8 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
   for (const m of src.matchAll(/\bline\('([\w-]+)'(?:, *\{[^{}]*\})?\)/g)) note(kindsAsked.LINES, m[1]);
   for (const m of src.matchAll(/\bbookLine\('([\w-]+)'/g)) note(kindsAsked.BOOK_LINES, m[1]);
 }
+// The pure sounds ("/m/") the recording workflow can cut.
+const cuts = Object.keys(JSON.parse(fs.readFileSync(path.join(__dirname, 'letter-sounds.json'), 'utf8')).sounds);
 
 (async () => {
   const browser = await launch();
@@ -45,7 +50,7 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}`);
     await page.click('#login-guest');
-    const report = await page.evaluate(([rounds, asked]) => {
+    const report = await page.evaluate(([rounds, asked, cuts]) => {
       const problems = [];
       const missing = new Map();
       const norm = t => String(t).trim().replace(/\s+/g, ' ');
@@ -54,6 +59,7 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
         if (!part || !part.text) return;
         const v = part.narrator || !who.tts ? TTS_NARRATOR : who.tts;
         const t = norm(part.text);
+        if (/^\/[a-z]+\/$/.test(t) && !cuts.includes(t.slice(1, -1))) problems.push(`"${t}" is said, but tools/letter-sounds.json has no such sound to cut`);
         if (!(TTS_INDEX[v] && TTS_INDEX[v][t])) missing.set(`${v}|${t}`, (missing.get(`${v}|${t}`) || 0) + 1);
       };
       // One asker of each kind, as the scenes make them.
@@ -74,10 +80,44 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
         const diff = [...a].map((c, i) => [c, b[i]]).filter(([x, y]) => x !== y);
         return diff.length === 1 && hardPair(diff[0][0], diff[0][1]);
       };
+      // The letter of each short vowel sound (RHYME_SETS v).
+      const SHORT = { 'æ': 'a', 'ɛ': 'e', 'ɪ': 'i', 'ɑ': 'o', 'ʌ': 'u' };
+      // Words a voice may read two ways, never said alone in a rhyme (bow).
+      const HETERONYMS = ['bow', 'row', 'sow', 'tear', 'wind', 'lead', 'read', 'live', 'close', 'dove', 'wound', 'bass'];
+      for (const r of RHYME_SETS) for (const [w] of r.set) if (HETERONYMS.includes(w)) problems.push(`rhyme ${r.rime}: ${w} can be read two ways`);
       const W = Quiz.words();
       const div = document.createElement('div');
       const picOf = o => { div.innerHTML = o.html; const p = div.querySelector('.pic, .bigpic'); return p && p.textContent; };
       const placeOf = npc => (npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
+      // Quiz.pool (the parent panel's counts) holds only what she can be asked
+      // with the parent's settings (all off here): each of its ids comes up at
+      // a tier they allow. Asked ones are marked solved, so the next is new.
+      state.settings = {};
+      for (const kind of Quiz.kinds) {
+        const npcs = ['word', 'findStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.map(h => ({ level: 1, letter: h.letter }))) : [{ level: 1 }];
+        for (const npc of npcs) {
+          state.history = {};
+          for (let t = 1; t <= Quiz.tierMax(kind); t++) {
+            for (let i = 0; i < 500; i++) {
+              const q = Quiz.make(npc, { kind, tier: t });
+              if (state.history[q.id]) break;
+              state.history[q.id] = { kind, tries: 1, right: 1, wrong: 0, last: Date.now() };
+            }
+          }
+          const never = Quiz.pool(kind, npc).filter(id => !state.history[id]);
+          if (never.length) problems.push(`${kind}${npc.letter ? ` (${npc.letter} house)` : ''}: ${never.length} id(s) in Quiz.pool are never asked with these settings, e.g. ${never[0]}`);
+        }
+      }
+      // A save from before tiers never starts a kind at its top tier, or at
+      // one that puts sounds she can't tell apart side by side.
+      const old = {};
+      for (const kind of Object.keys(TIERS)) for (let i = 0; i < 10; i++) old[`${kind}:${i}`] = { kind, tries: 1, right: 1, wrong: 0, last: 1 };
+      for (const [kind, k] of Object.entries(Quiz.migrate([old]))) {
+        const c = TIERS[kind][k.t - 1];
+        if (k.t >= TIERS[kind].length || c.near || c.minimal) problems.push(`an old save starts ${kind} at tier ${k.t} of ${TIERS[kind].length}`);
+      }
+      // The parent-only tiers are asked below too, so their ids are in the pool.
+      state.settings = Object.fromEntries(Object.values(TIERS).flat().filter(c => c.setting).map(c => [c.setting, true]));
       const kinds = {};
       const tiers = {};
       // Histories to ask under: nothing answered, all answered right (review), a mix.
@@ -125,9 +165,11 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
             for (const g of q.slots) { const i = left.indexOf(g); if (i < 0) problems.push(`${where}: "${g}" of ${q.word} has no tile`); else left.splice(i, 1); }
             if (q.slots.join('') !== q.word) problems.push(`${where}: blanks ${q.slots.join('/')} don't spell ${q.word}`);
             if (letters.length !== q.slots.length + cfg.extra) problems.push(`${where}: ${letters.length} tiles for ${q.slots.length} blanks + ${cfg.extra}`);
-            const soundOf = l => PART_SOUNDS[l] || (LETTERS.find(x => x.letter === l.toUpperCase()) || {}).sound;
+            const undoubled = l => (l.length === 2 && l[0] === l[1] ? l[0] : l);
+            const soundOf = l => PART_SOUNDS[undoubled(l)] || (LETTERS.find(x => x.letter === undoubled(l).toUpperCase()) || {}).sound;
             for (const f of left) if (q.slots.some(g => sameSound(f, g) || soundOf(f) === soundOf(g) || (!cfg.near && hardPair(f, g)))) problems.push(`${where}: tile ${f} sounds like a letter of ${q.word}`);
             for (let a = 0; a < left.length; a++) for (let b = a + 1; b < left.length; b++) if (sameSound(left[a], left[b])) problems.push(`${where}: tiles ${left[a]} and ${left[b]} say the same sound`);
+            for (const f of left) for (const g of q.slots) if (g.length > 1 && g.includes(f)) problems.push(`${where}: tile ${f} is a letter of ${g}`);
             if (cfg.noX && q.word.includes('x')) problems.push(`${where}: an x word at the easiest tier`);
             if ((q.given || 0) !== (cfg.firstGiven ? 1 : 0)) problems.push(`${where}: ${q.given} letters given`);
             for (const x of q.tiles) heard(x.sound, who);
@@ -172,13 +214,25 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
             if (q.kind === 'start') for (const w of wrongs) if (t.aka.some(m => sameSound(m[0], w.toLowerCase()))) problems.push(`${where}: ${q.target} (${t.aka}) starts with ${w}`);
             // Words that differ only in a sound she can't hear yet: top tiers only.
             if (['family', 'read', 'blend'].includes(q.kind) && !cfg.minimal) for (const w of wrongs) if (nearWords(w, rw)) problems.push(`${where}: ${w} and ${rw} differ only in a hard pair`);
+            if (q.kind === 'sentence' && !cfg.near) for (const w of wrongs) if (nearWords(w, rw)) problems.push(`${where}: ${w} and ${rw} differ only in a hard pair below the top tier`);
             if (q.kind === 'rhyme') {
               const set = RHYME_SETS.find(r => r.set.some(([w]) => w === rw));
               const same = wrongs.filter(w => RHYME_SETS.find(r => r.set.some(([x]) => x === w)).v === set.v);
               const can = RHYME_SETS.some(r => r !== set && r.v === set.v);
               if (same.length !== (cfg.sameVowel && can ? 1 : 0)) problems.push(`${where}: ${same.length} cards with the same vowel`);
+              // Below the top tier, none that ends the same after a short vowel she can't tell apart (hat, jet).
+              for (const w of wrongs) {
+                const s = RHYME_SETS.find(r => r.set.some(([x]) => x === w));
+                if (!cfg.sameVowel && hardPair(SHORT[s.v], SHORT[set.v]) && s.rime.slice(1) === set.rime.slice(1)) problems.push(`${where}: ${w} (${s.rime}) sounds like a rhyme of ${rw} (${set.rime})`);
+              }
             }
           }
+          // Sounding a word out says each sound once: a doubled letter (the gg
+          // of egg, the ll of bell) is one sound, its single letter's.
+          const sounding = q.tiles ? q.answer : ['word', 'family', 'read', 'blend', 'vowel', 'ending'].includes(q.kind) ? q.model : [];
+          const said = sounding.map(p => /^\/([a-z]+)\/$/.exec((p && p.text) || '')).filter(Boolean).map(m => m[1]).join('');
+          const sw = W[q.target];
+          if (said && sw && said !== (sw.syl || [sw.w]).map(s => s.replace(/(.)\1/g, '$1')).join('')) problems.push(`${where}: sounded out as ${said}`);
           // The cards wait for the word, except in silent reading.
           if (q.kind !== 'read' && !q.ask.includes(Quiz.READY)) problems.push(`${where}: no READY in ask`);
           if (!q.tiles && !(q.model && q.model.length)) problems.push(`${where}: no answer to show`);
@@ -202,7 +256,7 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
         }
       }
       return { problems: [...new Set(problems)], missing: [...missing.entries()].sort((a, b) => b[1] - a[1]), kinds, tiers };
-    }, [ROUNDS, kindsAsked]);
+    }, [ROUNDS, kindsAsked, cuts]);
     console.log(`${edition}: ${JSON.stringify(report.kinds)}`);
     console.log(`  tiers built: ${Object.keys(report.tiers).length} (place kind tier) ${process.env.LIST === 'all' ? JSON.stringify(report.tiers) : ''}`);
     for (const p of report.problems.slice(0, SHOW)) console.log(`  ${p}`);

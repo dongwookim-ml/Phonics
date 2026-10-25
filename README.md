@@ -81,19 +81,20 @@ npx http-server -p 8080 .
   one tile (fish, duck, bell) → 4-letter blends (frog, milk) → 5 letters
   (plant, truck) → two syllables (rab·bit), the last only when a parent
   turns it on. A save from before tiers starts each kind from its answers
-  so far. The words come from the bank in `js/data.js` (`CVC_A1`, `CVC_A2`,
-  `CCVC`, `CVCC`, `LONG`, `DIGRAPH`, `MINIMAL_SETS`, `RHYME_SETS`,
-  `SENTENCES_L1`/`_L2`); `ALIAS` lists other names for pictures so a wrong
-  card is never right by her name for it, and `WEAK_PICTURES` keeps
-  pictures with another name off picture-only cards.
+  so far, below its hardest tier. The words come from the bank in
+  `js/data.js` (`CVC_A1`, `CVC_A2`, `CCVC`, `CVCC`, `LONG`, `DIGRAPH`,
+  `MINIMAL_SETS`, `RHYME_SETS`, `SENTENCES_L1`/`_L2`); `ALIAS` lists other
+  names for pictures so a wrong card is never right by her name for it, and
+  `WEAK_PICTURES` keeps pictures with another name off picture-only cards.
 - **Solved questions and review**: every question has a stable id
   (`rhyme:cat`, `sentence:The {} says moo.`) and each kind has a pool of all
-  its ids (`reviewPool(kind, npc)`; house pools are per letter). Answers are
-  saved in `history` (tries, right, wrong, last time). Questions she has
-  already got right are not asked again until the whole pool is done; a
-  miss stays a miss even if the retry is right. Then that kind switches to
-  review (a 복습 tag on the dialog), which favours the ones she missed and
-  the ones not seen for a while.
+  its ids at the tiers the parent's settings allow (`reviewPool(kind, npc)`;
+  house pools are per letter). Answers are saved in `history` (tries,
+  right, wrong, last time). Questions she has already got right are not
+  asked again until the whole pool is done; a miss stays a miss even if
+  the retry is right. Then that kind switches to review (a 복습 tag on the
+  dialog), which favours the ones she missed and the ones not seen for a
+  while.
 - **Parent panel (⚙️, top right)**: asks for the login password (0000
   without an account) and shows stars, coins, fairy dust and answers, a
   bar per question kind (right / missed / not tried, out of the pool) with

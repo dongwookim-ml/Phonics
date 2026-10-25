@@ -190,12 +190,19 @@ const Progress = (() => {
     }
     return out;
   }
-  // Skill per question kind: the entry with more answers behind it.
+  // Skill per question kind: the entry with more answers behind it, unless a
+  // parent set the tier by hand later in one copy (`set`, Quiz.setTier): then
+  // that one. Answers and the best tier never go back.
   function joinSkill(a, b) {
     if (!isObj(a) || !isObj(b)) return a === undefined ? b : a;
     const out = Object.assign({}, b, a);
     for (const k of Object.keys(b)) {
-      if (has(a, k) && isObj(a[k]) && isObj(b[k]) && n(b[k].n) > n(a[k].n)) out[k] = b[k];
+      const x = a[k];
+      const y = b[k];
+      if (!has(a, k) || !isObj(x) || !isObj(y)) continue;
+      const set = n(y.set) - n(x.set);
+      const e = out[k] = Object.assign({}, set > 0 || (!set && n(y.n) > n(x.n)) ? y : x);
+      for (const f of ['n', 'best']) if (has(x, f) || has(y, f)) e[f] = Math.max(n(x[f]), n(y[f]));
     }
     return out;
   }
@@ -211,10 +218,20 @@ const Progress = (() => {
     const picks = Array.isArray(a.picks) && a.picks.length ? a.picks : b.picks;
     return Object.assign({}, b, a, { picks, got, chest: a.chest === true || b.chest === true });
   }
+  // The parent's settings: whole, from the copy changed last (`at`, stamped
+  // in js/parent.js), whichever copy is preferred. One without a stamp (an
+  // older version, or never changed) never beats one with it; two without
+  // are joined as above.
+  function joinSettings(a, b) {
+    if (!isObj(a) || !isObj(b)) return isObj(a) || b === undefined ? a : b;
+    if (n(a.at) !== n(b.at)) return n(b.at) > n(a.at) ? b : a;
+    return join(a, b);
+  }
   // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
   // js/guide.js) only ever grow, so the larger wins.
-  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests };
-  // The outfit, name and settings come whole from one copy.
+  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, settings: joinSettings,
+    friends: grow, guide: grow, quests: joinQuests };
+  // The outfit, name and picture hints come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];
 
@@ -278,7 +295,20 @@ const Progress = (() => {
       else mineFirst = n(l.ver) > n(s.ver);
       out[ed] = joinEdition(l, s, mineFirst, how === 'foreign');
     }
+    shared(out, how === 'mine' ? [L, S] : [S, L]);
     return build(out);
+  }
+  // Her level and the parent's settings are the same in every edition (save()
+  // in js/game.js writes them into each), so they are joined across all of
+  // them: an edition only one copy has (a guest's, in the other game) can't
+  // replace them. A tie goes to the first copy: the server's, unless this
+  // device has unsent progress.
+  function shared(out, copies) {
+    const eds = copies.flatMap(c => Object.values(c));
+    for (const [k, f] of [['skill', joinSkill], ['settings', joinSettings]]) {
+      const v = eds.reduce((acc, e) => f(acc, e[k]), undefined);
+      if (v !== undefined) for (const e of Object.values(out)) e[k] = v;
+    }
   }
 
   // load() in js/game.js keeps only answers it can show: a known kind and

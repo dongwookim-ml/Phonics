@@ -314,6 +314,10 @@ function parentSettings(body) {
       </div>`;
     box.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
       const v = Number(b.dataset.v);
+      // Stamped (at least one past the copy it replaces, whatever this
+      // device's clock says), so the newest change wins on the other tablet
+      // (joinSettings in js/progress.js).
+      if (b.dataset.set !== 'pictures') s.at = Math.max(Date.now(), (Number(s.at) || 0) + 1);
       if (b.dataset.set === 'limit') s.playLimit = v;
       if (b.dataset.set === 'mute') s.hideMute = !!v;
       if (b.dataset.set === 'two') { s.twoSyllables = !!v; Quiz.setTier('spell', Quiz.skill('spell').t); }

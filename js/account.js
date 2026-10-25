@@ -302,7 +302,12 @@ const Account = {
 
   // The progress is on the server, so the device forgets it and starts over
   // at the login screen. If the upload failed it stays, still marked as hers.
+  // A newer copy on the server is put together with this one first: it may
+  // lack something only this copy still has (answers an older version of the
+  // game on another tablet couldn't keep), which goes up with it.
   async logout() {
+    const s = await this.pull();
+    if (s && s.updated > this.base) this._merge(s, this._dirty ? 'mine' : 'theirs');
     if (this._dirty) await this._upload();
     await accountFetch('POST', '/auth/logout', null, { timeout: 3000 });
     if (!this._dirty) {

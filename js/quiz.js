@@ -81,6 +81,9 @@ const Quiz = (() => {
   const sameSound = (a, b) => a === b || has(HARD_PAIRS.same, a, b);
   const hardPair = (a, b) => a !== b && has(HARD_PAIRS.vowels.concat(HARD_PAIRS.consonants), a, b);
   const nearPair = (a, b) => hardPair(a, b) || has(HARD_PAIRS.looks, a, b);
+  // The letter of each short vowel sound (RHYME_SETS v), to find rhymes she
+  // hears as the same (at, et).
+  const SHORT = { 'æ': 'a', 'ɛ': 'e', 'ɪ': 'i', 'ɑ': 'o', 'ʌ': 'u' };
   // Two words that differ only in such a letter (pan, pen).
   function nearWords(a, b) {
     if (a.length !== b.length) return false;
@@ -166,7 +169,8 @@ const Quiz = (() => {
   const placeOf = npc => (npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
   const settings = () => (typeof state !== 'undefined' && state.settings) || {};
   // Tiers a kind has; a tier with a `setting` only once a parent turns it on.
-  const tierMax = kind => TIERS[kind].filter(c => !c.setting || settings()[c.setting]).length;
+  const allowed = c => !c.setting || settings()[c.setting];
+  const tierMax = kind => TIERS[kind].filter(allowed).length;
   const newSkill = () => ({ t: 1, best: 1, w: [], last: [], placed: false, easy: false, n: 0 });
   // Her level in a kind (state.skill, saved): t her tier, best the highest
   // she has reached, w her last first-try answers at t (1 right, 0 missed),
@@ -214,7 +218,9 @@ const Quiz = (() => {
   }
   // Levels for a save from before tiers, from its answers: a kind with 8 or
   // more answers starts at tier 3 if 90% were right the first time, tier 2
-  // at 75%. Spelling stops at 2 (its higher tiers are new words).
+  // at 75%. Spelling stops at 2 (its higher tiers are new words). No kind
+  // starts at its top tier or at one that puts sounds she can't tell apart
+  // side by side (`near`, `minimal`): the old game never asked those.
   function migrate(histories) {
     const per = {};
     for (const hist of histories) for (const h of Object.values(hist || {})) {
@@ -227,7 +233,8 @@ const Quiz = (() => {
     for (const [kind, p] of Object.entries(per)) {
       if (p.tries < 8) continue;
       const r = p.right / p.tries;
-      const t = Math.min(r >= 0.9 ? 3 : r >= 0.75 ? 2 : 1, kind === 'spell' ? 2 : 3, TIERS[kind].length);
+      const hard = TIERS[kind].findIndex((c, i) => c.near || c.minimal || i === TIERS[kind].length - 1);
+      const t = Math.max(1, Math.min(r >= 0.9 ? 3 : r >= 0.75 ? 2 : 1, kind === 'spell' ? 2 : 3, hard));
       out[kind] = Object.assign(newSkill(), { t, best: t, placed: true });
     }
     return out;
@@ -254,12 +261,15 @@ const Quiz = (() => {
   // switch speakers halfway (recorded for each voice by tools/tts-phrases.js).
   // `slow` plays the recording a little slower, for a hint.
   const voiced = (w, slow) => Object.assign({ text: w, file: rec('words', w), rate: 0.85 }, slow ? { slow } : {});
+  // A doubled letter (the ll of bell, the gg of egg) is one sound, the
+  // single letter's.
+  const undoubled = l => (l.length === 2 && l[0] === l[1] ? l[0] : l);
   // How a letter's sound is spelled in lines like "C says kuh.".
-  const soundOf = l => PART_SOUNDS[l] || (LETTERS.find(x => x.letter === l.toUpperCase()) || {}).sound;
+  const soundOf = l => PART_SOUNDS[undoubled(l)] || (LETTERS.find(x => x.letter === undoubled(l).toUpperCase()) || {}).sound;
   // A letter's pure sound, said on its own by the narrator: "/c/" is a clip
   // of just that sound (js/audio.js says the spelling above if it has none).
   // `show` is what the dialog prints for it.
-  const sound = l => ({ text: `/${l}/`, narrator: true, show: `${l}…` });
+  const sound = l => ({ text: `/${undoubled(l)}/`, narrator: true, show: `${l}…` });
   // "M says mmm." in the narrator's voice.
   const says = l => ({ text: `${l.toUpperCase()} says ${soundOf(l.toLowerCase())}.`, narrator: true });
   // The word she picked, said back.
@@ -270,8 +280,8 @@ const Quiz = (() => {
   const plain = w => /^[a-z]{3,5}$/.test(w) && (w.match(/[aeiou]/g) || []).length === 1 &&
     !/sh|ch|th|ck|ng|ll|ss|gh|wh|ph|kn|wr|qu|w[ao]|[aoe]w|oo|ee|ea|oa|ai|[aeiou]r|[aeiouwy]$|c[eiy]|g[eiy]|olt$|[hmp]ost$|old$|ind$|ild$/.test(w) &&
     [...w].every(soundOf);
-  // Its sounds, one tile each: f-i-sh, c-a-t; a long word syllable by syllable.
-  const graphemes = x => x.parts || (x.syl ? x.syl.join('').split('') : [...x.w]);
+  // Its sounds, one tile each: f-i-sh, c-a-t, e-gg; a long word syllable by syllable.
+  const graphemes = x => x.parts || (x.syl ? x.syl.join('').split('') : x.w.match(/(.)\1|./g));
   const soundable = x => !!(x.bank || plain(x.w));
   // "/f/ /i/ /sh/", a longer pause between syllables.
   function sounds(x, gap = 160) {
@@ -394,10 +404,13 @@ const Quiz = (() => {
       const { r, id } = take('rhyme', npc, cfg);
       const [base, ans] = shuffle(r.set.slice()).map(([w]) => words()[w]);
       const fromSet = s => words()[pick(s.set)[0]];
-      const pool = RHYME_SETS.filter(s => s !== r).map(s => Object.assign({ v: s.v }, fromSet(s)));
+      const pool = RHYME_SETS.filter(s => s !== r).map(s => Object.assign({ v: s.v, rime: s.rime }, fromSet(s)));
       // Never a picture she may call by a rhyming name (🚐 "car" for star).
       const rhymes = x => x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
-      const ok = (x, out, partner) => (partner || x.v !== r.v) && !alike(x, base) && !alike(x, ans) && !rhymes(x) &&
+      // Below the top tier, never one that ends the same after a short vowel
+      // she can't tell from this one yet (hat, jet).
+      const near = x => hardPair(SHORT[x.v], SHORT[r.v]) && x.rime.slice(1) === r.rime.slice(1);
+      const ok = (x, out, partner) => (partner || x.v !== r.v) && (cfg.sameVowel || !near(x)) && !alike(x, base) && !alike(x, ans) && !rhymes(x) &&
         !out.some(o => o.w === x.w || o.e === x.e || o.v === x.v);
       const list = others(pool, cfg.n - 1, ok, cfg.sameVowel && (x => x.v === r.v));
       const ask = line('rhyme');
@@ -560,9 +573,11 @@ const Quiz = (() => {
       const { x, id } = take('sentence', npc, cfg);
       const full = { text: sentenceParts(x).full, rate: 0.8 };
       const pic = w => words()[w] && words()[w].e;
-      // Below the top tiers, words she can't hear apart yet (pan, pen) go last.
-      const rank = w => (nearWords(w, x.w[0]) ? 2 : 0) + (cfg.pics && !pic(w) ? 1 : 0);
-      const alikes = shuffle(x.alike.slice()).sort((a, b) => rank(a) - rank(b)).slice(0, cfg.n - 1);
+      // Words she can't hear apart from the answer yet (pan, pen) only at
+      // the top tier; at the easiest, words with a picture first.
+      const fair = x.alike.filter(w => cfg.near || !nearWords(w, x.w[0]));
+      const rank = w => (cfg.pics && !pic(w) ? 1 : 0);
+      const alikes = shuffle(fair).sort((a, b) => rank(a) - rank(b)).slice(0, cfg.n - 1);
       const opts = [x.w[0]].concat(alikes);
       const pics = cfg.pics && opts.every(pic) && new Set(opts.map(pic)).size === opts.length;
       return {
@@ -607,9 +622,10 @@ const Quiz = (() => {
     spell(npc, cfg) {
       const t = take('spell', npc, cfg);
       const own = graphemes(t);
-      // Never a letter that sounds like one in the word, such as c for duck,
-      // or that she can't tell from one yet (d for tent).
-      const free = l => !own.some(o => o === l || soundOf(o) === soundOf(l) || sameSound(o, l) || hardPair(o, l));
+      // Never a letter of the word, also from inside a pair (s or h for
+      // ship), one that sounds like one in it, such as c for duck, or that
+      // she can't tell from one yet (d for tent).
+      const free = l => !own.some(o => o.includes(l) || soundOf(o) === soundOf(l) || sameSound(o, l) || hardPair(o, l));
       const myVowels = own.filter(g => 'aeiou'.includes(g));
       // One other vowel, so she has to listen for the middle sound too: a
       // far one (a, o), a hard one (a, e) at the top tier.
@@ -683,18 +699,21 @@ const Quiz = (() => {
     skill,
     tierMax,
     // A parent sets a tier by hand (parent.js); it doesn't count as a level-up.
+    // A change is stamped (`set`, at least one past the last), so it wins
+    // over the other tablet's tier when the saves are joined (js/progress.js).
     setTier(kind, t) {
       const k = skill(kind);
-      k.t = Math.max(1, Math.min(tierMax(kind), t));
-      Object.assign(k, { w: [], placed: true, easy: false });
+      const to = Math.max(1, Math.min(tierMax(kind), t));
+      if (to !== k.t) k.set = Math.max(Date.now(), (Number(k.set) || 0) + 1);
+      Object.assign(k, { t: to, w: [], placed: true, easy: false });
     },
     kinds: Object.keys(pools),
     // A word sounded out, then said ("/c/ /a/ /t/… cat!"), as an answer is:
     // for the books she reads herself (js/library.js). `sounds` are its pure
     // sounds, one per letter or letter pair (/f/ /i/ /sh/).
     soundOut: (w, sounds) => sounded({ w, parts: sounds, bank: true }),
-    // Every id a kind can ask here, at any tier.
-    pool: (kind, npc = {}) => (pools[kind] ? [...new Set(TIERS[kind].flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),
+    // Every id a kind can ask here, at any tier the parent's settings allow.
+    pool: (kind, npc = {}) => (pools[kind] ? [...new Set(TIERS[kind].filter(allowed).flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),
     words,
     get recent() { return recent; },
     set recent(saved) { recent = saved && !Array.isArray(saved) && typeof saved === 'object' ? saved : {}; },

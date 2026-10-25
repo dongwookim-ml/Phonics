@@ -449,7 +449,7 @@ const RHYME_SETS = [
   { v: 'oʊ', rime: 'oat', set: [['goat', '🐐'], ['boat', '⛵'], ['coat', '🧥']] },
   { v: 'oʊ', rime: 'ose', set: [['nose', '👃'], ['rose', '🌹']] },
   { v: 'oʊ', rime: 'one', set: [['bone', '🦴'], ['phone', '📱'], ['cone', '🍦']] },
-  { v: 'oʊ', rime: 'ow', set: [['snow', '❄️'], ['bow', '🎀']] },
+  { v: 'oʊ', rime: 'ow', set: [['snow', '❄️'], ['rainbow', '🌈']] },
   { v: 'u', rime: 'oon', set: [['moon', '🌙'], ['spoon', '🥄'], ['balloon', '🎈'], ['raccoon', '🦝']] },
   { v: 'u', rime: 'oo', set: [['shoe', '👟'], ['two', '2️⃣'], ['kangaroo', '🦘']] },
   { v: 'ʊ', rime: 'ook', set: [['book', '📖'], ['cook', '👨‍🍳']] },
@@ -463,13 +463,14 @@ const RHYME_SETS = [
 
 // Short sounds for single letters inside a word, spelled the way lines
 // like "M says mmm." say them. A spoken "/m/" is the pure sound itself
-// (see js/audio.js); c, h and r use their LETTERS sounds.
+// (see js/audio.js); c, h and r use their LETTERS sounds. A doubled letter
+// (the ll of bell, the gg of egg) says the single letter's sound.
 const PART_SOUNDS = {
   a: 'ah', e: 'eh', i: 'ih', o: 'aw', u: 'uh',
   b: 'buh', d: 'duh', g: 'guh', m: 'mmm', n: 'nnn', p: 'puh', t: 'tuh', x: 'ks', k: 'kuh', l: 'lll', s: 'sss', f: 'fff',
   v: 'vvv', w: 'wuh', z: 'zzz', j: 'juh', y: 'yuh',
   // Letter pairs that say one sound, on one spelling tile.
-  sh: 'shh', ch: 'chuh', th: 'thh', ck: 'kuh', ng: 'ng', ll: 'lll', ss: 'sss',
+  sh: 'shh', ch: 'chuh', th: 'thh', ck: 'kuh', ng: 'ng',
 };
 
 // Sounds a Korean five-year-old hears as the same: Korean has one sound
@@ -590,16 +591,17 @@ const SENTENCES = [
 // are the hardest ('old'). lv 1: a 3-letter answer, the words that sound
 // alike make no sense and the other pictures are silly. lv 2: a blend or a
 // longer answer, close sounding words, and one other picture of the right
-// kind of thing.
+// kind of thing. Their alike words never differ from the answer in just a
+// sound she can't tell apart yet (pan, pen; HARD_PAIRS): only the old ones do.
 const SENTENCES_L1 = [
   { lv: 1, s: 'The red {} runs in the woods.',     w: ['fox', '🦊'],  alike: ['box', 'fix'],  other: [['cup', '🥤'], ['pen', '🖊️']] },
   { lv: 1, s: 'I put my toys in the {}.',          w: ['box', '📦'],  alike: ['fox', 'ox'],   other: [['hen', '🐔'], ['leg', '🦵']] },
   { lv: 1, s: 'Look at the {} to find the way.',   w: ['map', '🗺️'],  alike: ['mop', 'cap'],  other: [['pig', '🐷'], ['egg', '🥚']] },
-  { lv: 1, s: 'I drink juice from my {}.',         w: ['cup', '🥤'],  alike: ['cap', 'pup'],  other: [['bed', '🛏️'], ['fox', '🦊']] },
+  { lv: 1, s: 'I drink juice from my {}.',         w: ['cup', '🥤'],  alike: ['pup', 'cut'],  other: [['bed', '🛏️'], ['fox', '🦊']] },
   { lv: 1, s: 'A bug has {} legs.',                w: ['six', '6️⃣'],  alike: ['sit', 'mix'],  other: [['hat', '🎩'], ['sun', '☀️']] },
-  { lv: 1, s: 'I have {} fingers.',                w: ['ten', '🔟'],  alike: ['tan', 'hen'],  other: [['bus', '🚌'], ['fox', '🦊']] },
-  { lv: 1, s: 'A little {} sits on the leaf.',     w: ['bug', '🐛'],  alike: ['bag', 'mug'],  other: [['bus', '🚌'], ['bed', '🛏️']] },
-  { lv: 1, s: 'I write with my {}.',               w: ['pen', '🖊️'],  alike: ['pan', 'pin'],  other: [['dog', '🐶'], ['sun', '☀️']] },
+  { lv: 1, s: 'I have {} fingers.',                w: ['ten', '🔟'],  alike: ['hen', 'pen'],  other: [['bus', '🚌'], ['fox', '🦊']] },
+  { lv: 1, s: 'A little {} sits on the leaf.',     w: ['bug', '🐛'],  alike: ['mug', 'hug'],  other: [['bus', '🚌'], ['bed', '🛏️']] },
+  { lv: 1, s: 'I write with my {}.',               w: ['pen', '🖊️'],  alike: ['hen', 'ten'],  other: [['dog', '🐶'], ['sun', '☀️']] },
   { lv: 1, s: 'We all ride in the {}.',            w: ['van', '🚐'],  alike: ['fan', 'man'],  other: [['cup', '🥤'], ['hat', '🎩']] },
   { lv: 1, s: 'The {} sleeps upside down.',        w: ['bat', '🦇'],  alike: ['bag', 'hat'],  other: [['bed', '🛏️'], ['egg', '🥚']] },
   { lv: 1, s: 'I hop on one {}.',                  w: ['leg', '🦵'],  alike: ['log', 'peg'],  other: [['cup', '🥤'], ['hat', '🎩']] },
@@ -607,18 +609,18 @@ const SENTENCES_L1 = [
   { lv: 1, s: 'A strawberry is {}.',               w: ['red', '🔴'],  alike: ['bed', 'rod'],  other: [['dog', '🐶'], ['bus', '🚌']] },
   { lv: 1, s: 'The spider makes a {}.',            w: ['web', '🕸️'],  alike: ['wet', 'bed'],  other: [['cup', '🥤'], ['pig', '🐷']] },
   { lv: 1, s: 'The {} flies in the sky.',          w: ['jet', '✈️'],  alike: ['net', 'jam'],  other: [['pig', '🐷'], ['bed', '🛏️']] },
-  { lv: 1, s: 'Dad cooks eggs in a {}.',           w: ['pan', '🍳'],  alike: ['pen', 'fan'],  other: [['hat', '🎩'], ['dog', '🐶']] },
+  { lv: 1, s: 'Dad cooks eggs in a {}.',           w: ['pan', '🍳'],  alike: ['man', 'can'],  other: [['hat', '🎩'], ['dog', '🐶']] },
   { lv: 1, s: 'Soup comes in a {}.',               w: ['can', '🥫'],  alike: ['cat', 'fan'],  other: [['sun', '☀️'], ['leg', '🦵']] },
   { lv: 1, s: 'The {} wags its tail.',             w: ['dog', '🐶'],  alike: ['dig', 'dot'],  other: [['cup', '🥤'], ['bus', '🚌']] },
-  { lv: 1, s: 'I put on my {} and go out.',        w: ['cap', '🧢'],  alike: ['cup', 'map'],  other: [['egg', '🥚'], ['pig', '🐷']] },
+  { lv: 1, s: 'I put on my {} and go out.',        w: ['cap', '🧢'],  alike: ['map', 'tap'],  other: [['egg', '🥚'], ['pig', '🐷']] },
   { lv: 1, s: 'The {} has a little chick.',        w: ['hen', '🐔'],  alike: ['ten', 'hat'],  other: [['box', '📦'], ['cup', '🥤']] },
 ];
 const SENTENCES_L2 = [
   { lv: 2, s: 'The {} jumps into the pond.',          w: ['frog', '🐸'],  alike: ['fog', 'flag'],   other: [['drum', '🥁'], ['tent', '⛺']] },
-  { lv: 2, s: 'We sleep in a {} when we go camping.', w: ['tent', '⛺'],  alike: ['ten', 'test'],   other: [['crab', '🦀'], ['house', '🏠']] },
+  { lv: 2, s: 'We sleep in a {} when we go camping.', w: ['tent', '⛺'],  alike: ['ten', 'test'],   other: [['crab', '🦀'], ['tub', '🛁']] },
   { lv: 2, s: 'The {} walks sideways on the sand.',   w: ['crab', '🦀'],  alike: ['cab', 'grab'],   other: [['tent', '⛺'], ['flag', '🚩']] },
   { lv: 2, s: 'Boom, boom! I bang my {}.',            w: ['drum', '🥁'],  alike: ['drip', 'dream'], other: [['milk', '🥛'], ['frog', '🐸']] },
-  { lv: 2, s: 'We slide down the snowy hill on a {}.', w: ['sled', '🛷'], alike: ['slid', 'bled'],  other: [['milk', '🥛'], ['hand', '✋']] },
+  { lv: 2, s: 'We slide down the snowy hill on a {}.', w: ['sled', '🛷'], alike: ['bled', 'bed'],  other: [['milk', '🥛'], ['hand', '✋']] },
   { lv: 2, s: 'Cars {} at the red light.',            w: ['stop', '🛑'],  alike: ['step', 'shop'],  other: [['crab', '🦀'], ['gift', '🎁']] },
   { lv: 2, s: 'Fish {} in the sea.',                  w: ['swim', '🏊'],  alike: ['swing', 'slim'], other: [['milk', '🥛'], ['tent', '⛺']] },
   { lv: 2, s: 'I wave a {} at the race.',             w: ['flag', '🚩'],  alike: ['flat', 'frog'],  other: [['milk', '🥛'], ['crab', '🦀']] },
@@ -632,16 +634,16 @@ const SENTENCES_L2 = [
   { lv: 2, s: 'The {} blasts off to the moon.',       w: ['rocket', '🚀'], alike: ['pocket', 'racket'], other: [['milk', '🥛'], ['bus', '🚌']] },
   { lv: 2, s: 'We carve a {} for Halloween.',         w: ['pumpkin', '🎃'], alike: ['pumping', 'napkin'], other: [['sled', '🛷'], ['crab', '🦀']] },
   { lv: 2, s: 'I wear a {} when I ride my bike.',     w: ['helmet', '⛑️'], alike: ['hammer', 'hello'], other: [['milk', '🥛'], ['frog', '🐸']] },
-  { lv: 2, s: 'The little {} says cheep, cheep.',     w: ['chick', '🐤'], alike: ['check', 'chin'], other: [['drum', '🥁'], ['frog', '🐸']] },
+  { lv: 2, s: 'The little {} says cheep, cheep.',     w: ['chick', '🐤'], alike: ['chin', 'sick'], other: [['drum', '🥁'], ['frog', '🐸']] },
   { lv: 2, s: 'I find a pretty {} at the beach.',     w: ['shell', '🐚'], alike: ['shelf', 'smell'], other: [['milk', '🥛'], ['sled', '🛷']] },
-  { lv: 2, s: 'The big {} carries the sand.',         w: ['truck', '🚚'], alike: ['track', 'trick'], other: [['chick', '🐤'], ['milk', '🥛']] },
+  { lv: 2, s: 'The big {} carries the sand.',         w: ['truck', '🚚'], alike: ['trick', 'duck'], other: [['chick', '🐤'], ['milk', '🥛']] },
   { lv: 2, s: 'The {} says tick tock.',               w: ['clock', '⏰'], alike: ['click', 'block'], other: [['frog', '🐸'], ['bell', '🔔']] },
-  { lv: 2, s: 'I paint a picture with a {}.',         w: ['brush', '🖌️'], alike: ['bush', 'blush'], other: [['crab', '🦀'], ['milk', '🥛']] },
+  { lv: 2, s: 'I paint a picture with a {}.',         w: ['brush', '🖌️'], alike: ['bush', 'brick'], other: [['crab', '🦀'], ['milk', '🥛']] },
   { lv: 2, s: 'The big {} sails on the sea.',         w: ['ship', '🚢'], alike: ['shop', 'chip'],  other: [['truck', '🚚'], ['drum', '🥁']] },
   { lv: 2, s: 'The {} grows in a pot.',               w: ['plant', '🌱'], alike: ['plan', 'pants'], other: [['drum', '🥁'], ['crab', '🦀']] },
   { lv: 2, s: 'I put on my {} and my shirt.',         w: ['pants', '👖'], alike: ['plants', 'ants'], other: [['frog', '🐸'], ['clock', '⏰']] },
   { lv: 2, s: 'The princess wears a pink {}.',       w: ['dress', '👗'], alike: ['desk', 'press'],  other: [['crab', '🦀'], ['drum', '🥁']] },
-  { lv: 2, s: 'I ring the {}. Ding, dong!',           w: ['bell', '🔔'], alike: ['ball', 'belt'],  other: [['milk', '🥛'], ['frog', '🐸']] },
+  { lv: 2, s: 'I ring the {}. Ding, dong!',           w: ['bell', '🔔'], alike: ['belt', 'shell'],  other: [['milk', '🥛'], ['frog', '🐸']] },
 ];
 
 // ---- Word bank and difficulty (js/quiz.js) ---------------------------------
@@ -667,9 +669,11 @@ const ALIAS = {
   ambulance: ['car'], mountain: ['hill'], heart: ['love'], penguin: ['bird'], duck: ['bird'], hen: ['chicken'], cap: ['hat'],
   van: ['car', 'bus'], bug: ['worm'], web: ['spider'], mom: ['lady'], rat: ['mouse'], tub: ['bath'], tap: ['water'],
   mug: ['cup', 'coffee'], jet: ['airplane', 'plane'], kid: ['boy', 'girl'], lip: ['mouth'], pan: ['egg'], nap: ['sleep'],
-  sad: ['cry'], ox: ['cow'], grin: ['smile'], drip: ['water'], ship: ['boat'], king: ['prince'], shop: ['store'],
+  sad: ['cry'], ox: ['cow', 'bull'], grin: ['smile'], drip: ['water'], ship: ['boat'], king: ['prince'], shop: ['store'],
   chick: ['bird'], brick: ['wall'], helmet: ['hat'], laptop: ['computer'], tennis: ['ball'], backpack: ['bag'],
   drumstick: ['chicken'], koala: ['bear'], otter: ['beaver'], kangaroo: ['animal'],
+  volcano: ['mountain'], elf: ['fairy'], watch: ['clock'], wolf: ['dog'], whale: ['fish'], envelope: ['letter', 'mail'],
+  zebra: ['horse'], violin: ['guitar'],
 };
 
 // Words for the tiers, each [word, picture, pic, parts?]. pic 2: the
@@ -734,7 +738,8 @@ const MINIMAL_SETS = [
 //   n         how many cards
 //   pics      pictures on word cards
 //   far       other cards far from the answer (another first letter or vowel)
-//   near      one other card she finds hard to tell apart (HARD_PAIRS)
+//   near      one other card she finds hard to tell apart (HARD_PAIRS); for
+//             sentences, words that sound alike may be such words (pan, pen)
 //   sound     the letter's pure sound is said with the question ("/k/")
 //   single    first-sound words start with one consonant (no tr, sn...)
 //   lower     lower-case letter cards
@@ -763,7 +768,7 @@ const TIERS = {
   ending:    [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],
   read:      [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
   blend:     [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
-  sentence:  [{ n: 2, lv: 1, pics: true }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old' }],
+  sentence:  [{ n: 2, lv: 1, pics: true }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old', near: true }],
   meaning:   [{ n: 2, lv: 1 }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old' }],
   spell:     SPELL_TIERS,
 };
