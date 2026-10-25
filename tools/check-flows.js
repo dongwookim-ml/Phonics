@@ -15,7 +15,8 @@
 //    feeding card stops her walk, 🔁 at the pond can't outrun the play
 //    limit, a wake is counted, a town left asleep wakes the next morning,
 //    no village's friends in the shop before its gate, no fish she'd name
-//    with the round's sound by another name (ALIAS).
+//    with the round's sound by another name (ALIAS), a friend's growth is
+//    cheered even after 👋, feeding is counted per tablet.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -462,6 +463,8 @@ async function cards(browser, edition) {
     closeFeed();
     Sound.say = say;
     out.grow = { stage: friendStage(friend), said, line: fill(LINES.friendGrow[0], {}) };
+    // That bite is this tablet's, on top of the plain count it had before.
+    out.perDevice = { saved: state.friends[friend], mine: (state.friends[friend] || {})[Progress.device], fed: friendFed(friend), want: FRIEND_STAGES[0] };
     changeScene('town');
     await sleep(500);
 
@@ -516,6 +519,7 @@ async function cards(browser, edition) {
   check(`${tag}: the parent panel over the album or the quest card keeps the game busy`, r.album.panel && r.album.after === false && r.quests.panel && r.quests.after === false, r);
   check(`${tag}: the feeding card stops her walk`, r.walk.steps > 1 && r.walk.left <= 1 && !r.walk.onArrive && !r.walk.arrived, r.walk);
   check(`${tag}: 👋 before the growing bite lands: the friend's new stage is still celebrated`, r.grow.stage === 1 && r.grow.said.includes(r.grow.line), r.grow);
+  check(`${tag}: feeding is counted per tablet, an earlier plain count kept`, r.perDevice.mine === 1 && r.perDevice.fed === r.perDevice.want, r.perDevice);
   check(`${tag}: 🔁 at the pond past the play limit: the town sleeps`, !r.again.mini && r.again.asleep, r.again);
   check(`${tag}: a parent's wake keeps the minutes and counts the wake`, r.wake.ms >= 60001 && r.wake.wakes === 1 && !r.wake.up && r.wake.busy === false, r.wake);
   check(`${tag}: left asleep overnight, the town wakes in the morning`, r.night && !r.morning.asleep && !r.morning.shown && r.morning.busy === false && r.morning.day && r.morning.wakes === 0, r);

@@ -1,7 +1,7 @@
 // Unit checks of the save merge (js/progress.js), in Node, no browser:
 // two devices on the new format, an older game version (no fmt) on either
 // side, a guest's progress joining an account, editions, today's quests,
-// play time, stickers, unknown fields.
+// play time, stickers, dust fed to a friend, unknown fields.
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -166,6 +166,20 @@ const C = device('captain', 'dC');
     check(`stickers (${how}): seen on either copy stays seen, a new one stays new`, !s.cat.new && !s.dog.new && s.sun.new === true, s);
     check(`stickers (${how}): the larger count and the first time found`, s.cat.n === 4 && s.dog.n === 3 && s.cat.at === 100, s);
   }
+}
+
+// ---- Dust fed to a friend (js/friend.js) ------------------------------------------------
+{
+  const ed = (friends, dust) => ({ edition: 'princess', friends, dust });
+  const fed = f => Object.values(f || {}).reduce((t, v) => t + v, 0);
+  // Both from 10 eaten (an earlier save's plain number): A feeds 10 more, B 5.
+  const m = A.merge(ed({ pink: { _: 10, dA: 10 } }), ed({ pink: { _: 10, dB: 5 } }), 'mine');
+  check('friends: feeds on two tablets add up (10 + 10 + 5)', fed(m.friends.pink) === 25, m.friends);
+  check('friends: an earlier save\'s plain number counts once', fed(A.merge(ed({ pink: 10 }), ed({ pink: { _: 10, dB: 2 } }), 'theirs').friends.pink) === 12 &&
+    fed(A.merge(ed({ pink: 10, mint: 3 }), ed({ pink: 12 }), 'mine').friends.pink) === 12);
+  check('friends: merging again changes nothing', A.same(A.merge(m, ed({ pink: { _: 10, dB: 5 } }), 'mine'), m));
+  const g = A.merge(ed({ pink: { dA: 20 } }), ed({ pink: { dA: 15 } }), 'foreign');
+  check('friends: a guest\'s feeds go on top of the account\'s (20 + 15)', fed(g.friends.pink) === 35, g.friends);
 }
 
 // ---- Fields this version doesn't know, and broken entries ---------------------------

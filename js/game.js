@@ -239,7 +239,7 @@ const state = {
   quests: saved.quests, // today's adventures: { day, picks, got, chest } (js/quest.js)
   combo: 0, // answers right the first time in a row, this visit
   pictures: saved.pictures,
-  friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: n } (js/friend.js)
+  friends: saved.friends,   // fairy dust fed to each fairy friend: { [key]: { [device]: n } } (js/friend.js)
   settings: saved.settings, // from the parent panel: { playLimit, hideMute }
   guide: saved.guide,       // first-steps pointer: { step } (js/guide.js)
   playtime: saved.playtime, // { day, ms, wakes } played today, for the limit (js/guide.js)

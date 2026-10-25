@@ -240,15 +240,31 @@ const Progress = (() => {
     }
     return out;
   }
-  // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
-  // js/guide.js) only ever grow, so the larger wins.
-  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers };
+  // Dust fed to each fairy friend (js/friend.js), counted per tablet like
+  // the counters: { [friend]: { [device]: n } }, each tablet's the larger, so
+  // feeds on two tablets add up. A plain number (an earlier save) counts
+  // under OLD. A guest's feeds go on top under a new key (joinEdition).
+  const perDevice = f => {
+    const out = {};
+    if (isObj(f)) for (const [k, v] of Object.entries(f)) out[k] = isObj(v) ? v : { [OLD]: n(v) };
+    return out;
+  };
+  const joinFriends = (a, b) => (isObj(a) || isObj(b) ? maxMap(perDevice(a), perDevice(b)) : join(a, b));
+  function guestFriends(f) {
+    const key = randomId('g');
+    const out = {};
+    for (const [k, e] of Object.entries(perDevice(f))) out[k] = { [key]: Object.values(e).reduce((t, v) => t + n(v), 0) };
+    return out;
+  }
+  // The first-steps pointer (js/guide.js) only ever grows, so the larger wins.
+  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: joinFriends, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers };
   // The outfit, name and settings come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];
 
   // One edition from two copies; `mineFirst` says whose outfit and name win.
   function joinEdition(l, s, mineFirst, foreign) {
+    if (foreign && isObj(l.friends)) l = Object.assign({}, l, { friends: guestFriends(l.friends) });
     const [a, b] = mineFirst ? [l, s] : [s, l];
     const out = {};
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
