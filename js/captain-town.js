@@ -10,12 +10,12 @@
 // Who lives in Robot Town. Same spots as the princess villagers.
 const ROBOT_TOWN_NPCS = [
   { name: '경비 로봇',     look: 'botguard',  c: 18, r: 11 },
-  { name: '꽃밭 로봇',     look: 'botgarden', c: 5,  r: 19 },
+  { name: '꽃밭 로봇',     look: 'botgarden', c: 5,  r: 17 },
   { name: '할머니 로봇',   look: 'botgranny', c: 16, r: 18 },
   { name: '낚시 로봇',     look: 'botfisher', c: 27, r: 28 },
   { name: '빵 굽는 로봇',  look: 'botchef',   c: 12, r: 16 },
   { name: '꼬마 로봇',     look: 'botkid',    c: 34, r: 19 },
-  { name: '음악 로봇',     look: 'botdj',     c: 23, r: 21 },
+  { name: '음악 로봇',     look: 'botdj',     c: 26, r: 20 },
   { name: '농장 로봇',     look: 'botfarm',   c: 9,  r: 31 },
 ];
 // Who runs each letter workshop (by letter; the houses keep their spots).
