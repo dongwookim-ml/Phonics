@@ -306,8 +306,9 @@ async function audioUnlock(browser) {
 // timers (later) wait in a queue that each step runs, as in check-tts.js,
 // so a present or a scene change happens when the step says.
 async function quests(browser, edition) {
-  // Everything open: the stars for every gate, and fairy dust.
-  const seed = { edition, stars: 40, dust: 12, coins: 2 };
+  // Everything open: the stars for every gate (the Monster Village's party
+  // already had), and fairy dust.
+  const seed = { edition, stars: 40, dust: 12, coins: 2, guide: { step: 3, opened: { monster: true } } };
   const { page, ctx, errors } = await game(browser, { seed, edition, days: true });
   const setup = () => page.evaluate(() => {
     if (!Sound.muted) Sound.toggleMute();
