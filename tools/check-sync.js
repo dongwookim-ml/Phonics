@@ -21,7 +21,7 @@ const { spawn, spawnSync } = require('child_process');
 const { launch } = require('./browser');
 
 const root = path.join(__dirname, '..');
-const PORT = Number(process.env.SYNC_PORT || 18960);
+const PORT = Number(process.env.SYNC_PORT || 20000 + (process.pid % 20000));
 const SERVER = `http://127.0.0.1:${PORT}`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const temp = []; // folders to remove at the end
@@ -41,13 +41,15 @@ async function startServer() {
     { cwd: path.join(root, 'server'), env, stdio: ['ignore', 'ignore', 'pipe'] });
   let log = '';
   proc.stderr.on('data', d => { log += d; });
-  for (let i = 0; i < 100; i++) {
-    try { if ((await fetch(`${SERVER}/`)).ok) return proc; } catch (e) { /* not up yet */ }
-    if (proc.exitCode !== null) break;
+  // Up when it says so itself (not some other server already on the port).
+  for (let i = 0; i < 100 && proc.exitCode === null; i++) {
+    if (/Uvicorn running/.test(log)) {
+      try { if ((await fetch(`${SERVER}/`)).ok) return proc; } catch (e) { /* not yet */ }
+    }
     await sleep(100);
   }
   proc.kill();
-  throw new Error(`the server did not start:\n${log}`);
+  throw new Error(`the server did not start on port ${PORT} (SYNC_PORT picks another):\n${log}`);
 }
 
 let ipNo = 0;
@@ -354,9 +356,18 @@ async function signedInUpdated(browser, deployed) {
 }
 
 (async () => {
-  const server = await startServer();
-  const browser = await launch();
-  const deployed = deployedGame();
+  let server = null;
+  let browser = null;
+  try {
+    server = await startServer();
+    browser = await launch();
+  } catch (e) {
+    if (server) server.kill();
+    console.log(`FAIL ${e.message}`);
+    process.exit(1);
+  }
+  let deployed = null;
+  try { deployed = deployedGame(); } catch (e) { check('the deployed game could be unpacked', false, e.message); }
   if (!deployed) check(`the deployed game (${OLD_REF}) is here`, !process.env.CI, `git has no ${OLD_REF}; fetch it (CI checks out with fetch-depth 0)`);
   // ONLY=guest node tools/check-sync.js runs the parts whose name has "guest".
   const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, newerOnBoot };
