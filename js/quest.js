@@ -8,7 +8,8 @@
 // tapping it opens it (about 2 s, a tap skips it) for QUEST_CHEST.coins
 // coins, once a day. A day she doesn't play changes nothing: there is no
 // streak, and nothing is ever taken away.
-// The chest in the HUD opens the card; it never opens over a question.
+// The chest in the HUD opens the card; it never opens over a question, and
+// a tap outside it closes it (outsideTap in js/game.js).
 // Hooks: questAdd where things happen (answeredRight, addDust, enterDoor
 // and followLink in js/game.js, collectSticker and stickerPack in
 // js/album.js, miniCatch, bookFinish, selfFinish and feedOnce),
@@ -155,6 +156,7 @@ const questUi = (() => {
     chest: box.querySelector('.qs-chest'), chestArt: box.querySelector('.qs-chest canvas'), prize: box.querySelector('.prize'),
     party: 0, // when the chest last opened
     checked: null, // the quests questRecheck last looked at
+    skipped: null, // the tap that last ended the chest's opening (questSkip)
   };
 })();
 
@@ -382,7 +384,10 @@ function questCoinsFly() {
   }
 }
 
-function questSkip() {
+// A tap anywhere lands the coins at once. One outside the card does only
+// that; the next one closes it (outsideTap in js/game.js).
+function questSkip(e) {
+  if (e && questAnims.size) questUi.skipped = e;
   for (const a of [...questAnims]) a.finish();
 }
 addEventListener('pointerdown', questSkip, true);

@@ -17,11 +17,19 @@
 //  - the robot's cave fight: closing the parent panel while the dialog is
 //    stepped aside for the laser or the shield keeps the game busy, and ✕
 //    or the end of the fight frees it;
-//  - a book she reads herself: tapping words sounds them out, ▶ comes after
-//    every word is tapped or a while, reading to the end pays a star once
-//    and puts a ✓ on its cover, each time counts for the 📖 quest and the
-//    star for the ⭐ one, a locked book stays locked, and a parent's + on
-//    읽기 opens it in the panel and in the library under it;
+//  - a book she reads herself: tapping a word says it whole (no letter
+//    sounds), ▶ comes after every word is tapped or a while, reading to the
+//    end pays a star once and puts a ✓ on its cover, each time counts for
+//    the 📖 quest and the star for the ⭐ one, a locked book stays locked,
+//    and a parent's + on 읽기 opens it in the panel and in the library
+//    under it;
+//  - a tap outside a card (js/game.js), in both editions at the iPad sizes
+//    and on a phone held sideways, with a finger and the mouse: it closes
+//    the cards she only looks at and never a question, a present, a book
+//    being read, the fishing game or the sleeping town; the game is free
+//    (or still busy) as it should be, she doesn't walk, nothing under the
+//    card is tapped or pressed, and a tap while the chest opens, stickers
+//    fly in or her friend celebrates only ends that;
 //  - the M3 cards, in both editions: closing one (or the parent panel over
 //    it) never frees the game under another or leaves it stuck, the
 //    feeding card stops her walk, neither 🔁 at the pond nor another book in
@@ -80,9 +88,10 @@ function check(name, ok, detail) {
 // A page playing as a guest (or signed in, with `user`), the start screen gone
 // (still showing with `start: false`). `edition` picks the game; `days` lets
 // a test move the clock on by whole days (localStorage 'test-days', read as
-// the page loads).
-async function game(browser, { seed, user, server, edition, days, start = true } = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+// the page loads); `viewport` sizes the screen, and `touch` lets it be tapped
+// with a finger (page.touchscreen).
+async function game(browser, { seed, user, server, edition, days, start = true, viewport = { width: 1024, height: 768 }, touch = false } = {}) {
+  const ctx = await browser.newContext({ viewport, hasTouch: touch });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -627,12 +636,14 @@ async function selfRead(browser) {
   const { page, ctx, errors } = await game(browser);
   const r = await page.evaluate(async () => {
     const sleep = ms => new Promise(res => setTimeout(res, ms));
-    // Speech is instant: each line is noted and its callbacks run at once.
+    // Speech is instant: each line is noted (with the word tile lit as it
+    // starts, if one is) and its callbacks run at once.
     const said = [];
     const say = Sound.say;
     Sound.say = parts => {
+      const lit = document.querySelector('#rd-text .rd-word.on .g.lit');
       for (const p of [].concat(parts)) {
-        if (p && p.text) said.push({ text: p.text, narrator: !!p.narrator });
+        if (p && p.text) said.push({ text: p.text, narrator: !!p.narrator, lit: lit ? lit.textContent : null });
         if (p && p.call) p.call();
       }
     };
@@ -660,14 +671,16 @@ async function selfRead(browser) {
     const tokens = decodeTokens(book.pages[0].text);
     const tiles = [...document.querySelectorAll('#rd-text .rd-word')];
     out.tiles = [tiles.length, tokens.length];
+    // Each tap says just its word, whole, its tile lit: "cat!" (the
+    // narrator's clip), a sight word as it is; never a letter's sound.
+    const tap = t => { const n = said.length; t.click(); return said.slice(n).map(p => `${p.text}|${p.lit}|${p.narrator}`); };
+    const plain = w => (w === 'I' ? w : w.toLowerCase());
+    const want = tokens.map(t => [`${t.sight ? plain(t.word) : `${plain(t.word)}!`}|${t.word}|true`]);
     said.length = 0;
-    tiles.slice(0, -1).forEach(t => t.click());
+    const heard = tiles.slice(0, -1).map(tap);
     out.playHiddenBeforeLast = $('#rd-play').classList.contains('wait');
-    tiles[tiles.length - 1].click();
-    const sounded = tokens.find(t => !t.sight);
-    const sight = tokens.find(t => t.sight);
-    out.soundsOut = decodeSounds(sounded.word).every(s => said.some(p => p.text === `/${s}/`)) && said.some(p => p.text === `${sounded.word.toLowerCase()}!`);
-    out.sightSaid = said.some(p => p.text === sight.word.toLowerCase());
+    heard.push(tap(tiles[tiles.length - 1]));
+    out.words = { heard, want, sounds: said.filter(p => /^\/.+\/$/.test(p.text)).map(p => p.text), sight: tokens.some(t => t.sight), plain: tokens.some(t => !t.sight) };
     out.playAfterTaps = !$('#rd-play').classList.contains('wait');
     said.length = 0;
     $('#rd-play').click();
@@ -722,7 +735,9 @@ async function selfRead(browser) {
   check('reading: a level 3 book is locked, says so and stays shut', r.hardLocked && r.lockedSays && r.lockedStaysShut, r);
   check('reading: the first book opens with a tile for every word', r.opened && r.tiles[0] === r.tiles[1] && r.tiles[0] > 1, r.tiles);
   check('reading: ▶ waits until she has tapped every word', r.playHidden && r.playHiddenBeforeLast && r.playAfterTaps, r);
-  check('reading: a tapped word is sounded out and said, a sight word just said', r.soundsOut && r.sightSaid, r);
+  const w = r.words;
+  check('reading: a tapped word is just said whole ("cat!"), its tile lit, a sight word as it is, no letter sounds',
+    JSON.stringify(w.heard) === JSON.stringify(w.want) && !w.sounds.length && w.sight && w.plain, w);
   check('reading: ▶ reads the sentence', r.playReads, r);
   check('reading: on a page she doesn\'t tap, ▶ comes after a while', r.page2Waits && r.page2Play, r);
   check('reading: the end is a party, then a tap shows the way out', r.party && r.buttonsAfterTap === 2, r);
@@ -900,6 +915,260 @@ async function cards(browser, edition) {
   check(`${tag}: the album's narrator line fits the edition`, r.albumLines.every(l => /sticker/.test(l) === (edition !== 'captain')), r.albumLines);
   check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();
+}
+
+// A tap outside a card (outsideTap in js/game.js), at the iPad sizes and on
+// a phone held sideways, with a finger and the mouse in turn: it closes each
+// card she only looks at (album, today's adventures, the library's shelf,
+// wardrobe, shop, feeding card, the fishing game's end card), and never a
+// question, a present, a book being read, the fishing game, the sleeping
+// town or anything under the parent panel. The game is free (or still busy)
+// after it, the tap doesn't walk her or reach anyone under the card, a
+// button of the card under it isn't pressed, the buttons at the top keep
+// their job, and a tap while the chest opens, stickers fly in or her friend
+// celebrates only ends that.
+const OUTSIDE_SIZES = [[844, 390], [1024, 768], [768, 1024], [1180, 820], [1024, 700]];
+
+// In the page: window.T, what the taps need.
+function outsideSetup() {
+  if (!Sound.muted) Sound.toggleMute();
+  const friend = Object.keys(FAIRIES).find(k => k !== 'none');
+  if (!state.owned.fairy.includes(friend)) state.owned.fairy.push(friend);
+  state.outfit = Object.assign({}, state.outfit, { fairy: friend });
+  const home = Object.assign({}, state.scene.start);
+  const hero = state.hero;
+  const shown = id => { const el = document.getElementById(id); return !!el && !el.closest('.hidden'); };
+  const names = ['town', 'forest', 'unicorn', 'fairy', 'dungeon'];
+  window.T = {
+    shown,
+    friend,
+    // Nothing open, the sound off, and she stands where she started.
+    reset() {
+      if (parentUi.panel) parentClose();
+      if (guide.asleep) guideWake(true);
+      if (state.gift) acceptReward(false);
+      if (state.talking) closeDialog();
+      closeFeed();
+      closeMini();
+      closeQuests();
+      if (shown('album')) closeAlbum();
+      if (shown('wardrobe')) closeWardrobe();
+      if (shown('shop')) closeShop();
+      if (shown('library') || shown('reader')) closeLibrary();
+      if (!Sound.muted) Sound.toggleMute();
+      placeHero(home.c, home.r);
+      snapCamera();
+      state.busy = busyNow();
+    },
+    now: () => ({ busy: state.busy, walking: hero.path.length, going: !!hero.onArrive, talking: !!state.talking, at: `${hero.c},${hero.r}` }),
+    ask: () => openDialog(state.scene.npcs.find(n => !n.mount && !n.shop && !n.caught)),
+    // Something bought: the "wear it now?" card.
+    buy() {
+      openShop(names.map(sceneFor).flatMap(sc => sc.npcs).find(n => n.shop));
+      state.coins = 999;
+      state.shopPick = shopItems()[0];
+      buyPick();
+    },
+    shopkeeper: () => names.map(sceneFor).flatMap(sc => sc.npcs).find(n => n.shop),
+    // A point on the town outside the card `id`, away from its edge and the
+    // buttons at the top (a finger near one counts as on it), where a tap
+    // with nothing open would walk her (`want` 'go': walk her to someone or
+    // something; 'any': whatever it would do). Else the star counter.
+    spot(id, want = 'walk') {
+      const card = document.getElementById(id).getBoundingClientRect();
+      const box = screen.getBoundingClientRect();
+      const top = document.querySelector('.hud').getBoundingClientRect().bottom + 36;
+      for (let y = box.bottom - 24; y > Math.max(box.top + 24, top); y -= 17) {
+        for (let x = box.left + 24; x < box.right - 24; x += 19) {
+          if (x > card.left - 30 && x < card.right + 30 && y > card.top - 30 && y < card.bottom + 30) continue;
+          if (document.elementFromPoint(x, y) !== screen) continue;
+          if (want === 'any' || T.tries(x, y, want === 'go')) return { x: Math.round(x), y: Math.round(y), town: true };
+        }
+      }
+      const s = document.getElementById('stars').getBoundingClientRect();
+      return { x: Math.round(s.left + 14), y: Math.round(s.top + s.height / 2), town: false };
+    },
+    // A pretend tap there with nothing open: whether it walks her (to
+    // someone, with `go`). Everything goes back as it was.
+    tries(x, y, go) {
+      const at = { c: hero.c, r: hero.r };
+      const busy = state.busy;
+      const mini = shown('mini');
+      state.busy = false;
+      onPointer({ clientX: x, clientY: y });
+      const ok = hero.path.length > 0 && !!hero.onArrive === go;
+      if (state.talking) closeDialog();
+      if (!mini) closeMini();
+      placeHero(at.c, at.r);
+      state.busy = busy;
+      return ok;
+    },
+  };
+}
+
+async function outsideTaps(browser, edition) {
+  const results = new Map();
+  const note = (name, ok, detail) => {
+    if (!results.has(name)) results.set(name, []);
+    if (!ok) results.get(name).push(detail);
+  };
+  const errs = [];
+  const chips = []; // the sizes where a wardrobe button showed beside the feeding card
+  for (const [i, [width, height]] of OUTSIDE_SIZES.entries()) {
+    const size = `${width}x${height}`;
+    const seed = { edition, stars: 40, dust: 12, coins: 60 };
+    const { page, ctx, errors } = await game(browser, { seed, edition, viewport: { width, height }, touch: true });
+    await page.evaluate(outsideSetup);
+    const ev = (fn, arg) => page.evaluate(fn, arg);
+    // A finger, or the mouse, in turn (or as `finger` says).
+    let turn = i;
+    const tap = async (p, finger = turn++ % 2 === 0) => {
+      if (finger) await page.touchscreen.tap(p.x, p.y);
+      else await page.mouse.click(p.x, p.y);
+      await page.waitForTimeout(120);
+      return finger ? 'finger' : 'mouse';
+    };
+    const now = id => ev(id => Object.assign(T.now(), { open: T.shown(id) }), id);
+
+    // The cards she only looks at: one tap outside closes it, the game is
+    // free, she doesn't walk; the next tap there walks her.
+    for (const [k, [id, open]] of [['album', 'openAlbum()'], ['quests', 'openQuests()'], ['library', 'openLibrary()'], ['wardrobe', 'openWardrobe()'],
+      ['shop', 'openShop(T.shopkeeper())'], ['feed', 'openFeed()']].entries()) {
+      await ev(`T.reset(); ${open}`);
+      const p = await ev(id => T.spot(id), id);
+      const before = await now(id);
+      const how = await tap(p, (i + k) % 2 === 0);
+      const after = await now(id);
+      note(`a tap outside closes the ${id} card, frees the game and doesn't walk her`,
+        before.open && before.busy && !after.open && after.busy === false && !after.walking && !after.going && after.at === before.at, { size, how, p, before, after });
+      if (p.town) await tap(p);
+      const again = await ev(() => T.now());
+      note(`after the ${id} card, a tap on the town walks her again`, !p.town || again.walking > 0, { size, p, again });
+      if (process.env.SHOW) console.log(edition, size, id, how, JSON.stringify(p));
+    }
+    // On someone (or a door) under the album: nobody is talked to, she
+    // doesn't set off.
+    await ev('T.reset(); openAlbum()');
+    const someone = await ev(() => T.spot('album', 'go'));
+    await tap(someone);
+    const met = await now('album');
+    note('a tap on someone outside the album closes it and goes no further', !met.open && !met.busy && !met.walking && !met.going && !met.talking && (someone.town || width !== 1024 || height !== 768), { size, someone, met });
+
+    // The fishing game's end card: a tap on the pond around it.
+    await ev('T.reset(); openMini(miniFisher()); miniFinish()');
+    const pond = await ev(() => {
+      const c = document.getElementById('mini-canvas').getBoundingClientRect();
+      const e = document.getElementById('mini-end').getBoundingClientRect();
+      return [[c.left + 20, c.top + 20], [c.right - 20, c.top + 20], [c.left + 20, c.bottom - 20], [c.right - 20, c.bottom - 20]]
+        .map(([x, y]) => ({ x: Math.round(x), y: Math.round(y) })).find(q => q.x < e.left || q.x > e.right || q.y < e.top || q.y > e.bottom);
+    });
+    const endBefore = await now('mini');
+    await tap(pond);
+    const endAfter = await now('mini');
+    note('a tap outside the fishing game\'s end card closes the game and frees it', endBefore.open && !endAfter.open && endAfter.busy === false && !endAfter.walking, { size, pond, endBefore, endAfter });
+
+    // Cards that stay: a question, a present, a book being read, the
+    // fishing game, the sleeping town.
+    for (const [id, open, close] of [['dialog', 'T.ask()', 'closeDialog()'], ['reward', 'T.buy()', 'acceptReward(false); closeShop()'],
+      ['reader', 'openLibrary(); openBook(BOOKS[0])', 'closeLibrary()'], ['reader', 'openLibrary(); openSelfBook(DECODABLE_BOOKS[0])', 'closeLibrary()'],
+      ['mini', 'openMini(miniFisher())', 'closeMini()'], ['sleep', 'guideSleep()', 'guideWake(true)']]) {
+      await ev(`T.reset(); ${open}`);
+      const p = await ev(id => T.spot(id, 'any'), id);
+      const how = await tap(p);
+      const after = await now(id);
+      note(`a tap outside leaves the ${id} card open and the game busy`, after.open && after.busy && !after.walking && !after.going, { size, how, p, after });
+      await ev(close);
+      const shut = await ev(() => T.now());
+      note(`... and its own way out still frees the game (${id})`, shut.busy === false, { size, shut });
+    }
+    // The parent panel over the album: a tap on its dimmed edge closes neither.
+    await ev(`T.reset(); openAlbum(); document.getElementById('parent').click()`);
+    await tap({ x: 3, y: height - 3 });
+    const panel = await ev(() => ({ panel: !!document.querySelector('.parent-panel'), album: T.shown('album') }));
+    await ev('parentClose()');
+    const underPanel = await now('album');
+    note('a tap on the parent panel\'s edge closes neither it nor the album under it', panel.panel && panel.album && underPanel.open && underPanel.busy, { size, panel, underPanel });
+    await ev('closeAlbum()');
+
+    // The feeding card over the wardrobe: a tap on a wardrobe button beside
+    // it closes the feeding card only, and that button isn't pressed. (She
+    // has everything, so there are buttons to press beside it.)
+    await ev(`T.reset(); for (const { slot, items } of WARDROBE) state.owned[slot] = Object.keys(items); openWardrobe(); openFeed()`);
+    // A point on a button of hers that shows beside the card (on a small
+    // screen there may be none).
+    const chip = await ev(() => {
+      const card = document.getElementById('feed').getBoundingClientRect();
+      for (const b of document.querySelectorAll('#wd-slots .chip:not(.on):not(.feed-chip):not([disabled])')) {
+        const r = b.getBoundingClientRect();
+        for (let x = r.left + 6; x < r.right - 6; x += 8) {
+          const q = { x: Math.round(x), y: Math.round(r.top + r.height / 2) };
+          if ((q.x < card.left - 30 || q.x > card.right + 30 || q.y < card.top - 30 || q.y > card.bottom + 30) && b.contains(document.elementFromPoint(q.x, q.y))) return q;
+        }
+      }
+      return null;
+    });
+    if (chip) {
+      const outfit = await ev(() => JSON.stringify(state.outfit));
+      await tap(chip);
+      const stacked = await ev(() => ({ feed: T.shown('feed'), wardrobe: T.shown('wardrobe'), busy: state.busy, outfit: JSON.stringify(state.outfit) }));
+      note('a tap on the wardrobe beside the feeding card closes that card only, and presses nothing under it',
+        !stacked.feed && stacked.wardrobe && stacked.busy && stacked.outfit === outfit, { size, chip, stacked });
+      chips.push(size);
+    } else await ev('closeFeed()');
+    const wd = await ev(() => T.spot('wardrobe'));
+    await tap(wd);
+    note('... then a tap outside the wardrobe closes it and frees the game', !(await ev(() => T.shown('wardrobe') || state.busy)), { size, wd });
+
+    // 🔊 at the top with the album open keeps its job; the album stays.
+    await ev('T.reset(); openAlbum()');
+    const mute = await ev(() => { const r = document.getElementById('mute').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), muted: Sound.muted }; });
+    await tap(mute);
+    const muted = await ev(() => ({ album: T.shown('album'), muted: Sound.muted, busy: state.busy }));
+    await tap(mute);
+    note('🔊 at the top with the album open turns the sound off and leaves the album open', muted.album && muted.busy && muted.muted !== mute.muted, { size, mute, muted });
+    await ev('if (!Sound.muted) Sound.toggleMute(); closeAlbum()');
+
+    // Something still playing: the first tap outside ends it, the next one
+    // closes the card. The chest opening, paid once.
+    await ev(`T.reset(); const q = questsToday(); q.got[Progress.device] = Object.fromEntries(q.picks.map(k => [k, QUESTS[k].n])); openQuests()`);
+    const out = await ev(() => T.spot('quests'));
+    const chest = await ev(() => { const r = document.querySelector('#quests .qs-chest').getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), coins: state.coins }; });
+    await tap(chest);
+    const flying = await ev(() => document.querySelectorAll('.coin-fly').length);
+    await tap(out);
+    const ended = await ev(() => ({ open: T.shown('quests'), flying: document.querySelectorAll('.coin-fly').length, coins: state.coins, busy: state.busy }));
+    await tap(out);
+    const closed = await ev(() => ({ open: T.shown('quests'), coins: state.coins, busy: state.busy }));
+    const paid = await ev(() => QUEST_CHEST.coins);
+    note('a tap outside while the chest opens lands the coins and leaves the card; the next one closes it; paid once',
+      flying > 0 && ended.open && !ended.flying && ended.busy && !closed.open && closed.busy === false && ended.coins === chest.coins + paid && closed.coins === ended.coins, { size, flying, ended, closed });
+    // Stickers flying into 📒 over the open album.
+    await ev(`T.reset(); openAlbum(); stickerFly([{ w: 'cat', e: '🐱' }, { w: 'dog', e: '🐶' }], null)`);
+    const sp = await ev(() => T.spot('album'));
+    const stickers = await ev(() => document.querySelectorAll('.sticker-fly').length);
+    await tap(sp);
+    const landed = await ev(() => ({ open: T.shown('album'), flying: document.querySelectorAll('.sticker-fly').length }));
+    await tap(sp);
+    const gone = await now('album');
+    note('a tap outside while stickers fly in lands them and leaves the album; the next one closes it',
+      stickers === 2 && landed.open && !landed.flying && !gone.open && gone.busy === false, { size, stickers, landed, gone });
+    // Her grown friend's party on the feeding card.
+    await ev(`T.reset(); state.friends[T.friend] = { x: FRIEND_STAGES[FRIEND_STAGES.length - 1] }; openFeed()`);
+    const fp = await ev(() => T.spot('feed'));
+    const party = await ev(() => !!friendUi.party);
+    await tap(fp);
+    const calm = await ev(() => ({ open: T.shown('feed'), party: !!friendUi.party }));
+    await tap(fp);
+    const fed = await now('feed');
+    note('a tap outside during her friend\'s party ends it and leaves the card; the next one closes it',
+      party && calm.open && !calm.party && !fed.open && fed.busy === false, { size, party, calm, fed });
+
+    errs.push(...errors.map(e => `${size}: ${e}`));
+    await ctx.close();
+  }
+  for (const [name, bad] of results) check(`outside (${edition}): ${name}`, !bad.length, bad);
+  check(`outside (${edition}): a wardrobe button showed beside the feeding card at some size`, chips.length > 0, chips);
+  check(`outside (${edition}): no page errors`, !errs.length, errs);
 }
 
 // The background music (js/music.js), watched through musicInfo, with real
@@ -1113,6 +1382,7 @@ async function musicFlows(browser, edition) {
   const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
     questEdges: b => questEdges(b, 'princess'), questEdgesCaptain: b => questEdges(b, 'captain'), caveFight,
     cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
+    outside: b => outsideTaps(b, 'princess'), outsideCaptain: b => outsideTaps(b, 'captain'),
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);

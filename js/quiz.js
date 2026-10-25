@@ -710,10 +710,6 @@ const Quiz = (() => {
       Object.assign(k, { t: to, w: [], placed: true, easy: false });
     },
     kinds: Object.keys(pools),
-    // A word sounded out, then said ("/c/ /a/ /t/… cat!"), as an answer is:
-    // for the books she reads herself (js/library.js). `sounds` are its pure
-    // sounds, one per letter or letter pair (/f/ /i/ /sh/).
-    soundOut: (w, sounds) => sounded({ w, parts: sounds, bank: true }),
     // Every id a kind can ask here, at any tier the parent's settings allow.
     pool: (kind, npc = {}) => (pools[kind] ? [...new Set(TIERS[kind].filter(allowed).flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),
     words,

@@ -8,14 +8,14 @@
 //    3 (4 with a blend: clock), CCVC, CVCC and one-syllable LONG words 4, and
 //    words of two syllables can't be read at any level; a word's letters
 //    split the way the bank splits them (f-i-sh), and tricky words (was,
-//    put, ball, cold) never count as readable, nor words she would hear
-//    wrong sounded out: an s that says /z/ after a vowel (has, his, as) or
-//    a voiced th (then, this, that, them), so a book has them only as
-//    SIGHT_WORDS;
-//  - every sound a word is sounded out with is a pure sound cut from the
-//    narrator's words (tools/letter-sounds.json), and every letter pair it
-//    knows is one the spelling tiles know (PART_SOUNDS) or a doubled letter
-//    (ll, ss), which says its one letter's sound, as in js/quiz.js;
+//    put, ball, cold) never count as readable, nor words she would sound
+//    out wrong: an s that says /z/ after a vowel (has, his, as) or a voiced
+//    th (then, this, that, them), so a book has them only as SIGHT_WORDS;
+//  - every sound a word is made of is one the game teaches as a pure sound
+//    cut from the narrator's words (tools/letter-sounds.json), and every
+//    letter pair it knows is one the spelling tiles know (PART_SOUNDS) or a
+//    doubled letter (ll, ss), which says its one letter's sound, as in
+//    js/quiz.js;
 //  - 4 to 6 pages of one sentence and a picture, its emoji (and the
 //    cover's) ones an older iPad has (Unicode 13 or before); levels 1 to 4
 //    in order, the first book at level 1; ids unique.

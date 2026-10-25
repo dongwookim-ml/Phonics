@@ -372,11 +372,11 @@ function bookSummary() {
 
 // ---- I can read! -----------------------------------------------------------
 // Her own books (DECODABLE_BOOKS in js/books.js). Each word is a tile:
-// tapping one sounds it out with the pure letter sounds and says it, its
-// letters lighting up as they are said; a sight word is just said. ▶ reads
-// the whole sentence, but only once she has tapped every word on the page
-// or after a while, so she tries first. ➡ turns the page. The end is a
-// short party (a tap ends it), a star the first time, and a ✓ on its cover.
+// tapping one says the whole word ("cat!"), the tile lit while it does; no
+// letter by letter, she sounds it out herself. ▶ reads the whole sentence,
+// but only once she has tapped every word on the page or after a while, so
+// she tries first. ➡ turns the page. The end is a short party (a tap ends
+// it), a star the first time, and a ✓ on its cover.
 
 const SELF_PLAY_MS = 8000; // ▶ shows up after this long on a page anyway
 
@@ -489,14 +489,12 @@ function renderSelfPage() {
   }
 }
 
-// A tile: punctuation dimmed, and each letter (or pair, sh) in its own span
-// so it can light up as its sound is said.
+// A tile: punctuation dimmed, and the word in its own span so it can light
+// up while it is said.
 function selfTileHtml(t) {
   const at = t.text.indexOf(t.word);
   const mark = s => (s ? `<span class="p">${s}</span>` : '');
-  let k = 0;
-  const parts = t.sight || !t.level ? [t.word] : decodeParts(t.word).map(p => t.word.slice(k, k += p.length));
-  return `${mark(t.text.slice(0, at))}${parts.map(p => `<span class="g">${p}</span>`).join('')}${mark(t.text.slice(at + t.word.length))}`;
+  return `${mark(t.text.slice(0, at))}<span class="g">${t.word}</span>${mark(t.text.slice(at + t.word.length))}`;
 }
 
 function renderSelfPlay(pop) {
@@ -511,7 +509,7 @@ function renderSelfPlay(pop) {
   }
 }
 
-// "/c/ /a/ /t/… cat!" with c, a, t lighting up in turn; a sight word whole.
+// "cat!", the tile and its word lit while it is said.
 function selfTap(i, b, t) {
   if (library.mode !== 'self') return;
   const page = library.page;
@@ -523,27 +521,23 @@ function selfTap(i, b, t) {
   text.querySelectorAll('.rd-word').forEach(x => x.classList.remove('on'));
   text.querySelectorAll('.g').forEach(x => x.classList.remove('lit'));
   b.classList.add('on');
-  const g = [...b.querySelectorAll('.g')];
-  const light = k => ({ call: () => g.forEach((x, j) => x.classList.toggle('lit', k < 0 || j === k)) });
-  let parts;
-  if (t.sight || !t.level) parts = [selfWord(t.word)];
-  else {
-    let k = 0;
-    // A light before each sound, then all of them for the word.
-    parts = Quiz.soundOut(t.word.toLowerCase(), decodeSounds(t.word))
-      .flatMap(p => (!p.text ? [p] : [light(/^\/.+\/$/.test(p.text) ? k++ : -1), p]));
-  }
+  const g = b.querySelector('.g');
+  g.classList.add('lit');
   const all = heard.size === text.querySelectorAll('.rd-word').length;
   if (all) library.self.ready[page] = true;
-  bookSay(parts, () => {
+  bookSay([selfWord(t)], () => {
     b.classList.remove('on');
-    g.forEach(x => x.classList.remove('lit'));
+    g.classList.remove('lit');
     if (all && library.page === page) renderSelfPlay(true);
   });
 }
 
-// A sight word, said the way a word in a question is (the narrator).
-const selfWord = w => ({ text: w === 'I' ? w : w.toLowerCase(), narrator: true, rate: 0.8 });
+// A word the way the narrator says one in a question: "cat!". A sight word
+// is said as it is ("the", "I").
+const selfWord = t => {
+  const w = t.word === 'I' ? t.word : t.word.toLowerCase();
+  return { text: t.sight || !t.level ? w : `${w}!`, narrator: true, rate: 0.8 };
+};
 
 // ▶ reads the page's sentence, slowly, the tiles lit while it does.
 function selfPlay() {

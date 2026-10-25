@@ -111,6 +111,7 @@ const albumUi = (() => {
     gate, gateNeed: gate.querySelector('.need'), gateIcon: gate.querySelector('.ic'), gateBar: gate.querySelector('.bar i'),
     box, name: box.querySelector('.al-name'), count: box.querySelector('.al-count'), tabs: box.querySelector('.al-tabs'),
     page: box.querySelector('.al-page'), done: box.querySelector('.al-done'),
+    skipped: null, // the tap that last landed stickers (albumSkip)
   };
 })();
 
@@ -547,8 +548,10 @@ function fanfareFireworks(show, n) {
 }
 
 // A tap anywhere ends what is playing: stickers land at once, a banner goes.
-// The tap still does whatever it does in the game.
-function albumSkip() {
+// The tap still does whatever it does in the game, except close the album
+// the stickers fly into (outsideTap in js/game.js).
+function albumSkip(e) {
+  if (e && albumAnims.size) albumUi.skipped = e;
   for (const a of albumAnims) a.finish();
   if (fanfareNow) fanfareNow.stop();
 }
