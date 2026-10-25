@@ -936,6 +936,26 @@ body.captain .wd-mirror {
     linear-gradient(#3f78c8, #2a5aa0);
 }
 body.captain .chip:disabled { background: #e4eaf4; }
+/* The robot is 28 x 38 pixels: previews keep whole screen pixels per robot
+   pixel (js/captain-hero.js sizes the reward card's), and the workbench and
+   shop mirror is a 40 x 52 stage with room to jump and punch. */
+body.captain .start .preview { width: 112px; height: 152px; }
+body.captain .reward { width: min(640px, calc(100vw - 24px)); }
+body.captain .previews { flex-wrap: wrap; }
+.previews figure.zoom { background: #eaf3ff; }
+.previews figure.zoom.hidden { display: none; }
+.previews .zoom canvas { width: 120px; height: 120px; }
+body.captain .wd-mirror { width: 226px; }
+body.captain .wd-mirror canvas { width: 200px; height: 260px; }
+body.captain .wd-mirror canvas.pulse { animation: pulse 0.6s ease; }
+@keyframes pulse { 35% { transform: scale(1.25); } }
+.chip canvas.part { image-rendering: pixelated; display: block; }
+body.captain .chip .ic { line-height: 1; }
+@media (max-width: 560px) {
+  body.captain .start .preview { width: 84px; height: 114px; }
+  body.captain .wd-mirror { width: 136px; }
+  body.captain .wd-mirror canvas { width: 120px; height: 156px; }
+}
 body.captain .start { background: radial-gradient(circle at 50% 40%, rgba(244, 250, 255, 0.92), rgba(160, 200, 255, 0.88)); }
 body.captain .field input:focus { box-shadow: 0 0 0 3px #b8d8ff; }
 

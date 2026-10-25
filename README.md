@@ -64,8 +64,9 @@ npx http-server -p 8080 .
   The game is paused while it is open. Code in `js/parent.js`.
 - **Presents**: every right answer offers a present, which can be a dress
   colour, a dress shape, a crown or tiara, a wand or bouquet, or a hair
-  colour. The child sees "now" and "after" side by side and chooses to
-  wear it now or put it in her wardrobe.
+  colour. The child sees "now" and "after" side by side (on foot, unless
+  the present is a unicorn) and chooses to wear it now or put it in her
+  wardrobe.
 - **Wardrobe**: every present is kept. In the throne room, the 🎀 door on
   the right leads to the princess's own room. Tap the wardrobe or the mirror
   to change clothes freely; presents not yet earned show as ❓.
