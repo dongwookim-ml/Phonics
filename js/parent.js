@@ -249,7 +249,9 @@ function parentStats() {
       <div><h3>최근 7일 활동</h3>${parentSpark()}<p class="parent-empty">그날 마지막으로 푼 문제 수예요.</p></div>
     </div>
     <h3>글자별 정답률 (한 번에 맞힌 비율)</h3>
-    <div class="parent-letters">${parentLetters()}</div>`;
+    <div class="parent-letters">${parentLetters()}</div>
+    <p class="parent-note">게임이 들려주는 글자 소리(/m/, /s/ …)와 그 소리를 잘라 낸 낱말을 직접 들어 보고 확인할 수 있어요:
+      <a href="tools/letter-sounds.html" target="_blank" rel="noopener">글자 소리 확인 페이지 ↗</a></p>`;
   parentSelfBooks(parentUi.panel.querySelector('.parent-body'));
   parentSettings(parentUi.panel.querySelector('.parent-body'));
 }
