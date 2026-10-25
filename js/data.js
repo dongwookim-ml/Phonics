@@ -386,10 +386,11 @@ LINES.openDungeon = isCaptain() ? ['The Villain Cave is open!'] : ['The Crystal 
 LINES.combo = ['Three in a row!', 'Three in a row! Hooray!'];
 LINES.combo5 = ['Five in a row! Super star!', 'Five in a row! Amazing!'];
 LINES.comboMore = ['You are on a roll!', 'Wow, super listening!'];
-// The narrator: a letter house's medal, a village's medal, the sticker album.
+// The narrator: a letter house's medal, a village's medal, the sticker album
+// (the word chip book in the robot edition).
 LINES.medalHouse = ['You know all the {letter} words!'];
 LINES.medalVillage = ['You got a medal! Hooray!', 'A shiny medal for you!'];
-LINES.album = ['Your sticker book!', "Let's look at your stickers!"];
+LINES.album = isCaptain() ? ['Your word chip book!', "Let's look at your word chips!"] : ['Your sticker book!', "Let's look at your stickers!"];
 
 // ---- Question variety ------------------------------------------------------
 

@@ -227,16 +227,61 @@ const Progress = (() => {
     if (n(a.at) !== n(b.at)) return n(b.at) > n(a.at) ? b : a;
     return join(a, b);
   }
-  // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
-  // js/guide.js) only ever grow, so the larger wins.
+  // Play time today (js/guide.js): the later day, whole; on the same day the
+  // most played and the most wakes, so neither the count nor a parent's
+  // wake is undone. Days are 2026-9-30, so they compare as numbers.
+  function joinPlaytime(a, b) {
+    const ok = x => isObj(x) && typeof x.day === 'string';
+    if (!ok(a) || !ok(b)) return ok(a) ? a : ok(b) ? b : join(a, b);
+    const [x, y] = [a, b].map(p => p.day.split('-').map(n));
+    const later = x[0] - y[0] || x[1] - y[1] || x[2] - y[2];
+    if (later) return later > 0 ? a : b;
+    return Object.assign({}, b, a, { ms: Math.max(n(a.ms), n(b.ms)), wakes: Math.max(n(a.wakes), n(b.wakes)) });
+  }
+  // Stickers (js/album.js): each word's count the larger, found when it was
+  // first found, and no longer new once she has seen it on either copy
+  // (closeAlbum deletes `new`, so a copy without it has seen it).
+  function joinStickers(a, b) {
+    if (!isObj(a) || !isObj(b)) return join(a, b);
+    const out = Object.assign({}, b, a);
+    for (const w of Object.keys(out)) {
+      const x = a[w];
+      const y = b[w];
+      if (!isObj(x) || !isObj(y)) continue;
+      const s = Object.assign({}, y, x, { n: Math.max(n(x.n), n(y.n)) });
+      const at = [x.at, y.at].map(n).filter(Boolean);
+      if (at.length) s.at = Math.min(...at);
+      if (!(x.new && y.new)) delete s.new;
+      out[w] = s;
+    }
+    return out;
+  }
+  // Dust fed to each fairy friend (js/friend.js), counted per tablet like
+  // the counters: { [friend]: { [device]: n } }, each tablet's the larger, so
+  // feeds on two tablets add up. A plain number (an earlier save) counts
+  // under OLD. A guest's feeds go on top under a new key (joinEdition).
+  const perDevice = f => {
+    const out = {};
+    if (isObj(f)) for (const [k, v] of Object.entries(f)) out[k] = isObj(v) ? v : { [OLD]: n(v) };
+    return out;
+  };
+  const joinFriends = (a, b) => (isObj(a) || isObj(b) ? maxMap(perDevice(a), perDevice(b)) : join(a, b));
+  function guestFriends(f) {
+    const key = randomId('g');
+    const out = {};
+    for (const [k, e] of Object.entries(perDevice(f))) out[k] = { [key]: Object.values(e).reduce((t, v) => t + n(v), 0) };
+    return out;
+  }
+  // The first-steps pointer (js/guide.js) only ever grows, so the larger wins.
   const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, settings: joinSettings,
-    friends: grow, guide: grow, quests: joinQuests };
+    friends: joinFriends, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers };
   // The outfit, name and picture hints come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];
 
   // One edition from two copies; `mineFirst` says whose outfit and name win.
   function joinEdition(l, s, mineFirst, foreign) {
+    if (foreign && isObj(l.friends)) l = Object.assign({}, l, { friends: guestFriends(l.friends) });
     const [a, b] = mineFirst ? [l, s] : [s, l];
     const out = {};
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {

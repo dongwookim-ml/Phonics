@@ -8,7 +8,9 @@
 // - The parent panel's play-time limit (state.settings.playLimit minutes a
 //   day, counted in state.playtime while the game is on screen) puts the
 //   town to sleep at the next quiet moment: no dialog, present or anything
-//   else open. Only the parent password wakes it, for another full stretch.
+//   else open. Only the parent password wakes it, for another stretch (a
+//   wake is counted in state.playtime.wakes, so two tablets can't undo it);
+//   a town left asleep wakes by itself the next day.
 // - The parent panel can also hide the 🔊 button from the child.
 
 const guide = {
@@ -16,6 +18,7 @@ const guide = {
   nudgedAt: -Infinity,
   nudges: 0,
   asleep: false,
+  sleptOn: null, // the day it fell asleep
   el: document.getElementById('sleep'),
   key: document.getElementById('sleep-key'),
   form: document.getElementById('sleep-form'),
@@ -100,6 +103,8 @@ function guideBob(n, now) {
 // Every frame (js/game.js): the play-time clock and the idle nudge.
 function guideTick(now, ms) {
   if (state.paused) return; // the parent panel is open
+  // "See you tomorrow": a tab left open overnight wakes up in the morning.
+  if (guide.asleep && !document.hidden && guide.sleptOn !== guideDay()) guideWake(true);
   guidePlayTime(ms);
   if (!guidePlaying() || state.busy || state.hero.path.length) return;
   if (now - guide.lastTap < GUIDE_IDLE_MS || now - guide.nudgedAt < GUIDE_NUDGE_GAP || guide.nudges >= GUIDE_NUDGES) return;
@@ -127,17 +132,23 @@ function guidePlayTime(ms) {
   if (!state.playtime) state.playtime = {};
   const p = state.playtime;
   const day = guideDay();
-  if (p.day !== day) Object.assign(p, { day, ms: 0 });
+  if (p.day !== day) Object.assign(p, { day, ms: 0, wakes: 0 });
   // A stall (the tab was away) doesn't count.
   p.ms = (p.ms | 0) + Math.min(ms, 250);
+  if (guideTimeUp() && !state.busy && !state.gift && !state.hero.onArrive) guideSleep();
+}
+// Today's play time is used up: the limit, once more for each wake.
+function guideTimeUp() {
   const limit = ((state.settings && state.settings.playLimit) | 0) * 60000;
-  if (limit && p.ms >= limit && !state.busy && !state.gift && !state.hero.onArrive) guideSleep();
+  const p = state.playtime || {};
+  return !!limit && p.day === guideDay() && (p.ms | 0) >= limit * (1 + (p.wakes | 0));
 }
 
 // The town goes to sleep: it dims, stars twinkle, and the narrator says
 // good night. Nothing is lost.
 function guideSleep() {
   guide.asleep = true;
+  guide.sleptOn = guideDay();
   state.busy = true;
   state.hero.path = [];
   save();
@@ -159,15 +170,17 @@ function guideSleep() {
   Sound.say([{ pause: 600 }, { text: line('sleep'), narrator: true }]);
 }
 
-// The parent's password wakes the town for another full stretch of play.
-function guideWake() {
+// The parent's password wakes the town for another stretch of play; the
+// next day (`morning`) it wakes by itself and the day's count starts again.
+function guideWake(morning) {
   guide.asleep = false;
   guide.el.classList.add('hidden');
-  if (state.playtime) state.playtime.ms = 0;
-  state.busy = false;
+  const p = state.playtime || (state.playtime = {});
+  if (!morning) p.wakes = (p.wakes | 0) + 1;
+  state.busy = busyNow(); // js/game.js
   guide.lastTap = performance.now();
   save();
-  Sound.correct();
+  if (!morning) Sound.correct();
 }
 
 guide.key.addEventListener('click', () => {

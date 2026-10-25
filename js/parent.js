@@ -74,11 +74,8 @@ function parentClose() {
   parentUi.panel = null;
   setPaused(false);
   // Busy again only if something is still showing (a question, a present,
-  // the wardrobe, the shop, the library or a scene change).
-  const shown = el => !!el && !el.classList.contains('hidden');
-  state.busy = [ui.dialog, ui.reward, ui.wardrobe, ui.shop, document.getElementById('library'), document.getElementById('reader'),
-    document.getElementById('feed'), document.getElementById('mini'), document.getElementById('sleep')].some(shown) ||
-    ui.fade.classList.contains('on');
+  // a card, the sleeping town or a scene change: busyNow in js/game.js).
+  state.busy = busyNow();
 }
 
 function parentLock() {
