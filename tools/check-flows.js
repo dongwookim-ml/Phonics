@@ -31,11 +31,35 @@
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
+const http = require('http');
 const path = require('path');
 const { launch } = require('./browser');
 
 const root = path.join(__dirname, '..');
-const URL = `file://${path.join(root, 'index.html')}`;
+// The game is served over http on localhost, as it is deployed: a file://
+// page sometimes finds an older localStorage after a reload (Chromium),
+// which made the reload checks fail now and then.
+let HOST;
+let URL;
+function serve() {
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp3': 'audio/mpeg', '.png': 'image/png', '.svg': 'image/svg+xml' };
+  const server = http.createServer((req, res) => {
+    const file = path.join(root, decodeURIComponent(new globalThis.URL(req.url, 'http://x').pathname));
+    if (!file.startsWith(root)) { res.writeHead(403); res.end(); return; }
+    fs.readFile(file, (err, data) => {
+      if (err) { res.writeHead(404); res.end(); return; }
+      res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
+      res.end(data);
+    });
+  });
+  return new Promise(ok => server.listen(0, '127.0.0.1', () => {
+    HOST = `http://127.0.0.1:${server.address().port}/`;
+    URL = `${HOST}index.html`;
+    ok(server);
+  }));
+}
+// Requests to the game itself go through; anything else is the test's.
+const own = r => r.request().url().startsWith(HOST);
 const FAKE = 'http://127.0.0.1:9'; // an account server that never answers for real
 let failed = 0;
 function check(name, ok, detail) {
@@ -52,7 +76,7 @@ async function game(browser, { seed, user, server, edition, days, start = true }
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  await page.route(/^https?:/, r => (server ? server(r) : r.abort()));
+  await page.route(/^https?:/, r => (own(r) ? r.continue() : server ? server(r) : r.abort()));
   await page.addInitScript(([seed, user, fake]) => {
     // Seeded once per context (a flag in localStorage).
     if (localStorage.getItem('test-seeded')) return;
@@ -203,7 +227,7 @@ async function brokenSave(browser) {
 async function audioUnlock(browser) {
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
   const page = await ctx.newPage();
-  await page.route(/^https?:/, r => r.abort());
+  await page.route(/^https?:/, r => (own(r) ? r.continue() : r.abort()));
   await page.addInitScript(() => {
     localStorage.setItem('pixeltown-guest', '1');
     window.__log = [];
@@ -845,7 +869,7 @@ async function musicFlows(browser, edition) {
   const p2 = await bare.newPage();
   const errs = [];
   p2.on('pageerror', e => errs.push(e.message));
-  await p2.route(/^https?:/, rt => rt.abort());
+  await p2.route(/^https?:/, rt => (own(rt) ? rt.continue() : rt.abort()));
   await p2.addInitScript(() => { localStorage.setItem('pixeltown-guest', '1'); delete window.AudioContext; delete window.webkitAudioContext; });
   await p2.goto(`${URL}?edition=${edition}`);
   await p2.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
@@ -866,6 +890,7 @@ async function musicFlows(browser, edition) {
 }
 
 (async () => {
+  const site = await serve();
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   // ONLY=audio node tools/check-flows.js runs the parts whose name has "audio".
   const parts = { parentPauses, parentPassword, brokenSave, audioUnlock, quests: b => quests(b, 'princess'), questsCaptain: b => quests(b, 'captain'),
