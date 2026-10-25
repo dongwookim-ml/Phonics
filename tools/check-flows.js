@@ -450,6 +450,18 @@ async function cards(browser, edition) {
     await sleep(1500);
     out.walk.arrived = arrived;
     closeFeed();
+    // The bite that grows her friend, and 👋 before it lands: still celebrated.
+    const said = [];
+    const say = Sound.say;
+    Sound.say = (parts, who) => { [].concat(parts).forEach(p => p && p.text && said.push(p.text)); return say(parts, who); };
+    state.friends = { [friend]: FRIEND_STAGES[0] - 1 };
+    state.dust = 5;
+    openFeed();
+    said.length = 0;
+    feedOnce();
+    closeFeed();
+    Sound.say = say;
+    out.grow = { stage: friendStage(friend), said, line: fill(LINES.friendGrow[0], {}) };
     changeScene('town');
     await sleep(500);
 
@@ -495,6 +507,7 @@ async function cards(browser, edition) {
       }
     }
     out.fish = [...new Set(bad)];
+    out.albumLines = LINES.album;
     return out;
   });
   const tag = `cards (${edition})`;
@@ -502,12 +515,14 @@ async function cards(browser, edition) {
   check(`${tag}: the feeding card over the wardrobe, the wardrobe closed first: busy until the card closes`, f.underFeed && f.panel && f.after === false, f);
   check(`${tag}: the parent panel over the album or the quest card keeps the game busy`, r.album.panel && r.album.after === false && r.quests.panel && r.quests.after === false, r);
   check(`${tag}: the feeding card stops her walk`, r.walk.steps > 1 && r.walk.left <= 1 && !r.walk.onArrive && !r.walk.arrived, r.walk);
+  check(`${tag}: 👋 before the growing bite lands: the friend's new stage is still celebrated`, r.grow.stage === 1 && r.grow.said.includes(r.grow.line), r.grow);
   check(`${tag}: 🔁 at the pond past the play limit: the town sleeps`, !r.again.mini && r.again.asleep, r.again);
   check(`${tag}: a parent's wake keeps the minutes and counts the wake`, r.wake.ms >= 60001 && r.wake.wakes === 1 && !r.wake.up && r.wake.busy === false, r.wake);
   check(`${tag}: left asleep overnight, the town wakes in the morning`, r.night && !r.morning.asleep && !r.morning.shown && r.morning.busy === false && r.morning.day && r.morning.wakes === 0, r);
   check(`${tag}: today's play time is saved with both editions`, r.shared);
   check(`${tag}: no fairy or unicorn in the shop before its village opens`, !r.shop.early.length && r.shop.open > 0, r.shop);
   check(`${tag}: no wrong fish she'd name with the round's sound (ALIAS)`, !r.fish.length, r.fish);
+  check(`${tag}: the album's narrator line fits the edition`, r.albumLines.every(l => /sticker/.test(l) === (edition !== 'captain')), r.albumLines);
   check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();
 }

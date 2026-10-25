@@ -222,9 +222,27 @@ const Progress = (() => {
     if (later) return later > 0 ? a : b;
     return Object.assign({}, b, a, { ms: Math.max(n(a.ms), n(b.ms)), wakes: Math.max(n(a.wakes), n(b.wakes)) });
   }
+  // Stickers (js/album.js): each word's count the larger, found when it was
+  // first found, and no longer new once she has seen it on either copy
+  // (closeAlbum deletes `new`, so a copy without it has seen it).
+  function joinStickers(a, b) {
+    if (!isObj(a) || !isObj(b)) return join(a, b);
+    const out = Object.assign({}, b, a);
+    for (const w of Object.keys(out)) {
+      const x = a[w];
+      const y = b[w];
+      if (!isObj(x) || !isObj(y)) continue;
+      const s = Object.assign({}, y, x, { n: Math.max(n(x.n), n(y.n)) });
+      const at = [x.at, y.at].map(n).filter(Boolean);
+      if (at.length) s.at = Math.min(...at);
+      if (!(x.new && y.new)) delete s.new;
+      out[w] = s;
+    }
+    return out;
+  }
   // Dust fed to each fairy friend and the first-steps pointer (js/friend.js,
   // js/guide.js) only ever grow, so the larger wins.
-  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests, playtime: joinPlaytime };
+  const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, friends: grow, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers };
   // The outfit, name and settings come whole from one copy.
   const WHOLE = ['outfit', 'player', 'pictures', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];

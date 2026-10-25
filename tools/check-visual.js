@@ -4,8 +4,10 @@
 // - every word in the content fits an answer card, on each iPad size and on
 //   a phone held sideways,
 // - the person she talks to stays visible above the dialog,
-// - what a child taps is big enough: HUD, hear-again and close 64 px,
-//   spelling tiles 68 px tall, wardrobe chips 56 px (on a phone a bit less),
+// - what a child taps is big enough: HUD, hear-again and close, the album's
+//   tabs and done, the feeding card, the 🎣 button and the pond game's
+//   buttons 64 px, spelling tiles 68 px tall, wardrobe chips 56 px (on a
+//   phone a bit less),
 // - ▶ on the start screen and the guest button on the login screen show
 //   without scrolling, also with Safari's toolbars (1024 x 700),
 // - with every counter and button showing (the next-gate and gift meters
@@ -182,6 +184,25 @@ function ask(kind, scene) {
         openWardrobe();
         small('#wd-slots .chip', 56, true);
         closeWardrobe();
+        // Her friend's feeding card, and the fisherman's 🎣 and his game.
+        const friend = Object.keys(FAIRIES).find(k => k !== 'none');
+        state.owned.fairy.push(friend);
+        state.outfit = Object.assign({}, state.outfit, { fairy: friend });
+        openFeed();
+        small('#fd-jar', big, true);
+        small('#fd-done', big, true);
+        closeFeed();
+        state.scene = sceneFor('town');
+        state.busy = false;
+        openDialog(miniFisher());
+        small('#dlg-mini', big, true);
+        closeDialog();
+        openMini(miniFisher());
+        small('#mini-close', big);
+        small('#mini-replay', big);
+        document.getElementById('mini-end').classList.remove('hidden');
+        small('.mini-end .answer button', big, true);
+        closeMini();
 
         // The HUD with everything showing (js/album.js): the stars toward the
         // last gate, the gift meter, coins and dust, and every button with
@@ -206,9 +227,9 @@ function ask(kind, scene) {
         openAlbum();
         const al = document.getElementById('album').getBoundingClientRect();
         if (al.top < 0 || al.left < 0 || al.bottom > innerHeight + 0.5 || al.right > innerWidth + 0.5) out.push(`album: ${Math.round(al.left)},${Math.round(al.top)} to ${Math.round(al.right)},${Math.round(al.bottom)} is off the screen`);
-        small('#album .al-tab', phone ? 48 : 56, true);
+        small('#album .al-tab', big);
         small('#album .sticker', phone ? 80 : 96);
-        small('#album .al-done', 44, true);
+        small('#album .al-done', big, true);
         const done = document.querySelector('#album .al-done').getBoundingClientRect();
         if (done.bottom > innerHeight) out.push('album: the done button is below the screen');
         const albumPage = document.querySelector('#album .al-page');

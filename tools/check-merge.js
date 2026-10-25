@@ -1,7 +1,7 @@
 // Unit checks of the save merge (js/progress.js), in Node, no browser:
 // two devices on the new format, an older game version (no fmt) on either
 // side, a guest's progress joining an account, editions, today's quests,
-// unknown fields.
+// play time, stickers, unknown fields.
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -153,6 +153,19 @@ const C = device('captain', 'dC');
   check('playtime: same day: the most played and the most wakes, whichever is preferred', m2.playtime.ms === 900000 && m2.playtime.wakes === 1 &&
     A.same(A.merge(ed(pt('2026-10-25', 900000, 1)), ed(pt('2026-10-25', 180000, 0)), 'theirs'), m2), m2.playtime);
   check('playtime: a copy without it (an older version of the game) keeps it', A.merge({ edition: 'princess', stars: 1 }, ed(pt('2026-10-25', 5, 0)), 'mine').playtime.ms === 5);
+}
+
+// ---- Stickers (js/album.js) ----------------------------------------------------------
+{
+  const ed = stickers => ({ edition: 'princess', stickers });
+  // A saw cat and dog in the album (closeAlbum dropped `new`); B still has them as new.
+  const a = { cat: { e: '🐱', n: 4, at: 200 }, dog: { e: '🐶', n: 1, at: 300 } };
+  const b = { cat: { e: '🐱', n: 2, at: 100, new: true }, dog: { e: '🐶', n: 3, at: 300, new: true }, sun: { e: '☀️', n: 1, at: 400, new: true } };
+  for (const how of ['mine', 'theirs']) {
+    const s = A.merge(ed(a), ed(b), how).stickers;
+    check(`stickers (${how}): seen on either copy stays seen, a new one stays new`, !s.cat.new && !s.dog.new && s.sun.new === true, s);
+    check(`stickers (${how}): the larger count and the first time found`, s.cat.n === 4 && s.dog.n === 3 && s.cat.at === 100, s);
+  }
 }
 
 // ---- Fields this version doesn't know, and broken entries ---------------------------

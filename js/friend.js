@@ -209,7 +209,15 @@ function openFeed() {
 function closeFeed() {
   if (friendUi.card.classList.contains('hidden')) return;
   Sound.tap();
-  Sound.say([]);
+  // Dust still on its way lands now: a stage it reaches is still celebrated.
+  const key = friendUi.key;
+  const fed = friendFed(key);
+  const grew = friendStageOf(fed) > friendStageOf(fed - friendUi.flies.length) ? friendStageOf(fed) : 0;
+  Sound.say(grew ? [{ pause: 300 }, { text: fill(LINES.friendGrow[grew - 1], {}), narrator: true }] : []);
+  if (grew) {
+    Sound.party();
+    if (state.fairyAt) friendBurstAt(state.fairyAt.x, state.fairyAt.y, FAIRIES[key].glow, 24);
+  }
   friendUi.card.classList.add('hidden');
   friendUi.flies = [];
   friendUi.party = null;
