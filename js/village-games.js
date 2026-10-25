@@ -160,7 +160,9 @@ function vgPickGame(scene, cap, skin) {
   return {
     scene,
     host: () => vgHost(scene),
-    label: () => `${vgIcon(scene)} ${skin.name}`,
+    // The picture on its bubble over the host (js/minigame.js) and its button.
+    badge: () => skin.badge || skin.pip,
+    label: () => `${skin.badge || skin.pip} ${skin.name}`,
     title: () => `${vgIcon(scene)} ${skin.name}`,
     pip: () => skin.pip,
     bag: () => skin.bag,
@@ -807,7 +809,8 @@ function vgSpellGame(skin) {
   return {
     scene: 'fairy',
     host: () => vgHost('fairy'),
-    label: () => `${vgIcon('fairy')} ${skin.name}`,
+    badge: () => skin.badge || skin.pip,
+    label: () => `${skin.badge || skin.pip} ${skin.name}`,
     title: () => `${vgIcon('fairy')} ${skin.name}`,
     pip: () => skin.pip,
     bag: () => skin.bag,
@@ -927,6 +930,7 @@ function vgBubble(g, x, y, col) {
 const VG_FAIRY_SKIN = {
   name: '글자 요정 놀이',
   pip: '✨',
+  badge: '🧚', // the fairy village's villagers already have ✨ over them
   bag: '✨',
   color: '#d85aa0',
   sparkle: '#ff9ec4',

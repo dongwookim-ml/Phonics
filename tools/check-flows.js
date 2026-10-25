@@ -1818,6 +1818,77 @@ async function rideInOut(browser, edition) {
   await ctx.close();
 }
 
+// Finding the little games: a bubble with the game's picture over each host
+// (over the pond in town), the same picture as on the host's button; a tap
+// on it walks her over and the game starts. Coming into a village from
+// another place, the host calls her over; coming out of a house there, not.
+async function gameSpots(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const out = await page.evaluate(async () => {
+    const wait = ok => new Promise(res => { const t0 = performance.now(); const go = () => (ok() || performance.now() - t0 > 12000 ? res() : setTimeout(go, 50)); go(); });
+    const settled = () => !ui.fade.classList.contains('on');
+    const go = async name => { if (state.scene !== sceneFor(name)) { changeScene(name); await wait(() => state.scene === sceneFor(name) && settled()); } };
+    state.stars = 99;
+    if (!Sound.muted) Sound.toggleMute();
+    const res = {};
+    for (const [key, g] of Object.entries(MINI_GAMES)) {
+      // In by its way from another place (the cave from where it is), or
+      // straight there.
+      const from = key === 'fish' ? 'forest' : ['town', 'forest', 'unicorn', 'fairy'].find(n => n !== g.scene && (sceneFor(n).links || []).some(l => l.target === g.scene));
+      await go(from);
+      const link = sceneFor(from).links.find(l => l.target === g.scene);
+      followLink(link);
+      await wait(() => state.scene === sceneFor(g.scene) && settled());
+      const host = g.host();
+      const called = { host: !!host, called: mini.called === host, hops: !!host && host.nudgeAt > 0 };
+      const spot = miniSpots().find(sp => sp.npc === host);
+      openDialog(host);
+      const button = mini.button.classList.contains('hidden') ? '' : mini.button.textContent;
+      closeDialog();
+      const r = { called, spot: !!spot, icon: spot && spot.icon, button, opened: false };
+      if (spot) {
+        // A real tap where the bubble is drawn, her standing near it.
+        const near = findPath(state.scene, { c: host.c, r: host.r }, (c, rr) => Math.abs(c - host.c) + Math.abs(rr - host.r) >= 3) || [];
+        const at = near[near.length - 1] || { c: host.c + 3, r: host.r };
+        placeHero(at.c, at.r);
+        snapCamera();
+        await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(res)));
+        const p = toScreen(spot.w.x, spot.w.y);
+        const box = screen.getBoundingClientRect();
+        onPointer({ clientX: box.left + p.x * box.width / screen.width, clientY: box.top + p.y * box.height / screen.height });
+        await wait(() => !mini.el.classList.contains('hidden'));
+        r.opened = !mini.el.classList.contains('hidden') && mini.npc === host && mini.game === g;
+        closeMini();
+        state.busy = busyNow();
+      }
+      res[key] = r;
+    }
+    // Out of a house in a village: no call (only coming in from elsewhere).
+    await go('forest');
+    const home = sceneFor('forest').doors.find(d => d.home);
+    mini.called = null;
+    if (home) {
+      enterDoor(home);
+      await wait(() => !state.scene.outdoor && settled());
+      leaveRoom();
+      await wait(() => state.scene === sceneFor('forest') && settled());
+    }
+    res.leftHouse = { home: !!home, called: mini.called === null };
+    return res;
+  });
+  const tag = `game bubbles (${edition})`;
+  for (const [key, r] of Object.entries(out)) {
+    if (key === 'leftHouse') continue;
+    const village = key !== 'fish';
+    check(`${tag} ${key}: a bubble with the game's picture, the same as its button's`, r.spot && !!r.button && r.button.startsWith(village ? r.icon : r.button.split(' ')[0]), r);
+    check(`${tag} ${key}: a tap on the bubble walks her over and the game starts`, r.opened, r);
+    if (village) check(`${tag} ${key}: coming in from another place, its host calls her over`, r.called.called && r.called.hops, r.called);
+  }
+  check(`${tag}: coming out of a house in the village, nobody calls`, out.leftHouse.home && out.leftHouse.called, out.leftHouse);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const site = await serve();
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -1830,7 +1901,8 @@ async function rideInOut(browser, edition) {
     outside: b => outsideTaps(b, 'princess'), outsideCaptain: b => outsideTaps(b, 'captain'),
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain'),
     shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain'),
-    ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain') };
+    ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain'),
+    gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

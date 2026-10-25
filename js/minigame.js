@@ -519,9 +519,9 @@ MINI_GAMES.fish = {
 };
 
 // Walks her to the fisherman and starts. True when there is a pond game here.
-function miniGo() {
-  const npc = miniFisher();
-  if (!npc || state.scene !== state.scenes.town) return false;
+// Over to a game's host (the fisherman by default), and the game starts.
+function miniGo(npc = miniFisher()) {
+  if (!npc || !miniGameOf(npc)) return false;
   Sound.tap();
   const isNext = (c, r) => Math.abs(c - npc.c) + Math.abs(r - npc.r) === 1;
   if (!walkTo(isNext, () => { faceEachOther(npc); openMini(npc); })) openMini(npc);
@@ -852,41 +852,92 @@ function miniLine(g, x0, y0, x1, y1, col) {
   for (let i = 0; i <= n; i++) px(g, Math.round(x0 + ((x1 - x0) * i) / n), Math.round(y0 + ((y1 - y0) * i) / n), 1, 1, col);
 }
 
-// ---- In town ---------------------------------------------------------------
+// ---- Where the games are ------------------------------------------------------
 
-// A bobbing 🎣 (🧲) bubble over the pond by the fisherman.
-function miniHintAt() {
+// A bobbing bubble with the game's picture (the one on its button in the
+// host's dialog), so she can find a game without reading: over the pond in
+// town (🎣, the robot's 🧲) and over each village's host. Tapping it walks
+// her there and the game starts. Coming into a village from another place,
+// its host hops and the bubble swells for a moment, with a chime (no words,
+// so the place's own hello isn't cut off).
+const MINI_CALL_MS = 3500;
+
+// The bubbles in this scene: { w (the bubble's middle, world pixels), icon, npc }.
+function miniSpots() {
   const sc = state.scene;
-  return sc && sc === state.scenes.town && miniFisher() ? tileCenter(sc, 28.5, 30.5) : null;
+  const out = [];
+  if (!sc) return out;
+  for (const g of Object.values(MINI_GAMES)) {
+    if (sc !== state.scenes[g.scene]) continue;
+    const npc = g.host();
+    if (!npc) continue;
+    if (g === MINI_GAMES.fish) {
+      const pond = tileCenter(sc, 28.5, 30.5);
+      out.push({ w: { x: pond.x, y: pond.y - 16 }, icon: isCaptain() ? '🧲' : '🎣', npc });
+      continue;
+    }
+    // Over the little ★ / ♥ / ◆ bubble every villager has (drawOverlay in
+    // js/game.js), its tail pointing down at it.
+    const feet = tileCenter(sc, npc.c, npc.r);
+    out.push({ w: { x: feet.x, y: feet.y - 57 }, icon: g.badge(), npc });
+  }
+  return out;
 }
+
 function drawMiniHint(now) {
-  const w = miniHintAt();
-  if (!w) return;
   const s = state.scale;
   const ctx = sctx;
-  const p = toScreen(w.x, w.y - 16 + Math.sin(now / 300) * 2);
-  if (p.x < -60 || p.y < -60 || p.x > screen.width + 60 || p.y > screen.height + 60) return;
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#3f88d8';
-  ctx.lineWidth = s;
-  roundRect(ctx, p.x - 9 * s, p.y - 7 * s, 18 * s, 14 * s, 5 * s);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(p.x - 2.5 * s, p.y + 7 * s - 1);
-  ctx.lineTo(p.x, p.y + 10.5 * s);
-  ctx.lineTo(p.x + 2.5 * s, p.y + 7 * s - 1);
-  ctx.fill();
-  ctx.font = `${10 * s}px ${MINI_EMOJI}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(isCaptain() ? '🧲' : '🎣', p.x, p.y + 0.5 * s);
+  for (const spot of miniSpots()) {
+    const call = spot.npc === mini.called ? now - mini.calledAt : -1;
+    const swell = call >= 0 && call < MINI_CALL_MS ? Math.abs(Math.sin(call / 220)) * 0.35 : 0;
+    const k = s * (1 + swell);
+    const p = toScreen(spot.w.x, spot.w.y + Math.sin(now / 300) * 2);
+    if (p.x < -60 || p.y < -60 || p.x > screen.width + 60 || p.y > screen.height + 60) continue;
+    if (swell) {
+      // A soft ring at the host's feet while it calls her over.
+      const feet = toScreen(tileCenter(state.scene, spot.npc.c, spot.npc.r).x, tileCenter(state.scene, spot.npc.c, spot.npc.r).y);
+      const pulse = (call % 1100) / 1100;
+      ctx.strokeStyle = `rgba(255,214,77,${1 - pulse})`;
+      ctx.lineWidth = 2 * s;
+      ctx.beginPath();
+      ctx.ellipse(feet.x, feet.y, (6 + pulse * 8) * s, (3 + pulse * 4) * s, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#3f88d8';
+    ctx.lineWidth = s;
+    roundRect(ctx, p.x - 9 * k, p.y - 7 * k, 18 * k, 14 * k, 5 * k);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p.x - 2.5 * k, p.y + 7 * k - 1);
+    ctx.lineTo(p.x, p.y + 10.5 * k);
+    ctx.lineTo(p.x + 2.5 * k, p.y + 7 * k - 1);
+    ctx.fill();
+    ctx.font = `${10 * k}px ${MINI_EMOJI}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(spot.icon, p.x, p.y + 0.5 * k);
+  }
 }
-// A tap on that bubble. True when it took the tap.
+
+// A tap on a bubble. True when it took the tap.
 function miniTap(wx, wy) {
-  const w = miniHintAt();
-  if (!w || Math.abs(wx - w.x) > 11 || wy < w.y - 25 || wy > w.y - 5) return false;
-  return miniGo();
+  const spot = miniSpots().find(sp => Math.abs(wx - sp.w.x) <= 11 && wy >= sp.w.y - 10 && wy <= sp.w.y + 10);
+  return !!spot && miniGo(spot.npc);
+}
+
+// Coming into a village from another place outdoors (changeScene in
+// js/game.js): its host calls her over (above).
+function miniArrive() {
+  const spot = miniSpots().find(sp => sp.npc !== miniFisher());
+  if (!spot) return;
+  const at = performance.now() + 500; // once the fade is over
+  mini.called = spot.npc;
+  mini.calledAt = at;
+  spot.npc.nudgeAt = at; // it hops (guideBob in js/guide.js)
+  miniLater(500, () => Sound.tune('chime'));
 }
 
 mini.canvas.addEventListener('pointerdown', miniTapAt);

@@ -424,6 +424,9 @@ function changeScene(target, at, label) {
     state.busy = busyNow();
     musicUpdate(); // crossfades to this place's tune (js/music.js)
     showPlace(label);
+    // Into a village (or the cave) from another place: its game's host calls
+    // her over (js/minigame.js). Not out of a house: she has just been there.
+    if (from && from.outdoor && from !== state.scene) miniArrive();
   });
 }
 
@@ -2372,7 +2375,7 @@ function onPointer(e) {
   const wy = sy / state.scale + Math.round(state.cam.y);
   state.ripples.push({ x: sx, y: sy, t0: performance.now() });
 
-  // Her fairy friend and the 🎣 over the pond fly over everything.
+  // Her fairy friend and the games' bubbles (🎣 over the pond) fly over everything.
   if (friendTap(wx, wy) || miniTap(wx, wy)) return;
 
   // Villagers first: they are small and stand in front of things.
