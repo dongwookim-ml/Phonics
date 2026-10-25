@@ -928,7 +928,6 @@ const LONG_TWINS = [
 // goat, star...), for longRhyme: pictures she names for sure. `v` is the
 // vowel sound, as there; a rhyme may be spelled two ways (snail, whale).
 const LONG_RHYMES = [
-  { v: 'i', rime: 'each', set: [['peach', '🍑'], ['beach', '🏖️']] },
   { v: 'eɪ', rime: 'ail', set: [['snail', '🐌'], ['whale', '🐳']] },
 ];
 Object.assign(ALIAS, {

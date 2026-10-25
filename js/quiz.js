@@ -111,6 +111,9 @@ const Quiz = (() => {
   // A set's words she names for sure from the picture (LONG_RHYME_UNSURE):
   // the ones a long rhyme question asks about.
   const sureRhymes = r => r.set.filter(([w]) => clear(words()[w]) && !LONG_RHYME_UNSURE.has(w));
+  // Two of them she hears apart, to rhyme (not tree and three).
+  const rhymePairs = r => sureRhymes(r).flatMap(([a], i, all) => all.slice(i + 1).map(([b]) => [words()[a], words()[b]]))
+    .filter(([a, b]) => !hardTwin(a, b));
   // The last sound of a rhyme (ake: k, ell: l, ee: none), to find words that
   // end the same after another vowel (kite, bat).
   const lastSound = rime => {
@@ -159,7 +162,7 @@ const Quiz = (() => {
     longBlend: (npc, cfg) => withId('longBlend', BANK[cfg.words]()),
     longRead: (npc, cfg) => withId('longRead', BANK[cfg.words]()),
     longWord: (npc, cfg) => withId('longWord', longWords().filter(x => (!cfg.easy || EASY_TEAMS.has(x.team)) && (!cfg.twin || twinOf(x.w)))),
-    longRhyme: () => withId('longRhyme', longRhymes().filter(r => sureRhymes(r).length >= 2).map(r => ({ r, w: r.set[0][0] }))),
+    longRhyme: () => withId('longRhyme', longRhymes().filter(r => rhymePairs(r).length).map(r => ({ r, w: r.set[0][0] }))),
   };
   const history = () => (typeof state !== 'undefined' && state.history) || {};
   const solved = id => (history()[id] || {}).right > 0;
@@ -544,7 +547,7 @@ const Quiz = (() => {
   // from `ends` instead: another vowel that ends in the same sound (kite, bat).
   function rhymeQuestion(kind, npc, cfg, sets, ends = []) {
     const { r, id } = take(kind, npc, cfg);
-    const [base, ans] = shuffle((kind === 'longRhyme' ? sureRhymes(r) : r.set).slice()).map(([w]) => words()[w]);
+    const [base, ans] = kind === 'longRhyme' ? shuffle(pick(rhymePairs(r)).slice()) : shuffle(r.set.slice()).map(([w]) => words()[w]);
     const fromSet = s => Object.assign({ v: s.v, rime: s.rime }, words()[pick(s.set)[0]]);
     const pool = sets.filter(s => s !== r).map(fromSet);
     const end = lastSound(r.rime);
@@ -804,7 +807,8 @@ const Quiz = (() => {
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${marked(t)}</span>`,
         teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(nameSounds(t, 600)),
         picked: o => [named(o.wrong)],
-        model: nameSounded(t),
+        // The rule too: at two cards a miss goes straight to the answer.
+        model: [rule(t), { pause: 300 }].concat(nameSounded(t)),
       };
     },
 
@@ -825,7 +829,7 @@ const Quiz = (() => {
         // "boat… Magic e makes the A say its name! /k/ … A … /k/"
         teach: o => [named(o.wrong), { pause: 300 }, rule(t), { pause: 300 }].concat(nameSounds(t)),
         picked: o => [named(o.wrong)],
-        model: nameSounded(t),
+        model: [rule(t), { pause: 300 }].concat(nameSounded(t)),
       };
     },
 

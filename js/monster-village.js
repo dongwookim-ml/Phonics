@@ -129,7 +129,8 @@ function buildMonsterVillage() {
     sc.npcs.push(npc);
   }
   // Gate back to town on the east edge.
-  sc.links = [11, 12].map(r => ({ c: N - 1, r, target: 'town', at: { c: 1, r: r + 3 }, icon: isCaptain() ? '🤖' : '🌸', style: 'gate' }));
+  // She comes out in town just past the gate's mat (a tap there goes back).
+  sc.links = [11, 12].map(r => ({ c: N - 1, r, target: 'town', at: { c: 2, r: r + 3 }, icon: isCaptain() ? '🤖' : '🌸', style: 'gate' }));
   addSideGate(sc, N - 2, [10, 13], '#c8b8ff', [N - 2, N - 1], sc.links);
   const tg = tileCenter(sc, N - 2, 11.5);
   sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: isCaptain() ? '#3f8fd8' : '#ff8fc0', links: sc.links });
@@ -314,7 +315,9 @@ function buildMonsterTower() {
 // own (addSideGate, rtAddSideGate).
 function addTownMonsterGate(sc, sideGate) {
   for (const [c, r] of [[0, 14], [0, 15], [1, 14], [1, 15], [2, 15]]) setTile(sc, c, r, 'road');
-  sc.objects = sc.objects.filter(o => !(o.tree && o.c0 <= 2 && o.r0 >= 12 && o.r0 <= 17));
+  const gone = o => o.tree && o.c0 <= 2 && o.r0 >= 12 && o.r0 <= 17;
+  for (const o of sc.objects.filter(gone)) tileAt(sc, o.c0, o.r0).blocked = false;
+  sc.objects = sc.objects.filter(o => !gone(o));
   for (let r = 13; r <= 16; r++) for (let c = 0; c <= 2; c++) tileAt(sc, c, r).blocked = false;
   const links = [14, 15].map(r => ({ c: 0, r, target: 'monster', at: { c: MONSTER_N - 3, r: r - 3 }, icon: '👾', style: 'gate', needStars: MONSTER_STARS }));
   sc.links.push(...links);

@@ -284,8 +284,17 @@ function renderGateMeter() {
 
 // After a star: a gate whose stars were just reached opens with a party,
 // once she is free (the dialog and any present closed).
+// A gate added in an update (the Monster Village) also opens with a party,
+// once, for a child already past its stars, after her first answer since
+// (state.guide.opened, saved).
+const LATE_GATES = ['monster'];
 function gateCheck(before) {
-  for (const g of albumGates()) if (before < g.stars && state.stars >= g.stars) fanfareLater(() => gateFanfare(g));
+  const opened = state.guide && (state.guide.opened = state.guide.opened || {});
+  for (const g of albumGates()) {
+    const late = opened && LATE_GATES.includes(g.key) && before >= g.stars && !opened[g.key];
+    if ((before < g.stars && state.stars >= g.stars) || late) fanfareLater(() => gateFanfare(g));
+    if (opened && LATE_GATES.includes(g.key) && state.stars >= g.stars) opened[g.key] = true;
+  }
 }
 
 function gateFanfare(g) {

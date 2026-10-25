@@ -2061,6 +2061,34 @@ async function kidMonsters(browser, edition) {
   await ctx.close();
 }
 
+// A gate added in an update (the Monster Village): a child already past its
+// stars gets its party once, after her next answer; one who reaches it
+// later gets it as she crosses, and not again.
+async function lateGate(browser) {
+  const { page, ctx, errors } = await game(browser);
+  const r = await page.evaluate(() => {
+    const seen = [];
+    fanfareLater = fn => fn();
+    gateFanfare = g => seen.push(g.key);
+    state.guide = { step: 3 };
+    state.stars = 52;
+    gateCheck(51);
+    const first = seen.slice();
+    gateCheck(52);
+    const again = seen.length;
+    state.guide = { step: 3 };
+    state.stars = 40;
+    seen.length = 0;
+    gateCheck(39);
+    gateCheck(40);
+    return { first, again, crossing: seen.slice() };
+  });
+  check('a gate new in an update: its party once for a child already past it', r.first.join() === 'monster' && r.again === 1, r);
+  check('... and once as she crosses it, not again after', r.crossing.join() === 'monster', r);
+  check('late gate: no page errors', !errors.length, errors);
+  await ctx.close();
+}
+
 (async () => {
   const site = await serve();
   const browser = await launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -2075,7 +2103,7 @@ async function kidMonsters(browser, edition) {
     shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain'),
     ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain'),
     gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
-    kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain') };
+    kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {
