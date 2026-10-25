@@ -118,8 +118,10 @@ npx http-server -p 8080 .
   - 🔊 소리 버튼: hide the child's mute button (the sound comes back on).
   - 배경 음악: the background music on (the default) or off.
   - 두 음절 철자: let the top spelling tier use two-syllable words.
-  Settings are shared by both editions; a change is stamped, so the newest
-  one wins when two tablets' saves are put together.
+  Settings are shared by both editions (그림 힌트 is per edition); each
+  change is stamped on its own, so when two tablets' saves are put together
+  the newest change to each setting wins and a change to one never reverts
+  another. The panel shows the account's newest copy when it opens.
   The play-time clock, the limit and the sleep screen are in `js/guide.js`.
 - **Presents and the gift meter**: 🎁 ●●○ next to the stars fills a pip
   for every answer right the first time (not in the cave, which pays
@@ -323,7 +325,7 @@ npx http-server -p 8080 .
 - 🖼️ picture hints on the answer cards (easier) are a parent setting now
   (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting, the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at }`, `music: false` when a parent turned the background music off, `at` when they last changed one), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit, recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting (`pictures`, with `stamps: { pictures: { v, at } }` once a parent changed it), the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at, stamps }`, `music: false` when a parent turned the background music off, `stamps: { [setting]: { v, at } }` the value a parent set and when, `at` the newest of those, for older versions), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -491,7 +493,7 @@ The other checks, all run by
   plays nothing and breaks nothing without Web Audio).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), also next to the
-  deployed game (`origin/main`); with `SYNC_SERVER_REF=origin/main`
+  deployed game (`origin/main`) and the first release (`eee606ec`); with `SYNC_SERVER_REF=origin/main`
   against the server still deployed.
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 

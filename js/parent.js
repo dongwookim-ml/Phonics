@@ -27,6 +27,7 @@ const PARENT_ERRORS = {
 const parentUi = {
   gear: document.getElementById('parent'),
   panel: null,
+  paint: null, // marks the settings shown, while they are
 };
 
 function parentHasAccount() {
@@ -72,6 +73,7 @@ function parentClose() {
   if (!parentUi.panel) return;
   parentUi.panel.remove();
   parentUi.panel = null;
+  parentUi.paint = null;
   setPaused(false);
   libraryRefresh(); // a book a new 읽기 tier opened shows open (js/library.js)
   // Busy again only if something is still showing (a question, a present,
@@ -103,10 +105,20 @@ function parentLock() {
       r = typeof Account !== 'undefined' ? await Account.verify(input.value) : { ok: input.value === PARENT_PASSWORD, reason: 'wrong' };
     } catch (x) { /* r stays 'busy' */ }
     if (!parentUi.panel) return;
-    if (r.ok) parentStats();
-    else { err.textContent = PARENT_ERRORS[r.reason] || PARENT_ERRORS.wrong; input.select(); }
+    if (!r.ok) { err.textContent = PARENT_ERRORS[r.reason] || PARENT_ERRORS.wrong; input.select(); return; }
+    await parentCatchUp();
+    if (parentUi.panel) parentStats();
   });
   setTimeout(() => input.focus(), 50);
+}
+
+// A tab open a while only has its own old copy (the account's comes in at
+// boot and when a save of this tab is refused): the panel shows, and its
+// changes start from, the account's newest, when the server can be reached.
+async function parentCatchUp() {
+  if (!parentHasAccount()) return;
+  const s = await Account.pull();
+  if (s && s.updated > Account.base) Account._merge(s, Account._dirty ? 'mine' : 'theirs');
 }
 
 // Per kind: questions got right, missed (and not yet put right) and not
@@ -283,7 +295,8 @@ function parentClick(e) {
 }
 
 // ---- Settings: play time, picture hints, the 🔊 button, music --------------
-// Saved with the game (state.settings, state.pictures). The play-time limit
+// Saved with the game (state.settings, state.pictures), each change stamped
+// on its own (Progress.stamp in js/progress.js). The play-time limit
 // and the hidden 🔊 button are handled in js/guide.js, the background music
 // (settings.music, missing means on) in js/music.js.
 
@@ -291,50 +304,60 @@ function parentSettings(body) {
   const box = document.createElement('section');
   box.className = 'parent-settings';
   body.append(box);
-  const render = () => {
+  const chips = (name, options) => options.map(([v, label]) =>
+    `<button type="button" class="chip" data-set="${name}" data-v="${v}">${label}</button>`).join('');
+  box.innerHTML = `<h3>설정</h3>
+    <div class="ps-row">
+      <div class="ps-name">놀이 시간<small>시간이 되면 대화가 끝난 뒤 마을이 잠들고, 비밀번호로만 다시 놀 수 있어요. 오늘 <span class="ps-played"></span>분 놀았어요.</small></div>
+      <div class="ps-chips">${chips('limit', [[0, '끄기'], [15, '15분'], [20, '20분'], [30, '30분']])}</div>
+    </div>
+    <div class="ps-row">
+      <div class="ps-name">그림 힌트<small>단어 카드에 그림을 함께 보여줘요. 끄면 첫 글자를 읽어야 해요.</small></div>
+      <div class="ps-chips">${chips('pictures', [[1, '켜기'], [0, '끄기']])}</div>
+    </div>
+    <div class="ps-row">
+      <div class="ps-name">🔊 소리 버튼<small>아이 화면 위쪽의 소리 끄기 버튼이에요.</small></div>
+      <div class="ps-chips">${chips('mute', [[0, '보이기'], [1, '숨기기']])}</div>
+    </div>
+    <div class="ps-row">
+      <div class="ps-name">배경 음악<small>장소마다 조용한 음악이 흘러요. 말소리가 나오거나 문제를 풀 때는 아주 작아져요.</small></div>
+      <div class="ps-chips">${chips('music', [[1, '켜기'], [0, '끄기']])}</div>
+    </div>
+    <div class="ps-row">
+      <div class="ps-name">두 음절 철자<small>스펠링 마지막 단계에 rab·bit, rock·et 같은 두 음절 단어도 내요.</small></div>
+      <div class="ps-chips">${chips('two', [[0, '끄기'], [1, '켜기']])}</div>
+    </div>`;
+  // The chip that is on, from the live settings: after a tap, and after a
+  // sync put the other tablet's in (parentRefresh). The chips stay in place,
+  // so a tap already under way still lands.
+  const paint = () => {
     const s = state.settings;
-    const played = Math.floor(guidePlayedMs() / 60000);
-    const chips = (name, options, value) => options.map(([v, label]) =>
-      `<button type="button" class="chip${v === value ? ' on' : ''}" data-set="${name}" data-v="${v}">${label}</button>`).join('');
-    box.innerHTML = `<h3>설정</h3>
-      <div class="ps-row">
-        <div class="ps-name">놀이 시간<small>시간이 되면 대화가 끝난 뒤 마을이 잠들고, 비밀번호로만 다시 놀 수 있어요. 오늘 ${played}분 놀았어요.</small></div>
-        <div class="ps-chips">${chips('limit', [[0, '끄기'], [15, '15분'], [20, '20분'], [30, '30분']], s.playLimit | 0)}</div>
-      </div>
-      <div class="ps-row">
-        <div class="ps-name">그림 힌트<small>단어 카드에 그림을 함께 보여줘요. 끄면 첫 글자를 읽어야 해요.</small></div>
-        <div class="ps-chips">${chips('pictures', [[1, '켜기'], [0, '끄기']], state.pictures ? 1 : 0)}</div>
-      </div>
-      <div class="ps-row">
-        <div class="ps-name">🔊 소리 버튼<small>아이 화면 위쪽의 소리 끄기 버튼이에요.</small></div>
-        <div class="ps-chips">${chips('mute', [[0, '보이기'], [1, '숨기기']], s.hideMute ? 1 : 0)}</div>
-      </div>
-      <div class="ps-row">
-        <div class="ps-name">배경 음악<small>장소마다 조용한 음악이 흘러요. 말소리가 나오거나 문제를 풀 때는 아주 작아져요.</small></div>
-        <div class="ps-chips">${chips('music', [[1, '켜기'], [0, '끄기']], s.music === false ? 0 : 1)}</div>
-      </div>
-      <div class="ps-row">
-        <div class="ps-name">두 음절 철자<small>스펠링 마지막 단계에 rab·bit, rock·et 같은 두 음절 단어도 내요.</small></div>
-        <div class="ps-chips">${chips('two', [[0, '끄기'], [1, '켜기']], s.twoSyllables ? 1 : 0)}</div>
-      </div>`;
-    box.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
-      const v = Number(b.dataset.v);
-      // Stamped (at least one past the copy it replaces, whatever this
-      // device's clock says), so the newest change wins on the other tablet
-      // (joinSettings in js/progress.js).
-      if (b.dataset.set !== 'pictures') s.at = Math.max(Date.now(), (Number(s.at) || 0) + 1);
-      if (b.dataset.set === 'limit') s.playLimit = v;
-      if (b.dataset.set === 'mute') s.hideMute = !!v;
-      if (b.dataset.set === 'music') s.music = !!v;
-      if (b.dataset.set === 'two') { s.twoSyllables = !!v; Quiz.setTier('spell', Quiz.skill('spell').t); }
-      if (b.dataset.set === 'pictures') setPictures(!!v); // saves
-      else save();
-      guideApplySettings();
-      musicUpdate(); // heard once the panel closes
-      render();
-    }));
+    const on = { limit: s.playLimit | 0, pictures: state.pictures ? 1 : 0, mute: s.hideMute ? 1 : 0, music: s.music === false ? 0 : 1, two: s.twoSyllables ? 1 : 0 };
+    box.querySelectorAll('[data-set]').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === on[b.dataset.set]));
+    box.querySelector('.ps-played').textContent = Math.floor(guidePlayedMs() / 60000);
   };
-  render();
+  const keys = { limit: 'playLimit', mute: 'hideMute', music: 'music', two: 'twoSyllables' };
+  box.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => {
+    const v = Number(b.dataset.v);
+    const k = keys[b.dataset.set];
+    // Each setting is stamped on its own, so the newest change to it wins
+    // on the other tablet and a change to another one there stays
+    // (js/progress.js). The live settings: a sync may have replaced them.
+    if (k) state.settings.at = Progress.stamp(state.settings, k, k === 'playLimit' ? v : !!v);
+    if (b.dataset.set === 'two') Quiz.setTier('spell', Quiz.skill('spell').t);
+    if (b.dataset.set === 'pictures') { Progress.stamp(state, 'pictures', !!v); setPictures(state.pictures); } // saves
+    else save();
+    guideApplySettings();
+    musicUpdate(); // heard once the panel closes
+    paint();
+  }));
+  parentUi.paint = paint;
+  paint();
+}
+
+// Called by applyProgress (js/game.js) when a sync changed the game.
+function parentRefresh() {
+  if (parentUi.paint) parentUi.paint();
 }
 
 parentUi.gear.addEventListener('click', parentOpen);

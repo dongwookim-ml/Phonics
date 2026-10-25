@@ -9,7 +9,8 @@
 // recording workflow), every pure sound one tools/letter-sounds.json can cut,
 // and a word sounded out once per sound. Also: Quiz.pool holds only what the
 // parent's settings let her be asked, an old save never starts a kind at its
-// hardest tier, every villager in every scene has a voice and a persona, and
+// hardest tier, a tier the parent sets is stamped (Quiz.setTier), every
+// villager in every scene has a voice and a persona, and
 // every LINES / BOOK_LINES kind the code asks for exists.
 // First it runs tools/check-books.js: every word of the books she reads
 // herself can be sounded out at the book's level, or is a sight word.
@@ -116,6 +117,16 @@ const cuts = Object.keys(JSON.parse(fs.readFileSync(path.join(__dirname, 'letter
         const c = TIERS[kind][k.t - 1];
         if (k.t >= TIERS[kind].length || c.near || c.minimal) problems.push(`an old save starts ${kind} at tier ${k.t} of ${TIERS[kind].length}`);
       }
+      // A tier the parent sets is stamped and counts as one more answer, so
+      // the saves keep it (tools/check-merge.js); setting it again to the
+      // same tier changes nothing.
+      const skills = state.skill;
+      state.skill = { spell: { t: 3, best: 3, w: [1], last: [], n: 7, set: 9e15 } };
+      Quiz.setTier('spell', 2);
+      Quiz.setTier('spell', 2);
+      const set = Quiz.skill('spell');
+      if (set.t !== 2 || set.set !== 9e15 + 1 || set.n !== 8 || set.w.length) problems.push(`Quiz.setTier: ${JSON.stringify(set)}`);
+      state.skill = skills;
       // The parent-only tiers are asked below too, so their ids are in the pool.
       state.settings = Object.fromEntries(Object.values(TIERS).flat().filter(c => c.setting).map(c => [c.setting, true]));
       const kinds = {};

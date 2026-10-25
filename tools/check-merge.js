@@ -1,12 +1,15 @@
 // Unit checks of the save merge (js/progress.js), in Node, no browser:
 // two devices on the new format, an older game version (no fmt) on either
 // side, a guest's progress joining an account, editions, today's quests,
-// play time, stickers, dust fed to a friend, unknown fields.
+// play time, stickers, dust fed to a friend, unknown fields, and the
+// parent's settings, tiers and picture hints next to tabs still on the two
+// older releases (their own merge code, from git).
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 let failed = 0;
@@ -15,14 +18,22 @@ function check(name, ok, detail) {
   if (!ok) failed++;
 }
 
-// Progress as one device running one edition sees it.
-function device(edition, id) {
+// Progress as one device running one edition sees it; with `rev`, as a tab
+// still on that older release does (its js/progress.js from git; null when
+// git doesn't have it).
+function device(edition, id, rev) {
+  let src = fs.readFileSync(path.join(root, 'js/progress.js'), 'utf8');
+  if (rev) {
+    const r = spawnSync('git', ['-C', root, 'show', `${rev}:js/progress.js`], { maxBuffer: 1 << 26 });
+    if (r.status !== 0) return null;
+    src = r.stdout.toString();
+  }
   const store = { 'pixeltown-device': id };
   const ctx = {
     EDITION: edition, crypto: require('crypto').webcrypto, Quiz: { kinds: ['word', 'start', 'rhyme'] },
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } },
   };
-  return vm.runInNewContext(`${fs.readFileSync(path.join(root, 'js/progress.js'), 'utf8')}\nProgress`, ctx);
+  return vm.runInNewContext(`${src}\nProgress`, ctx);
 }
 
 // What save() in js/game.js writes after playing on top of a save `s`
@@ -209,6 +220,118 @@ const kind = (e, k) => (e.skill || {})[k] || {};
   check('tier set by the parent: after that, more answers win again', kind(A.merge(phone, later, 'theirs'), 'spell').t === 3 && kind(A.merge(phone, later, 'mine'), 'spell').t === 3);
   const again = Object.assign({}, phone, { skill: { spell: sk(1, 40, { best: 4, set: 6000 }) } });
   check('tier set by the parent: the newer change wins', kind(B.merge(later, again, 'mine'), 'spell').t === 1 && kind(B.merge(again, later, 'theirs'), 'spell').t === 1);
+  // Per kind: spelling lowered on A, family raised in B's panel (open since before).
+  const b = Object.assign({}, tab, { skill: { spell: sk(5, 41), word: sk(3, 11, { set: 7000 }) } });
+  check('tiers set on two tablets: each kind keeps its own', ['mine', 'theirs'].every(how => {
+    const x = B.merge(b, phone, how);
+    return kind(x, 'spell').t === 2 && kind(x, 'word').t === 3;
+  }), B.merge(b, phone, 'mine').skill);
+}
+
+// ---- The parent's settings, one by one (js/parent.js) ------------------------------
+// A change stamps that setting alone (Progress.stamp), so a change on one
+// tablet never reverts another setting changed on the other.
+const settingsOf = s => ({ limit: s.playLimit | 0, mute: !!s.hideMute, two: !!s.twoSyllables, music: s.music !== false });
+const changed = (P, s, k, v) => { const x = JSON.parse(JSON.stringify(s)); x.at = P.stamp(x, k, v); return x; };
+const withSettings = (save, settings) => Object.assign({}, save, { settings });
+{
+  // In step, nothing set. The parent sets 15 minutes on A; later, in B's
+  // panel, open since before (still showing 끄기), she hides the 🔊 button.
+  const base = play(A, { edition: 'princess' }, 1, 0, { settings: { playLimit: 0, hideMute: false } });
+  const a = withSettings(base, changed(A, base.settings, 'playLimit', 15));
+  const b = withSettings(play(B, base, 1, 0), changed(B, base.settings, 'hideMute', true));
+  const all = [B.merge(b, a, 'mine'), B.merge(b, a, 'theirs'), A.merge(a, b, 'mine'), A.merge(a, b, 'theirs')];
+  check('settings one by one: a change on each tablet, both stay (mine and theirs, both ways)', all.every(m => m.settings.playLimit === 15 && m.settings.hideMute === true), all.map(m => m.settings));
+  check('settings one by one: merging again, either way round, changes nothing', all.every(m => A.same(A.merge(m, a, 'mine'), m) && A.same(B.merge(b, m, 'theirs'), m)));
+  const guest = withSettings({ edition: 'princess', stars: 3 }, changed(C, { playLimit: 0 }, 'music', false));
+  const g = A.merge(guest, a, 'foreign');
+  check('settings one by one: a guest\'s change joins the account\'s, and its unchanged ones don\'t count', g.settings.music === false && g.settings.playLimit === 15, g.settings);
+  // The same one on both: the newer change, whichever copy is preferred.
+  const at = (v, t) => withSettings(base, { playLimit: v, hideMute: false, at: t, stamps: { playLimit: { v, at: t } } });
+  check('settings one by one: the same one changed on both: the newer wins', ['mine', 'theirs'].every(how => A.merge(at(20, 3000), at(30, 4000), how).settings.playLimit === 30 && A.merge(at(30, 4000), at(20, 3000), how).settings.playLimit === 30));
+  const ahead = { playLimit: 30, at: 9e15, stamps: { playLimit: { v: 30, at: 9e15 } } };
+  check('settings one by one: a change beats the one it replaces, whatever this clock says', changed(A, ahead, 'playLimit', 15).stamps.playLimit.at === 9e15 + 1);
+  check('settings one by one: what the game reads is plain values', settingsOf(all[0].settings).limit === 15 && all[0].settings.at === Math.max(...Object.values(all[0].settings.stamps).map(r => r.at)));
+}
+
+// ---- Tabs still on an older release -----------------------------------------------
+// The first release (M1, eee606ec) knows no settings or tiers: its game
+// keeps them as it loaded them, and its merge joins the settings key by key
+// (its own value first) and keeps a tier entry with more answers. The
+// previous one (M2+M3, 144e11e1) stamps the settings whole (`at`), and
+// leaves the picture hints unstamped. Both read the plain values.
+const M1 = device('princess', 'dO', 'eee606ec');
+const M23 = device('princess', 'dM', '144e11e1');
+if (!M1 || !M23) check('the older releases are in git (eee606ec, 144e11e1)', !process.env.CI, 'fetch them (CI checks out with fetch-depth 0)');
+if (M1 && M23) {
+  // A tab on the first release loaded the save while nothing was set. The
+  // parent sets 15 minutes and hides the 🔊 button on this version's tablet
+  // N; then the child answers once on the old tab, which joins the server's
+  // copy into its own: its old values, beside the server's stamps.
+  const base = play(A, { edition: 'princess' }, 2, 0, { settings: { playLimit: 0, hideMute: false } });
+  const n = withSettings(base, changed(A, changed(A, base.settings, 'playLimit', 15), 'hideMute', true));
+  const o = M1.merge(play(M1, base, 1, 0), n, 'mine');
+  check('first release: its copy has its own old values beside the newest stamp', o.settings.playLimit === 0 && o.settings.at === n.settings.at, o.settings);
+  const want = v => v.limit === 15 && v.mute === true;
+  const back = [A.merge(n, o, 'theirs'), A.merge(n, o, 'mine')];
+  check('first release: its old values don\'t win with the stamp (this version, theirs and mine)', back.every(m => want(settingsOf(m.settings))), back.map(m => m.settings));
+  // The same with the old tab in the robot game: the princess edition it
+  // carries along is joined the same way.
+  const oc = device('captain', 'dO', 'eee606ec').merge(Object.assign(play(M1, { edition: 'captain' }, 1, 0), { other: { princess: Object.assign({}, base, { ver: 9 }) } }), n, 'mine');
+  check('first release, robot game: its old values don\'t win either', [A.merge(n, oc, 'theirs'), A.merge(oc, n, 'mine')].every(m => want(settingsOf(m.settings)) && want(settingsOf(m.other.captain.settings))), oc.other.princess.settings);
+  check('first release: a tablet that only has its copy reads the parent\'s settings', want(settingsOf(A.settings(o.settings))), A.settings(o.settings));
+  check('first release: what this version sends back has them plain, for both older releases', want(settingsOf(M23.merge(o, back[0], 'theirs').settings)) && want(settingsOf(M1.merge(o, back[0], 'theirs').settings)) && want(settingsOf(back[0].settings)));
+  // The old tab loaded this version's stamped copy: its stamps go with its
+  // values, and the newer change wins.
+  const n2 = withSettings(n, changed(A, n.settings, 'playLimit', 20));
+  const o2 = M1.merge(play(M1, n, 1, 0), n2, 'mine');
+  check('first release: a copy with its own older stamps loses to the newer change', A.merge(n2, o2, 'theirs').settings.playLimit === 20 && A.settings(o2.settings).playLimit === 15 && A.merge(o2, n2, 'mine').settings.playLimit === 20);
+  // A tab on the previous release reads this version's copy, and changes
+  // one in its own panel: it stamps `at` and keeps the stamps it loaded.
+  const p = M23.merge(play(M23, base, 1, 0), n, 'mine');
+  check('previous release: it reads this version\'s settings', want(settingsOf(p.settings)) && want(settingsOf(M23.merge(n, play(M23, base, 1, 0), 'theirs').settings)), p.settings);
+  const oldPanel = (s, k, v) => Object.assign({}, s, { [k]: v, at: Math.max(Date.now(), (Number(s.at) || 0) + 1) });
+  const p2 = withSettings(p, oldPanel(p.settings, 'twoSyllables', true));
+  const n3 = withSettings(n, changed(A, n.settings, 'music', false));
+  const both = [A.merge(n3, p2, 'mine'), A.merge(n3, p2, 'theirs'), A.merge(p2, n3, 'theirs')];
+  check('previous release: a change in its panel counts, and this version\'s other change stays', both.every(m => { const v = settingsOf(m.settings); return want(v) && v.two && !v.music; }), both.map(m => m.settings));
+  const p3 = withSettings(p, oldPanel(p.settings, 'playLimit', 30));
+  check('previous release: changing one that has a stamp counts too', A.merge(n, p3, 'mine').settings.playLimit === 30 && A.settings(p3.settings).playLimit === 30);
+  // Saves from before any stamp: the previous release's `at` counts for
+  // every setting in its copy; without it, they are joined as before.
+  const whole = { playLimit: 20, hideMute: true, at: 500 };
+  check('unstamped: the previous release\'s whole stamp counts for each setting', A.merge(withSettings(base, whole), n, 'mine').settings.playLimit === 15 && A.merge(n, withSettings(base, { playLimit: 30, at: 9e15 }), 'mine').settings.playLimit === 30 && ((A.settings(whole).stamps || {}).hideMute || {}).at === 500);
+  // Tiers: a tier the parent sets counts as one more answer (Quiz.setTier),
+  // so the first release, which keeps the entry with more answers, keeps it.
+  const synced = play(A, { edition: 'princess' }, 1, 0, { skill: { spell: sk(4, 40) } });
+  const lowered = Object.assign({}, synced, { skill: { spell: sk(2, 41, { best: 4, set: 5000 }) } });
+  const t = M1.merge(play(M1, synced, 1, 0), lowered, 'mine');
+  check('first release next to a tier the parent set: it keeps it', kind(t, 'spell').t === 2 && kind(A.merge(lowered, t, 'theirs'), 'spell').t === 2, t.skill);
+}
+
+// ---- The picture hints (그림 힌트), per edition -----------------------------------
+{
+  // In step, hints on in both games. The parent turns them off on A in the
+  // princess game (and sets 20 minutes); B's open tab then saves once, and
+  // so do tabs on the older releases, each with its own copy first.
+  const base = play(A, { edition: 'princess', pictures: true, other: { captain: { edition: 'captain', pictures: true } } }, 1, 0);
+  const a = withSettings(JSON.parse(JSON.stringify(base)), changed(A, {}, 'playLimit', 20));
+  A.stamp(a, 'pictures', false);
+  const stale = play(B, base, 1, 0);
+  const off = m => m.pictures === false && m.settings.playLimit === 20 && m.other.captain.pictures === true;
+  check('picture hints: turned off on one tablet, the other tablet\'s next save keeps them off', off(B.merge(stale, a, 'mine')) && off(A.merge(a, stale, 'theirs')) && off(B.merge(stale, a, 'theirs')), B.merge(stale, a, 'mine'));
+  for (const [name, P] of [['first release', M1], ['previous release', M23]]) {
+    if (!P) continue;
+    const o = P.merge(play(P, base, 1, 0), a, 'mine');
+    check(`picture hints: a tab on the ${name} keeps its own beside the stamp, and this version puts it right`, o.pictures === true && A.setting(o, 'pictures') === false && off(A.merge(a, o, 'theirs')) && off(A.merge(o, a, 'mine')), o);
+  }
+  // The robot game's hints are its own.
+  const c = C.merge(base, base, 'theirs');
+  C.stamp(c, 'pictures', false);
+  const m = A.merge(stale, c, 'mine');
+  check('picture hints: each edition has its own', m.pictures === true && m.other.captain.pictures === false && A.merge(a, c, 'mine').pictures === false, [m.pictures, m.other.captain.pictures]);
+  check('picture hints: merging again changes nothing', A.same(A.merge(m, c, 'mine'), m) && A.same(B.merge(B.merge(stale, a, 'mine'), a, 'theirs'), B.merge(stale, a, 'mine')));
+  check('picture hints: a save without a stamp, as before (the copy preferred)', A.merge(Object.assign({}, base, { pictures: false }), base, 'mine').pictures === false && A.merge(base, Object.assign({}, base, { pictures: false }), 'mine').pictures === true);
 }
 
 // ---- Play time today (js/guide.js) -----------------------------------------------
