@@ -2,248 +2,248 @@
 const TTS_SOUNDS = {
 "a": {
 "anchor": "apple",
-"anchorClip": "34283edfd9",
-"clip": "d167689b75",
+"anchorClip": "df56a4ae66",
+"clip": "12cef4bcd9",
 "kind": "vowel",
 "ms": 400,
 "where": "vowel"
 },
 "b": {
 "anchor": "bus",
-"anchorClip": "36caa29a4e",
-"clip": "b4780ee5a5",
+"anchorClip": "de08be0585",
+"clip": "6168e32d07",
 "kind": "vstop",
 "ms": 65,
 "where": "initial"
 },
 "c": {
 "anchor": "cat",
-"anchorClip": "e8ba43bcec",
-"clip": "aa6f06af26",
+"anchorClip": "320d54fcad",
+"clip": "5809fc1e0a",
 "kind": "stop",
 "ms": 65,
 "where": "initial"
 },
 "ch": {
 "anchor": "chick",
-"anchorClip": "b99298f781",
-"clip": "c75510e78f",
+"anchorClip": "9c68d4cf55",
+"clip": "bfde921dfd",
 "kind": "affricate",
 "ms": 145,
 "where": "initial"
 },
 "ck": {
 "anchor": "cat",
-"anchorClip": "e8ba43bcec",
-"clip": "0ff2e30c68",
+"anchorClip": "320d54fcad",
+"clip": "82a0e2df83",
 "kind": "stop",
 "ms": 65,
 "where": "initial"
 },
 "d": {
 "anchor": "dog",
-"anchorClip": "c4a4e644fc",
-"clip": "ccfe9dcc63",
+"anchorClip": "7758bbe68f",
+"clip": "ed6b866088",
 "kind": "vstop",
 "ms": 65,
 "where": "initial"
 },
 "e": {
 "anchor": "egg",
-"anchorClip": "563b2b546c",
-"clip": "b30d60d4fc",
+"anchorClip": "9a9c9f4bd8",
+"clip": "a843c50126",
 "kind": "vowel",
 "ms": 400,
 "where": "vowel"
 },
 "f": {
 "anchor": "leaf",
-"anchorClip": "48d866b62b",
-"clip": "6c2ce0f39e",
+"anchorClip": "5e02953104",
+"clip": "9622021a76",
 "kind": "fricative",
 "ms": 550,
 "where": "final"
 },
 "g": {
 "anchor": "goat",
-"anchorClip": "36b672771a",
-"clip": "3a75f46aa4",
+"anchorClip": "6bb66006c3",
+"clip": "d41c50e4b3",
 "kind": "vstop",
 "ms": 65,
 "where": "initial"
 },
 "h": {
 "anchor": "hut",
-"anchorClip": "ef52b8113d",
-"clip": "324c5559a8",
+"anchorClip": "5efd087d89",
+"clip": "6fdb7b76b6",
 "kind": "breath",
 "ms": 400,
 "where": "initial"
 },
 "i": {
 "anchor": "it",
-"anchorClip": "a3b91da730",
-"clip": "e0944d7e1c",
+"anchorClip": "96ddb4c4c9",
+"clip": "4dd6885e54",
 "kind": "vowel",
 "ms": 400,
 "where": "vowel"
 },
 "j": {
 "anchor": "jet",
-"anchorClip": "126812a328",
-"clip": "f5d2edb01f",
+"anchorClip": "6506af3065",
+"clip": "490eaca116",
 "kind": "vaffricate",
 "ms": 125,
 "where": "initial"
 },
 "k": {
 "anchor": "cat",
-"anchorClip": "e8ba43bcec",
-"clip": "41148d96c9",
+"anchorClip": "320d54fcad",
+"clip": "f865e1559b",
 "kind": "stop",
 "ms": 65,
 "where": "initial"
 },
 "l": {
 "anchor": "lock",
-"anchorClip": "3812e5aeef",
-"clip": "1738bfd4ed",
+"anchorClip": "6887ba609d",
+"clip": "ef90f9bde6",
 "kind": "liquid",
 "ms": 550,
 "where": "initial"
 },
 "m": {
 "anchor": "ham",
-"anchorClip": "66d7e52b30",
-"clip": "14f9068160",
+"anchorClip": "3f105de150",
+"clip": "9979748e3b",
 "kind": "nasal",
 "ms": 550,
 "where": "final"
 },
 "n": {
 "anchor": "ten",
-"anchorClip": "073b1b3828",
-"clip": "59b2f4e052",
+"anchorClip": "12423a7491",
+"clip": "bca0c9cd11",
 "kind": "nasal",
 "ms": 550,
 "where": "final"
 },
 "ng": {
 "anchor": "ring",
-"anchorClip": "71cf324ee7",
-"clip": "409a9f39d2",
+"anchorClip": "4a55b1ccfa",
+"clip": "4052b1c912",
 "kind": "nasal",
 "ms": 550,
 "where": "final"
 },
 "o": {
 "anchor": "hot",
-"anchorClip": "f116e76f16",
-"clip": "160e0b44b2",
+"anchorClip": "d8aba8db07",
+"clip": "67081e6beb",
 "kind": "vowel",
 "ms": 400,
 "where": "vowel"
 },
 "p": {
 "anchor": "pig",
-"anchorClip": "2fc954ad62",
-"clip": "7e8f1b6624",
+"anchorClip": "533ec974da",
+"clip": "87429fd628",
 "kind": "stop",
 "ms": 65,
 "where": "initial"
 },
 "q": {
 "anchor": "queen",
-"anchorClip": "3d15011461",
-"clip": "86ce86e85d",
+"anchorClip": "ba0eeacd20",
+"clip": "c75563161e",
 "kind": "glide",
 "ms": 82,
 "where": "initial"
 },
 "r": {
 "anchor": "purple",
-"anchorClip": "e665bf3035",
-"clip": "d320b7d46d",
+"anchorClip": "9c0b23211d",
+"clip": "21b5988591",
 "kind": "liquid",
 "ms": 550,
 "where": "vowel"
 },
 "s": {
 "anchor": "bus",
-"anchorClip": "36caa29a4e",
-"clip": "7b184f9e52",
+"anchorClip": "de08be0585",
+"clip": "95c377bdb7",
 "kind": "fricative",
 "ms": 550,
 "where": "final"
 },
 "sh": {
 "anchor": "fish",
-"anchorClip": "d3f9ad7943",
-"clip": "b266d0e272",
+"anchorClip": "e4f8aaca99",
+"clip": "f45de048e9",
 "kind": "fricative",
 "ms": 550,
 "where": "final"
 },
 "t": {
 "anchor": "top",
-"anchorClip": "35a2541b3a",
-"clip": "2e319ca074",
+"anchorClip": "409d998f2a",
+"clip": "cc138e5154",
 "kind": "stop",
 "ms": 65,
 "where": "initial"
 },
 "th": {
 "anchor": "tooth",
-"anchorClip": "92dd9fbba6",
-"clip": "2d57e8df3d",
+"anchorClip": "0e1a37b679",
+"clip": "4310b5e367",
 "kind": "fricative",
 "ms": 550,
 "where": "final"
 },
 "u": {
 "anchor": "up",
-"anchorClip": "1dcb7c7fd3",
-"clip": "3e36d61cd9",
+"anchorClip": "424f5e9f0a",
+"clip": "b7509171a8",
 "kind": "vowel",
 "ms": 400,
 "where": "vowel"
 },
 "v": {
 "anchor": "van",
-"anchorClip": "bbf47b8e00",
-"clip": "102d10f850",
+"anchorClip": "1cfdea86d6",
+"clip": "f636e4076d",
 "kind": "vfricative",
 "ms": 550,
 "where": "initial"
 },
 "w": {
 "anchor": "web",
-"anchorClip": "873b1e4812",
-"clip": "38f3fa82a4",
+"anchorClip": "13fcab5702",
+"clip": "50460826c6",
 "kind": "glide",
 "ms": 122,
 "where": "initial"
 },
 "x": {
 "anchor": "box",
-"anchorClip": "2cdfa58643",
-"clip": "f7d6538706",
+"anchorClip": "55c0a16303",
+"clip": "0884a181d5",
 "kind": "cluster",
 "ms": 270,
 "where": "final"
 },
 "y": {
 "anchor": "yes",
-"anchorClip": "96f6dbd734",
-"clip": "b58f6ef02b",
+"anchorClip": "bd99071ede",
+"clip": "63571ea630",
 "kind": "glide",
 "ms": 132,
 "where": "initial"
 },
 "z": {
 "anchor": "zebra",
-"anchorClip": "f9d81bcee3",
-"clip": "6b8b850a62",
+"anchorClip": "06a33a383a",
+"clip": "734eacc678",
 "kind": "vfricative",
 "ms": 550,
 "where": "initial"
