@@ -198,7 +198,7 @@ ENGINES = read_json(CLIPS_FILE, {})
 GAINS = read_json(GAINS_FILE, {})
 LONE = re.compile(r'^[a-z]+[!.]?$')
 SENTENCES = re.compile(r'[.!?]\s+\S')
-LAST_VARIANT = 2
+LAST_VARIANT = 4
 
 PHRASES = {}  # (voice, text) -> phrase, filled by load_phrases()
 
@@ -266,12 +266,19 @@ def spoken(text, k):
     A lone word is said as a short sentence ("Cat."), which keeps its pitch
     falling and stops the engine from adding a word. Try 1 wraps the line in
     <s> (<p> for several sentences); try 2 says it after "Listen." and a
-    pause, which is cut off."""
-    if LONE.match(text):
+    pause, which is cut off. Try 3 says a lone word as "Cat!", which the
+    engine says more crisply (a final t that "Cat." swallowed), and other
+    lines wrapped after the carrier; try 4 is try 2 said slower (SLOWER)."""
+    lone = LONE.match(text)
+    if lone:
         word = text.rstrip('!.')
-        text = word.capitalize() + (text[len(word):] or '.')
-    wrap = ('p' if SENTENCES.search(text) else 's') if k == 1 else None
-    return text, wrap, ('Listen.' if k == 2 else None)
+        text = word.capitalize() + (text[len(word):] or ('!' if k == 3 else '.'))
+    wrap = ('p' if SENTENCES.search(text) else 's') if k == 1 or (k == 3 and not lone) else None
+    return text, wrap, ('Listen.' if k in (2, 4) or (k == 3 and not lone) else None)
+
+
+# How much slower each try is said (try 4: a careful, slower reading).
+SLOWER = {4: 0.85}
 
 
 polly = None
@@ -317,6 +324,7 @@ def speak(slot, text, speed, k=0, after=None, sounds=False):
     """One recording, cleaned up (no gain yet): (samples, notes)."""
     voice, engine = VOICES[slot]
     said, wrap, before = spoken(text, k)
+    speed *= SLOWER.get(k, 1)
     audio, used = request(voice, engine, lambda rate: ssml(said, speed, rate, wrap, before, after, sounds))
     x = ca.decode(audio)
     lone = bool(LONE.match(text))
@@ -658,24 +666,31 @@ def fix():
         v, t = key.split('|', 1)
         return idx.get(v, {}).get(t)
 
-    bad = []
+    bad, tried = [], {}
     for key, p in ((f"{p['voice']}|{p['text']}", p) for p in phrases):
         cid = current(key)
         if kind_of(p) != 'plain' or variant(p) >= LAST_VARIANT:
             continue
-        if not cid:
-            bad.append(key)  # no clip at all (refused, or nothing audible): try the other ways
+        tried[key] = variant(p)
+        if not cid or cid not in ENGINES.get(p['voice'], {}):
+            # No clip at all (refused, or nothing audible), or one kept from
+            # before clips were tracked: try the other ways.
+            bad.append(key)
             continue
         c, w = crep['clips'].get(key, {}), vrep['clips'].get(key, {})
         if c.get('unfixable') or w.get('unfixable'):
-            continue
+            # Given up on after every way there was then (2 before tries 3
+            # and 4 existed): only the ways added since are left to try.
+            tried[key] = max(tried[key], c.get('tried', 2))
+            if tried[key] >= LAST_VARIANT:
+                continue
         if (c.get('id') == cid and c.get('fails')) or (w.get('id') == cid and w.get('status') in vc.FAILS):
             bad.append(key)
     by_key = {f"{p['voice']}|{p['text']}": p for p in phrases}
     print(f'{len(bad)} lines to record again' + ('' if whisper else ' (no recogniser here: acoustic checks only)'),
           flush=True)
     refs = cc.references(crep)
-    tried = {key: variant(by_key[key]) for key in bad}
+    tried = {key: tried[key] for key in bad}
     while bad:
         todo = [key for key in bad if tried[key] < LAST_VARIANT]
         if not todo:
@@ -708,7 +723,7 @@ def fix():
                 if heard:
                     vrep['clips'][key] = heard
     for key in bad:
-        crep['clips'].setdefault(key, {})['unfixable'] = True
+        crep['clips'].setdefault(key, {}).update(unfixable=True, tried=tried[key])
         print(f'  unfixable, keeps its clip: {key}', flush=True)
     # Sounds and "says" lines made from a clip that changed.
     record_missing(phrases)

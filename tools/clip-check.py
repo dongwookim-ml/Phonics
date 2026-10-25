@@ -226,7 +226,7 @@ def run(scope='all', jobs=4, path=REPORT):
     with ThreadPoolExecutor(jobs) as pool:
         for i, (key, m) in enumerate(pool.map(one, todo), 1):
             if old.get(key, {}).get('id') == m['id'] and old[key].get('unfixable'):
-                m['unfixable'] = True
+                m.update(unfixable=True, tried=old[key].get('tried', 2))
             rep['clips'][key] = m
             if i % 1000 == 0:
                 print(f'  {i}/{len(todo)}', flush=True)
