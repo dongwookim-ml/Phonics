@@ -135,8 +135,8 @@ const Account = {
     if (!this.user) return { ok: pw === ACCOUNT_GUEST_PW, reason: 'wrong' };
     const r = await accountFetch('POST', '/auth/verify', { pw });
     if (r.status === 200 && r.data) {
-      // Signed in before this check existed: keep one now.
-      if (r.data.ok && !accountGet('pwcheck')) accountRemember(this.user, pw);
+      // Signed in before this check existed (or it is another account's): keep one now.
+      if (r.data.ok && (accountParse(accountGet('pwcheck')) || {}).id !== this.user) accountRemember(this.user, pw);
       return { ok: !!r.data.ok, reason: 'wrong' };
     }
     if (r.status === 429) return { ok: false, reason: 'busy' };
