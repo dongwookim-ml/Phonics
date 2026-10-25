@@ -45,8 +45,11 @@ async function game(browser, { seed, user, server, edition, days } = {}) {
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/^https?:/, r => (server ? server(r) : r.abort()));
   await page.addInitScript(([seed, user, fake]) => {
-    if (sessionStorage.getItem('seeded')) return;
-    sessionStorage.setItem('seeded', '1');
+    // Seeded once per context: a flag in localStorage, which a reload keeps
+    // (sessionStorage for a file:// page sometimes doesn't, and the seed would
+    // then overwrite the save the reload is meant to keep).
+    if (localStorage.getItem('test-seeded')) return;
+    localStorage.setItem('test-seeded', '1');
     if (user) {
       localStorage.setItem('pixeltown-token', 'token');
       localStorage.setItem('pixeltown-user', user);
