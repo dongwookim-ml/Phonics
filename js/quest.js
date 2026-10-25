@@ -10,11 +10,12 @@
 // streak, and nothing is ever taken away.
 // The chest in the HUD opens the card; it never opens over a question.
 // Hooks: questAdd where things happen (answeredRight, addDust, enterDoor
-// and followLink in js/game.js, collectSticker in js/album.js, miniCatch,
-// bookFinish and feedOnce), renderQuestHud from renderStars, load/save and
-// applyProgress. Saved: state.quests, { day, picks, got, chest }, with what
-// each tablet counted kept apart (got[device][kind]) so two tablets on one
-// account add up (joinQuests in js/progress.js).
+// and followLink in js/game.js, collectSticker and stickerPack in
+// js/album.js, miniCatch, bookFinish, selfFinish and feedOnce),
+// renderQuestHud from renderStars, load/save and applyProgress. Saved:
+// state.quests, { day, picks, got, chest }, with what each tablet counted
+// kept apart (got[device][kind]) so two tablets on one account add up
+// (joinQuests in js/progress.js).
 
 // ---- The day's quests ----------------------------------------------------------
 

@@ -1369,6 +1369,21 @@ body.captain .rd-word.on, body.captain .rd-text.now .rd-word { background: #dceb
   .rd-option .w { font-size: 24px; text-align: left; }
   .rd-qtext { font-size: 26px; }
 }
+/* Her own books on a phone held upright: a smaller picture, its emoji side
+   by side, and a phone's tiles, so a sentence fits the page. Where it
+   still can't (the smallest phones), the page scrolls: the auto margins
+   centre it while it fits and start it at the top when it doesn't, so
+   every word stays in reach. (Held sideways, see the short screens.) */
+@media (max-width: 560px) and (min-height: 521px) {
+  .reader.self .rd-page, .reader.self .rd-quiz { justify-content: flex-start; gap: 8px; padding: 10px; overflow-y: auto; }
+  .reader.self .rd-pic, .reader.self .rd-q { margin-top: auto; }
+  .reader.self .rd-text, .reader.self .rd-options { margin-bottom: auto; }
+  .reader.self .rd-pic { font-size: min(12vh, 20vw); letter-spacing: 0; white-space: nowrap; }
+  .reader.self .rd-text { gap: 8px; }
+  .reader.self .rd-word { min-height: 52px; padding: 0 10px 2px; font-size: 26px; border-radius: 12px; }
+  .reader.self .rd-big { display: none; }
+  .reader.self .rd-end { font-size: 40px; }
+}
 
 /* ---- A friend that grows (js/friend.js) ---- */
 

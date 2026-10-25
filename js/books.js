@@ -195,7 +195,7 @@ const BOOKS = [
 // Tapping a word sounds it out ("/c/ /a/ /t/… cat!"). A book opens once her
 // tier in reading words (the `read` questions) reaches its level; level 1
 // always is. tools/check-books.js checks every word against decodeLevel below.
-//   level 1  short a: cat, has      level 3  sh ch th ck ll ss ng: fish, duck
+//   level 1  short a: cat, had      level 3  sh ch th ck ll ss ng: fish, duck
 //   level 2  any short vowel: pig   level 4  blends: frog, jump, splash
 
 // Words she learns by heart, said whole when tapped.
@@ -206,17 +206,16 @@ const DECODABLE_BOOKS = [
     id: 'cat-hat', level: 1, title: 'The Cat', ko: '고양이', cover: '🐱', color: '#ffd9a0',
     pages: [
       { text: 'A cat sat.', pic: '🐱' },
-      { text: 'The cat has a hat.', pic: '🐱🎩' },
+      { text: 'The cat had a hat.', pic: '🐱🎩' },
       { text: 'The cat had a nap.', pic: '🐱💤' },
       { text: 'A rat ran at the cat.', pic: '🐀💨🐱' },
-      { text: 'The rat has the hat!', pic: '🐀🎩' },
+      { text: 'The rat had the hat!', pic: '🐀🎩' },
     ],
   },
   {
     id: 'i-can', level: 1, title: 'I Can!', ko: '할 수 있어!', cover: '🙌', color: '#b8eab0',
     pages: [
       { text: 'I can tap.', pic: '👆🥁' },
-      { text: 'I can bat.', pic: '⚾' },
       { text: 'I can tag Dad.', pic: '🏃👨' },
       { text: 'I can pat my cat.', pic: '✋🐱' },
       { text: 'I can nap.', pic: '😴' },
@@ -246,21 +245,21 @@ const DECODABLE_BOOKS = [
   {
     id: 'fish-wish', level: 3, title: 'The Fish Wish', ko: '물고기의 소원', cover: '🐟', color: '#a8dcff',
     pages: [
-      { text: 'Beth has a fish.', pic: '👧🐟' },
+      { text: 'Beth got a fish.', pic: '👧🐟' },
       { text: 'The fish is in a dish.', pic: '🐟🥣' },
-      { text: 'The fish has a wish.', pic: '🐟💭🛁' },
-      { text: 'Beth gets a big tub.', pic: '👧🛁' },
-      { text: 'The fish had its wish!', pic: '🐟🛁✨' },
+      { text: 'The fish had a wish.', pic: '🐟💭🛁' },
+      { text: 'Beth got a big tub.', pic: '👧🛁' },
+      { text: 'The fish got its wish!', pic: '🐟🛁✨' },
     ],
   },
   {
     id: 'chuck-duck', level: 3, title: 'Chuck the Duck', ko: '오리 척', cover: '🦆', color: '#ffe98a',
     pages: [
       { text: 'Chuck is a duck.', pic: '🦆' },
-      { text: 'Chuck got mud on his neck.', pic: '🦆🟫' },
+      { text: 'Chuck fell in the mud.', pic: '🦆🟫' },
       { text: 'Chuck had a bath in a tub.', pic: '🦆🛁' },
-      { text: 'Rub, rub, rub!', pic: '🧽🫧' },
-      { text: 'Then Chuck sat in the sun.', pic: '🦆☀️' },
+      { text: 'Rub, rub, rub!', pic: '🧽🦆' },
+      { text: 'Chuck sat in the sun.', pic: '🦆☀️' },
     ],
   },
   {
@@ -277,7 +276,7 @@ const DECODABLE_BOOKS = [
   {
     id: 'best-gift', level: 4, title: 'The Best Gift', ko: '최고의 선물', cover: '🎁', color: '#ffbcb0',
     pages: [
-      { text: 'Brad has a gift.', pic: '👦🎁' },
+      { text: 'Brad got a gift.', pic: '👦🎁' },
       { text: 'The gift is in a big red box.', pic: '🎁📦' },
       { text: 'Brad lifts the lid.', pic: '👦📦' },
       { text: 'It is a drum!', pic: '🥁' },
@@ -308,6 +307,11 @@ const DECODE = {
   irregular: ['put', 'push', 'pull', 'full', 'bull', 'bush', 'puss', 'of', 'son', 'ton', 'from', 'front', 'month',
     'roll', 'toll', 'poll', 'troll', 'scroll', 'stroll', 'kind', 'mind', 'find', 'bind', 'hind', 'rind', 'blind', 'grind',
     'wild', 'mild', 'child', 'gem', 'gel', 'gin', 'gym', 'gist'],
+  // And words with a sound she would hear wrong sounded out: an s that says
+  // /z/ (has: the /s/ she hears is the one in bus) or a voiced th (then: the
+  // /th/ she hears is the one in tooth). A book says them whole, as sight
+  // words, or not at all.
+  voiced: ['as', 'has', 'his', 'is', 'then', 'this', 'that', 'them', 'than', 'thus'],
   // A pair that says the sound of one of its letters is sounded out as that letter.
   sound: { ll: 'l', ss: 's' },
 };
@@ -316,7 +320,7 @@ const DECODE = {
 // on the end (gets, its) comes at level 2, after a word she can read.
 function decodeLevel(word) {
   const w = String(word).toLowerCase();
-  if (!/^[a-z]+$/.test(w) || DECODE.odd.test(w) || DECODE.irregular.includes(w)) return 0;
+  if (!/^[a-z]+$/.test(w) || DECODE.odd.test(w) || DECODE.irregular.includes(w) || DECODE.voiced.includes(w)) return 0;
   const m = /^([^aeiou]*)([aeiou])([^aeiou]+)$/.exec(w);
   // The level of a first or last sound: no letter or one letter is 1.
   const of = (part, one, three, four) => (part.length < 2 ? (one.includes(part) ? 1 : 0)

@@ -104,6 +104,12 @@ function renderLibrary() {
   }
 }
 
+// The book list drawn again if it is showing, after something changed
+// under it: a parent's − / + on 읽기 (js/parent.js) can open a book.
+function libraryRefresh() {
+  if (!libraryEl('library').classList.contains('hidden')) renderLibrary();
+}
+
 function closeLibrary() {
   bookHush();
   libraryEl('library').classList.add('hidden');
@@ -393,6 +399,8 @@ function selfLevel() {
 // either one has its ✓ on both.
 const selfKey = book => `self:${book.id}`;
 const selfDone = book => (((state.books || {})[selfKey(book)] || {}).read | 0) > 0;
+// Whether a book is open: its cover here and its chip in the parent panel
+// (js/parent.js) both ask this.
 const selfOpen = book => book.level <= selfLevel() || selfDone(book);
 function selfLog(book) {
   if (!state.books) state.books = {};
@@ -563,9 +571,11 @@ function selfFinish() {
   const first = !log.read;
   log.read++;
   log.last = Date.now();
+  questAdd('book'); // today's adventures (js/quest.js), as a story does
   const before = state.stars;
   if (first) {
     state.stars++;
+    questAdd('stars'); // as a star from a right answer does
     renderStars(true);
   }
   save();

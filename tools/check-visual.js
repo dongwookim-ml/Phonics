@@ -19,7 +19,12 @@
 //   over, and the tick under the HUD chest stays on screen;
 // - on every page of the books she reads herself the picture and the word
 //   tiles fit the page, in two rows at most, the tiles 64 px tall (52 on a
-//   phone), and the card at the end fits.
+//   phone), and the card at the end fits;
+// - the same books on a phone held upright (390 x 844, 375 x 667, 360 x
+//   640): every word tile and the end card's buttons on the page and the
+//   thing a tap at their middle reaches, the tiles 52 px tall; on a very
+//   small one (320 x 568) the page may scroll, as long as scrolling brings
+//   each of them into reach.
 // Run: node tools/check-visual.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -27,6 +32,8 @@ const { chromium } = require('playwright');
 
 const root = path.join(__dirname, '..');
 const SIZES = [[1024, 768], [1180, 820], [768, 1024], [1024, 700], [844, 390]];
+// Phones held upright, for the books she reads herself: [w, h, fits without scrolling].
+const UPRIGHT = [[390, 844, true], [375, 667, true], [360, 640, true], [320, 568, false]];
 let failed = 0;
 const fail = msg => { console.log(`  ${msg}`); failed++; };
 
@@ -82,6 +89,48 @@ function hiddenVillagers() {
       out.push({ scene: name, name: n.name, c: n.c, r: n.r, cover: all ? Math.round(100 * covered / all) : 0 });
     });
   }
+  return out;
+}
+
+// Every page of the books she reads herself, and the end card, on a phone
+// held upright: what she taps is on the page (scrolled to first when the
+// page may scroll), big enough, and what a tap at its middle reaches.
+function readerUpright(fit) {
+  const out = [];
+  document.getElementById('start').classList.add('hidden');
+  state.skill.read = Object.assign(Quiz.skill('read'), { t: 4 });
+  state.busy = false;
+  openLibrary();
+  const reach = el => {
+    if (!fit) el.scrollIntoView({ block: 'nearest' });
+    const r = el.getBoundingClientRect();
+    const p = document.getElementById('rd-paper').getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return r.left >= p.left - 0.5 && r.right <= p.right + 0.5 && r.top >= p.top - 0.5 && r.bottom <= p.bottom + 0.5 && !!hit && el.contains(hit);
+  };
+  const where = book => `reading upright ${book.id}`;
+  for (const book of DECODABLE_BOOKS) {
+    openSelfBook(book);
+    book.pages.forEach((p, i) => {
+      library.page = i;
+      renderSelfPage();
+      const tiles = [...document.querySelectorAll('#rd-text .rd-word')];
+      const off = tiles.filter(t => !reach(t));
+      if (off.length) out.push(`${where(book)} page ${i + 1}: ${off.map(t => t.textContent).join(' ')} can't be tapped`);
+      const low = tiles.filter(t => t.getBoundingClientRect().height < 51.5);
+      if (low.length) out.push(`${where(book)} page ${i + 1}: ${low.length} tile(s) under 52px`);
+    });
+    for (const id of ['rd-prev', 'rd-next']) {
+      const r = document.getElementById(id).getBoundingClientRect();
+      if (Math.min(r.width, r.height) < 51.5 || r.bottom > innerHeight) out.push(`${where(book)}: ${id} is small or off the screen`);
+    }
+    library.page = book.pages.length - 1;
+    selfFinish();
+    selfEndButtons(book);
+    const off = [...document.querySelectorAll('#rd-options button')].filter(b => !reach(b));
+    if (off.length) out.push(`${where(book)}: the end card's ${off.map(b => b.textContent).join(', ')} can't be tapped`);
+  }
+  closeLibrary();
   return out;
 }
 
@@ -334,6 +383,18 @@ function ask(kind, scene) {
         return out;
       }, phone);
       r.forEach(fail);
+      errors.forEach(e => fail(`page error: ${e}`));
+      await page.close();
+    }
+    for (const [w, h, fit] of UPRIGHT) {
+      const page = await browser.newPage({ viewport: { width: w, height: h } });
+      const errors = [];
+      page.on('pageerror', e => errors.push(e.message));
+      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0`);
+      await page.evaluate(() => document.fonts.ready);
+      console.log(`${edition} ${w}x${h} (upright: her books)`);
+      await page.click('#login-guest');
+      (await page.evaluate(readerUpright, fit)).forEach(fail);
       errors.forEach(e => fail(`page error: ${e}`));
       await page.close();
     }

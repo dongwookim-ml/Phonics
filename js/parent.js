@@ -73,6 +73,7 @@ function parentClose() {
   parentUi.panel.remove();
   parentUi.panel = null;
   setPaused(false);
+  libraryRefresh(); // a book a new 읽기 tier opened shows open (js/library.js)
   // Busy again only if something is still showing (a question, a present,
   // a card, the sleeping town or a scene change: busyNow in js/game.js).
   state.busy = busyNow();

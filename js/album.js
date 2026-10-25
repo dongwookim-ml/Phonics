@@ -213,6 +213,7 @@ function stickerPack() {
   }
   const three = shuffle(open.slice()).slice(0, 3);
   for (const s of three) state.stickers[s.w] = { e: s.e, n: 1, at: Date.now(), new: true };
+  questAdd('sticker', three.length); // new ones for today's adventures (js/quest.js)
   Sound.tune('chime');
   stickerFly(three, null);
   showPlace(isCaptain() ? `💾 단어 칩 ${three.length}개!` : `📒 스티커 ${three.length}장!`);

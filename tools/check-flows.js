@@ -7,12 +7,15 @@
 //  - a broken or edited save never reaches the parent panel as HTML;
 //  - the first tap after ▶ doesn't cut off the line being spoken;
 //  - today's adventures (js/quest.js), in both editions: three quests she
-//    can do are picked, doing each the way she would ticks it, the chest
-//    stays shut until all three are done and never opens over a question,
-//    it pays once, a reload keeps all of it, and the next day has new ones;
+//    can do are picked, doing each the way she would ticks it (a sticker
+//    pack's stickers count too), the chest stays shut until all three are
+//    done and never opens over a question, it pays once, a reload keeps all
+//    of it, and the next day has new ones;
 //  - a book she reads herself: tapping words sounds them out, ▶ comes after
 //    every word is tapped or a while, reading to the end pays a star once
-//    and puts a ✓ on its cover, and a locked book stays locked;
+//    and puts a ✓ on its cover, each time counts for the 📖 quest and the
+//    star for the ⭐ one, a locked book stays locked, and a parent's + on
+//    읽기 opens it in the panel and in the library under it;
 //  - the M3 cards, in both editions: closing one (or the parent panel over
 //    it) never frees the game under another or leaves it stuck, the
 //    feeding card stops her walk, neither 🔁 at the pond nor another book in
@@ -403,6 +406,11 @@ async function quests(browser, edition) {
     out.paidTwice = state.coins - coins1;
     out.opened = { chest: questsToday().chest, prize: document.querySelector('#quests .prize').textContent, hud: document.getElementById('quest-btn').classList.contains('ready') };
     closeQuests();
+    // A sticker pack (a full gift meter with no present left) counts its
+    // new stickers for 📒 too.
+    const stickers = [questCount('sticker'), Object.keys(state.stickers).length];
+    stickerPack();
+    out.pack = [questCount('sticker') - stickers[0], Object.keys(state.stickers).length - stickers[1]];
     out.coins = state.coins;
     out.saved = JSON.parse(localStorage.getItem('pixeltown-v2')).quests;
     return out;
@@ -414,6 +422,7 @@ async function quests(browser, edition) {
   check(`${tag}: a shut chest pays nothing before all three are done`, r.early.coins === 0 && !r.early.chest && r.closed, r);
   const unhooked = Object.entries(r.hooks).filter(([, [, after, n]]) => after < n);
   check(`${tag}: doing each kind of quest counts it`, !unhooked.length, r.hooks);
+  check(`${tag}: a sticker pack's new stickers count for the sticker quest`, r.pack[1] === 3 && r.pack[0] === 3, r.pack);
   if (process.env.SHOW) console.log(JSON.stringify(r));
   check(`${tag}: each finished quest ticks once, and the chest glows`, r.ticked.shown === 3 && !r.ticked.left && r.hud.on === 3 && r.hud.ready && r.done === 3 && r.glows, r);
   check(`${tag}: the chest pays once`, r.paid === r.chestCoins && r.paidTwice === r.chestCoins && r.opened.chest && r.opened.prize.includes(`+${r.chestCoins}`) && !r.opened.hud, r);
@@ -463,6 +472,8 @@ async function selfRead(browser) {
     const cover = id => $(`#lib-books .lib-book.self[data-id="${id}"]`);
     const shown = s => !$(s).classList.contains('hidden');
     const out = { stars0: state.stars };
+    const quest = () => ({ book: questCount('book'), stars: questCount('stars') });
+    out.quest = [quest()];
     openLibrary();
     out.covers = document.querySelectorAll('#lib-books .lib-book.self').length;
     out.firstOpen = !cover(DECODABLE_BOOKS[0].id).classList.contains('locked');
@@ -503,6 +514,7 @@ async function selfRead(browser) {
     out.party = library.mode === 'selfEnd' && shown('#rd-quiz') && !document.querySelector('#rd-options button');
     out.star = state.stars - out.stars0;
     out.log = Object.assign({}, state.books[`self:${book.id}`]);
+    out.quest.push(quest());
     await sleep(100);
     $('#rd-paper').click();
     out.buttonsAfterTap = document.querySelectorAll('#rd-options button').length;
@@ -513,14 +525,25 @@ async function selfRead(browser) {
     for (let i = 0; i < book.pages.length; i++) $('#rd-next').click();
     out.starAgain = state.stars - out.stars0;
     out.readAgain = state.books[`self:${book.id}`].read;
+    out.quest.push(quest());
     await sleep(2300);
     out.buttonsAfterWait = document.querySelectorAll('#rd-options button').length;
     document.querySelector('#rd-options .rd-wide.yes').click();
-    // Still locked at reading tier 1; open once a parent sets tier 3.
+    // Still locked at reading tier 1. A parent's + + on 읽기 (tier 3) opens
+    // it: the panel says so, and the library under it once the panel
+    // closes, still scrolled where it was.
     out.stillLocked = cover(hard.id).classList.contains('locked');
-    state.skill.read = Object.assign(Quiz.skill('read'), { t: 3 });
-    renderLibrary();
-    out.unlocked = !cover(hard.id).classList.contains('locked') && cover(DECODABLE_BOOKS.find(b => b.level === 4).id).classList.contains('locked');
+    const top = DECODABLE_BOOKS.find(b => b.level === 4);
+    const list = $('#lib-books');
+    list.scrollTop = list.scrollHeight;
+    const scrolled = list.scrollTop;
+    $('#parent').click();
+    parentStats(); // past the password
+    for (let i = 0; i < 2; i++) $('.parent-panel .tier-btn[data-kind="read"][data-step="1"]').click();
+    const chip = b => [...document.querySelectorAll('.parent-panel .l-chip')].find(c => c.textContent.includes(b.title)).textContent;
+    out.panel = { tier: Quiz.skill('read').t, hard: chip(hard), top: chip(top) };
+    $('.parent-close').click();
+    out.unlocked = { hard: !cover(hard.id).classList.contains('locked'), top: cover(top.id).classList.contains('locked'), scroll: [scrolled, list.scrollTop] };
     closeLibrary();
     out.closed = !shown('#reader') && !shown('#library') && !state.busy;
     Sound.say = say;
@@ -538,7 +561,10 @@ async function selfRead(browser) {
   check('reading: the first time to the end pays one star and logs it', r.star === 1 && r.log.read === 1, r);
   check('reading: its cover gets a ✓', r.tick, r);
   check('reading: reading it again pays nothing more', r.starAgain === 1 && r.readAgain === 2 && r.buttonsAfterWait === 2, r);
-  check('reading: a locked book stays locked until her reading tier reaches its level', r.stillLocked && r.unlocked, r);
+  const [q0, q1, q2] = r.quest;
+  check('reading: each time to the end counts for the 📖 quest, the star once for the ⭐ quest', q1.book - q0.book === 1 && q2.book - q0.book === 2 && q1.stars - q0.stars === 1 && q2.stars - q0.stars === 1, r.quest);
+  check('reading: a locked book stays locked until her reading tier reaches its level', r.stillLocked && r.panel.tier === 3 && r.unlocked.hard && r.unlocked.top, r);
+  check('reading: a parent\'s + on 읽기 opens a book in the panel and in the library under it, which keeps its scroll', r.panel.hard.includes('열림') && r.panel.top.includes('🔒') && r.unlocked.scroll[0] === r.unlocked.scroll[1], r.panel);
   check('reading: closing the library frees the game', r.closed, r);
   // Everything the narrator said is listed for recording.
   const listed = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'tts-phrases.json'), 'utf8')).filter(p => p.voice === 'af_heart').map(p => p.text));
