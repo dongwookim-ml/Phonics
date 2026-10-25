@@ -133,7 +133,7 @@ function ask(kind, scene) {
         };
         // Every word on a card of three, the word families on a card of four.
         const words = new Set();
-        for (const [x] of LETTERS.flatMap(l => l.words).concat(...WORD_FAMILIES, ...RHYMES)) words.add(x);
+        for (const [x] of LETTERS.flatMap(l => l.words).concat(...WORD_FAMILIES, ...RHYME_SETS.map(r => r.set))) words.add(x);
         for (const s of SENTENCES) { words.add(s.w[0]); (s.alike || []).forEach(x => words.add(x)); (s.other || []).forEach(([x]) => words.add(x)); }
         for (const [kind, scene, list] of [['word', 'town', words], ['family', 'forest', new Set(WORD_FAMILIES.flat().map(([x]) => x))]]) {
           ask(kind, scene);
