@@ -235,10 +235,11 @@ npx http-server -p 8080 .
 - **Today's adventures and the treasure chest**: a little chest at the top
   right (three dots under it) opens a card with three picture quests for
   the day, one of each kind: answering (⭐ ●●●●● stars, 🎁 a full gift
-  meter, 📒 new stickers, ✨ fairy dust), playing (🐟 fish, 📖 a book, her
-  own friend fed once) and going somewhere (🏠 a letter house, or a village
-  by its picture). Only what she can do is picked: nothing behind a shut
-  gate, no feeding without a friend. What she does that day fills the dots;
+  meter, 📒 new stickers, ✨ fairy dust), playing (🐟 fish, 📖 a book read
+  to her or one she reads herself, her own friend fed once) and going
+  somewhere (🏠 a letter house, or a village by its picture). Only what
+  she can do is picked: nothing behind a shut gate, no feeding without a
+  friend. What she does that day fills the dots;
   a finished quest gets a tick and a chime once she is free, and when all
   three are done the chest glows ("All done! Open the treasure chest!").
   Tapping it opens it (about 2 seconds, a tap skips) and 5 🪙 coins
@@ -268,16 +269,21 @@ npx http-server -p 8080 .
   shows once she has tapped every word on it, or after 8 seconds, so she
   tries first; ➡ turns the page. The end is a short party (a tap ends it),
   ⭐ 1 star the first time she reads that book to the end (never again for
-  it), and a ✓ on its cover. A book opens once her tier in reading words
+  it), and a ✓ on its cover; every time counts for today's 📖 quest, and
+  the star for the ⭐ one. A book opens once her tier in reading words
   (the forest's and fairies' `read` questions: read a word with no voice,
   pick its picture, the very skill these books use) reaches the book's
   level, or a parent sets it there; level 1 is always open, and a 🔒 cover
   says "읽기 3단계". The robot edition's HQ library calls it a reading
   mission (🚀). The parent panel lists which ones she has read. Books live
   in `DECODABLE_BOOKS` in `js/books.js`, with the rule for what each level
-  can sound out (`decodeLevel`); `node tools/check-books.js` (also run by
-  `tools/quiz-test.js`) checks every word against it, and the rule against
-  the word bank in `js/data.js`.
+  can sound out (`decodeLevel`). A word she would hear wrong sounded out
+  is not one of them: an s that says /z/ (has, his, as) or a voiced th
+  (then, this, that), since the pure sounds are the /s/ of bus and the /th/
+  of tooth. `node tools/check-books.js` (also run by `tools/quiz-test.js`)
+  checks every word against it, the rule against the word bank in
+  `js/data.js`, and that every picture is an emoji an older iPad has
+  (Unicode 13 or before).
 - **Village homes**: every home in the villages opens too: the forest's
   mushroom houses, the unicorn homes and stable, and the fairies' teacup
   and tulip cottages (🍄 🦄 🫖 🌷 over their doors). Tap one to walk to its
@@ -453,7 +459,10 @@ button show without scrolling, the HUD stays on one row with every counter
 and button showing, the sticker album and a celebration fit the screen
 with every word fitting its sticker, today's adventures fit on one row
 without scrolling, and every page of the books she reads herself fits its
-word tiles in two rows at most.
+word tiles in two rows at most. On a phone held upright (390 x 844,
+375 x 667, 360 x 640) every word tile of those books and the end card's
+buttons are on the page and take a tap; on a very small one (320 x 568)
+the page may scroll, as long as each comes into reach.
 
 The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add

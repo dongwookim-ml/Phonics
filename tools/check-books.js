@@ -8,13 +8,17 @@
 //    3 (4 with a blend: clock), CCVC, CVCC and one-syllable LONG words 4, and
 //    words of two syllables can't be read at any level; a word's letters
 //    split the way the bank splits them (f-i-sh), and tricky words (was,
-//    put, ball, cold) never count as readable;
+//    put, ball, cold) never count as readable, nor words she would hear
+//    wrong sounded out: an s that says /z/ after a vowel (has, his, as) or
+//    a voiced th (then, this, that, them), so a book has them only as
+//    SIGHT_WORDS;
 //  - every sound a word is sounded out with is a pure sound cut from the
 //    narrator's words (tools/letter-sounds.json), and every letter pair it
 //    knows is one the spelling tiles know (PART_SOUNDS) or a doubled letter
 //    (ll, ss), which says its one letter's sound, as in js/quiz.js;
-//  - 4 to 6 pages of one sentence and a picture; levels 1 to 4 in order,
-//    the first book at level 1; ids unique.
+//  - 4 to 6 pages of one sentence and a picture, its emoji (and the
+//    cover's) ones an older iPad has (Unicode 13 or before); levels 1 to 4
+//    in order, the first book at level 1; ids unique.
 // Run: node tools/check-books.js  (no browser; tools/quiz-test.js runs it too)
 
 const fs = require('fs');
@@ -26,7 +30,13 @@ const LEVELS = 4;
 // Words that look regular but aren't (or are): what decodeLevel must say.
 const TRICKY = { was: 0, want: 0, wash: 0, swan: 0, put: 0, push: 0, full: 0, of: 0, from: 0, son: 0, ball: 0, talk: 0, salt: 0,
   half: 0, cold: 0, bolt: 0, most: 0, kind: 0, wild: 0, roll: 0, cent: 0, city: 0, gem: 0, said: 0, you: 0, car: 0, cake: 0,
-  wag: 1, has: 1, swam: 4, doll: 3, cost: 4, get: 2, gift: 4, wind: 4, fox: 2, yes: 2, cats: 2, bells: 3, dresses: 0 };
+  wag: 1, swam: 4, doll: 3, cost: 4, get: 2, gift: 4, wind: 4, fox: 2, yes: 2, cats: 2, bells: 3, dresses: 0,
+  // An s that says /z/ after a vowel, or a voiced th; the s in gas and bus
+  // and the th in bath say their sounds.
+  has: 0, his: 0, as: 0, is: 0, then: 0, this: 0, that: 0, them: 0, than: 0, gas: 1, bus: 2, us: 2, bath: 3 };
+// Emoji newer than Unicode 13, which an older iPad shows as an empty box
+// (🫧 🛞 🩵 🥹 ...).
+const NEW_EMOJI = /[\u{1F6DC}-\u{1F6DF}\u{1F7F0}\u{1F979}\u{1F9CC}\u{1FA75}-\u{1FA77}\u{1FA7B}-\u{1FA7F}\u{1FA87}-\u{1FA8F}\u{1FAA9}-\u{1FAAF}\u{1FAB7}-\u{1FABF}\u{1FAC3}-\u{1FACF}\u{1FAD7}-\u{1FAFF}]/u;
 
 function load() {
   const src = ['js/data.js', 'js/books.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
@@ -74,6 +84,7 @@ function check() {
     if (b.level < last) say(`${where}: comes after a level ${last} book`);
     last = b.level;
     if (!b.title || !b.ko || !b.cover || !/^#[0-9a-f]{6}$/i.test(b.color || '')) say(`${where}: needs a title, ko, cover and color`);
+    if (NEW_EMOJI.test(b.cover || '')) say(`${where}: the cover ${b.cover} is newer than Unicode 13`);
     if (b.pages.length < 4 || b.pages.length > 6) say(`${where}: ${b.pages.length} pages, should be 4 to 6`);
     let top = 0;
     for (const [i, p] of [{ text: b.title, title: true }].concat(b.pages).entries()) {
@@ -81,6 +92,7 @@ function check() {
       if (!p.title) {
         if (D.bookSentences(p.text).length !== 1) say(`${at}: "${p.text}" is not one sentence`);
         if (!p.pic || /[A-Za-z0-9]/.test(p.pic)) say(`${at}: needs an emoji picture`);
+        else if (NEW_EMOJI.test(p.pic)) say(`${at}: the picture ${p.pic} is newer than Unicode 13`);
       }
       for (const t of D.decodeTokens(p.text)) {
         if (!/^[A-Za-z]+$/.test(t.word)) { say(`${at}: "${t.text}" is not a plain word`); continue; }
