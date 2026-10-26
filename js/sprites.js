@@ -1740,22 +1740,30 @@ function pxLine(ctx, a, b, color, thick = 1) {
   for (let i = 0; i <= n; i++) px(ctx, Math.round(a.x + (b.x - a.x) * i / n), Math.round(a.y + (b.y - a.y) * i / n), 1, thick, color);
 }
 
+// The colours of a staircase and of the stairwell at its top: the castle's
+// (pale stone, a red runner, gold banisters); the Monster Tower has its own
+// (js/monster-village.js).
+const STAIRS_CASTLE = {
+  side: '#e8d4e4', top: '#fbf0f6', front: '#d8c0d4', edge: '#c8a8c0', runner: '#e8507a', riser: '#c83a64',
+  gold: CASTLE.gold, post: '#e0a83a', arch: ['#6a4a7a', '#8a68a0'], hole: '#3a2a48', holeSide: '#b89cb4', step: '#a888a0',
+};
+
 // Gold banister post on a stair corner, standing `v` above the ground.
-function stairPost(ctx, p, v) {
-  px(ctx, Math.round(p.x) - 1, Math.round(p.y - v) - 12, 2, 12, '#e0a83a');
-  px(ctx, Math.round(p.x) - 2, Math.round(p.y - v) - 14, 4, 3, CASTLE.gold);
+function stairPost(ctx, p, v, pal = STAIRS_CASTLE) {
+  px(ctx, Math.round(p.x) - 1, Math.round(p.y - v) - 12, 2, 12, pal.post);
+  px(ctx, Math.round(p.x) - 2, Math.round(p.y - v) - 14, 4, 3, pal.gold);
 }
 
 // A carpeted stone staircase in a w x d footprint rising towards the back
 // wall (r0), with gold banisters and an arched doorway at the top.
-function drawCastleStairs(ctx, sc, c0, r0, w, d, n = 6) {
+function drawCastleStairs(ctx, sc, c0, r0, w, d, n = 6, pal = STAIRS_CASTLE) {
   const rise = 8;
   const k = boxCorners(sc, c0, r0, w, d);
   const back = wall(k.T, k.R);
   const top = n * rise;
-  wallArch(ctx, back, 3, back.len - 3, top - 2, top + 42, CASTLE.gold);
-  wallArch(ctx, back, 5, back.len - 5, top, top + 40, '#6a4a7a');
-  wallArch(ctx, back, 9, back.len - 9, top, top + 34, '#8a68a0');
+  wallArch(ctx, back, 3, back.len - 3, top - 2, top + 42, pal.gold);
+  wallArch(ctx, back, 5, back.len - 5, top, top + 40, pal.arch[0]);
+  wallArch(ctx, back, 9, back.len - 9, top, top + 34, pal.arch[1]);
   // Steps from the top one down, so each lower step covers the foot of the
   // one behind it.
   const s = d / n;
@@ -1763,32 +1771,32 @@ function drawCastleStairs(ctx, sc, c0, r0, w, d, n = 6) {
   for (let i = n - 1; i >= 0; i--) {
     const H = (i + 1) * rise;
     const ks = boxCorners(sc, c0, r0 + d - (i + 1) * s, w, s);
-    const { WL } = drawSlab(ctx, ks, 0, H, '#e8d4e4', '#fbf0f6', '#d8c0d4');
-    wallRect(ctx, WL, 0, WL.len, H - 1, H, '#c8a8c0');
-    // Red runner up the middle of the tread and the riser.
+    const { WL } = drawSlab(ctx, ks, 0, H, pal.side, pal.top, pal.front);
+    wallRect(ctx, WL, 0, WL.len, H - 1, H, pal.edge);
+    // The runner up the middle of the tread and the riser.
     const kr = boxCorners(sc, c0 + w * 0.22, r0 + d - (i + 1) * s, w * 0.56, s);
     const up = p => ({ x: p.x, y: p.y - H });
-    fillPoly(ctx, [up(kr.T), up(kr.R), up(kr.B), up(kr.L)], '#e8507a');
+    fillPoly(ctx, [up(kr.T), up(kr.R), up(kr.B), up(kr.L)], pal.runner);
     const RL = wall(kr.L, kr.B);
-    wallRect(ctx, RL, 0, RL.len, H - rise, H, '#c83a64');
-    wallRect(ctx, RL, 0, 1, H - rise, H, CASTLE.gold);
-    wallRect(ctx, RL, RL.len - 1, RL.len, H - rise, H, CASTLE.gold);
+    wallRect(ctx, RL, 0, RL.len, H - rise, H, pal.riser);
+    wallRect(ctx, RL, 0, 1, H - rise, H, pal.gold);
+    wallRect(ctx, RL, RL.len - 1, RL.len, H - rise, H, pal.gold);
     posts.push({ L: ks.L, B: ks.B, H });
   }
   // Banisters on both sides.
   for (const side of ['L', 'B']) {
-    for (const p of posts) stairPost(ctx, p[side], p.H);
+    for (const p of posts) stairPost(ctx, p[side], p.H, pal);
     const lo = posts[posts.length - 1];
     const hi = posts[0];
     const a = { x: lo[side].x, y: lo[side].y - lo.H - 13 };
     const b = { x: hi[side].x, y: hi[side].y - hi.H - 13 };
-    pxLine(ctx, a, b, CASTLE.gold, 2);
+    pxLine(ctx, a, b, pal.gold, 2);
   }
 }
 
 // The top of the stairs on the floor above: a hole in the floor with steps
 // going down towards the front (+r), and gold rails along its sides.
-function drawStairwell(ctx, sc, c0, r0, w, d, n = 6) {
+function drawStairwell(ctx, sc, c0, r0, w, d, n = 6, pal = STAIRS_CASTLE) {
   const rise = 5;
   const deep = n * rise + 12;
   const k = boxCorners(sc, c0, r0, w, d);
@@ -1797,29 +1805,29 @@ function drawStairwell(ctx, sc, c0, r0, w, d, n = 6) {
   for (const p of [k.T, k.R, k.B, k.L]) ctx.lineTo(p.x, p.y);
   ctx.closePath();
   ctx.clip();
-  fillPoly(ctx, [k.T, k.R, k.B, k.L], '#3a2a48');
-  wallRect(ctx, wall(k.T, k.R), 0, k.R.x - k.T.x, -deep, 0, '#d8c0d4');
-  wallRect(ctx, wall(k.L, k.T), 0, k.T.x - k.L.x, -deep, 0, '#b89cb4');
+  fillPoly(ctx, [k.T, k.R, k.B, k.L], pal.hole);
+  wallRect(ctx, wall(k.T, k.R), 0, k.R.x - k.T.x, -deep, 0, pal.front);
+  wallRect(ctx, wall(k.L, k.T), 0, k.T.x - k.L.x, -deep, 0, pal.holeSide);
   const s = d / n;
   for (let i = 0; i < n; i++) {
     const H = -(i + 1) * rise;
     const ks = boxCorners(sc, c0, r0 + i * s, w, s);
-    const { WL } = drawSlab(ctx, ks, -deep, H, '#e8d4e4', mix('#fbf0f6', '#3a2a48', i / n * 0.6), mix('#d8c0d4', '#3a2a48', i / n * 0.6));
+    const { WL } = drawSlab(ctx, ks, -deep, H, pal.side, mix(pal.top, pal.hole, i / n * 0.6), mix(pal.front, pal.hole, i / n * 0.6));
     const kr = boxCorners(sc, c0 + w * 0.22, r0 + i * s, w * 0.56, s);
     const up = p => ({ x: p.x, y: p.y - H });
-    fillPoly(ctx, [up(kr.T), up(kr.R), up(kr.B), up(kr.L)], mix('#e8507a', '#3a2a48', i / n * 0.6));
-    wallRect(ctx, WL, 0, WL.len, H - 1, H, '#a888a0');
+    fillPoly(ctx, [up(kr.T), up(kr.R), up(kr.B), up(kr.L)], mix(pal.runner, pal.hole, i / n * 0.6));
+    wallRect(ctx, WL, 0, WL.len, H - 1, H, pal.step);
   }
   ctx.restore();
   // Stone rim and gold rails along the two sides; the back stays open.
-  pxLine(ctx, k.T, k.R, '#c8a8c0');
+  pxLine(ctx, k.T, k.R, pal.edge);
   for (const [a, b] of [[k.T, k.L], [k.R, k.B]]) {
-    pxLine(ctx, a, b, '#c8a8c0', 2);
+    pxLine(ctx, a, b, pal.edge, 2);
     for (let i = 0; i <= 3; i++) {
       const p = { x: a.x + (b.x - a.x) * i / 3, y: a.y + (b.y - a.y) * i / 3 };
-      stairPost(ctx, p, 0);
+      stairPost(ctx, p, 0, pal);
     }
-    pxLine(ctx, { x: a.x, y: a.y - 13 }, { x: b.x, y: b.y - 13 }, CASTLE.gold, 2);
+    pxLine(ctx, { x: a.x, y: a.y - 13 }, { x: b.x, y: b.y - 13 }, pal.gold, 2);
   }
 }
 

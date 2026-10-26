@@ -1,11 +1,8 @@
-// The Monster Village and the Monster Tower in its middle, the same in both
-// editions (no captain scene replaces them). Their people, voices, lines
-// and MONSTER_STARS are in js/data.js; the monsters she drew herself, who
-// live in the tower, in js/kid-monsters.js.
-
-// The village's friendly monsters are drawn like the cave's (drawMonster in
-// js/cave-magic.js), under looks of their own for their voices and words.
-Object.assign(MONSTERS, { mvSlime: MONSTERS.slime, mvGhost: MONSTERS.ghost, mvBat: MONSTERS.bat, mvShroom: MONSTERS.shroom });
+// The Monster Village and the Monster Tower in its middle, two floors high,
+// the same in both editions (no captain scene replaces them). Where everyone
+// stands, the places' names and lines and MONSTER_STARS are in js/data.js;
+// everyone there is one of the monsters she drew herself, with their names,
+// pictures, voices and hellos in js/kid-monsters.js.
 
 const MONSTER_N = 26;
 // The tower's footprint (4 x 4 tiles) and the two tiles in front of its door.
@@ -123,11 +120,7 @@ function buildMonsterVillage() {
     sc.objects.push({ c0: c, r0: r, c1: c, r1: r, tree: true, canvas: tree.canvas, x: p.x - tree.ax, y: p.y - tree.ay, w: tree.canvas.width, h: tree.canvas.height });
   }
 
-  for (const n of MONSTER_NPCS) {
-    const npc = makeNpc(n, null);
-    Object.assign(npc, { level: 6, critter: true, badge: '👾' });
-    sc.npcs.push(npc);
-  }
+  for (const n of MONSTER_NPCS) sc.npcs.push(kidVillager(n));
   // Gate back to town on the east edge.
   // She comes out in town just past the gate's mat (a tap there goes back).
   sc.links = [11, 12].map(r => ({ c: N - 1, r, target: 'town', at: { c: 2, r: r + 3 }, icon: isCaptain() ? '🤖' : '🌸', style: 'gate' }));
@@ -241,9 +234,24 @@ function drawMonsterTower(ctx, k) {
 
 // ---- Inside the tower --------------------------------------------------------------
 
+// One of her monsters as a villager here: level 6 (the Monster Village's
+// questions), with its own name and a 🖍️ over it.
+function kidVillager(n) {
+  const art = typeof KID_MONSTERS !== 'undefined' && KID_MONSTERS[n.look];
+  const npc = makeNpc(Object.assign({ name: art ? art.name : '몬스터 친구' }, n), null);
+  return Object.assign(npc, { level: 6, badge: '🖍️' });
+}
+
+// The tower's stairs: purple stone with a pink runner and pale gold rails.
+const STAIRS_TOWER = {
+  side: '#a493dc', top: '#c8bcf4', front: '#8a78c8', edge: '#6a58a8', runner: '#ff9cc8', riser: '#e07aa8',
+  gold: '#ffe08a', post: '#e8c060', arch: ['#2a2050', '#3e2c66'], hole: '#2a1f48', holeSide: '#7a68b8', step: '#5f4fa0',
+};
+
 // A round room of purple stone with a soft rug, torches, star windows and
 // the monsters she drew, each with its picture in the dialog
-// (js/kid-monsters.js). Out through the mat at the front, to the door.
+// (js/kid-monsters.js). Out through the mat at the front, to the door; up
+// the stairs in the back corner to the second floor.
 function buildMonsterTower() {
   const sc = makeScene('tower', 12, 10, 130, 50);
   for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'cave');
@@ -270,7 +278,7 @@ function buildMonsterTower() {
   });
   const torch = makeTorch();
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
-  for (const [W, u] of [[wall(k.L, k.T), 0.5], [wall(k.T, k.R), 0.42], [wall(k.T, k.R), 0.84]]) {
+  for (const [W, u] of [[wall(k.L, k.T), 0.5], [wall(k.T, k.R), 0.42]]) {
     const p = wallPt(W, W.len * u, 22);
     sc.objects.push({ c0: -10, r0: -10, c1: -10, r1: -10, background: true, canvas: torch.canvas, x: Math.round(p.x - torch.ax), y: Math.round(p.y - torch.ay), w: torch.canvas.width, h: torch.canvas.height });
     sc.lamps.push({ x: p.x, y: p.y - torch.ay + torch.glow.y });
@@ -282,7 +290,7 @@ function buildMonsterTower() {
     addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
-  for (const [c, r, col] of [[0, 0, '#7fe8ff'], [11, 1, '#ff9cf0'], [0, 9, '#c8a0ff']]) {
+  for (const [c, r, col] of [[0, 0, '#7fe8ff'], [11, 5, '#ff9cf0'], [0, 9, '#c8a0ff']]) {
     const p = prop(c, r, 30, (ctx, x, y) => drawCrystal(ctx, x, y, col), { word: 'crystal', fx: 'sparkle' });
     sc.lamps.push({ x: p.x, y: p.y - 12 });
   }
@@ -291,12 +299,13 @@ function buildMonsterTower() {
     sc.lamps.push({ x: p.x, y: p.y - 18 });
   }
 
-  for (const n of TOWER_NPCS) {
-    const art = typeof KID_MONSTERS !== 'undefined' && KID_MONSTERS[n.look];
-    const npc = makeNpc(Object.assign({ name: art ? art.name : '몬스터 친구' }, n), null);
-    Object.assign(npc, { level: 6, badge: '🖍️' });
-    sc.npcs.push(npc);
-  }
+  // Stairs up in the back-right corner, to the second floor.
+  addStairs(sc, 10, 0, 2, 3, ctx => drawCastleStairs(ctx, sc, 10, 0, 2, 3, 6, STAIRS_TOWER),
+    [10, 11].map(c => ({ c, r: 3, target: 'tower2', at: { c: 9, r: 4 }, icon: '⬆️' })));
+  const up = tileCenter(sc, 10.5, 1);
+  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#8f5ad8', links: sc.links.filter(l => l.target === 'tower2') });
+
+  for (const n of TOWER_NPCS) sc.npcs.push(kidVillager(n));
   const exit = { c: 5, r: sc.D - 1 };
   tileAt(sc, 5, sc.D - 1).rug = '#8f5ad8';
   tileAt(sc, 6, sc.D - 1).rug = '#8f5ad8';
@@ -304,6 +313,92 @@ function buildMonsterTower() {
   sc.exitTiles = [{ c: 5, r: sc.D - 1 }, { c: 6, r: sc.D - 1 }];
   sc.returnTo = { scene: 'monster', at: { c: MONSTER_TOWER_DOOR[0][0], r: MONSTER_TOWER_DOOR[0][1] } };
   sc.start = { c: 5, r: sc.D - 2 };
+  renderGround(sc);
+  return sc;
+}
+
+// The second floor: a playroom under the roof, with her pictures pinned up
+// on the walls, round windows onto the night sky, a crayon table and a toy
+// chest, and the next five monsters she drew. Down the stairs in the front
+// corner, back to the ground floor.
+function buildMonsterTower2() {
+  const sc = makeScene('tower', 12, 10, 130, 50);
+  sc.floorTint = '#d8c8f4';
+  for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'wood');
+  for (let r = 1; r <= 8; r++) for (let c = 1; c <= 8; c++) {
+    const v = ((c - 4.5) / 3.6) ** 2 + ((r - 4.5) / 3.6) ** 2;
+    if (v > 1) continue;
+    Object.assign(tileAt(sc, c, r), { type: 'carpet', color: v > 0.6 ? '#ffb8dc' : '#ffd6ec', edge: v > 0.6 });
+  }
+  addRoomWalls(sc, 84, '#9c8ad8', '#5a4a98', (ctx, WA, WB) => {
+    // Round windows onto the night sky, a moon in one.
+    for (const [W, u, moon] of [[WA, 0.5, false], [WB, 0.3, true]]) {
+      const x = W.len * u;
+      for (let dv = -15; dv <= 15; dv++) for (let dx = -15; dx <= 15; dx++) {
+        const d = dx * dx + dv * dv;
+        if (d <= 225) wallRect(ctx, W, x + dx, x + dx + 1, 54 + dv, 55 + dv, d > 156 ? '#3a2c60' : d > 132 ? '#ffe08a' : '#2a3a7a');
+      }
+      if (moon) for (let dv = -4; dv <= 4; dv++) for (let dx = -4; dx <= 4; dx++) {
+        if (dx * dx + dv * dv <= 16 && (dx - 2) ** 2 + (dv + 1) ** 2 > 9) wallRect(ctx, W, x + dx + 3, x + dx + 4, 56 + dv, 57 + dv, '#fff4b0');
+      }
+      for (const [sx, sv] of [[-7, 60], [6, 48], [-3, 46], [8, 62], [-9, 52]]) wallRect(ctx, W, x + sx, x + sx + 1, sv, sv + 1, '#ffffff');
+    }
+    // Her pictures pinned up: monsters in crayon on white paper.
+    const cols = ['#ff7aa8', '#5cb84a', '#6e9cf0', '#ff8a3c', '#a46ae0', '#e0a020'];
+    const pics = [[WA, 0.18], [WA, 0.8], [WB, 0.58], [WB, 0.78]];
+    pics.forEach(([W, u], i) => {
+      const x = Math.round(W.len * u);
+      const col = cols[i % cols.length];
+      wallRect(ctx, W, x - 9, x + 9, 34, 60, '#e8e0f8');
+      wallRect(ctx, W, x - 8, x + 8, 35, 59, '#ffffff');
+      wallRect(ctx, W, x - 1, x + 1, 57, 61, '#ff5a7a'); // the pin
+      // A round body, eyes, horns or ears and legs, a little different each time.
+      for (let dv = -5; dv <= 5; dv++) for (let dx = -5; dx <= 5; dx++) {
+        const d = dx * dx + dv * dv;
+        if (d <= 25 && d > 15) wallRect(ctx, W, x + dx, x + dx + 1, 46 + dv, 47 + dv, col);
+      }
+      const eyes = i % 2 ? [0] : [-2, 2];
+      for (const e of eyes) wallRect(ctx, W, x + e, x + e + 1, 47, 49, '#2c2c3a');
+      wallRect(ctx, W, x - 3, x - 2, 52, 54, col);
+      wallRect(ctx, W, x + 2, x + 3, 52, 54, col);
+      for (let j = 0; j < 3; j++) {
+        wallRect(ctx, W, x - 4 + j, x - 3 + j, 39 - j, 40 - j, col);
+        wallRect(ctx, W, x + 3 - j, x + 4 - j, 39 - j, 40 - j, col);
+      }
+      wallRect(ctx, W, x - 3, x - 2, 39, 41, col);
+      wallRect(ctx, W, x + 2, x + 3, 39, 41, col);
+    });
+    // Paper bunting with crayon colours, higher up under the roof.
+    for (const W of [WA, WB]) for (let x = 6; x < W.len - 6; x += 12) {
+      const col = cols[Math.floor(x / 12) % cols.length];
+      for (let i = 0; i < 6; i++) wallRect(ctx, W, x + i, x + 10 - i, 78 - i, 79 - i, col);
+    }
+  });
+  const torch = makeTorch();
+  const k = boxCorners(sc, 0, 0, sc.W, sc.D);
+  for (const [W, u] of [[wall(k.L, k.T), 0.3], [wall(k.T, k.R), 0.1], [wall(k.T, k.R), 0.92]]) {
+    const p = wallPt(W, W.len * u, 22);
+    sc.objects.push({ c0: -10, r0: -10, c1: -10, r1: -10, background: true, canvas: torch.canvas, x: Math.round(p.x - torch.ax), y: Math.round(p.y - torch.ay), w: torch.canvas.width, h: torch.canvas.height });
+    sc.lamps.push({ x: p.x, y: p.y - torch.ay + torch.glow.y });
+  }
+  const furn = (c, r, up, draw, react) => {
+    block(sc, c, r, 1, 1);
+    const p = tileCenter(sc, c, r);
+    addObject(sc, { c, r, w: 1, d: 1 }, footBounds(sc, c, r, 1, 1, up, 8), draw, { react });
+    return p;
+  };
+  furn(10, 2, 24, ctx => drawTable(ctx, sc, 10, 2), FURNITURE.table);
+  furn(11, 0, 34, ctx => drawTreasureChest(ctx, sc, 11, 0), FURNITURE.chest);
+  furn(0, 4, 30, ctx => { const p = tileCenter(sc, 0, 4); drawCrystal(ctx, Math.round(p.x), Math.round(p.y), '#7fe8ff'); }, { word: 'crystal', fx: 'sparkle' });
+  furn(0, 8, 26, ctx => { const p = tileCenter(sc, 0, 8); drawBigShroom(ctx, Math.round(p.x), Math.round(p.y), '#ff9cf0'); }, { word: 'mushroom', fx: 'boing' });
+  for (const [c, r] of [[0, 4], [0, 8]]) { const p = tileCenter(sc, c, r); sc.lamps.push({ x: p.x, y: p.y - 14 }); }
+
+  // Stairs back down in the front-right corner.
+  addStairs(sc, 9, 6, 2, 3, ctx => drawStairwell(ctx, sc, 9, 6, 2, 3, 6, STAIRS_TOWER),
+    [9, 10].map(c => ({ c, r: 5, target: 'tower', at: { c: 10, r: 4 }, icon: '⬇️' })));
+
+  for (const n of TOWER2_NPCS) sc.npcs.push(kidVillager(n));
+  sc.start = { c: 9, r: 4 };
   renderGround(sc);
   return sc;
 }

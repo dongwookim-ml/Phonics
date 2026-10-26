@@ -11,7 +11,7 @@ const root = path.join(__dirname, '..');
 // The people of the Monster Village and its tower (level 6), who ask its
 // long vowel questions (QUIZ_TYPES.monster): these tables in js/data.js
 // (a captain file may splice its own people into them, as for the others).
-const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS'];
+const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS', 'TOWER2_NPCS'];
 // Content constants read from js/data.js (and, for the robot edition, the
 // js/captain-*.js files, which change those tables and add their own), and
 // js/kid-monsters.js in both: the monsters she drew, with their voices and hellos.
@@ -195,7 +195,7 @@ function collect(D) {
     if (g.team.includes('_')) lines(N, ['magicE'], { letter: g.says });
     else lines(N, ['vowelTeam'], { team: g.team.toUpperCase().split('').join(' '), letter: g.says });
   }
-  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower']);
+  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower', 'tower2']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
   // The villages' little games (js/village-games.js): the narrator says

@@ -20,7 +20,7 @@ const root = path.join(__dirname, '..');
     await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}`);
     await page.click('#login-guest');
     const report = await page.evaluate(() => {
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
       const problems = [];
       // Where she can arrive: each scene's start, every link's landing spot,
       // and the tiles in front of the doors she comes out of.

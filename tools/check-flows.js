@@ -1916,8 +1916,8 @@ async function gameSpots(browser, edition) {
 
 // The monsters she drew herself (js/kid-monsters.js): each one draws in
 // every frame (still, eyes shut, waving) and in the town as a villager,
-// stands on its feet and is between 28 and 40 px tall with its ♪ clear of
-// it; talking to one shows her drawing in the dialog where the portrait
+// stands on its feet and is between 20 and 40 px tall (the caterpillar is
+// long and low) with its ♪ clear of it; talking to one shows her drawing in the dialog where the portrait
 // goes (the picture loaded), and at the iPad sizes and on a phone held
 // sideways it sits inside the dialog, off the cards, which stay on screen;
 // another villager's dialog shows the portrait and no drawing; closing the
@@ -1939,7 +1939,7 @@ async function kidMonsters(browser, edition) {
       const r = out[look] = { frames: [], bad: [] };
       try {
         const art = kidMonsterArt(look);
-        art.rows.concat(Object.values(art.wave || {})).forEach((row, i) => { if (row.length !== art.rows[0].length) r.bad.push(`row ${i} is ${row.length} wide`); });
+        art.rows.concat(Object.values(art.wave || {}), Object.values(art.shut || {})).forEach((row, i) => { if (row.length !== art.rows[0].length) r.bad.push(`row ${i} is ${row.length} wide`); });
         for (let f = 0; f < 4; f++) {
           const s = kidMonsterSprite(look, f);
           const px = s.canvas.getContext('2d').getImageData(0, 0, s.canvas.width, s.canvas.height).data;
@@ -1969,9 +1969,9 @@ async function kidMonsters(browser, edition) {
   });
   for (const look of looks) {
     const r = drawn[look];
-    check(`${tag} ${look}: draws in every frame, on its feet, 28 to 40 px tall, also as a villager`, !r.bad.length && r.frames.every(f => f.ink > 150 && f.feet && f.tall >= 28 && f.tall <= 40)
+    check(`${tag} ${look}: draws in every frame, on its feet, 20 to 40 px tall, also as a villager`, !r.bad.length && r.frames.every(f => f.ink > 150 && f.feet && f.tall >= 20 && f.tall <= 40)
       && r.portrait && r.waves >= 2, r);
-    check(`${tag} ${look}: its ♪ goes up clear of it`, r.lift > 0 && r.frames[0].tall - r.lift <= 32, r.lift);
+    check(`${tag} ${look}: its ♪ goes up clear of it`, r.lift >= 0 && r.frames[0].tall - r.lift <= 32, r.lift);
     check(`${tag} ${look}: a recorded voice and three hellos`, r.voice && r.hellos === 3, r);
   }
   check(`${tag}: anyone else's ♪ stays where it was`, drawn.otherLift === 0, drawn.otherLift);
@@ -2076,6 +2076,60 @@ async function kidMonsters(browser, edition) {
   check(`${tag}: a tap shows her drawing big and any tap closes it, as does the dialog stepping aside`, r.big && r.bigGone && r.asideGone && r.back, r);
   check(`${tag}: closing the dialog hides her drawing`, r.closed, r);
   check(`${tag}: another villager's dialog shows the portrait and no drawing`, !r.other.drawing && r.other.portrait && r.free, r.other);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
+// The Monster Village and its tower (js/monster-village.js): everyone out
+// in the village is one of the monsters she drew (the next five), asking
+// the village's questions with her drawing in the dialog. In by the
+// tower's door, up its stairs to the second floor (its name shown, the
+// five who live there), down again to the foot of the stairs, and out to
+// the door she went in by.
+async function monsterTower(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const r = await page.evaluate(async () => {
+    const wait = ok => new Promise(res => { const t0 = performance.now(); const go = () => (ok() || performance.now() - t0 > 15000 ? res() : setTimeout(go, 50)); go(); });
+    const settled = () => !ui.fade.classList.contains('on') && !state.hero.path.length;
+    const at = () => [state.hero.c, state.hero.r].join();
+    const kids = sc => sc.npcs.filter(n => !n.mount).map(n => ({ look: n.look, kid: !!KID_MONSTERS[n.look], level: n.level, named: !!KID_MONSTERS[n.look] && n.name === KID_MONSTERS[n.look].name }));
+    state.stars = 60;
+    if (!Sound.muted) Sound.toggleMute();
+    const out = {};
+    changeScene('monster');
+    await wait(() => state.scene === sceneFor('monster') && settled());
+    const village = state.scene;
+    out.village = kids(village);
+    const npc = village.npcs.find(n => KID_MONSTERS[n.look]);
+    state.busy = false;
+    openDialog(npc);
+    out.talk = { asked: !!state.question, drawing: !document.getElementById('dlg-drawing').classList.contains('hidden') };
+    closeDialog();
+    const door = village.doors.find(d => d.target === 'tower');
+    enterDoor(door);
+    await wait(() => state.scene === sceneFor('tower') && settled());
+    out.tower = { inside: state.scene === sceneFor('tower'), looks: kids(state.scene).map(k => k.look).join() };
+    tapObject(state.scene.objects.find(o => o.stairs));
+    await wait(() => state.scene === sceneFor('tower2') && settled());
+    out.up = { there: state.scene === sceneFor('tower2'), at: at(), label: ui.place.textContent, monsters: kids(state.scene), busy: state.busy };
+    tapObject(state.scene.objects.find(o => o.stairs));
+    await wait(() => state.scene === sceneFor('tower') && settled());
+    out.down = { there: state.scene === sceneFor('tower'), at: at(), label: ui.place.textContent };
+    leaveRoom();
+    await wait(() => state.scene === village && settled());
+    out.out = { there: state.scene === village, at: at(), door: [door.c, door.r].join(), busy: state.busy };
+    return out;
+  });
+  const tag = `Monster Tower (${edition})`;
+  const want = looks => looks.map(n => n.look).join();
+  const theirs = await page.evaluate(() => ({ village: MONSTER_NPCS.map(n => n.look).join(), up: TOWER2_NPCS.map(n => n.look).join(), floor1: TOWER_NPCS.map(n => n.look).join(),
+    upName: place('tower2'), downName: place('tower') }));
+  check(`${tag}: everyone out in the village is one of her monsters, named as she drew them, asking the village's questions`,
+    want(r.village) === theirs.village && r.village.length === 5 && r.village.every(k => k.kid && k.named && k.level === 6) && r.talk.asked && r.talk.drawing, r);
+  check(`${tag}: up the stairs from the ground floor to the second floor, where the next five live`, r.tower.inside && r.tower.looks === theirs.floor1 && r.up.there && r.up.at === '9,4'
+    && r.up.label === theirs.upName && want(r.up.monsters) === theirs.up && r.up.monsters.every(k => k.kid && k.named && k.level === 6) && !r.up.busy, r);
+  check(`${tag}: down again to the foot of the stairs, and out to the door she went in by`, r.down.there && r.down.at === '10,4' && r.down.label === theirs.downName
+    && r.out.there && r.out.at === r.out.door && !r.out.busy, r);
   check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();
 }
@@ -2450,6 +2504,7 @@ async function lateGate(browser) {
     ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain'),
     gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
     kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate,
+    monsterTower: b => monsterTower(b, 'princess'), monsterTowerCaptain: b => monsterTower(b, 'captain'),
     blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);

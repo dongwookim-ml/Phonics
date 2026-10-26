@@ -325,6 +325,7 @@ function sceneFor(target) {
     else if (target === 'fairy') state.scenes[target] = buildFairyVillage();
     else if (target === 'monster') state.scenes[target] = buildMonsterVillage(); // js/monster-village.js
     else if (target === 'tower') state.scenes[target] = buildMonsterTower();
+    else if (target === 'tower2') state.scenes[target] = buildMonsterTower2();
     else if (home) state.scenes[target] = buildHomeInterior(home);
     else if (house) state.scenes[target] = buildHouseInterior(house);
     // A place that doesn't exist takes her to the town instead of breaking.
@@ -1106,6 +1107,10 @@ function followLink(link) {
     changeScene('castle2', link.at, place('castle2'));
     Sound.say([{ text: line('upstairs'), pitch: 1.3 }, { pause: 400 }]);
     libraryInvite();
+  } else if (link.target === 'tower2' || link.target === 'tower') {
+    // Up and down the Monster Tower's stairs (js/monster-village.js).
+    changeScene(link.target, link.at, place(link.target));
+    if (link.target === 'tower2') Sound.say([{ text: line('tower2'), pitch: 1.3 }]);
   } else {
     changeScene(link.target, link.at, place('castle'));
   }

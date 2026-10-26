@@ -219,7 +219,7 @@ function ask(kind, scene) {
           if (wide.length) out.push(`${kind}: ${wide.length} word(s) wider than a ${Math.round(room(card))}px card: ${wide.slice(0, 8).join(', ')}`);
         }
         // The person talking and the hero stay above the dialog.
-        for (const [kind, scene] of [['word', 'town'], ['start', 'town'], ['family', 'forest'], ['sentence', 'unicorn'], ['spell', 'fairy'], ['longRead', 'monster'], ['longBlend', 'tower']]) {
+        for (const [kind, scene] of [['word', 'town'], ['start', 'town'], ['family', 'forest'], ['sentence', 'unicorn'], ['spell', 'fairy'], ['longRead', 'monster'], ['longBlend', 'tower'], ['longWord', 'tower2']]) {
           const npc = ask(kind, scene);
           const top = ui.dialog.getBoundingClientRect().top;
           const k = devicePixelRatio || 1;

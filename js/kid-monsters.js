@@ -1,17 +1,21 @@
-// Her own monsters: five little monsters the child drew herself, who live in
-// the Monster Tower. Any villager with one of these looks is one of them,
-// in either edition: drawCharacter (js/game.js) draws it with
-// drawKidMonster, its ♪ goes a little higher (kidBubbleLift, from
-// drawOverlay), and its dialog shows her drawing in a little photo frame
-// where the portrait goes (kidDrawingShow, from openDialog and closeDialog).
+// Her own monsters: the little monsters the child drew herself. The first
+// five live on the Monster Tower's ground floor; the next five on its second
+// floor and out in the Monster Village round it (js/monster-village.js).
+// Any villager with one of these looks is one of them, in either edition:
+// drawCharacter (js/game.js) draws it with drawKidMonster, its ♪ goes a
+// little higher (kidBubbleLift, from drawOverlay), and its dialog shows her
+// drawing in a little photo frame where the portrait goes (kidDrawingShow,
+// from openDialog and closeDialog).
 // - KID_MONSTERS: each one's Korean name, her drawing (img/monsters, made
 //   from a photo by tools/kid-drawings.py), the caption under it, and its
 //   pixel art. The art is string rows with a palette letter per pixel and
-//   `.` empty, like MONSTERS in js/sprites.js. An outline in her dark teal
-//   marker goes round every coloured part; `o` pixels are that ink too, for
-//   stick arms and legs, brows and mouths. `k` are the eyes, which shut when
-//   it blinks (blinkRows in js/cave-magic.js), and `wave` swaps a few rows
-//   for an arm (or the wings) up.
+//   `.` empty, like MONSTERS in js/sprites.js. An outline in her ink goes
+//   round every coloured part; `o` pixels are that ink too, for stick arms
+//   and legs, brows and mouths. The ink is her dark teal marker unless the
+//   art has its own (`ink`: the pencil or crayon she drew it with). `k` are
+//   the eyes, which shut when it blinks (blinkRows in js/cave-magic.js), or
+//   as `shut` draws them over the rows (a space keeps the pixel), and `wave`
+//   swaps a few rows for an arm (or the wings, or a tail) up.
 // - While they wait they bob, blink and now and then wave; one calling her
 //   over hops (guideBob in js/guide.js). They are never drawn mirrored, so
 //   a hat leans the way she drew it.
@@ -288,6 +292,281 @@ const KID_MONSTERS = {
       24: 'ooooobbbbbbbbbd.......',
     },
   },
+  // Three eyes on a square head under two pink horns, round ears, and a
+  // second face on its tummy: one more eye and a big mouth with fangs and a
+  // tongue. Four little legs. Her pencil was brown (`ink`).
+  kidmon6: {
+    name: '배에 입 달린 몬스터',
+    drawing: 'img/monsters/kidmon6.jpg',
+    by: '직접 그린 몬스터',
+    ink: '#8a4e2e',
+    pal: { b: '#ffe1c2', B: '#fff1e2', d: '#f2c69c', h: '#e0407a', H: '#ff86b0', m: '#7a2a3a', t: '#ff8aa8' },
+    rows: [
+      '.....H..........h.....',
+      '.....Hh........hh.....',
+      '.....Hhh......hhh.....',
+      '.....Hhhh....hhhh.....',
+      '.....BBBbbbbbbbbb.....',
+      '.....Bbbbbwkbbbbb.....',
+      '.....Bbbbbkkbbbbb.....',
+      '....bBoobbbbbboobb....',
+      '...bbBbkbbbbbbkbbbb...',
+      '...bbBbkbbbbbbkbbbb...',
+      '....bbbbbobbbbbbbb....',
+      '.....bbbbobbbbbbbd....',
+      '.....bbbbbobbbbbbd....',
+      '.....bbbbbbbbbbbbd....',
+      '.....bbbbbbbbbbbdd....',
+      '.....dbbbbbbbbbddd....',
+      '.........Bbbd.........',
+      '.bbooooooBbbdooooobb..',
+      '.bb......Bbbd.....bb..',
+      '........BBbbbd........',
+      '.......Bbbbbbbd.......',
+      '......Bbbbwkbbbd......',
+      '......Bbbbkkbbbbd.....',
+      '.....Bbbbbbbbbbbd.....',
+      '.....bbmmmmmmmbbd.....',
+      '.....bbwmmmmmwbbd.....',
+      '.....bbmttmmmmbdd.....',
+      '......bbmmmmmbbd......',
+      '.......bbbbbbbd.......',
+      '........bbbbdd........',
+      '......o..o..o..o......',
+      '.....o...o..o...o.....',
+      '....o....o..o....o....',
+      '...bb...bb..bb...bb...',
+    ],
+    wave: {
+      15: '.....dbbbbbbbbbddd..bb',
+      16: '.........Bbbd....ooobb',
+      17: '.bbooooooBbbdoooo.....',
+      18: '.bb......Bbbd.........',
+    },
+  },
+  // One big eye under a green horn, hairs sticking up, two pink fangs, a
+  // swirl on its round tummy and four arms with mitten hands. Its eye
+  // shuts as a line (`shut`).
+  kidmon7: {
+    name: '외눈 초록뿔 몬스터',
+    drawing: 'img/monsters/kidmon7.jpg',
+    by: '직접 그린 몬스터',
+    ink: '#2c2c3a',
+    pal: { b: '#d6e6ff', B: '#eef5ff', d: '#aec8f0', g: '#5cb84a', G: '#9be07a', f: '#e0508a', s: '#c0703a' },
+    rows: [
+      '...........g............',
+      '...........Gg...........',
+      '...........Gg...........',
+      '......o...Ggg....o......',
+      '...o...o..Gggg..o...o...',
+      '....o..o..Gggg..o..o....',
+      '.....o..oGgggggo..o.....',
+      '.........oooooo.........',
+      '........BBbbbbbb........',
+      '.......Bbbbbbbbbb.......',
+      '......Bbbboooobbbb......',
+      '......Bbbowwwwobbd......',
+      '......Bbbowkkwobbd......',
+      '......Bbbowkkwobbd......',
+      '......bbbboooobbbd......',
+      '......bbbbbbbbbbbd......',
+      '.......boooooooodd......',
+      'b.b.....bfbbbbfd.....b.b',
+      'bbb......f....f......bbb',
+      'bbb......BBbbbb......bbb',
+      '.o.....Bbbbbbbbbd...o...',
+      '...o..Bbbbbbbbbbbd.o....',
+      '....oBbbbbbsbbbbbbo.....',
+      '.....Bbbbbsbbbbbbbd.....',
+      '.....Bbbbbsssbbbbbd..bb.',
+      '.....Bbbbbsbbsbbbbdoobbb',
+      '....obbbbbbssbbbbbdoobbb',
+      '...o..bbbbbbbbbbdd...bb.',
+      '..o....bbbbbbbbdd.......',
+      'bbb......bbbbdd.........',
+      'bbb.....bb....bb........',
+      'b.b.....bb....bb........',
+      '.....bbbbb....bbbbb.....',
+      '.....bbbbb....bbbbb.....',
+      '........................',
+    ],
+    shut: {
+      10: '      Bbbbbbbbbbbb      ',
+      11: '      Bbbbbbbbbbbd      ',
+      12: '      Bbbooooobbbd      ',
+      13: '      Bbbbbbbbbbbd      ',
+      14: '      bbbbbbbbbbbd      ',
+    },
+    wave: {
+      14: '......bbbboooobbbd...b.b',
+      15: '......bbbbbbbbbbbd...bbb',
+      16: '.......boooooooodd...bbb',
+      17: 'b.b.....bfbbbbfd......o.',
+      18: 'bbb......f....f......o..',
+      19: 'bbb......BBbbbb.....o...',
+    },
+  },
+  // A caterpillar: an angry head with red eyes, a curly feeler and a huge
+  // mouth full of teeth, then round body parts, purple feet and a purple
+  // spike on its tail, which flicks up when it waves.
+  kidmon8: {
+    name: '이빨 애벌레 몬스터',
+    drawing: 'img/monsters/kidmon8.jpg',
+    by: '직접 그린 몬스터',
+    ink: '#2c2c3a',
+    pal: { b: '#c4ecaa', B: '#e2fbd2', d: '#98d07e', m: '#6a2a3a', f: '#b07ae0', k: '#c8283c' },
+    rows: [
+      '.........oo...................',
+      '........oo.o..................',
+      '.......o..o...................',
+      '.......o......................',
+      '..oo.BBbbb.oo.................',
+      '....oobbboo...................',
+      '...Bkwbbbbkw..................',
+      '..BBkbbbbbkbb.................',
+      '..Bbbbbbbbbbb.................',
+      '..bbbbbbbbbbb...............f.',
+      '..bbbbobobbbd..............ff.',
+      '..bbbbbbbbddd....Bb..Bbb.Bbb..',
+      '...oBBbbbbbo...BBbbbbbbbbobbb.',
+      '.BwBbwbmbwbbwb.Bbbbbbobbbobbb.',
+      'Bbwmmwmmmwmmwbbobbbbbobbbobbd.',
+      'bbmmmmmmmmmmmddobbbbdobbdobd..',
+      '.bbwbmmwmmdwdd.bbbbddbbd......',
+      '....bbbbddd......bd...........',
+      '......o...o....o...o..o...o...',
+      '......o...o....o...o..o...o...',
+      '.....ff..ff...ff..ff.ff..ff...',
+    ],
+    wave: {
+      7: '..BBkbbbbbkbb................f',
+      8: '..Bbbbbbbbbbb...............ff',
+      9: '..bbbbbbbbbbb..............ff.',
+      10: '..bbbbobobbbd..............bb.',
+    },
+  },
+  // Cat ears (one short, one tall), a grumpy face, blue wings like a big
+  // bow, a grey dress with a purple stripe, arms straight out with claws,
+  // and long thin legs with bird feet.
+  kidmon9: {
+    name: '파란 날개 고양이 몬스터',
+    drawing: 'img/monsters/kidmon9.jpg',
+    by: '직접 그린 몬스터',
+    ink: '#2c2c3a',
+    pal: { b: '#ece6f8', B: '#faf7ff', d: '#d2c6ec', g: '#a9b6be', G: '#c9d3d9', s: '#c0409a', v: '#6e9cf0', V: '#a4c4ff' },
+    rows: [
+      '................b.........',
+      '.........b.....bb.........',
+      '.........bb....bb.........',
+      '.........BBbbbbbb.........',
+      '.........Bbbbbbbb.........',
+      '.........Bobbbboo.........',
+      '.........Bbobbobb.........',
+      '.........Bbkbbkbd.........',
+      '.........bbkbbkbd.........',
+      '.........bbbbbbbd.........',
+      '..........boooob..........',
+      'o.....VVv.bbbbdd.vvd.....o',
+      '.oooooooooobb..oooooooooo.',
+      'o...VvvvvvGGsg..vvvvvd...o',
+      '....VvvvvvGgsgggvvvvvd....',
+      '.....vvvv.Ggsggg.vvvd.....',
+      '.........Gggsgggg.........',
+      '.........Gggssggg.........',
+      '........Ggggsggggg........',
+      '........Gggsgggggg........',
+      '.......Ggggssgggggg.......',
+      '.......ggggsggggggg.......',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '..........o....o..........',
+      '.........o.o..o.o.........',
+      '........o...oo...o........',
+      '.......o....o.....o.......',
+    ],
+    wave: {
+      4: '.........Bbbbbbbb.....o...',
+      5: '.........Bobbbboo....o.o..',
+      6: '.........Bbobbobb....o....',
+      7: '.........Bbkbbkbd...o.....',
+      8: '.........bbkbbkbd..o......',
+      9: '.........bbbbbbbd.o.......',
+      10: '..........boooob.o........',
+      11: 'o.....VVv.bbbbd.ovvd......',
+      12: '.oooooooooobb..ovvvvvd....',
+      13: 'o...VvvvvvGGsg..vvvvvd....',
+    },
+  },
+  // Spiky hair like a crown, cross orange eyes, a triangle dress, an arm
+  // down its side and crossed legs, all in her red crayon (`ink`).
+  kidmon10: {
+    name: '삐죽머리 빨강 몬스터',
+    drawing: 'img/monsters/kidmon10.jpg',
+    by: '직접 그린 몬스터',
+    ink: '#d23a24',
+    pal: { b: '#ffe6d8', B: '#fff3ec', d: '#f6c9b2', h: '#ff6a3c', H: '#ff9a70', e: '#ffb070', r: '#ffb4a4', R: '#ffd2c8', k: '#2a1a1a' },
+    rows: [
+      '...h.......h...........',
+      '...h...h...h...h.......',
+      '...h...h...h...h...h...',
+      '..Hhh..h..Hhh..h...h...',
+      '..Hhh.Hhh.Hhh.Hhh..h...',
+      '..Hhh.Hhh.Hhh.Hhh.Hhh..',
+      'Hhhhhhhhhhhhhhhhhhhhhh.',
+      '....BBbbbbbbbbbbbbb....',
+      '....Bbbbbbbbbbbbbbd....',
+      '....Bbboobbbbboobbd....',
+      '.....bbeekbbbekeebd....',
+      '.....bbeekbbbekeebd....',
+      '.....bbbbbbbbbbbbbd....',
+      '......bbbboooobbbd.....',
+      '.......bbbbbbbbdd......',
+      '........bbbbbbdd.......',
+      '..........Rrr.o........',
+      '.........Rrrr..o.......',
+      '........Rrrrrr.o.......',
+      '........Rrrrrr..o......',
+      '.......Rrrrrrdd.o......',
+      '......Rrrrrrrrdd.o.....',
+      '......Rrrrrrrrdd.o.....',
+      '.....Rrrrrrrrrrdd.o....',
+      '.....Rrrrrrrrrrdd.o....',
+      '....Rrrrrrrrrrrrdd.....',
+      '...Rrrrrrrrrrrrrrdd....',
+      '........o....o.........',
+      '.........o..o..........',
+      '.........o..o..........',
+      '..........oo...........',
+      '..........oo...........',
+      '.........o..o..........',
+      '.........o..o..........',
+      '......o.o...o.o........',
+      '.....o...o.o...o.......',
+    ],
+    wave: {
+      12: '.....bbbbbbbbbbbbbd..o.',
+      13: '......bbbboooobbbd...oo',
+      14: '.......bbbbbbbbdd...o..',
+      15: '........bbbbbbdd..oo...',
+      16: '..........Rrr...oo.....',
+      17: '.........Rrrr.oo.......',
+      18: '........Rrrrrr.........',
+      19: '........Rrrrrr.........',
+      20: '.......Rrrrrrdd........',
+      21: '......Rrrrrrrrdd.......',
+      22: '......Rrrrrrrrdd.......',
+      23: '.....Rrrrrrrrrrdd......',
+      24: '.....Rrrrrrrrrrdd......',
+    },
+  },
 };
 
 // Letters every monster shares: her marker's ink, eyes, a glint and blush.
@@ -304,6 +583,13 @@ Object.assign(VOICES, {
   kidmon3: { gender: 'male',   tts: 'am_adam',  lift: 0.94, pitch: 0.9,  rate: 0.95, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
   kidmon4: { gender: 'female', tts: 'af_aoede',  pitch: 1.35, rate: 0.95, voice: ['Samantha', 'Karen', 'Microsoft Aria'] },
   kidmon5: { gender: 'female', tts: 'af_kore',   lift: 1.06, pitch: 1.4,  rate: 1.0,  voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
+  // The second five share voices the Monster Village had already (so its
+  // questions are recorded in them), each lifted to sound like itself.
+  kidmon6: { gender: 'male',   tts: 'am_michael', lift: 1.1,  pitch: 1.2,  rate: 0.95, voice: ['Daniel', 'Fred', 'Microsoft Guy'] },
+  kidmon7: { gender: 'female', tts: 'af_nova',   lift: 1.14, pitch: 1.6,  rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
+  kidmon8: { gender: 'male',   tts: 'am_liam',   lift: 1.02, pitch: 1.1,  rate: 1.0,  voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
+  kidmon9: { gender: 'female', tts: 'bf_lily',   lift: 1.08, pitch: 1.4,  rate: 0.95, voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
+  kidmon10: { gender: 'female', tts: 'af_kore',  lift: 1.16, pitch: 1.5,  rate: 1.05, voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
 });
 Object.assign(PERSONA, {
   kidmon1: ['Hmph! I am grumpy, but I like letters!', 'Grr! Do not touch my pointy hat, {title} {name}!', 'Hmph. Okay, okay. One word game. Just one!'],
@@ -311,6 +597,11 @@ Object.assign(PERSONA, {
   kidmon3: ['Meow! Hmph! Do you like my stripy jacket?', 'Grr, meow! I am a grumpy cat. Want to play anyway?', 'Hmph! Show me your super ears, {title} {name}.'],
   kidmon4: ['Whoosh! Hello, {title} {name}! My spire touches the clouds.', 'Flap, flap! I fly round and round the Monster Tower.', 'Hello! I am the tallest monster in the tower!'],
   kidmon5: ['Hmph! I have three ears. I hear everything!', 'Swish! This is my magic loop. Ready, {title} {name}?', "I am not grumpy. I am thinking! Let's play."],
+  kidmon6: ['Hello, {title} {name}! I have a mouth on my tummy!', 'Three eyes on top, one more on my tummy. I see you!', 'Yum, yum! My tummy mouth loves long words!'],
+  kidmon7: ['Hi, {title} {name}! I have one big eye and four arms!', 'Wave, wave, wave, wave! Four arms to say hello!', 'My green horn is pointy, but I am friendly!'],
+  kidmon8: ['Chomp, chomp! I am a hungry caterpillar monster.', 'Look at all my legs, {title} {name}! Wiggle, wiggle!', 'My teeth are big, but I only eat leaves. And words!'],
+  kidmon9: ['Hello, {title} {name}! Do you like my blue wings?', 'My legs are long and thin. I walk like a bird!', 'Meow! I am a cat with wings. Flap, flap!'],
+  kidmon10: ['Hmph! Do you like my spiky red hair, {title} {name}?', 'My hair is spiky like a crown!', 'Grr! I look grumpy, but I love word games!'],
 });
 
 // ---- Pixel sprites ------------------------------------------------------------
@@ -338,8 +629,9 @@ function kidMonsterSprite(look, frame = 0) {
 function kidPaint(art, frame) {
   let rows = art.rows;
   if (frame & 2 && art.wave) rows = rows.map((r, j) => art.wave[j] || r);
-  if (frame & 1) rows = blinkRows(rows);
-  const pal = Object.assign({}, KID_PAL, art.pal);
+  if (frame & 1) rows = art.shut ? rows.map((r, j) => kidOver(r, art.shut[j])) : blinkRows(rows);
+  const ink = art.ink || KID_INK;
+  const pal = Object.assign({}, KID_PAL, { o: ink }, art.pal);
   const at = (x, y) => (rows[y - 1] || '')[x - 1] || '.';
   const coloured = (x, y) => { const ch = at(x, y); return ch !== '.' && ch !== 'o'; };
   // A pixel of room all round for the outline.
@@ -348,7 +640,7 @@ function kidPaint(art, frame) {
   for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) {
     const ch = at(x, y);
     if (ch !== '.') px(ctx, x, y, 1, 1, pal[ch]);
-    else if (coloured(x + 1, y) || coloured(x - 1, y) || coloured(x, y + 1) || coloured(x, y - 1)) px(ctx, x, y, 1, 1, KID_INK);
+    else if (coloured(x + 1, y) || coloured(x - 1, y) || coloured(x, y + 1) || coloured(x, y - 1)) px(ctx, x, y, 1, 1, ink);
   }
   // The feet: between the outermost legs in the last few rows (from the
   // still picture, so every frame stands in the same place).
@@ -363,6 +655,11 @@ function kidPaint(art, frame) {
     x1 = Math.max(x1, r.length - 1 - [...r].reverse().join('').search(/[^.]/));
   }
   return { canvas: cv, ax: Math.round((x0 + x1) / 2) + 1, ay: last + 1 };
+}
+
+// A row with `over` drawn on it, where `over` has no space.
+function kidOver(row, over) {
+  return over ? [...row].map((ch, i) => (over[i] && over[i] !== ' ' ? over[i] : ch)).join('') : row;
 }
 
 // Called by drawCharacter (js/game.js) with its feet at (x, y) in world

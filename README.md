@@ -305,13 +305,17 @@ npx http-server -p 8080 .
   monster still goes poof and pays. Sounds are the game's own effects; no
   new lines are said. Code in `js/cave-magic.js` (`MONSTER_MAGIC` sets each
   monster's magic and colours).
-- **Her own monsters**: five little monsters she drew herself live in the
-  Monster Tower (looks `kidmon1` to `kidmon5`): 뾰족모자 몬스터, 방긋 여우귀
-  몬스터, 줄무늬 고양이 몬스터, 뾰족탑 날개 몬스터 and 요술고리 토끼 몬스터.
-  Each is pixel art of her drawing, in its own pastel with her dark teal
-  marker for the outline, and in both editions they bob, blink and now and
-  then wave while they wait, their ♪ a little higher over a tall hat or
-  ears. Talking to one shows her drawing where the portrait goes, as a
+- **Her own monsters**: ten little monsters she drew herself. The first
+  five live on the Monster Tower's ground floor (looks `kidmon1` to
+  `kidmon5`): 뾰족모자 몬스터, 방긋 여우귀 몬스터, 줄무늬 고양이 몬스터,
+  뾰족탑 날개 몬스터 and 요술고리 토끼 몬스터. The next five live on its
+  second floor and are out in the village too (`kidmon6` to `kidmon10`):
+  배에 입 달린 몬스터, 외눈 초록뿔 몬스터, 이빨 애벌레 몬스터, 파란 날개
+  고양이 몬스터 and 삐죽머리 빨강 몬스터. Each is pixel art of her drawing,
+  in its own pastel with the outline in what she drew it with (her dark teal
+  marker, or `ink`: her brown pencil, red crayon), and in both editions they
+  bob, blink and now and then wave (an arm, wings or a tail) while they
+  wait, their ♪ a little higher over a tall hat or ears. Talking to one shows her drawing where the portrait goes, as a
   little taped photo with "직접 그린 몬스터" under it; a tap shows it big and
   any tap closes it. `python tools/kid-drawings.py SRC_DIR` makes photos of
   new drawings into `img/monsters/kidmonN.jpg` (cropped to the drawing,
@@ -339,15 +343,19 @@ npx http-server -p 8080 .
   easier reading and sound-blending ones.
 - **Monster Village (level 6)**: a gate at the west end of town's upper road
   opens at 40 stars (`MONSTER_STARS`), the same village in both editions.
-  Lavender grass at dusk, glowing mushrooms, crystals and lanterns; four
-  friendly monsters (👾 bubble) ask the next step after short vowels: long
-  vowels, the ones that say their name (`QUIZ_TYPES.monster`). In the
-  middle stands the Monster Tower, with a monster's face (round-window
-  eyes, the doorway for a mouth). Inside live the monsters the child drew
-  herself (🖍️ bubble, `js/kid-monsters.js`): talking to one shows her
-  drawing in the dialog. Each is pixel art from a drawing, kept in one
-  place (`KID_MONSTERS`) so a parent's own drawings can replace them later.
-  Built in `js/monster-village.js`.
+  Lavender grass at dusk, glowing mushrooms, crystals and lanterns. Out in
+  the village, five of the monsters the child drew herself (🖍️ bubble,
+  `MONSTER_NPCS`) ask the next step after short vowels: long vowels, the
+  ones that say their name (`QUIZ_TYPES.monster`). In the middle stands
+  the Monster Tower, with a monster's face (round-window eyes, the doorway
+  for a mouth). Inside, the ground floor (`TOWER_NPCS`) has the first five
+  she drew; stairs in its back corner (⬆️ 2층) go up to the second floor
+  (`TOWER2_NPCS`), a playroom with her pictures pinned up, where the next
+  five live, and down again from the stairwell in its front corner. Talking
+  to any of them shows her drawing in the dialog. Each is pixel art from a
+  drawing, kept in one place (`KID_MONSTERS` in `js/kid-monsters.js`) so a
+  parent's own drawings can replace them later. Built in
+  `js/monster-village.js`.
 - **Fairy friends**: presents in the Fairy Village (a full gift meter) are
   its six little fairies and its treasures first (a petal dress, a leaf
   tunic for a boy, butterfly wings, a fairy teapot and a tulip; each fairy

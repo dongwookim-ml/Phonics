@@ -1320,44 +1320,42 @@ LINES.questChest = isCaptain() ? ['Mission complete! Coins for you!'] : ['You fo
 // The Monster Village opens from the west end of the town's upper road, in
 // both editions alike. Its people ask the next step after short vowels:
 // long vowels, the ones that say their name (QUIZ_TYPES.monster). In the
-// middle stands the Monster Tower, where the monsters she drew herself live
-// (KID_MONSTERS in js/kid-monsters.js). Built in js/monster-village.js.
+// middle stands the Monster Tower, two floors of them. Everyone there is
+// one of the monsters she drew herself (KID_MONSTERS in js/kid-monsters.js,
+// with their names, voices and hellos). Built in js/monster-village.js.
 const MONSTER_STARS = 40;
 PLACES.monster = '👾 몬스터 마을';
 PLACES.tower = '🗼 몬스터 탑';
-// Friendly monsters out in the village: the cave monsters' pictures
-// (MONSTERS in js/sprites.js, under these looks) with words of their own.
+PLACES.tower2 = '🗼 몬스터 탑 2층';
+// Out in the village: the five she drew next, who live on the tower's
+// second floor and come out to play.
 const MONSTER_NPCS = [
-  { name: '말랑 슬라임',   look: 'mvSlime',  c: 5,  r: 10 },
-  { name: '부끄럼쟁이 유령', look: 'mvGhost',  c: 18, r: 7 },
-  { name: '박쥐 길잡이',   look: 'mvBat',    c: 19, r: 17 },
-  { name: '버섯 몬스터',   look: 'mvShroom', c: 10, r: 18 },
+  { look: 'kidmon6',  c: 5,  r: 10 },
+  { look: 'kidmon7',  c: 18, r: 7 },
+  { look: 'kidmon8',  c: 19, r: 17 },
+  { look: 'kidmon9',  c: 10, r: 18 },
+  { look: 'kidmon10', c: 14, r: 20 },
 ];
-// The monsters in the tower, each one of her drawings.
+// The monsters in the tower, each one of her drawings: the first five on
+// the ground floor, the next five upstairs.
 const TOWER_NPCS = [
   { look: 'kidmon1', c: 2, r: 3 },
   { look: 'kidmon2', c: 6, r: 2 },
-  { look: 'kidmon3', c: 9, r: 4 },
+  { look: 'kidmon3', c: 8, r: 4 },
   { look: 'kidmon4', c: 3, r: 7 },
   { look: 'kidmon5', c: 8, r: 7 },
 ];
-// Drawn as the cave monster they look like (villagerSprite, js/sprites.js).
-Object.assign(LOOKS, { mvSlime: { monster: 'slime' }, mvGhost: { monster: 'ghost' }, mvBat: { monster: 'bat' }, mvShroom: { monster: 'shroom' } });
-Object.assign(VOICES, {
-  mvSlime:  { gender: 'female', tts: 'af_nova',   lift: 1.1,  pitch: 1.6, rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
-  mvGhost:  { gender: 'female', tts: 'bf_lily',   lift: 1.06, pitch: 1.4, rate: 0.9,  voice: ['Zoe', 'Allison', 'Microsoft Ana'] },
-  mvBat:    { gender: 'male',   tts: 'am_liam',   lift: 1.1,  pitch: 1.4, rate: 1.05, voice: ['Oliver', 'Tom', 'Microsoft Brian'] },
-  mvShroom: { gender: 'male',   tts: 'am_michael', lift: 1.04, pitch: 1.2, rate: 0.95, voice: ['Daniel', 'Fred', 'Microsoft Guy'] },
-});
-Object.assign(PERSONA, {
-  mvSlime:  ['Bloop! Welcome to the Monster Village, {title} {name}!', 'Wiggle, wiggle! Monsters love long vowels!', 'Hello! I am squishy and friendly.'],
-  mvGhost:  ['Boo! Hee hee, I am the friendliest ghost here.', 'Oh! Hello, {title} {name}! Do you know the magic e?', 'I float around the Monster Tower all day.'],
-  mvBat:    ['Flap, flap! The Monster Tower is right in the middle!', 'Hello, {title} {name}! The monsters in the tower want to meet you.', 'I see everything from up high!'],
-  mvShroom: ['Hello! I am a mushroom monster. I grow very slowly.', 'Welcome, {title} {name}! Shall we read some long words?', 'My cap keeps the rain off. Rain, rain!'],
-});
+const TOWER2_NPCS = [
+  { look: 'kidmon6',  c: 1, r: 3 },
+  { look: 'kidmon7',  c: 4, r: 1 },
+  { look: 'kidmon8',  c: 3, r: 6 },
+  { look: 'kidmon9',  c: 8, r: 2 },
+  { look: 'kidmon10', c: 6, r: 7 },
+];
 // Said as she comes in (the narrator, like the other places).
 LINES.monster = ['Welcome to the Monster Village!', 'Rawr! The monsters are happy to see you!'];
 LINES.tower = ['Welcome to the Monster Tower!', 'The monsters live up here. Say hello!'];
+LINES.tower2 = ['Up, up, up the stairs!', 'More monsters live up here. Say hello!'];
 LINES.openMonster = ['The Monster Village is open!'];
 
 // ---- Village homes -----------------------------------------------------------
