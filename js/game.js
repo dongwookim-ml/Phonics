@@ -694,7 +694,7 @@ function listen(q, parts, ms) {
 // 🔊: the word again (once the answer is shown or given, the answer).
 function askAgain() {
   const q = state.question;
-  if (!q) return;
+  if (!q || q.magicPending) return;
   const parts = q.done ? q.answer : q.reveal ? q.model : q.replay;
   if (q.locked) listen(q, parts.slice(), 5000);
   else Sound.say(parts, voiceOf(state.talking));
@@ -804,8 +804,10 @@ function showAnswer(q, o) {
     q.locked = true;
     q.turn = (q.turn || 0) + 1; // no earlier listen() lets her answer now
     ui.dialog.classList.add('listening');
+    q.magicPending = true; // 🔊 waits (askAgain): the cards stay as they are till the show
     blendMagicAfter(picked, voiceOf(state.talking), 4000, () => {
-      if (state.question !== q) return;
+      q.magicPending = false;
+      if (state.question !== q || q.done) return;
       ui.dialog.classList.add('hidden');
       openBlendMagic(q.magic, { done: () => {
         if (state.question !== q) return;

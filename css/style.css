@@ -1079,6 +1079,7 @@ body.captain.fairy { background: linear-gradient(#bfe6ff, #e0f2ff 50%, #dff6e0);
   background: rgba(74, 44, 79, 0.45);
   user-select: text;
   -webkit-user-select: text;
+  z-index: 30; /* over the sound magic, under the bedtime screen */
 }
 .parent-box {
   width: min(860px, 100%);
@@ -1971,6 +1972,8 @@ body.captain .drawing .photo::before { background: rgba(143, 196, 255, 0.8); }
 .magic.hidden { display: none; }
 body.captain .magic { background: radial-gradient(circle at 50% 30%, #fbfdff, #d8e8ff); }
 .magic .mg-close { position: absolute; top: -20px; right: -10px; z-index: 1; box-shadow: 0 4px 0 rgba(74, 44, 79, 0.25); }
+/* The game's own buttons wait while it plays (on a phone its ✖ is right by the game's ✖). */
+body.magic-on .mini-head { pointer-events: none; opacity: 0.5; }
 .mg-stage { position: relative; flex: 1; min-height: 0; }
 /* The bubbles in a row: far apart, closer (🐢), touching (🐇), squashed (✨),
    in the middle with the turtle's (rabbit's) path under them. */

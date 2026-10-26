@@ -41,6 +41,7 @@ const mini = {
   locked: true,   // until the question has been said
   tapped: false,  // she has tried one: the finger on the first round goes
   turn: 0,        // bumps whenever the game moves on, so stale callbacks give up
+  magicTurn: null, // the turn whose sound magic is about to show (miniMagic)
   anim: null,     // the round's right one, being won: { it, t0, x0, y0 }
   sparks: [],     // splashes and sparkles: { x, y, vx, vy, life, col, fall }
   ripples: [],
@@ -121,7 +122,7 @@ function openMini(npc, g = miniGameOf(npc)) {
   mini.el.classList.remove('hidden');
   // The first round at a new step of blending: the sound magic first,
   // with an easy word (js/blend-magic.js).
-  const intro = g.magic && mini.rounds[0] && blendMagicIntro(mini.rounds[0].q);
+  const intro = g.magic && mini.rounds[0] && blendMagicIntro(mini.rounds[0].q, mini.rounds.map(r => r.q && r.q.target));
   if (intro) {
     const turn = ++mini.turn;
     mini.locked = true;
@@ -178,7 +179,7 @@ function miniSay(parts, ms, ready) {
 // stop the win.
 function miniReplay() {
   const r = miniRound();
-  if (!r || mini.anim || mini.winning || !mini.end.classList.contains('hidden') || blendMagicShown()) return;
+  if (!r || mini.anim || mini.winning || !mini.end.classList.contains('hidden') || blendMagicShown() || mini.magicTurn === mini.turn) return;
   Sound.tap();
   // Still waiting for it: ask again, and the things open after it.
   if (mini.locked) miniAsk(false);
@@ -258,10 +259,12 @@ function miniMiss(it) {
 function miniMagic(parts, m) {
   const turn = ++mini.turn;
   mini.locked = true;
+  mini.magicTurn = turn; // 🔊 waits till the show (miniReplay)
   let shown = false;
   const go = () => {
     if (shown || mini.turn !== turn) return;
     shown = true;
+    mini.magicTurn = null;
     openBlendMagic(m, { done: () => { if (mini.turn === turn) mini.locked = false; } });
   };
   miniSay(parts.concat({ pause: 200 }, { call: go }), 4000, go);

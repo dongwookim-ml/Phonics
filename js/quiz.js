@@ -223,19 +223,24 @@ const Quiz = (() => {
   // ---- Letters she knows (blending's one-sound step) --------------------------
   // A letter is known once she has picked its picture right on the first try
   // LETTER_MASTERY.right times and her latest try at it was right. Like her
-  // tiers, that is hers in both editions: state.skill.letters, { s: { right,
+  // tiers, that is hers in both editions: state.skill.letters, { S: { right,
   // hit, last } }, `right` her right first tries, `hit` when the latest of
   // them was and `last` when her latest try was. Each only grows, so two
   // tablets' and two editions' join letter by letter, field by field,
-  // without losing either (joinSkill in js/progress.js).
+  // without losing either (joinSkill in js/progress.js). Its keys are
+  // capitals: an older version joins this like a kind's entry and writes
+  // its `n` and `best`, which would wipe a letter n.
   function letterLog() {
     if (typeof state === 'undefined') return {};
     const all = state.skill || (state.skill = {});
     return all.letters || (all.letters = {});
   }
-  function knows(l) {
-    const h = letterLog()[l];
-    return !!h && (h.right | 0) >= LETTER_MASTERY.right && (h.hit || 0) > 0 && h.hit >= (h.last || 0);
+  const letterOf = l => letterLog()[l.toUpperCase()];
+  // `since`: only with her latest right try after then (a parent who put her
+  // back at one sound, Quiz.setTier, means it).
+  function knows(l, since = 0) {
+    const h = letterOf(l);
+    return !!h && (h.right | 0) >= LETTER_MASTERY.right && (h.hit || 0) > since && h.hit >= (h.last || 0);
   }
   const knownLetters = () => ONE_SOUND.filter(s => knows(s.l)).map(s => s.l);
   // Missed letters to ask again soon, by how many one-sound questions have
@@ -261,13 +266,13 @@ const Quiz = (() => {
     const known = all.filter(x => knows(x.l));
     const open = all.filter(x => !knows(x.l));
     if (known.length && (!open.length || Math.random() < LETTER_MASTERY.review)) return pick(fresh('oneSound', known));
-    const begun = x => !!letterLog()[x.l] || (recent.oneSound || []).includes(x.l);
+    const begun = x => !!letterOf(x.l) || (recent.oneSound || []).includes(x.l);
     const tried = open.filter(begun);
     const next = [...LETTER_ORDER].map(l => open.find(x => x.l === l && !begun(x))).find(Boolean);
     let list = tried.length < LETTER_MASTERY.working && next ? tried.concat(next) : tried.length ? tried : open;
     const last = (recent.oneSound || []).slice(-1)[0];
     if (list.length > 1) list = list.filter(x => x.l !== last);
-    const weight = x => { const h = letterLog()[x.l]; return h && !(h.hit >= h.last) ? 3 : 1; };
+    const weight = x => { const h = letterOf(x.l); return h && !(h.hit >= h.last) ? 3 : 1; };
     let r = Math.random() * list.reduce((a, x) => a + weight(x), 0);
     for (const x of list) if ((r -= weight(x)) < 0) return x;
     return list[list.length - 1];
@@ -280,7 +285,7 @@ const Quiz = (() => {
     const kind = ladderOf('oneSound');
     const k = skill(kind);
     const c = TIERS[kind][k.t - 1];
-    if (!c || !c.letters || !ONE_SOUND.every(s => knows(s.l))) return false;
+    if (!c || !c.letters || !ONE_SOUND.every(s => knows(s.l, Number(k.set) || 0))) return false;
     k.t++;
     k.w = [];
     if (k.t > (k.best || 1)) { k.best = k.t; if (q) q.levelUp = true; }
@@ -292,7 +297,8 @@ const Quiz = (() => {
   // miss brings the letter back soon.
   function letterTry(q, right) {
     const log = letterLog();
-    const e = log[q.letter] || (log[q.letter] = { right: 0, hit: 0, last: 0 });
+    const key = q.letter.toUpperCase();
+    const e = log[key] || (log[key] = { right: 0, hit: 0, last: 0 });
     const now = Math.max(Date.now(), (e.last || 0) + 1);
     if (right && !q.misses) Object.assign(e, { right: (e.right | 0) + 1, hit: now });
     e.last = now;

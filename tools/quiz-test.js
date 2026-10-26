@@ -21,7 +21,7 @@
 // vowel and last sound. The word bank itself: one capital vowel per word,
 // every other sound one the narrator has, pictures an older iPad has.
 // Blending's first steps: the one-sound step's bank has every letter but
-// x, each word starting with that very sound and a picture she names for
+// q and x, each word starting with that very sound and a picture she names for
 // sure (Unicode 12 or before), and every question one right picture and no
 // other card she could call by a name that starts with that sound (or one
 // she can't tell from it); two cards, then three once she knows enough
@@ -161,14 +161,15 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
         for (const b of longSets.slice(i + 1)) if (a.v === b.v && lastSound(a.rime) === lastSound(b.rime)) problems.push(`rhymes ${a.rime} and ${b.rime} rhyme with each other`);
         for (const [w, e] of a.set) if (NEW_EMOJI.test(e)) problems.push(`rhyme ${a.rime}: ${w} ${e} is newer than Unicode 13`);
       }
-      // Blending's first steps: the one-sound bank has every letter but x,
-      // each word starting with that very sound (not a ch, sh, th, ph, wh, kn
+      // Blending's first steps: the one-sound bank has every letter but q and
+      // x (LETTER_ORDER: each once), each word starting with that very sound (not a ch, sh, th, ph, wh, kn
       // or wr, nor a vowel that says another sound), a picture she names for
       // sure (Unicode 12 or before); the two-sound words are two sounds each,
       // every one the narrator has (a capital: a letter's name).
       const U12 = new RegExp(`${newEmoji}|${u13}`, 'u');
       const letters = ONE_SOUND.map(s => s.l).join('');
-      if (letters !== 'abcdefghijklmnopqrstuvwyz') problems.push(`ONE_SOUND has the letters ${letters}, not a to z without x`);
+      if (letters !== 'abcdefghijklmnoprstuvwyz') problems.push(`ONE_SOUND has the letters ${letters}, not a to z without q and x`);
+      if ([...LETTER_ORDER].sort().join('') !== letters) problems.push(`LETTER_ORDER (${LETTER_ORDER}) is not ONE_SOUND's letters, each once`);
       const notSound = { a: /^(a[eiruwy]|ai)/, e: /^(e[aeiruwy]|eigh)/, i: /^(i[gr]|i[^aeiou]e)/, o: /^(o[aeiouwr]|one)/, u: /^(u[^aeiou][aeiou]|ur)/, c: /^c[hei]/, g: /^(gira|ge[mnr]|gia|gin|gy)/, s: /^sh/, t: /^th/, p: /^ph/, w: /^wr/, k: /^kn/ };
       for (const s of ONE_SOUND) {
         for (const [w, e] of s.words) {
@@ -201,7 +202,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
       // its letters are marked known (state.skill.letters): then she is
       // asked new ones, and now and then one she knows, again.
       state.settings = {};
-      const knowAll = () => Object.fromEntries(ONE_SOUND.map(x => [x.l, { right: 2, hit: 5, last: 5 }]));
+      const knowAll = () => Object.fromEntries(ONE_SOUND.map(x => [x.l.toUpperCase(), { right: 2, hit: 5, last: 5 }]));
       const ladderOf = kind => (TIERS[kind] ? kind : Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === kind)));
       for (const kind of Quiz.kinds) {
         const npcs = ['word', 'findStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.map(h => ({ level: 1, letter: h.letter }))) : [{ level: 1 }];
@@ -216,7 +217,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
               if (q.kind !== kind) { problems.push(`${ladder} t${i + 1}: a ${q.kind} question, not ${kind}`); break; }
               if (state.history[q.id]) { if (kind === 'oneSound') continue; break; }
               state.history[q.id] = { kind, tries: 1, right: 1, wrong: 0, last: Date.now() };
-              if (q.letter) state.skill.letters[q.letter] = { right: 2, hit: 5, last: 5 };
+              if (q.letter) state.skill.letters[q.letter.toUpperCase()] = { right: 2, hit: 5, last: 5 };
               if (Quiz.pool(kind, npc).every(id => state.history[id])) break;
             }
           });

@@ -77,13 +77,13 @@
 //  - the first blending steps (js/quiz.js, js/blend-magic.js), in both
 //    editions: a new child starts on one sound, every question there is one
 //    sound and a picture that starts with it, and she moves up to two sounds
-//    only once she knows all 25 letters (never on a run of right answers);
+//    only once she knows all 24 letters (never on a run of right answers);
 //    the sound magic shows once when she first reaches two sounds and
 //    three, never again after a reload, and after a second miss on a blend
 //    question (in the dialog and in the Unicorn game) as the answer; the
 //    game stays busy and a tap outside never closes it, the parent panel
 //    pauses it, the play limit waits for it; the Unicorn game's end card
-//    shows her letters, a new one lit, and all 25 open the two-sound step.
+//    shows her letters, a new one lit, and all 24 open the two-sound step.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -2160,14 +2160,14 @@ async function blendSteps(browser, edition) {
   });
   // Every letter known but one, right once already: right once more passes the step.
   r.pass = await page.evaluate(async () => {
-    for (const s of ONE_SOUND) state.skill.letters[s.l] = { right: 2, hit: 10, last: 10 };
-    state.skill.letters.q = { right: 1, hit: 10, last: 10 };
+    for (const s of ONE_SOUND) state.skill.letters[s.l.toUpperCase()] = { right: 2, hit: 10, last: 10 };
+    state.skill.letters.N = { right: 1, hit: 10, last: 10 };
     T.said.length = 0;
     let q;
     for (let i = 0; i < 40; i++) {
       q = T.ask();
       T.unlock();
-      if (q.letter === 'q') break;
+      if (q.letter === 'n') break;
       T.tap(true);
     }
     T.said.length = 0;
@@ -2181,7 +2181,7 @@ async function blendSteps(browser, edition) {
     const at = T.magic();
     const seen = await T.through();
     await T.until(() => T.shown('dialog'));
-    return { at, seen, kind: q.kind, after: { dialog: T.shown('dialog'), magic: blendMagicShown(), asked: state.question === q }, seenStep: state.guide.magic };
+    return { at, seen, kind: q.kind, target: q.target, after: { dialog: T.shown('dialog'), magic: blendMagicShown(), asked: state.question === q }, seenStep: state.guide.magic };
   });
   // The magic over the dialog: busy, a tap outside does nothing, the panel holds it.
   await page.evaluate(() => { closeDialog(); T.ask(); T.unlock(); T.tap(false); });
@@ -2246,7 +2246,7 @@ async function blendSteps(browser, edition) {
     const kind = state.question.kind;
     closeDialog();
     save();
-    return { two, at, kind, seenStep: state.guide.magic };
+    return { two, at, kind, target: q.target, seenStep: state.guide.magic };
   });
   // Kept over a reload: no magic at three sounds again.
   await page.reload();
@@ -2298,7 +2298,7 @@ async function blendSteps(browser, edition) {
     const out = { kind: mini.rounds[0].q.kind, clue: mini.letter.textContent, letter: mini.rounds[0].q.letter };
     mini.locked = false;
     miniMiss(live().find(x => !x.right));
-    out.counted = !!state.skill.letters[out.letter];
+    out.counted = !!state.skill.letters[out.letter.toUpperCase()];
     out.back = mini.rounds[2].q.letter === out.letter;
     mini.locked = false;
     miniMiss(live().find(x => !x.right));
@@ -2308,8 +2308,8 @@ async function blendSteps(browser, edition) {
     out.magic.after = { locked: mini.locked, shown: blendMagicShown() };
     closeMini();
     // Every letter known but one, right once already: a game where she gets it.
-    for (const s of ONE_SOUND) state.skill.letters[s.l] = { right: 2, hit: 10, last: 10 };
-    state.skill.letters.z = { right: 1, hit: 10, last: 10 };
+    for (const s of ONE_SOUND) state.skill.letters[s.l.toUpperCase()] = { right: 2, hit: 10, last: 10 };
+    state.skill.letters.Z = { right: 1, hit: 10, last: 10 };
     state.busy = false;
     openMini(g.host(), g);
     for (let i = 0; i < 5; i++) {
@@ -2329,7 +2329,7 @@ async function blendSteps(browser, edition) {
     // 🔁 at two sounds: the magic first.
     document.getElementById('mini-again').click();
     await sleep(100);
-    out.again = { magic: blendMagicShown(), w: blendMagic.m && blendMagic.m.w, round: mini.round, kind: mini.rounds[0].q.kind };
+    out.again = { magic: blendMagicShown(), w: blendMagic.m && blendMagic.m.w, round: mini.round, kind: mini.rounds[0].q.kind, targets: mini.rounds.map(x => x.q.target) };
     for (let i = 0; i < 300 && blendMagicShown(); i++) { const b = blendMagic.buttons.find(x => x.classList.contains('next')); if (b) b.click(); await sleep(100); }
     out.again.after = { round: mini.round, magic: blendMagicShown() };
     closeMini();
@@ -2369,11 +2369,12 @@ async function blendSteps(browser, edition) {
     state.settings.playLimit = 0;
     return out;
   });
+  const MAGIC_INTRO = await page.evaluate(() => MAGIC_INTRO);
   const tag = `blend steps (${edition})`;
   check(`${tag}: a new child starts at one sound: two pictures, the letter's pure sound, no magic`, r.one.tier === 1 && r.one.kind === 'oneSound' && r.one.cards === 2 && r.one.sound && r.one.clue && !r.one.magic, r.one);
   check(`${tag}: answers right in a row don't move her on from one sound (her letters count)`, r.row.tier === 1 && r.row.letters > 0, r.row);
-  check(`${tag}: knowing every letter moves her on to two sounds, a level-up`, r.pass.letter === 'q' && r.pass.tier === 2 && r.pass.levelUp && r.pass.two && r.pass.line && r.pass.banner, r.pass);
-  check(`${tag}: two sounds: the magic first (bee) with the dialog aside and busy, then the dialog asks`, r.intro2.at.shown && !r.intro2.at.dialog && r.intro2.at.busy && r.intro2.at.w === 'bee' &&
+  check(`${tag}: knowing every letter moves her on to two sounds, a level-up`, r.pass.letter === 'n' && r.pass.tier === 2 && r.pass.levelUp && r.pass.two && r.pass.line && r.pass.banner, r.pass);
+  check(`${tag}: two sounds: the magic first (bee or key, not the question's word) with the dialog aside and busy, then the dialog asks`, r.intro2.at.shown && !r.intro2.at.dialog && r.intro2.at.busy && MAGIC_INTRO[2].includes(r.intro2.at.w) && r.intro2.at.w !== r.intro2.target &&
     r.intro2.seen.join() === 'slow,fast,pop' && r.intro2.kind === 'twoSounds' && r.intro2.after.dialog && !r.intro2.after.magic && r.intro2.after.asked && r.intro2.seenStep === 2, r.intro2);
   check(`${tag}: a second miss shows the answer as the magic with the question's word`, r.outside.before.magic && r.outside.before.w === r.outside.before.target && !r.outside.before.dialog, r.outside.before);
   check(`${tag}: a tap outside the magic does nothing: still showing, busy, she doesn't walk`, r.outside.magic && r.outside.busy && !r.outside.path && r.outside.hero.join() === r.outside.before.hero.join() && !r.outside.dialog, r.outside);
@@ -2381,13 +2382,13 @@ async function blendSteps(browser, edition) {
   check(`${tag}: after the show the dialog is back with the right card glowing to tap`, r.answer.seen.length >= 1 && r.answer.glow === r.answer.right && r.answer.done, r.answer);
   check(`${tag}: misses at two sounds never send her back to one sound; closing the dialog closes the magic`, r.answer.kind2 === 'twoSounds' && r.answer.tier === 2 && r.answer.magicClosed && r.answer.busy === false, r.answer);
   check(`${tag}: ✖ on the magic skips to the end: the dialog is back`, !r.skip.magic && r.skip.dialog && r.skip.busy && r.skip.reveal, r.skip);
-  check(`${tag}: a parent's + past one sound moves her on; three sounds: the magic first (sun), once`, r.three.two === 'twoSounds' && r.three.at.shown && r.three.at.w === 'sun' && r.three.at.bubbles === 3 && r.three.kind === 'blend' && r.three.seenStep === 3, r.three);
+  check(`${tag}: a parent's + past one sound moves her on; three sounds: the magic first (sun or hat, not the question's word), once`, r.three.two === 'twoSounds' && r.three.at.shown && MAGIC_INTRO[3].includes(r.three.at.w) && r.three.at.w !== r.three.target && r.three.at.bubbles === 3 && r.three.kind === 'blend' && r.three.seenStep === 3, r.three);
   check(`${tag}: the magic seen at a step is kept over a reload`, r.reload.tier === 3 && !r.reload.magic && r.reload.dialog && r.reload.seenStep === 3, r.reload);
   check(`${tag}: one sound: the short show, its letter's bubble and ✨ only`, r.short.kind === 'oneSound' && r.short.shown && r.short.bubbles === 1 && r.short.steps.join() === 'pop' && r.short.w === r.short.target, r.short);
   check(`${tag}: the Unicorn game at one sound: its letter at the top, a first try counts, a missed letter comes back two rounds on`, r.game.kind === 'oneSound' && r.game.clue === r.game.letter.toUpperCase() + r.game.letter && r.game.counted && r.game.back, r.game);
   check(`${tag}: the Unicorn game: two misses show the magic over the game, the right one glowing, and then she can tap`, r.game.magic.shown && r.game.magic.locked && r.game.magic.glow && !r.game.magic.after.locked && !r.game.magic.after.shown, r.game.magic);
-  check(`${tag}: the end card shows every letter, the new one sparkling; all lit: the party, and two sounds open`, r.game.end.shown && r.game.end.letters === 25 && r.game.end.fresh === 'z' && r.game.end.lit === 25 && r.game.end.all && r.game.end.two && r.game.end.tier === 2 && r.game.end.fits, r.game.end);
-  check(`${tag}: 🔁 at two sounds starts with the magic, then the rounds`, r.game.again.magic && r.game.again.w === 'bee' && r.game.again.kind === 'twoSounds' && r.game.again.after.round === 0 && !r.game.again.after.magic && r.game.closed.busy === false && !r.game.closed.magic, r.game.again);
+  check(`${tag}: the end card shows every letter, the new one sparkling; all lit: the party, and two sounds open`, r.game.end.shown && r.game.end.letters === 24 && r.game.end.fresh === 'z' && r.game.end.lit === 24 && r.game.end.all && r.game.end.two && r.game.end.tier === 2 && r.game.end.fits, r.game.end);
+  check(`${tag}: 🔁 at two sounds starts with the magic (none of its rounds' words), then the rounds`, r.game.again.magic && MAGIC_INTRO[2].includes(r.game.again.w) && !r.game.again.targets.includes(r.game.again.w) && r.game.again.kind === 'twoSounds' && r.game.again.after.round === 0 && !r.game.again.after.magic && r.game.closed.busy === false && !r.game.closed.magic, r.game.again);
   check(`${tag}: past the play limit the magic plays on, and the town sleeps once it and the question are over`, r.limit.during.magic && !r.limit.during.asleep && r.limit.after.asleep && !r.limit.after.magic, r.limit);
   check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();

@@ -517,7 +517,7 @@ var state = {};`, ctx);
   check('blend steps: two tablets on this version, joined, still read the same', now(both).t === 4 && now(B.merge(both, saved, 'theirs')).t === 4);
   // A guest's tablet on this version (one sound, a few answers) joins an
   // account from before (three-letter words and up): she keeps her level.
-  const guest = { edition: 'princess', stars: 3, skill: { blendFirst: sb(1, 3, { placed: false }), letters: { s: { right: 2, hit: 9, last: 9 } } } };
+  const guest = { edition: 'princess', stars: 3, skill: { blendFirst: sb(1, 3, { placed: false }), letters: { S: { right: 2, hit: 9, last: 9 } } } };
   const acct = play(B, { edition: 'princess' }, 5, 0, { skill: { blend: sb(3, 40) } });
   const g = A.merge(guest, acct, 'foreign');
   check('blend steps: a guest on this version joining an account from before keeps the account\'s level, and her letters', now(g).t === 5 && now(A.merge(acct, guest, 'foreign')).t === 5 && now(g).known === 's', now(g));
@@ -544,7 +544,7 @@ var state = {};`, ctx);
   // `blendFirst` and the letters, and move `blend` in its own count, which
   // this version then reads two up.
   const L = (right, hit, last) => ({ right, hit, last });
-  const mine = play(A, { edition: 'princess' }, 1, 0, { skill: { blendFirst: sb(3, 30), blend: sb(2, 30), letters: { s: L(2, 10, 10), a: L(2, 20, 20) } },
+  const mine = play(A, { edition: 'princess' }, 1, 0, { skill: { blendFirst: sb(3, 30), blend: sb(2, 30), letters: { S: L(2, 10, 10), A: L(2, 20, 20), N: L(2, 30, 30) } },
     history: { 'oneSound:s': { kind: 'oneSound', tries: 2, right: 2, wrong: 0, last: 10 }, 'twoSounds:bee': { kind: 'twoSounds', tries: 1, right: 1, wrong: 0, last: 11 } } });
   for (const [name, P] of [['first release', M1], ['previous release', M23], ['deployed game', D]]) {
     if (!P) continue;
@@ -552,9 +552,9 @@ var state = {};`, ctx);
     const theirs = play(P, Object.assign({}, mine, { history: {}, skill: Object.assign({}, mine.skill, { blend: sb(3, 31) }) }), 1, 0);
     const o = P.merge(theirs, mine, 'mine');
     const r = now(o);
-    check(`blend steps: a tab on the ${name} keeps the first steps and the letters, and its move counts here`, r.t === 5 && r.known === 'as' && !!o.history['oneSound:s'] && !!o.history['twoSounds:bee'], { t: r.t, known: r.known, skill: o.skill });
+    check(`blend steps: a tab on the ${name} keeps the first steps and the letters, and its move counts here`, r.t === 5 && r.known === 'ans' && !!o.history['oneSound:s'] && !!o.history['twoSounds:bee'], { t: r.t, known: r.known, skill: o.skill });
     const back = [A.merge(mine, o, 'theirs'), B.merge(o, mine, 'mine')].map(now);
-    check(`blend steps: ... and this version's next merge after it too`, back.every(x => x.t === 5 && x.known === 'as'), back);
+    check(`blend steps: ... and this version's next merge after it too`, back.every(x => x.t === 5 && x.known === 'ans'), back);
   }
 }
 {
@@ -565,14 +565,18 @@ var state = {};`, ctx);
   const now = reader();
   const L = (right, hit, last) => ({ right, hit, last });
   const ed = (P, edition, letters) => play(P, { edition }, 1, 0, { skill: { letters } });
-  const a = ed(A, 'princess', { s: L(2, 100, 100), a: L(2, 50, 50), i: L(3, 90, 90) });
-  const b = ed(B, 'princess', { s: L(1, 40, 120), t: L(2, 70, 70), i: L(1, 30, 60) });
+  const a = ed(A, 'princess', { S: L(2, 100, 100), A: L(2, 50, 50), I: L(3, 90, 90), N: L(2, 80, 80) });
+  const b = ed(B, 'princess', { S: L(1, 40, 120), T: L(2, 70, 70), I: L(1, 30, 60), N: L(1, 20, 40) });
   const all = [A.merge(a, b, 'mine'), A.merge(a, b, 'theirs'), B.merge(b, a, 'mine'), B.merge(b, a, 'theirs')].map(m => now(m).known);
-  check('letters: joined letter by letter, a later miss counts, an older one doesn\'t (both ways)', all.every(k => k === 'ait'), all);
-  const twice = A.merge(ed(A, 'princess', { p: L(1, 10, 10) }), ed(B, 'princess', { p: L(1, 20, 20) }), 'mine');
-  check('letters: right once on each tablet is right once (as answers join: the larger count)', now(twice).known === '' && twice.skill.letters.p.right === 1);
-  const p = ed(A, 'princess', { s: L(2, 10, 10) });
-  const c = Object.assign(ed(C, 'captain', { a: L(2, 20, 20) }), { other: { princess: { edition: 'princess' } } });
+  check('letters: joined letter by letter, a later miss counts, an older one doesn\'t (both ways)', all.every(k => k === 'aint'), all);
+  const twice = A.merge(ed(A, 'princess', { P: L(1, 10, 10) }), ed(B, 'princess', { P: L(1, 20, 20) }), 'mine');
+  check('letters: right once on each tablet is right once (as answers join: the larger count)', now(twice).known === '' && twice.skill.letters.P.right === 1);
+  // Only capitals: an older version joins `letters` as a kind and writes its
+  // own n and best in it (numbers), and the first copies had small letters.
+  const junk = A.merge(ed(A, 'princess', { S: L(2, 10, 10), n: 3, best: 1 }), ed(B, 'princess', { N: L(2, 20, 20), s: L(2, 5, 5), n: 4 }), 'mine');
+  check('letters: only capital letters join (not an older version\'s n and best)', Object.keys(junk.skill.letters).sort().join() === 'N,S' && now(junk).known === 'ns', junk.skill.letters);
+  const p = ed(A, 'princess', { S: L(2, 10, 10) });
+  const c = Object.assign(ed(C, 'captain', { A: L(2, 20, 20) }), { other: { princess: { edition: 'princess' } } });
   const m = C.merge(c, p, 'mine');
   check('letters: the robot game and the princess game share them', now(m).known === 'as' && now(m.other.princess).known === 'as', [m.skill, m.other.princess.skill]);
   check('letters: merging again changes nothing', A.same(A.merge(m, p, 'mine'), A.merge(m, m, 'mine')));
@@ -580,9 +584,9 @@ var state = {};`, ctx);
   // version's next merge has them all again.
   for (const [name, P] of [['previous release', M23], ['first release', M1]]) {
     if (!P) continue;
-    const newer = ed(A, 'princess', { s: L(2, 10, 10), a: L(2, 20, 20), t: L(2, 30, 30) });
-    const o = P.merge(play(P, ed(P, 'princess', { s: L(2, 10, 10) }), 1, 0), newer, 'mine');
-    check(`letters: after a tab on the ${name} sent an older copy, this version's merge has them all`, now(A.merge(newer, o, 'theirs')).known === 'ast' && now(B.merge(o, newer, 'mine')).known === 'ast', o.skill);
+    const newer = ed(A, 'princess', { S: L(2, 10, 10), A: L(2, 20, 20), T: L(2, 30, 30), N: L(2, 40, 40) });
+    const o = P.merge(play(P, ed(P, 'princess', { S: L(2, 10, 10) }), 1, 0), newer, 'mine');
+    check(`letters: after a tab on the ${name} sent an older copy, this version's merge has them all`, now(A.merge(newer, o, 'theirs')).known === 'anst' && now(B.merge(o, newer, 'mine')).known === 'anst', o.skill);
   }
 }
 

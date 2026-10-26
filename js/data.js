@@ -896,10 +896,11 @@ const SKILL = { window: 6, promoteAt: 5, placementRun: 3, demoteAfter: 2, review
 //              moves on once she knows every letter here (LETTER_MASTERY)
 //   twoSounds  she hears two ("/b/ … E") and picks the picture; a long vowel
 //              is said by its letter's name, as in the Monster Village
-// Every letter but x (no word starts with its /ks/), with words that start
+// Every letter but x (no word starts with its /ks/) and q (always qu, two
+// sounds /kw/, and its 👸 is a princess to her): 24, with words that start
 // with that very sound (no ch for c, th for t, the e of ear or the o of
 // one) and pictures she names for sure; ALIAS keeps a picture she may call
-// something else (👸 a princess) off a question about that other sound.
+// something else off a question about that other sound.
 const ONE_SOUND = [
   { l: 'a', words: [['apple', '🍎'], ['ant', '🐜'], ['avocado', '🥑']] },
   { l: 'b', words: [['bus', '🚌'], ['bed', '🛏️'], ['box', '📦'], ['bee', '🐝'], ['ball', '⚽'], ['banana', '🍌'], ['bear', '🐻'], ['book', '📖'], ['balloon', '🎈']] },
@@ -917,7 +918,6 @@ const ONE_SOUND = [
   { l: 'n', words: [['nose', '👃'], ['nine', '9️⃣']] },
   { l: 'o', words: [['octopus', '🐙']] },
   { l: 'p', words: [['pig', '🐷'], ['pen', '🖊️'], ['pizza', '🍕'], ['popcorn', '🍿'], ['pumpkin', '🎃'], ['peach', '🍑']] },
-  { l: 'q', words: [['queen', '👸']] },
   { l: 'r', words: [['ring', '💍'], ['rainbow', '🌈'], ['robot', '🤖'], ['rice', '🍚']] },
   { l: 's', words: [['sun', '☀️'], ['sock', '🧦'], ['six', '6️⃣'], ['soap', '🧼'], ['sandwich', '🥪']] },
   { l: 't', words: [['ten', '🔟'], ['tent', '⛺'], ['tomato', '🍅'], ['tooth', '🦷']] },
@@ -945,10 +945,11 @@ const TWO_SOUNDS = [
 // `more` letters, then three.
 const LETTER_MASTERY = { right: 2, working: 4, soon: 2, review: 0.2, more: 8 };
 // New letters come in this order, the first ones the easiest to hear apart.
-const LETTER_ORDER = 'satipnckehrmdgoulfbjzwvyq';
+const LETTER_ORDER = 'satipnckehrmdgoulfbjzwvy';
 // The easy word the sound magic (js/blend-magic.js) shows the first time
 // she is at the two-sound and the three-sound step.
-const MAGIC_INTRO = { 2: 'bee', 3: 'sun' };
+// Two each: never the word of the question it comes before.
+const MAGIC_INTRO = { 2: ['bee', 'key'], 3: ['sun', 'hat'] };
 // Asked by the villager before the sound (the one-sound step).
 LINES.oneSound = ['Which picture starts with this sound?', 'Listen! Which one starts with this sound?'];
 // The narrator: the Unicorn Village's game at the one-sound step, the sound

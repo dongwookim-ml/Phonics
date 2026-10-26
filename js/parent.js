@@ -15,7 +15,7 @@ const PARENT_KINDS = [
   ['read', '읽기', `${placeName('forest')} · ${placeName('fairy')}`],
   ['blend', '소리 합치기', `${placeName('forest')} · ${placeName('fairy')} · ${placeName('unicorn')} 놀이`],
   // Its first steps (1단계 and 2단계 of 소리 합치기), counted on their own.
-  ['oneSound', '소리 합치기 1단계 · 한 소리', '글자 25개'],
+  ['oneSound', '소리 합치기 1단계 · 한 소리', '글자 24개'],
   ['twoSounds', '소리 합치기 2단계 · 두 소리', ''],
   ['sentence', '문장 듣기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
   ['meaning', '뜻 맞추기', `${placeName('unicorn')} · ${placeName('dungeon')}`],

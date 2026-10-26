@@ -626,9 +626,9 @@ async function deployedBlend(browser, deployed) {
   for (const t of [N, O]) await t.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
   const view = t => t.page.evaluate(() => ({ t: Quiz.skill('blend').t, known: typeof Quiz.letters === 'function' ? Quiz.letters().filter(x => x.known).map(x => x.l).join('') : null }));
   const first = { here: await view(N), deployed: await view(O) };
-  // Here she gets to know s and t; there blending moves up a tier.
+  // Here she gets to know n, s and t; there blending moves up a tier.
   await N.page.evaluate(() => {
-    for (const l of 'st') state.skill.letters[l] = { right: 2, hit: 10, last: 10 };
+    for (const l of 'NST') state.skill.letters[l] = { right: 2, hit: 10, last: 10 };
     state.history['oneSound:s'] = { kind: 'oneSound', tries: 2, right: 2, wrong: 0, last: 10 };
     save();
   });
@@ -642,10 +642,10 @@ async function deployedBlend(browser, deployed) {
   const after = { here: await view(N), deployed: await view(O).catch(() => null) };
   await Promise.all([N.page.waitForNavigation({ timeout: 15000 }), N.page.evaluate(() => Account.logout())]).catch(() => {});
   const e = editionOf((await serverSave(acct)).save, 'princess');
-  const saved = { blend: ((e.skill || {}).blend || {}).t, first: ((e.skill || {}).blendFirst || {}).t, letters: Object.keys((e.skill || {}).letters || {}).join(''), answer: !!(e.history || {})['oneSound:s'] };
+  const saved = { blend: ((e.skill || {}).blend || {}).t, first: ((e.skill || {}).blendFirst || {}).t, letters: Object.keys((e.skill || {}).letters || {}).sort().join(''), answer: !!(e.history || {})['oneSound:s'] };
   check('deployed tab next to blending\'s first steps: a child who played blend keeps her level here, the deployed game its own count', first.here.t === 4 && first.deployed.t === 2, first);
-  check('deployed tab next to blending\'s first steps: its move counts here two up, and the letters she knows stay', after.here.t === 5 && after.here.known === 'st', after);
-  check('deployed tab next to blending\'s first steps: the account keeps both counts, the letters and the answers', saved.blend === 3 && saved.first === 3 && saved.letters === 'st' && saved.answer, saved);
+  check('deployed tab next to blending\'s first steps: its move counts here two up, and the letters she knows stay', after.here.t === 5 && after.here.known === 'nst', after);
+  check('deployed tab next to blending\'s first steps: the account keeps both counts, the letters and the answers', saved.blend === 3 && saved.first === 3 && saved.letters === 'NST' && saved.answer, saved);
   check('deployed tab next to blending\'s first steps: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
   await O.ctx.close();
   await N.ctx.close();

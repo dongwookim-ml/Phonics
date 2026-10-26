@@ -213,8 +213,11 @@ const Progress = (() => {
   // parent set the tier by hand later in one copy (`set`, Quiz.setTier): then
   // that one. Answers and the best tier never go back. A copy without the
   // first steps counts as above (firstSteps), but its best tier only if it wins.
-  // The letters she knows (`letters`, blending's one-sound step: { s: {
+  // The letters she knows (`letters`, blending's one-sound step: { S: {
   // right, hit, last } }) join letter by letter, each count the larger.
+  // Only the capitals: an older version joins `letters` as a kind and writes
+  // its own `n` and `best` (numbers) in it.
+  const letterLog = x => Object.fromEntries(Object.entries(x).filter(([l, e]) => /^[A-Z]$/.test(l) && isObj(e)));
   function joinSkill(a, b) {
     if (!isObj(a) || !isObj(b)) return a === undefined ? b : a;
     const filled = new Set();
@@ -231,7 +234,7 @@ const Progress = (() => {
       const x = a[k];
       const y = b[k];
       if (!has(a, k) || !isObj(x) || !isObj(y)) continue;
-      if (k === 'letters') { out[k] = grow(x, y); continue; }
+      if (k === 'letters') { out[k] = grow(letterLog(x), letterLog(y)); continue; }
       const set = n(y.set) - n(x.set);
       const won = set > 0 || (!set && n(y.n) > n(x.n)) ? y : x;
       const e = out[k] = Object.assign({}, won);

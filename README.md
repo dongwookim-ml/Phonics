@@ -100,8 +100,9 @@ npx http-server -p 8080 .
   of question):
   1. One sound (`oneSound`): she hears one pure sound (/s/, never "suh")
      and picks the picture that starts with it, from two cards, then three.
-     Each of 25 letters (no x) has pictures she names for sure (`ONE_SOUND`
-     in `js/data.js`). She passes this step by knowing all 25 letters, not
+     Each of 24 letters (no x, whose /ks/ starts no word, and no q, which
+     is always qu, two sounds) has pictures she names for sure (`ONE_SOUND`
+     in `js/data.js`). She passes this step by knowing all 24 letters, not
      by a run of right answers: a letter is known once she has got it right
      on the first try twice and her latest try at it was right
      (`LETTER_MASTERY`). Most questions are letters she doesn't know yet,
@@ -393,8 +394,8 @@ npx http-server -p 8080 .
     the unicorn whose cloud shows the 🐱, which gallops off (blend). At
     one sound the letter is at the top (Ss) and she hears /s/; her first
     tries count towards the letters she knows (a missed letter comes back
-    two rounds on), and the end card shows all 25, the ones she knows lit
-    and a new one sparkling with its sound; all 25 lit is a party, and two
+    two rounds on), and the end card shows all 24, the ones she knows lit
+    and a new one sparkling with its sound; all 24 lit is a party, and two
     sounds open. Two misses show the sound magic as the answer.
   - Crystal Cave, from the baby dragon: "cat" is written at the top and
     nobody says it; she opens the treasure chest with the 🐱 (read).
@@ -669,7 +670,7 @@ word tiles in two rows at most, every little game (the pond's and each
 village's) fits the screen with its top row on one line, its buttons and
 every picture or letter to tap in every round at least 64 px (52 on the
 phone), and its pictures big enough to see (the Unicorn game's end card
-with her 25 letters in two rows at most), the sound magic on screen under
+with her 24 letters in two rows at most), the sound magic on screen under
 the HUD with its buttons big enough and its bubbles, picture and word
 inside the card, and the wardrobe and the shop
 fit on every tab for a girl, a boy and the robot (the picture tabs on one

@@ -86,12 +86,18 @@ function mgLine(kind) {
 
 // The first question at a new step of blending (her own tier, 2 or 3,
 // before she has seen it there): the easy word to show it with, once.
-function blendMagicIntro(q) {
+// Never the answer of the question it comes before (nor of `avoid`, the
+// minigame's other rounds), and not one of its cards if the other will do.
+function blendMagicIntro(q, avoid = []) {
   if (!q || q.ladder !== 'blend' || typeof state === 'undefined') return null;
   const t = Quiz.skill('blend').t;
   const seen = ((state.guide || {}).magic) | 0;
   if (q.tier !== t || seen >= t || !MAGIC_INTRO[t]) return null;
-  const m = Quiz.magic(MAGIC_INTRO[t]);
+  const answers = [q.target].concat(avoid);
+  const cards = (q.options || []).map(o => o.wrong);
+  const ok = MAGIC_INTRO[t].filter(w => !answers.includes(w));
+  const w = ok.find(w => !cards.includes(w)) || ok[0];
+  const m = w && Quiz.magic(w);
   if (!m) return null;
   if (!state.guide) state.guide = {};
   state.guide.magic = t;
@@ -130,6 +136,7 @@ function openBlendMagic(m, { intro = false, done = null } = {}) {
     b.disabled = true;
   }
   g.el.classList.remove('hidden');
+  document.body.classList.add('magic-on');
   state.busy = true;
   mgAppear();
 }
@@ -140,6 +147,7 @@ function closeBlendMagic() {
   if (!blendMagicShown()) return;
   blendMagic.token++;
   blendMagic.el.classList.add('hidden');
+  document.body.classList.remove('magic-on');
   state.busy = busyNow(); // js/game.js
 }
 
@@ -150,6 +158,7 @@ function mgFinish() {
   g.done = null;
   g.token++;
   g.el.classList.add('hidden');
+  document.body.classList.remove('magic-on');
   if (done) done();
   state.busy = busyNow();
 }
@@ -316,7 +325,7 @@ blendMagic.buttons.forEach(b => b.addEventListener('click', () => {
 }));
 // ✖: to the end, as if it had played.
 blendMagic.close.addEventListener('click', () => {
-  if (!blendMagicShown()) return;
+  if (state.paused || !blendMagicShown()) return;
   Sound.tap();
   Sound.say([]);
   mgFinish();
