@@ -290,7 +290,7 @@ function buildMonsterTower() {
     addObject(sc, { c, r, w: 1, d: 1 }, { x: p.x - 16, y: p.y - up, w: 32, h: up + 8 }, ctx => draw(ctx, Math.round(p.x), Math.round(p.y)), { react });
     return p;
   };
-  for (const [c, r, col] of [[0, 0, '#7fe8ff'], [11, 5, '#ff9cf0'], [0, 9, '#c8a0ff']]) {
+  for (const [c, r, col] of [[0, 0, '#7fe8ff'], [11, 7, '#ff9cf0'], [0, 9, '#c8a0ff']]) {
     const p = prop(c, r, 30, (ctx, x, y) => drawCrystal(ctx, x, y, col), { word: 'crystal', fx: 'sparkle' });
     sc.lamps.push({ x: p.x, y: p.y - 12 });
   }
@@ -319,8 +319,8 @@ function buildMonsterTower() {
 
 // The second floor: a playroom under the roof, with her pictures pinned up
 // on the walls, round windows onto the night sky, a crayon table and a toy
-// chest, and the next five monsters she drew. Down the stairs in the front
-// corner, back to the ground floor.
+// chest, and the monsters she drew after the first five. Down the stairs in
+// the front corner, back to the ground floor.
 function buildMonsterTower2() {
   const sc = makeScene('tower', 12, 10, 130, 50);
   sc.floorTint = '#d8c8f4';

@@ -2229,8 +2229,8 @@ function drawOverlay(now) {
     for (const n of sc.npcs) {
       if (n.mount) continue;
       const w = tileCenter(sc, n.c, n.r);
-      // Higher over the tall monsters she drew (js/kid-monsters.js).
-      const p = toScreen(w.x, w.y - 40 - kidBubbleLift(n) + Math.sin(now / 300 + n.phase) * 1.5);
+      // Higher over the tall monsters she drew, over the head of a long one (js/kid-monsters.js).
+      const p = toScreen(w.x + kidBubbleShift(n), w.y - 40 - kidBubbleLift(n) + Math.sin(now / 300 + n.phase) * 1.5);
       // A gold "!" when a question she missed is ready to try again.
       const back = comeBack(n);
       ctx.fillStyle = back ? '#fff4b8' : '#ffffff';
@@ -2436,10 +2436,16 @@ function onPointer(e) {
   // Her fairy friend and the games' bubbles (🎣 over the pond) fly over everything.
   if (friendTap(wx, wy) || miniTap(wx, wy)) return;
 
-  // Villagers first: they are small and stand in front of things.
-  for (const n of sc.npcs) {
+  // Villagers first: they are small and stand in front of things. The
+  // front-most one takes a tap where two overlap; a monster she drew is
+  // tapped anywhere on it (kidTapBox: a caterpillar is long).
+  const front = sc.npcs.slice().sort((a, b) => (b.c + b.r) - (a.c + a.r));
+  for (const n of front) {
     const p = tileCenter(sc, n.c, n.r);
-    if (Math.abs(wx - p.x) < (n.mount || n.unicorn ? 14 : 10) && wy > p.y - 44 && wy < p.y + 4) {
+    const kid = kidTapBox(n);
+    const dx = wx - p.x;
+    const hit = kid ? dx > kid.x0 && dx < kid.x1 && wy > p.y + kid.y0 : Math.abs(dx) < (n.mount || n.unicorn ? 14 : 10) && wy > p.y - 44;
+    if (hit && wy < p.y + 4) {
       Sound.tap();
       if (n.mount) {
         const isNext = (c, r) => Math.abs(c - n.c) + Math.abs(r - n.r) === 1;
