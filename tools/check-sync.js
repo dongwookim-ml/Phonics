@@ -22,7 +22,8 @@
 //    when this version signs out; a save with this version's new clothes
 //    and treasures loads in the deployed game without an error, and the
 //    treasure shelf it drops comes back with this version's next save;
-//    blending's first steps next to it: her level kept here (two tiers up)
+//  - a tab on the release before blending's first steps (BEFORE_STEPS_REF,
+//    default adf0d71e) next to them: her level kept here (two tiers up)
 //    and in its own count there, its move counted here, and the letters she
 //    knows and her first steps' answers kept;
 //  - a tab still on the first release (FIRST_REF, default eee606ec) next to
@@ -466,6 +467,9 @@ async function chestTwice(browser) {
 // the first release (FIRST_REF) may still share an account too.
 const OLD_REF = process.env.OLD_REF || 'origin/main';
 const FIRST_REF = process.env.FIRST_REF || 'eee606ec';
+// The release before blending's first steps (the Monster Village's): not
+// OLD_REF, which is this version once it is deployed.
+const BEFORE_STEPS_REF = process.env.BEFORE_STEPS_REF || 'adf0d71e';
 function deployedGame(ref = OLD_REF) {
   if (spawnSync('git', ['-C', root, 'rev-parse', '--verify', '--quiet', `${ref}^{commit}`]).status !== 0) return null;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pixeltown-deployed-'));
@@ -643,10 +647,10 @@ async function deployedBlend(browser, deployed) {
   await Promise.all([N.page.waitForNavigation({ timeout: 15000 }), N.page.evaluate(() => Account.logout())]).catch(() => {});
   const e = editionOf((await serverSave(acct)).save, 'princess');
   const saved = { blend: ((e.skill || {}).blend || {}).t, first: ((e.skill || {}).blendFirst || {}).t, letters: Object.keys((e.skill || {}).letters || {}).sort().join(''), answer: !!(e.history || {})['oneSound:s'] };
-  check('deployed tab next to blending\'s first steps: a child who played blend keeps her level here, the deployed game its own count', first.here.t === 4 && first.deployed.t === 2, first);
-  check('deployed tab next to blending\'s first steps: its move counts here two up, and the letters she knows stay', after.here.t === 5 && after.here.known === 'nst', after);
-  check('deployed tab next to blending\'s first steps: the account keeps both counts, the letters and the answers', saved.blend === 3 && saved.first === 3 && saved.letters === 'NST' && saved.answer, saved);
-  check('deployed tab next to blending\'s first steps: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
+  check('a tab on the release before blending\'s first steps: a child who played blend keeps her level here, the deployed game its own count', first.here.t === 4 && first.deployed.t === 2, first);
+  check('a tab on the release before blending\'s first steps: its move counts here two up, and the letters she knows stay', after.here.t === 5 && after.here.known === 'nst', after);
+  check('a tab on the release before blending\'s first steps: the account keeps both counts, the letters and the answers', saved.blend === 3 && saved.first === 3 && saved.letters === 'NST' && saved.answer, saved);
+  check('a tab on the release before blending\'s first steps: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
   await O.ctx.close();
   await N.ctx.close();
 }
@@ -763,6 +767,9 @@ async function deployedWardrobe(browser, deployed) {
   let first = null;
   try { first = deployedGame(FIRST_REF); } catch (e) { check('the first release could be unpacked', false, e.message); }
   if (!first) check(`the first release (${FIRST_REF}) is here`, !process.env.CI, `git has no ${FIRST_REF}; fetch it (CI checks out with fetch-depth 0)`);
+  let beforeSteps = null;
+  try { beforeSteps = deployedGame(BEFORE_STEPS_REF); } catch (e) { check('the release before blending\'s first steps could be unpacked', false, e.message); }
+  if (!beforeSteps) check(`the release before blending's first steps (${BEFORE_STEPS_REF}) is here`, !process.env.CI, `git has no ${BEFORE_STEPS_REF}; fetch it (CI checks out with fetch-depth 0)`);
   // ONLY=guest node tools/check-sync.js runs the parts whose name has "guest".
   const parts = { slowNetwork, princessCaptain: b => twoTablets(b, 'captain'), princessPrincess: b => twoTablets(b, 'princess'), guestJoins, otherOwner, guestOtherEdition, parentChanges,
     stalePanel, panelAfterSync, newerOnBoot, chestTwice };
@@ -774,9 +781,9 @@ async function deployedWardrobe(browser, deployed) {
       deployedSignedInUpdated: b => signedInUpdated(b, deployed),
       deployedLogout: b => deployedLogout(b, deployed),
       deployedWardrobe: b => deployedWardrobe(b, deployed),
-      deployedBlend: b => deployedBlend(b, deployed),
     });
   }
+  if (beforeSteps) parts.deployedBlend = b => deployedBlend(b, beforeSteps);
   if (first) parts.firstRelease = b => firstRelease(b, first);
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);

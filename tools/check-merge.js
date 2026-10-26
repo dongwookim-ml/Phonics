@@ -303,7 +303,11 @@ const withSettings = (save, settings) => Object.assign({}, save, { settings });
 // leaves the picture hints unstamped. Both read the plain values.
 const M1 = device('princess', 'dO', 'eee606ec');
 const M23 = device('princess', 'dM', '144e11e1');
-if (!M1 || !M23) check('the older releases are in git (eee606ec, 144e11e1)', !process.env.CI, 'fetch them (CI checks out with fetch-depth 0)');
+// The release before blending's first steps (the Monster Village's): not
+// origin/main, which is this version once it is deployed.
+const BEFORE_STEPS = 'adf0d71e';
+const BS = device('princess', 'dS', BEFORE_STEPS);
+if (!M1 || !M23 || !BS) check(`the older releases are in git (eee606ec, 144e11e1, ${BEFORE_STEPS})`, !process.env.CI, 'fetch them (CI checks out with fetch-depth 0)');
 if (M1 && M23) {
   // A tab on the first release loaded the save while nothing was set. The
   // parent sets 15 minutes and hides the 🔊 button on this version's tablet
@@ -495,7 +499,8 @@ var state = {};`, ctx);
 }
 {
   const now = reader();
-  const deployedReader = reader('origin/main');
+  // A tab still on the release before them reads and moves `blend` alone.
+  const beforeReader = reader(BEFORE_STEPS);
   const D = device('princess', 'dD', 'origin/main');
   const sb = (t, n, extra) => Object.assign({ t, best: t, w: [], last: [], placed: true, easy: false, n }, extra);
   const blendAnswer = { kind: 'blend', tries: 1, right: 1, wrong: 0, last: 9 };
@@ -512,7 +517,7 @@ var state = {};`, ctx);
   // Once: this version's save of it reads the same, and keeps `blend` in its own count.
   const saved = Object.assign({}, old, { skill: r1.skill });
   check('blend steps: shifted once (this version\'s save reads the same, `blend` unchanged)', now(saved).t === 4 && saved.skill.blend.t === 2 && saved.skill.blendFirst.t === 3, saved.skill);
-  if (deployedReader) check('blend steps: the deployed game reads blending in its own count, as before', deployedReader(saved).t === 2);
+  if (beforeReader) check('blend steps: the release before them reads blending in its own count, as before', beforeReader(saved).t === 2);
   const both = A.merge(play(A, saved, 1, 0), play(B, saved, 1, 0), 'mine');
   check('blend steps: two tablets on this version, joined, still read the same', now(both).t === 4 && now(B.merge(both, saved, 'theirs')).t === 4);
   // A guest's tablet on this version (one sound, a few answers) joins an
@@ -546,7 +551,7 @@ var state = {};`, ctx);
   const L = (right, hit, last) => ({ right, hit, last });
   const mine = play(A, { edition: 'princess' }, 1, 0, { skill: { blendFirst: sb(3, 30), blend: sb(2, 30), letters: { S: L(2, 10, 10), A: L(2, 20, 20), N: L(2, 30, 30) } },
     history: { 'oneSound:s': { kind: 'oneSound', tries: 2, right: 2, wrong: 0, last: 10 }, 'twoSounds:bee': { kind: 'twoSounds', tries: 1, right: 1, wrong: 0, last: 11 } } });
-  for (const [name, P] of [['first release', M1], ['previous release', M23], ['deployed game', D]]) {
+  for (const [name, P] of [['first release', M1], ['previous release', M23], ['release before the first steps', BS], ['deployed game', D]]) {
     if (!P) continue;
     // Its copy: loaded from this version's, without those answers, and blend moved up a tier.
     const theirs = play(P, Object.assign({}, mine, { history: {}, skill: Object.assign({}, mine.skill, { blend: sb(3, 31) }) }), 1, 0);
@@ -582,7 +587,7 @@ var state = {};`, ctx);
   check('letters: merging again changes nothing', A.same(A.merge(m, p, 'mine'), A.merge(m, m, 'mine')));
   // An older tab sends its older letters (its own copy wins whole there); this
   // version's next merge has them all again.
-  for (const [name, P] of [['previous release', M23], ['first release', M1]]) {
+  for (const [name, P] of [['previous release', M23], ['first release', M1], ['release before the first steps', BS]]) {
     if (!P) continue;
     const newer = ed(A, 'princess', { S: L(2, 10, 10), A: L(2, 20, 20), T: L(2, 30, 30), N: L(2, 40, 40) });
     const o = P.merge(play(P, ed(P, 'princess', { S: L(2, 10, 10) }), 1, 0), newer, 'mine');
