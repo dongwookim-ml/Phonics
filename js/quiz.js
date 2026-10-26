@@ -236,13 +236,22 @@ const Quiz = (() => {
     return all.letters || (all.letters = {});
   }
   const letterOf = l => letterLog()[l.toUpperCase()];
-  // `since`: only with her latest right try after then (a parent who put her
-  // back at one sound, Quiz.setTier, means it).
-  function knows(l, since = 0) {
+  // `since`: only with her latest right try after then (letterSince).
+  function knows(l, since) {
     const h = letterOf(l);
     return !!h && (h.right | 0) >= LETTER_MASTERY.right && (h.hit || 0) > since && h.hit >= (h.last || 0);
   }
-  const knownLetters = () => ONE_SOUND.filter(s => knows(s.l)).map(s => s.l);
+  // A parent who put her back at one sound (Quiz.setTier) means it: while
+  // she is there, only letters right again since then count (the panel, the
+  // game's end card and passing alike).
+  const ladderOf = step => Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === step));
+  function letterSince() {
+    const kind = ladderOf('oneSound');
+    const k = skill(kind);
+    const c = TIERS[kind][k.t - 1];
+    return c && c.letters ? Number(k.set) || 0 : 0;
+  }
+  const knownLetters = () => { const since = letterSince(); return ONE_SOUND.filter(s => knows(s.l, since)).map(s => s.l); };
   // Missed letters to ask again soon, by how many one-sound questions have
   // been made (this visit): [{ l, due }].
   let soon = [];
@@ -263,8 +272,9 @@ const Quiz = (() => {
       const back = all.find(x => x.l === due.l);
       if (back) return back;
     }
-    const known = all.filter(x => knows(x.l));
-    const open = all.filter(x => !knows(x.l));
+    const since = letterSince();
+    const known = all.filter(x => knows(x.l, since));
+    const open = all.filter(x => !knows(x.l, since));
     if (known.length && (!open.length || Math.random() < LETTER_MASTERY.review)) return pick(fresh('oneSound', known));
     const begun = x => !!letterOf(x.l) || (recent.oneSound || []).includes(x.l);
     const tried = open.filter(begun);
@@ -280,12 +290,12 @@ const Quiz = (() => {
   // The one-sound step is passed by knowing every letter: she is up a tier
   // then (a level-up), wherever she answered, a village's game too. Its
   // ladder is the kind it is a step of (blend).
-  const ladderOf = step => Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === step));
   function lettersPass(q) {
     const kind = ladderOf('oneSound');
     const k = skill(kind);
     const c = TIERS[kind][k.t - 1];
-    if (!c || !c.letters || !ONE_SOUND.every(s => knows(s.l, Number(k.set) || 0))) return false;
+    const since = letterSince();
+    if (!c || !c.letters || !ONE_SOUND.every(s => knows(s.l, since))) return false;
     k.t++;
     k.w = [];
     if (k.t > (k.best || 1)) { k.best = k.t; if (q) q.levelUp = true; }
@@ -1195,7 +1205,7 @@ const Quiz = (() => {
     // counts from after them).
     lead: leadOf,
     // Blending's one-sound step: every letter, and whether she knows it.
-    letters: () => ONE_SOUND.map(s => ({ l: s.l, known: knows(s.l) })),
+    letters: () => { const since = letterSince(); return ONE_SOUND.map(s => ({ l: s.l, known: knows(s.l, since) })); },
     practice,
     // The sound magic for a word (js/blend-magic.js): { w, e, parts }.
     magic(w) {

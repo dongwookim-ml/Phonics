@@ -2369,6 +2369,17 @@ async function blendSteps(browser, edition) {
     state.settings.playLimit = 0;
     return out;
   });
+  // A parent puts her back at one sound: the letters she knew count again only once right again.
+  r.back = await page.evaluate(() => {
+    state.skill = { letters: Object.fromEntries(ONE_SOUND.map(s => [s.l.toUpperCase(), { right: 3, hit: 1000, last: 1000 }])) };
+    Quiz.setTier('blend', 2);
+    const two = Quiz.letters().filter(x => x.known).length;
+    Quiz.setTier('blend', 1);
+    const one = Quiz.letters().filter(x => x.known).length;
+    Object.assign(state.skill.letters.B, { hit: Date.now() + 5, last: Date.now() + 5 });
+    const again = Quiz.letters().filter(x => x.known).map(x => x.l).join('');
+    return { two, one, again, tier: Quiz.skill('blend').t };
+  });
   const MAGIC_INTRO = await page.evaluate(() => MAGIC_INTRO);
   const tag = `blend steps (${edition})`;
   check(`${tag}: a new child starts at one sound: two pictures, the letter's pure sound, no magic`, r.one.tier === 1 && r.one.kind === 'oneSound' && r.one.cards === 2 && r.one.sound && r.one.clue && !r.one.magic, r.one);
@@ -2391,6 +2402,7 @@ async function blendSteps(browser, edition) {
   check(`${tag}: 🔁 at two sounds starts with the magic (not its first round's word, nor a later one's if the other will do), then the rounds`, r.game.again.magic && MAGIC_INTRO[2].includes(r.game.again.w) && r.game.again.w !== r.game.again.targets[0] &&
     (!r.game.again.targets.includes(r.game.again.w) || MAGIC_INTRO[2].every(w => r.game.again.targets.includes(w))) && r.game.again.kind === 'twoSounds' && r.game.again.after.round === 0 && !r.game.again.after.magic && r.game.closed.busy === false && !r.game.closed.magic, r.game.again);
   check(`${tag}: past the play limit the magic plays on, and the town sleeps once it and the question are over`, r.limit.during.magic && !r.limit.during.asleep && r.limit.after.asleep && !r.limit.after.magic, r.limit);
+  check(`${tag}: put back at one sound by a parent, the letters she knew count once she gets them right again`, r.back.two === 24 && r.back.one === 0 && r.back.again === 'b' && r.back.tier === 1, r.back);
   check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();
 }
