@@ -2173,7 +2173,7 @@ async function blendSteps(browser, edition) {
     T.said.length = 0;
     T.tap(true);
     await T.until(() => !!document.querySelector('.level-up'), 3000);
-    return { letter: q.letter, tier: Quiz.skill('blend').t, levelUp: !!q.levelUp, two: !!q.twoOpen, line: T.said.some(t => LINES.levelUp.includes(t)), banner: !!document.querySelector('.level-up') };
+    return { letter: q.letter, tier: Quiz.skill('blend').t, levelUp: !!q.levelUp, two: !!q.twoOpen, line: T.said.some(t => LINES.blendTwo.includes(t)), banner: !!document.querySelector('.level-up') };
   });
   // Two sounds: the magic first (bee), then the dialog asks.
   r.intro2 = await page.evaluate(async () => {
@@ -2373,7 +2373,7 @@ async function blendSteps(browser, edition) {
   const tag = `blend steps (${edition})`;
   check(`${tag}: a new child starts at one sound: two pictures, the letter's pure sound, no magic`, r.one.tier === 1 && r.one.kind === 'oneSound' && r.one.cards === 2 && r.one.sound && r.one.clue && !r.one.magic, r.one);
   check(`${tag}: answers right in a row don't move her on from one sound (her letters count)`, r.row.tier === 1 && r.row.letters > 0, r.row);
-  check(`${tag}: knowing every letter moves her on to two sounds, a level-up`, r.pass.letter === 'n' && r.pass.tier === 2 && r.pass.levelUp && r.pass.two && r.pass.line && r.pass.banner, r.pass);
+  check(`${tag}: knowing every letter moves her on to two sounds: a level-up, and "You can blend two sounds now!"`, r.pass.letter === 'n' && r.pass.tier === 2 && r.pass.levelUp && r.pass.two && r.pass.line && r.pass.banner, r.pass);
   check(`${tag}: two sounds: the magic first (bee or key, not the question's word) with the dialog aside and busy, then the dialog asks`, r.intro2.at.shown && !r.intro2.at.dialog && r.intro2.at.busy && MAGIC_INTRO[2].includes(r.intro2.at.w) && r.intro2.at.w !== r.intro2.target &&
     r.intro2.seen.join() === 'slow,fast,pop' && r.intro2.kind === 'twoSounds' && r.intro2.after.dialog && !r.intro2.after.magic && r.intro2.after.asked && r.intro2.seenStep === 2, r.intro2);
   check(`${tag}: a second miss shows the answer as the magic with the question's word`, r.outside.before.magic && r.outside.before.w === r.outside.before.target && !r.outside.before.dialog, r.outside.before);
