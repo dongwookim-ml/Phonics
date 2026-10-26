@@ -73,7 +73,17 @@
 //    its dialog shows her drawing (loaded) where the portrait goes, inside
 //    the dialog and off the cards at the iPad sizes and on a phone held
 //    sideways; anyone else's shows the portrait; closing hides it; a tap
-//    shows it big and any tap (or the dialog stepping aside) closes that.
+//    shows it big and any tap (or the dialog stepping aside) closes that;
+//  - the first blending steps (js/quiz.js, js/blend-magic.js), in both
+//    editions: a new child starts on one sound, every question there is one
+//    sound and a picture that starts with it, and she moves up to two sounds
+//    only once she knows all 25 letters (never on a run of right answers);
+//    the sound magic shows once when she first reaches two sounds and
+//    three, never again after a reload, and after a second miss on a blend
+//    question (in the dialog and in the Unicorn game) as the answer; the
+//    game stays busy and a tap outside never closes it, the parent panel
+//    pauses it, the play limit waits for it; the Unicorn game's end card
+//    shows her letters, a new one lit, and all 25 open the two-sound step.
 // Run: node tools/check-flows.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -1090,7 +1100,7 @@ async function littleGames(browser, edition) {
       for (let i = 0; i < 8 && mini.round === n && right(); i++) { tap(right()); await sleep(60); }
       return until(() => mini.round > n || shown('mini-end'), 6000);
     };
-    const firstLines = ['miniRhyme', 'miniSpell', 'miniBlend', 'miniRead'].flatMap(k => LINES[k]).concat(LINES.fishHello);
+    const firstLines = ['miniRhyme', 'miniSpell', 'miniBlend', 'miniRead', 'miniSound'].flatMap(k => LINES[k]).concat(LINES.fishHello);
     const out = {};
     for (const key of ['fish', 'forest', 'fairy', 'unicorn', 'dungeon']) {
       const g = MINI_GAMES[key];
@@ -1120,7 +1130,10 @@ async function littleGames(browser, edition) {
       // Started from the button: busy, the music down, what to do said, the
       // finger. (The dialog's own question counts towards her tier.)
       openDialog(host);
-      const skill = JSON.stringify(state.skill);
+      // Her tier in every kind, and the letters she knows (blending's one-sound step).
+      const tiersNow = () => JSON.stringify(Quiz.kinds.filter(k => Quiz.tierMax(k)).map(k => Quiz.skill(k).t));
+      const skill = tiersNow();
+      const letters = Object.keys(state.skill.letters || {}).length;
       const history = JSON.stringify(state.history);
       const coins = state.coins;
       const quest = questCount('fish');
@@ -1161,20 +1174,22 @@ async function littleGames(browser, edition) {
       document.getElementById('mini-close').click();
       await sleep(100);
       o.closed = { card: shown('mini'), busy: state.busy, music: musicListening() };
-      o.kept = { skill: JSON.stringify(state.skill) === skill, history: JSON.stringify(state.history) === history };
-      // Her tier, capped like the village asks it; three-letter words to spell.
+      o.kept = { skill: tiersNow() === skill, history: JSON.stringify(state.history) === history,
+        // At blending's one-sound step her first tries count towards the letters she knows.
+        letters: key !== 'unicorn' || Object.keys(state.skill.letters || {}).length > letters };
+      // Her tier, capped like the village asks it (counted from after
+      // blending's first steps); three-letter words to spell.
       if (key !== 'fish') {
         const kind = VILLAGE_GAMES[key].kind;
-        const was = state.skill[kind];
-        const cap = Math.min(key === 'fairy' ? 2 : TIER_BAND[key][1], Quiz.tierMax(kind));
+        const was = JSON.stringify(state.skill);
+        const cap = Math.min(key === 'fairy' ? 2 : TIER_BAND[key][1] + Quiz.lead(kind), Quiz.tierMax(kind));
         o.tiers = {};
         for (const t of [1, 9]) {
-          state.skill[kind] = Object.assign({}, was || {}, { t });
+          Quiz.skill(kind).t = t;
           const rounds = g.rounds();
           o.tiers[t] = { got: [...new Set(rounds.map(x => x.q.tier))], want: Math.min(t, cap), three: rounds.every(x => key !== 'fairy' || x.q.slots.length === 3) };
         }
-        if (was) state.skill[kind] = was;
-        else delete state.skill[kind];
+        state.skill = JSON.parse(was);
       }
       // Past the play limit: the button opens nothing, and 🔁 puts the town to sleep.
       state.settings.playLimit = 1;
@@ -1210,7 +1225,7 @@ async function littleGames(browser, edition) {
     check(`${t}: the end pays the coins once and counts each round for the games quest`, o.end.card && o.end.coins === r.out.fish.end.coins && o.end.coins > 0 && o.end.quest === 5 && o.end.pips === 5 && o.end.done, o.end);
     check(`${t}: 🔁 plays again from the start`, o.again.card && !o.again.end && o.again.round === 0 && o.again.caught === 0, o.again);
     check(`${t}: ✖ closes it and frees the game and the music`, !o.closed.card && o.closed.busy === false && o.closed.music === false, o.closed);
-    check(`${t}: playing moves no tier and records no answer`, o.kept.skill && o.kept.history, o.kept);
+    check(`${t}: playing moves no tier and records no answer${key === 'unicorn' ? ' (her letters count)' : ''}`, o.kept.skill && o.kept.history && o.kept.letters, o.kept);
     if (o.tiers) check(`${t}: the questions come at her tier, capped like the village`, Object.values(o.tiers).every(x => x.got.length === 1 && x.got[0] === x.want && x.three), o.tiers);
     check(`${t}: past the play limit it doesn't open, and 🔁 puts the town to sleep`, !o.limit.card && o.limit.asleep && !o.limit.again.card && o.limit.again.asleep, o.limit);
   }
@@ -1325,6 +1340,7 @@ function outsideSetup() {
       if (parentUi.panel) parentClose();
       if (guide.asleep) guideWake(true);
       if (state.gift) acceptReward(false);
+      closeBlendMagic();
       if (state.talking) closeDialog();
       closeFeed();
       closeMini();
@@ -1450,8 +1466,10 @@ async function outsideTaps(browser, edition) {
     note('a tap outside the fishing game\'s end card closes the game and frees it', endBefore.open && !endAfter.open && endAfter.busy === false && !endAfter.walking, { size, pond, endBefore, endAfter });
 
     // Cards that stay: a question, a present, a book being read, the
-    // fishing game, the sleeping town.
+    // fishing game, the sound magic over a question (js/blend-magic.js),
+    // the sleeping town.
     for (const [id, open, close] of [['dialog', 'T.ask()', 'closeDialog()'], ['reward', 'T.buy()', 'acceptReward(false); closeShop()'],
+      ['magic', "T.ask(); ui.dialog.classList.add('hidden'); openBlendMagic(Quiz.magic('sun'))", 'closeDialog()'],
       ['reader', 'openLibrary(); openBook(BOOKS[0])', 'closeLibrary()'], ['reader', 'openLibrary(); openSelfBook(DECODABLE_BOOKS[0])', 'closeLibrary()'],
       ['mini', 'openMini(miniFisher())', 'closeMini()'], ['sleep', 'guideSleep()', 'guideWake(true)']]) {
       await ev(`T.reset(); ${open}`);
@@ -2062,6 +2080,319 @@ async function kidMonsters(browser, edition) {
   await ctx.close();
 }
 
+// Blending's first steps and the sound magic (js/quiz.js, js/blend-magic.js),
+// with the sound off, so the show moves on its timers: a new child starts
+// at one sound (two cards, the letter's pure sound asked); answers right in
+// a row don't move her on, knowing every letter does (a level-up), and she
+// never goes back down to one sound; a parent's + past one sound moves her
+// on too. The first question at two sounds and at three sounds shows the
+// magic first, once each (kept over a reload), and the dialog asks after;
+// a second miss shows the answer as the magic with the question's word (one
+// sound: its bubble and ✨ only), then the right card glows to tap. While it
+// shows the game is busy, a tap outside does nothing (no walking), the
+// parent panel holds it, and ✖ skips to the end. In the Unicorn Village's
+// game (the Car Village's): a first try counts towards her letters, a
+// missed letter comes back two rounds on, the answer after two misses is
+// the magic, the end card shows the letters she knows (a new one
+// sparkling) and, once all are lit, the party and the two-sound step open;
+// 🔁 then starts with the magic at two sounds. Past the play limit the town
+// sleeps only once the show and its question are over.
+async function blendSteps(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { seed: { edition, stars: 40 }, edition });
+  await page.evaluate(() => { if (!Sound.muted) Sound.toggleMute(); changeScene('forest'); });
+  await page.waitForTimeout(800);
+  // Helpers in the page: a forest villager asks blending only.
+  await page.evaluate(() => {
+    window.T = {};
+    T.said = [];
+    const say = Sound.say;
+    Sound.say = (parts, who) => { for (const p of [].concat(parts)) if (p && p.text) T.said.push(String(p.text)); return say(parts, who); };
+    T.sleep = ms => new Promise(res => setTimeout(res, ms));
+    T.until = async (ok, ms = 15000) => { for (let t = 0; t < ms && !ok(); t += 100) await T.sleep(100); return ok(); };
+    T.shown = id => !document.getElementById(id).classList.contains('hidden');
+    QUIZ_TYPES.forest = ['blend'];
+    T.npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    T.ask = () => {
+      if (state.talking) closeDialog();
+      const k = Quiz.skill('blend');
+      Object.assign(k, { n: 0, easy: false });
+      T.npc.lastQuiz = null;
+      T.npc.missed = null;
+      state.busy = false;
+      openDialog(T.npc);
+      return state.question;
+    };
+    T.tap = right => {
+      const q = state.question;
+      const i = q.options.findIndex((o, j) => !!o.right === right && !ui.choices.children[j].disabled);
+      choose(i, ui.choices.children[i]);
+    };
+    T.unlock = () => { if (state.question) { state.question.locked = false; ui.dialog.classList.remove('listening'); } };
+    // Taps each step of the show as it comes, until it is over.
+    T.through = async () => {
+      const seen = [];
+      for (let i = 0; i < 300 && blendMagicShown(); i++) {
+        const b = blendMagic.buttons.find(x => x.classList.contains('next'));
+        if (b && !seen.includes(b.dataset.step)) { seen.push(b.dataset.step); b.click(); }
+        await T.sleep(100);
+      }
+      return seen;
+    };
+    T.magic = () => ({ shown: blendMagicShown(), dialog: T.shown('dialog'), busy: state.busy, w: blendMagic.m && blendMagic.m.w, bubbles: blendMagic.row.children.length,
+      steps: blendMagic.buttons.filter(b => !b.classList.contains('hidden')).map(b => b.dataset.step) });
+  });
+  const r = {};
+  // A new child: one sound.
+  r.one = await page.evaluate(() => {
+    const q = T.ask();
+    return { tier: Quiz.skill('blend').t, kind: q.kind, cards: q.options.length, letter: q.letter, sound: q.ask.some(p => p.text === `/${q.letter}/`),
+      clue: ui.clue.textContent.trim() === q.letter, magic: blendMagicShown() };
+  });
+  // Right answers in a row: still one sound.
+  r.row = await page.evaluate(async () => {
+    for (let i = 0; i < 8; i++) {
+      T.ask();
+      T.unlock();
+      T.tap(true);
+      await T.sleep(50);
+    }
+    return { tier: Quiz.skill('blend').t, letters: Object.keys(state.skill.letters).length };
+  });
+  // Every letter known but one, right once already: right once more passes the step.
+  r.pass = await page.evaluate(async () => {
+    for (const s of ONE_SOUND) state.skill.letters[s.l] = { right: 2, hit: 10, last: 10 };
+    state.skill.letters.q = { right: 1, hit: 10, last: 10 };
+    T.said.length = 0;
+    let q;
+    for (let i = 0; i < 40; i++) {
+      q = T.ask();
+      T.unlock();
+      if (q.letter === 'q') break;
+      T.tap(true);
+    }
+    T.said.length = 0;
+    T.tap(true);
+    await T.until(() => !!document.querySelector('.level-up'), 3000);
+    return { letter: q.letter, tier: Quiz.skill('blend').t, levelUp: !!q.levelUp, two: !!q.twoOpen, line: T.said.some(t => LINES.levelUp.includes(t)), banner: !!document.querySelector('.level-up') };
+  });
+  // Two sounds: the magic first (bee), then the dialog asks.
+  r.intro2 = await page.evaluate(async () => {
+    const q = T.ask();
+    const at = T.magic();
+    const seen = await T.through();
+    await T.until(() => T.shown('dialog'));
+    return { at, seen, kind: q.kind, after: { dialog: T.shown('dialog'), magic: blendMagicShown(), asked: state.question === q }, seenStep: state.guide.magic };
+  });
+  // The magic over the dialog: busy, a tap outside does nothing, the panel holds it.
+  await page.evaluate(() => { closeDialog(); T.ask(); T.unlock(); T.tap(false); });
+  await page.waitForFunction(() => blendMagicShown(), null, { timeout: 15000 }).catch(() => {});
+  const before = await page.evaluate(() => ({ magic: blendMagicShown(), busy: state.busy, w: blendMagic.m && blendMagic.m.w, target: state.question && state.question.target, dialog: T.shown('dialog'), hero: [state.hero.c, state.hero.r] }));
+  const vp = page.viewportSize();
+  await page.mouse.click(vp.width / 2, 120);
+  await page.waitForTimeout(400);
+  r.outside = await page.evaluate(([b]) => ({ before: b, magic: blendMagicShown(), busy: state.busy, path: state.hero.path.length, hero: [state.hero.c, state.hero.r], dialog: T.shown('dialog') }), [before]);
+  r.panel = await page.evaluate(async () => {
+    document.getElementById('parent').click();
+    const step = blendMagic.step;
+    await T.sleep(9000);
+    const held = blendMagic.step === step && blendMagicShown();
+    document.querySelector('.parent-close').click();
+    return { held, step, busy: state.busy, magic: blendMagicShown() };
+  });
+  // Through the show: the dialog back, the right card glowing to tap; no going back to one sound.
+  r.answer = await page.evaluate(async () => {
+    const q = state.question;
+    const seen = await T.through();
+    await T.until(() => T.shown('dialog') && !q.locked);
+    const glow = [...ui.choices.children].findIndex(b => b.classList.contains('glow'));
+    const right = q.options.findIndex(o => o.right);
+    if (glow >= 0) choose(glow, ui.choices.children[glow]);
+    await T.sleep(100);
+    // A second miss on another question: two in a row, still at two sounds.
+    const q2 = T.ask();
+    T.unlock();
+    T.tap(false);
+    if (!blendMagicShown() && !q2.done) { T.unlock(); T.tap(false); }
+    await T.until(() => blendMagicShown());
+    closeDialog();
+    return { seen, glow, right, done: q.done, kind2: q2.kind, tier: Quiz.skill('blend').t, magicClosed: !blendMagicShown(), busy: state.busy };
+  });
+  // ✖ skips to the end: the dialog comes back.
+  r.skip = await page.evaluate(async () => {
+    const q = T.ask();
+    T.unlock();
+    T.tap(false);
+    if (!blendMagicShown()) { T.unlock(); T.tap(false); }
+    await T.until(() => blendMagicShown());
+    blendMagic.close.click();
+    await T.until(() => T.shown('dialog'));
+    const out = { magic: blendMagicShown(), dialog: T.shown('dialog'), busy: state.busy, reveal: !!q.reveal };
+    closeDialog();
+    return out;
+  });
+  // A parent's + past one sound moves her on (no letters needed); three sounds: its magic (sun) once.
+  r.three = await page.evaluate(async () => {
+    state.skill = {};
+    state.guide.magic = 0;
+    Quiz.setTier('blend', 2);
+    const two = T.ask().kind;
+    await T.through();
+    closeDialog();
+    Quiz.setTier('blend', 3);
+    const q = T.ask();
+    const at = T.magic();
+    await T.through();
+    await T.until(() => T.shown('dialog'));
+    const kind = state.question.kind;
+    closeDialog();
+    save();
+    return { two, at, kind, seenStep: state.guide.magic };
+  });
+  // Kept over a reload: no magic at three sounds again.
+  await page.reload();
+  await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+  await page.evaluate(() => { document.getElementById('start-btn').click(); if (!Sound.muted) Sound.toggleMute(); changeScene('forest'); });
+  await page.waitForTimeout(800);
+  r.reload = await page.evaluate(() => {
+    QUIZ_TYPES.forest = ['blend'];
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    Object.assign(Quiz.skill('blend'), { n: 0, easy: false });
+    state.busy = false;
+    openDialog(npc);
+    const out = { tier: Quiz.skill('blend').t, magic: blendMagicShown(), dialog: !document.getElementById('dialog').classList.contains('hidden'), seenStep: state.guide.magic };
+    closeDialog();
+    return out;
+  });
+  // One sound: the short show.
+  r.short = await page.evaluate(async () => {
+    window.T = window.T || {};
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    Quiz.setTier('blend', 1);
+    Object.assign(Quiz.skill('blend'), { n: 0, easy: false });
+    state.busy = false;
+    openDialog(npc);
+    const q = state.question;
+    q.locked = false;
+    const i = q.options.findIndex(o => !o.right);
+    choose(i, ui.choices.children[i]);
+    for (let t = 0; t < 100 && !blendMagicShown(); t++) await sleep(100);
+    const out = { kind: q.kind, shown: blendMagicShown(), bubbles: blendMagic.row.children.length, steps: blendMagic.buttons.filter(b => !b.classList.contains('hidden')).map(b => b.dataset.step), w: blendMagic.m && blendMagic.m.w, target: q.target };
+    closeDialog();
+    return out;
+  });
+  // The Unicorn Village's game at one sound.
+  await page.evaluate(() => { changeScene('unicorn'); });
+  await page.waitForTimeout(800);
+  r.game = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const until = async (ok, ms = 15000) => { for (let t = 0; t < ms && !ok(); t += 100) await sleep(100); return ok(); };
+    const shown = id => !document.getElementById(id).classList.contains('hidden');
+    state.skill = {};
+    state.guide.magic = 0;
+    const g = MINI_GAMES.unicorn;
+    state.busy = false;
+    openMini(g.host(), g);
+    await sleep(50);
+    const live = () => mini.items.filter(x => x.state === 'live');
+    const out = { kind: mini.rounds[0].q.kind, clue: mini.letter.textContent, letter: mini.rounds[0].q.letter };
+    mini.locked = false;
+    miniMiss(live().find(x => !x.right));
+    out.counted = !!state.skill.letters[out.letter];
+    out.back = mini.rounds[2].q.letter === out.letter;
+    mini.locked = false;
+    miniMiss(live().find(x => !x.right));
+    await until(() => blendMagicShown());
+    out.magic = { shown: blendMagicShown(), locked: mini.locked, glow: mini.items.filter(x => x.glow).length === 1 && mini.items.find(x => x.glow).right, w: blendMagic.m && blendMagic.m.w };
+    for (let i = 0; i < 300 && blendMagicShown(); i++) { const b = blendMagic.buttons.find(x => x.classList.contains('next')); if (b) b.click(); await sleep(100); }
+    out.magic.after = { locked: mini.locked, shown: blendMagicShown() };
+    closeMini();
+    // Every letter known but one, right once already: a game where she gets it.
+    for (const s of ONE_SOUND) state.skill.letters[s.l] = { right: 2, hit: 10, last: 10 };
+    state.skill.letters.z = { right: 1, hit: 10, last: 10 };
+    state.busy = false;
+    openMini(g.host(), g);
+    for (let i = 0; i < 5; i++) {
+      await until(() => !mini.locked && live().length);
+      mini.locked = false;
+      miniCatch(live().find(x => x.right));
+      await until(() => mini.round > i || shown('mini-end'), 8000);
+    }
+    await until(() => shown('mini-end'));
+    await sleep(2500);
+    const box = document.getElementById('mini-letters');
+    out.end = { letters: box.children.length, shown: !box.classList.contains('hidden'), lit: box.querySelectorAll('.ml.on').length, fresh: [...box.querySelectorAll('.ml.new')].map(x => x.textContent).join(''),
+      all: box.classList.contains('all'), two: shown('mini-two'), tier: Quiz.skill('blend').t };
+    const card = document.getElementById('mini-end').getBoundingClientRect();
+    const m = mini.el.getBoundingClientRect();
+    out.end.fits = card.top >= m.top && card.bottom <= m.bottom && card.left >= m.left && card.right <= m.right;
+    // 🔁 at two sounds: the magic first.
+    document.getElementById('mini-again').click();
+    await sleep(100);
+    out.again = { magic: blendMagicShown(), w: blendMagic.m && blendMagic.m.w, round: mini.round, kind: mini.rounds[0].q.kind };
+    for (let i = 0; i < 300 && blendMagicShown(); i++) { const b = blendMagic.buttons.find(x => x.classList.contains('next')); if (b) b.click(); await sleep(100); }
+    out.again.after = { round: mini.round, magic: blendMagicShown() };
+    closeMini();
+    out.closed = { busy: state.busy, magic: blendMagicShown() };
+    return out;
+  });
+  // Past the play limit while the magic shows: the town sleeps only after it and the question.
+  await page.evaluate(() => { changeScene('forest'); });
+  await page.waitForTimeout(800);
+  r.limit = await page.evaluate(async () => {
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    const until = async (ok, ms = 15000) => { for (let t = 0; t < ms && !ok(); t += 100) await sleep(100); return ok(); };
+    QUIZ_TYPES.forest = ['blend'];
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    Quiz.setTier('blend', 3);
+    state.guide.magic = 3;
+    Object.assign(Quiz.skill('blend'), { n: 0, easy: false });
+    state.busy = false;
+    openDialog(npc);
+    const q = state.question;
+    for (let k = 0; k < 2 && !blendMagicShown(); k++) {
+      q.locked = false;
+      ui.dialog.classList.remove('listening');
+      const i = q.options.findIndex((o, j) => !o.right && !ui.choices.children[j].disabled);
+      choose(i, ui.choices.children[i]);
+      await sleep(50);
+    }
+    await until(() => blendMagicShown());
+    state.settings.playLimit = 1;
+    state.playtime = { day: guideDay(), ms: 60001, wakes: 0 };
+    await sleep(1500);
+    const during = { magic: blendMagicShown(), asleep: guide.asleep };
+    closeDialog();
+    await until(() => guide.asleep, 3000);
+    const out = { during, after: { asleep: guide.asleep, magic: blendMagicShown() } };
+    if (guide.asleep) guideWake();
+    state.settings.playLimit = 0;
+    return out;
+  });
+  const tag = `blend steps (${edition})`;
+  check(`${tag}: a new child starts at one sound: two pictures, the letter's pure sound, no magic`, r.one.tier === 1 && r.one.kind === 'oneSound' && r.one.cards === 2 && r.one.sound && r.one.clue && !r.one.magic, r.one);
+  check(`${tag}: answers right in a row don't move her on from one sound (her letters count)`, r.row.tier === 1 && r.row.letters > 0, r.row);
+  check(`${tag}: knowing every letter moves her on to two sounds, a level-up`, r.pass.letter === 'q' && r.pass.tier === 2 && r.pass.levelUp && r.pass.two && r.pass.line && r.pass.banner, r.pass);
+  check(`${tag}: two sounds: the magic first (bee) with the dialog aside and busy, then the dialog asks`, r.intro2.at.shown && !r.intro2.at.dialog && r.intro2.at.busy && r.intro2.at.w === 'bee' &&
+    r.intro2.seen.join() === 'slow,fast,pop' && r.intro2.kind === 'twoSounds' && r.intro2.after.dialog && !r.intro2.after.magic && r.intro2.after.asked && r.intro2.seenStep === 2, r.intro2);
+  check(`${tag}: a second miss shows the answer as the magic with the question's word`, r.outside.before.magic && r.outside.before.w === r.outside.before.target && !r.outside.before.dialog, r.outside.before);
+  check(`${tag}: a tap outside the magic does nothing: still showing, busy, she doesn't walk`, r.outside.magic && r.outside.busy && !r.outside.path && r.outside.hero.join() === r.outside.before.hero.join() && !r.outside.dialog, r.outside);
+  check(`${tag}: the parent panel holds the magic, and closing it leaves the game busy`, r.panel.held && r.panel.busy && r.panel.magic, r.panel);
+  check(`${tag}: after the show the dialog is back with the right card glowing to tap`, r.answer.seen.length >= 1 && r.answer.glow === r.answer.right && r.answer.done, r.answer);
+  check(`${tag}: misses at two sounds never send her back to one sound; closing the dialog closes the magic`, r.answer.kind2 === 'twoSounds' && r.answer.tier === 2 && r.answer.magicClosed && r.answer.busy === false, r.answer);
+  check(`${tag}: ✖ on the magic skips to the end: the dialog is back`, !r.skip.magic && r.skip.dialog && r.skip.busy && r.skip.reveal, r.skip);
+  check(`${tag}: a parent's + past one sound moves her on; three sounds: the magic first (sun), once`, r.three.two === 'twoSounds' && r.three.at.shown && r.three.at.w === 'sun' && r.three.at.bubbles === 3 && r.three.kind === 'blend' && r.three.seenStep === 3, r.three);
+  check(`${tag}: the magic seen at a step is kept over a reload`, r.reload.tier === 3 && !r.reload.magic && r.reload.dialog && r.reload.seenStep === 3, r.reload);
+  check(`${tag}: one sound: the short show, its letter's bubble and ✨ only`, r.short.kind === 'oneSound' && r.short.shown && r.short.bubbles === 1 && r.short.steps.join() === 'pop' && r.short.w === r.short.target, r.short);
+  check(`${tag}: the Unicorn game at one sound: its letter at the top, a first try counts, a missed letter comes back two rounds on`, r.game.kind === 'oneSound' && r.game.clue === r.game.letter.toUpperCase() + r.game.letter && r.game.counted && r.game.back, r.game);
+  check(`${tag}: the Unicorn game: two misses show the magic over the game, the right one glowing, and then she can tap`, r.game.magic.shown && r.game.magic.locked && r.game.magic.glow && !r.game.magic.after.locked && !r.game.magic.after.shown, r.game.magic);
+  check(`${tag}: the end card shows every letter, the new one sparkling; all lit: the party, and two sounds open`, r.game.end.shown && r.game.end.letters === 25 && r.game.end.fresh === 'z' && r.game.end.lit === 25 && r.game.end.all && r.game.end.two && r.game.end.tier === 2 && r.game.end.fits, r.game.end);
+  check(`${tag}: 🔁 at two sounds starts with the magic, then the rounds`, r.game.again.magic && r.game.again.w === 'bee' && r.game.again.kind === 'twoSounds' && r.game.again.after.round === 0 && !r.game.again.after.magic && r.game.closed.busy === false && !r.game.closed.magic, r.game.again);
+  check(`${tag}: past the play limit the magic plays on, and the town sleeps once it and the question are over`, r.limit.during.magic && !r.limit.during.asleep && r.limit.after.asleep && !r.limit.after.magic, r.limit);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 // A gate added in an update (the Monster Village): a child already past its
 // stars gets its party once, after her next answer; one who reaches it
 // later gets it as she crosses, and not again.
@@ -2104,7 +2435,8 @@ async function lateGate(browser) {
     shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain'),
     ride: b => rideInOut(b, 'princess'), rideCaptain: b => rideInOut(b, 'captain'),
     gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
-    kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate };
+    kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate,
+    blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);
   } catch (e) {

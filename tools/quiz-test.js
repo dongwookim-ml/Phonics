@@ -20,6 +20,16 @@
 // always; another first sound and vowel at a far tier; rhymes by their
 // vowel and last sound. The word bank itself: one capital vowel per word,
 // every other sound one the narrator has, pictures an older iPad has.
+// Blending's first steps: the one-sound step's bank has every letter but
+// x, each word starting with that very sound and a picture she names for
+// sure (Unicode 12 or before), and every question one right picture and no
+// other card she could call by a name that starts with that sound (or one
+// she can't tell from it); two cards, then three once she knows enough
+// letters. The two-sound words are two sounds each, said as such (a long
+// vowel by its letter's name) when asked, answered and shown, among other
+// two-sound words, far ones at a far tier. Each place asks blending up to
+// its band counted from after the first steps, and the first steps' ids
+// are in their own kinds' pools, not blending's.
 // First it runs tools/check-books.js: every word of the books she reads
 // herself can be sounded out at the book's level, or is a sight word.
 // Run: node tools/quiz-test.js  (needs the playwright package and Chromium)
@@ -44,8 +54,10 @@ for (const f of fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.j
 }
 // The pure sounds ("/m/") the recording workflow can cut.
 const cuts = Object.keys(JSON.parse(fs.readFileSync(path.join(__dirname, 'letter-sounds.json'), 'utf8')).sounds);
-// Emoji newer than Unicode 13 (an older iPad shows an empty box).
+// Emoji newer than Unicode 13 (an older iPad shows an empty box), and the
+// ones Unicode 13 added (blending's first steps keep to Unicode 12).
 const newEmoji = require('./check-books').NEW_EMOJI.source;
+const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F9A3}\\u{1F9A4}\\u{1F9AB}-\\u{1F9AD}\\u{1F9CB}\\u{1FA74}\\u{1FA83}-\\u{1FA86}\\u{1FA96}-\\u{1FAA8}\\u{1FAB0}-\\u{1FAB6}\\u{1FAC0}-\\u{1FAC2}\\u{1FAD0}-\\u{1FAD6}\\u{26A7}]';
 
 (async () => {
   const browser = await launch();
@@ -61,7 +73,7 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}`);
     await page.click('#login-guest');
-    const report = await page.evaluate(([rounds, asked, cuts, newEmoji]) => {
+    const report = await page.evaluate(([rounds, asked, cuts, newEmoji, u13]) => {
       const problems = [];
       const missing = new Map();
       const norm = t => String(t).trim().replace(/\s+/g, ' ');
@@ -149,6 +161,30 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
         for (const b of longSets.slice(i + 1)) if (a.v === b.v && lastSound(a.rime) === lastSound(b.rime)) problems.push(`rhymes ${a.rime} and ${b.rime} rhyme with each other`);
         for (const [w, e] of a.set) if (NEW_EMOJI.test(e)) problems.push(`rhyme ${a.rime}: ${w} ${e} is newer than Unicode 13`);
       }
+      // Blending's first steps: the one-sound bank has every letter but x,
+      // each word starting with that very sound (not a ch, sh, th, ph, wh, kn
+      // or wr, nor a vowel that says another sound), a picture she names for
+      // sure (Unicode 12 or before); the two-sound words are two sounds each,
+      // every one the narrator has (a capital: a letter's name).
+      const U12 = new RegExp(`${newEmoji}|${u13}`, 'u');
+      const letters = ONE_SOUND.map(s => s.l).join('');
+      if (letters !== 'abcdefghijklmnopqrstuvwyz') problems.push(`ONE_SOUND has the letters ${letters}, not a to z without x`);
+      const notSound = { a: /^(a[eiruwy]|ai)/, e: /^(e[aeiruwy]|eigh)/, i: /^(i[gr]|i[^aeiou]e)/, o: /^(o[aeiouwr]|one)/, u: /^(u[^aeiou][aeiou]|ur)/, c: /^c[hei]/, g: /^(gira|ge[mnr]|gia|gin|gy)/, s: /^sh/, t: /^th/, p: /^ph/, w: /^wr/, k: /^kn/ };
+      for (const s of ONE_SOUND) {
+        for (const [w, e] of s.words) {
+          const x = Quiz.words()[w];
+          if (w[0] !== s.l || (notSound[s.l] && notSound[s.l].test(w))) problems.push(`ONE_SOUND ${s.l}: ${w} doesn't start with /${s.l}/`);
+          if (!x || x.pic < 2 || x.e !== e) problems.push(`ONE_SOUND ${s.l}: ${w} ${e} is not a picture she names for sure (${x && x.e} pic ${x && x.pic})`);
+          if (U12.test(e)) problems.push(`ONE_SOUND ${s.l}: ${w} ${e} is newer than Unicode 12`);
+        }
+      }
+      for (const [w, e, two] of TWO_SOUNDS) {
+        const x = Quiz.words()[w];
+        if (two.length !== 2) problems.push(`TWO_SOUNDS ${w}: ${two.join('-')} is not two sounds`);
+        for (const p of two) if (!/^[A-Z]$/.test(p) && !cuts.includes(p)) problems.push(`TWO_SOUNDS ${w}: the narrator has no /${p}/`);
+        if (!x || x.pic < 2 || x.e !== e || x.aka.length > (w === 'pie' ? 1 : 0)) problems.push(`TWO_SOUNDS ${w}: ${e} is not a picture she names for sure`);
+        if (U12.test(e)) problems.push(`TWO_SOUNDS ${w}: ${e} is newer than Unicode 12`);
+      }
       const W = Quiz.words();
       const div = document.createElement('div');
       const picOf = o => { div.innerHTML = o.html; const p = div.querySelector('.pic, .bigpic'); return p && p.textContent; };
@@ -161,29 +197,43 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
       // Quiz.pool (the parent panel's counts) holds only what she can be asked
       // with the parent's settings (all off here): each of its ids comes up at
       // a tier they allow. Asked ones are marked solved, so the next is new.
+      // A first step of blending is a tier of its ladder (TIERS.blend), and
+      // its letters are marked known (state.skill.letters): then she is
+      // asked new ones, and now and then one she knows, again.
       state.settings = {};
+      const knowAll = () => Object.fromEntries(ONE_SOUND.map(x => [x.l, { right: 2, hit: 5, last: 5 }]));
+      const ladderOf = kind => (TIERS[kind] ? kind : Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === kind)));
       for (const kind of Quiz.kinds) {
         const npcs = ['word', 'findStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.map(h => ({ level: 1, letter: h.letter }))) : [{ level: 1 }];
+        const ladder = ladderOf(kind);
         for (const npc of npcs) {
           state.history = {};
-          for (let t = 1; t <= Quiz.tierMax(kind); t++) {
-            for (let i = 0; i < 500; i++) {
-              const q = Quiz.make(npc, { kind, tier: t });
-              if (state.history[q.id]) break;
+          state.skill.letters = {};
+          TIERS[ladder].forEach((c, i) => {
+            if ((c.step || ladder) !== kind) return;
+            for (let n = 0; n < 500; n++) {
+              const q = Quiz.make(npc, { kind: ladder, tier: i + 1 });
+              if (q.kind !== kind) { problems.push(`${ladder} t${i + 1}: a ${q.kind} question, not ${kind}`); break; }
+              if (state.history[q.id]) { if (kind === 'oneSound') continue; break; }
               state.history[q.id] = { kind, tries: 1, right: 1, wrong: 0, last: Date.now() };
+              if (q.letter) state.skill.letters[q.letter] = { right: 2, hit: 5, last: 5 };
+              if (Quiz.pool(kind, npc).every(id => state.history[id])) break;
             }
-          }
+          });
           const never = Quiz.pool(kind, npc).filter(id => !state.history[id]);
           if (never.length) problems.push(`${kind}${npc.letter ? ` (${npc.letter} house)` : ''}: ${never.length} id(s) in Quiz.pool are never asked with these settings, e.g. ${never[0]}`);
         }
       }
+      if (Quiz.pool('blend').some(id => !id.startsWith('blend:'))) problems.push('blending\'s pool holds its first steps\' questions');
       // A save from before tiers never starts a kind at its top tier, or at
       // one that puts sounds she can't tell apart side by side.
       const old = {};
       for (const kind of Object.keys(TIERS)) for (let i = 0; i < 10; i++) old[`${kind}:${i}`] = { kind, tries: 1, right: 1, wrong: 0, last: 1 };
       for (const [kind, k] of Object.entries(Quiz.migrate([old]))) {
-        const c = TIERS[kind][k.t - 1];
-        if (k.t >= TIERS[kind].length || c.near || c.minimal) problems.push(`an old save starts ${kind} at tier ${k.t} of ${TIERS[kind].length}`);
+        // Blending's entry is in its own count, after its first steps.
+        const own = TIERS[kind].filter(c => !c.step);
+        const c = own[k.t - 1];
+        if (k.t >= own.length || c.near || c.minimal) problems.push(`an old save starts ${kind} at tier ${k.t} of ${own.length}`);
       }
       // A tier the parent sets is stamped and counts as one more answer, so
       // the saves keep it (tools/check-merge.js); setting it again to the
@@ -215,15 +265,18 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
         solved: npc => fill(npc, () => ({ right: 1, wrong: Math.random() < 0.3 ? 1 : 0 })),
         mixed: npc => fill(npc, () => (Math.random() < 0.7 ? { right: Math.random() < 0.8 ? 1 : 0, wrong: 1 } : null)),
       };
+      // The letters she knows (blending's one-sound step): none, all, some.
+      const lettersFor = { new: () => ({}), solved: knowAll, mixed: () => Object.fromEntries(Object.entries(knowAll()).filter(() => Math.random() < 0.5)) };
       for (const [mode, history] of Object.entries(histories)) for (const npc of askers) {
         const who = Object.assign({ standIn: !!npc.standIn }, voiceOf(npc));
         state.history = history(npc);
+        state.skill.letters = lettersFor[mode]();
         npc.lastQuiz = null;
         // Every kind this person asks at every tier their place goes up to
         // (spelling's parent-only tier too), in turn.
         const place = placeOf(npc);
         const combos = [];
-        for (const kind of new Set(QUIZ_TYPES[place])) for (let t = 1; t <= Math.min(TIER_BAND[place][1], TIERS[kind].length); t++) combos.push({ kind, tier: t });
+        for (const kind of new Set(QUIZ_TYPES[place])) for (let t = 1; t <= Math.min(TIER_BAND[place][1] + Quiz.lead(kind), TIERS[kind].length); t++) combos.push({ kind, tier: t });
         // A stand-in asks as much as a whole village would.
         const times = npc.standIn ? rounds * 6 : rounds;
         for (let i = 0; i < times; i++) {
@@ -232,7 +285,7 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
           try { q = Quiz.make(npc, i < combos.length * Math.floor(times / combos.length) ? force : null); } catch (e) { problems.push(`${npc.name} (${mode}) ${force.kind} t${force.tier}: ${e.message}`); continue; }
           kinds[q.kind] = (kinds[q.kind] || 0) + 1;
           tiers[`${place} ${q.kind} t${q.tier}`] = (tiers[`${place} ${q.kind} t${q.tier}`] || 0) + 1;
-          const cfg = TIERS[q.kind][q.tier - 1];
+          const cfg = TIERS[q.ladder || q.kind][q.tier - 1];
           const where = `${npc.name} ${q.kind} t${q.tier} ${q.id}`;
           const rightCard = q.options.find(o => o.right);
           const t = W[['rhyme', 'longRhyme'].includes(q.kind) ? String(rightCard.wrong) : q.target] || { w: q.target, aka: [] };
@@ -258,16 +311,54 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
             q.slots.forEach((g, i) => after.push(...q.need(i)));
           } else {
             const n = q.options.length;
-            if (n !== cfg.n) problems.push(`${where}: ${n} cards, the tier has ${cfg.n}`);
+            // The one-sound step: two cards, three once she knows enough letters.
+            const want = cfg.then && Quiz.letters().filter(x => x.known).length >= LETTER_MASTERY.more ? cfg.then : cfg.n;
+            if (n !== want) problems.push(`${where}: ${n} cards, the tier has ${want}`);
             if (q.options.filter(o => o.right).length !== 1) problems.push(`${where}: ${q.options.filter(o => o.right).length} right options`);
             if (new Set(q.options.map(o => o.html)).size !== n) problems.push(`${where}: two options alike`);
             const ws = q.options.map(o => String(o.wrong || '').toLowerCase());
             if (new Set(ws).size !== n) problems.push(`${where}: two options say the same word`);
             for (const o of q.options) if (!o.right) after.push(...q.teach(o), ...q.picked(o));
             // Where she finds the word's picture, a hint never says the word.
-            if (['read', 'blend', 'longRead', 'longBlend'].includes(q.kind)) {
+            if (['read', 'blend', 'longRead', 'longBlend', 'oneSound', 'twoSounds'].includes(q.kind)) {
               for (const o of q.options) if (!o.right && q.teach(o).concat(q.picked(o)).some(p => p.text && p.text.replace(/!$/, '') === q.target)) problems.push(`${where}: a hint says ${q.target}`);
             }
+            // Blending's first steps.
+            const spoken = parts => parts.filter(p => p && p.text && (/^\/[a-z]+\/$/.test(p.text) || /^[A-Z]$/.test(p.text))).map(p => p.text.replace(/\//g, '')).join('-');
+            if (q.kind === 'oneSound') {
+              // The right picture starts with the letter's sound (its bank),
+              // and no other card she could call by a name that starts with
+              // it or with a sound she can't tell from it (a c is a /k/).
+              const L = q.letter;
+              const k = l => (l === 'c' ? 'k' : l);
+              const clash = (a, b) => sameSound(a, b) || sameSound(k(a), k(b)) || hardPair(k(a), k(b)) || has(HARD_PAIRS.looks, k(a), k(b));
+              const bank = (ONE_SOUND.find(x => x.l === L) || { words: [] }).words.map(([w]) => w);
+              const right_ = q.options.find(o => o.right);
+              if (!bank.includes(String(right_.wrong))) problems.push(`${where}: ${right_.wrong} is not a /${L}/ picture`);
+              const heads = w => [w[0]].concat((W[w] || { aka: [] }).aka.map(a => a[0]));
+              const others_ = q.options.filter(o => !o.right).map(o => String(o.wrong));
+              for (const w of others_) if (heads(w).some(h => clash(h, L))) problems.push(`${where}: ${w} (${heads(w).join('/')}) may start like /${L}/`);
+              for (let a = 0; a < others_.length; a++) for (let b = a + 1; b < others_.length; b++) if (heads(others_[a]).some(x => heads(others_[b]).some(y => clash(x, y)))) problems.push(`${where}: ${others_[a]} and ${others_[b]} start alike`);
+              for (const [what, parts] of [['asked', q.ask], ['answered', q.answer], ['shown', q.model]]) if (spoken(parts) !== L) problems.push(`${where}: ${what} as ${spoken(parts)}, not /${L}/`);
+              if (!q.magic || q.magic.parts.join() !== L || q.magic.w !== String(right_.wrong)) problems.push(`${where}: its magic is ${JSON.stringify(q.magic)}`);
+            }
+            if (q.kind === 'twoSounds') {
+              // Two sounds, said as such (a long vowel by its letter's name),
+              // among other two-sound words; far ones at a far tier.
+              const two = W[q.target].two;
+              if (!two || two.length !== 2) problems.push(`${where}: ${q.target} is not a two-sound word`);
+              for (const [what, parts] of [['asked', q.ask], ['answered', q.answer], ['shown', q.model]]) if (spoken(parts) !== two.join('-')) problems.push(`${where}: ${what} as ${spoken(parts)}, not ${two.join('-')}`);
+              if (!q.magic || q.magic.parts.join() !== two.join()) problems.push(`${where}: its magic is ${JSON.stringify(q.magic)}`);
+              const k = p => (p.toLowerCase() === 'c' ? 'k' : p);
+              const clash = (a, b) => k(a).toLowerCase() === k(b).toLowerCase() || sameSound(k(a), k(b)) || hardPair(k(a), k(b));
+              for (const o of q.options.filter(x => !x.right)) {
+                const w = String(o.wrong);
+                if (!W[w] || !W[w].two) problems.push(`${where}: ${w} is not a two-sound word`);
+                else if (cfg.far && (clash(W[w].two[0], two[0]) || clash(W[w].two[1], two[1]))) problems.push(`${where}: ${w} is not far from ${q.target}`);
+              }
+            }
+            // A three-sound question shows its own word's sounds as its magic.
+            if (q.kind === 'blend' && (!q.magic || q.magic.w !== q.target || q.magic.parts.join('') !== q.target)) problems.push(`${where}: its magic is ${JSON.stringify(q.magic)}`);
             const pics = q.options.map(picOf).filter(Boolean);
             if (new Set(pics).size !== pics.length) problems.push(`${where}: two cards show the same picture ${pics.join(' ')}`);
             if ((cfg.pics || ['rhyme', 'meaning', 'longRhyme'].includes(q.kind)) && q.kind !== 'sentence' && pics.length !== n) problems.push(`${where}: a card without its picture`);
@@ -394,7 +485,7 @@ const newEmoji = require('./check-books').NEW_EMOJI.source;
         }
       }
       return { problems: [...new Set(problems)], missing: [...missing.entries()].sort((a, b) => b[1] - a[1]), kinds, tiers };
-    }, [ROUNDS, kindsAsked, cuts, newEmoji]);
+    }, [ROUNDS, kindsAsked, cuts, newEmoji, u13]);
     console.log(`${edition}: ${JSON.stringify(report.kinds)}`);
     console.log(`  tiers built: ${Object.keys(report.tiers).length} (place kind tier) ${process.env.LIST === 'all' ? JSON.stringify(report.tiers) : ''}`);
     for (const p of report.problems.slice(0, SHOW)) console.log(`  ${p}`);
