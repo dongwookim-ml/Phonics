@@ -19,7 +19,7 @@ const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
-  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', ...MONSTER_TABLES];
+  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', ...MONSTER_TABLES];
 function loadData(edition) {
   const files = ['js/data.js'];
   if (edition === 'captain') {
@@ -117,6 +117,9 @@ function collect(D) {
       lines(v, kindLines[k]);
       for (const w of kindWords[k] || []) asks.add(w);
     }
+    // Blending starts with its first steps: "Which picture starts with this
+    // sound?" before the pure sound (the narrator's); two sounds ask as blend does.
+    if (kinds.has('blend')) lines(v, ['oneSound']);
     // The word in each question, said by whoever asks it (`voiced` in quiz.js).
     for (const w of asks) add(v, w, 0.85);
     // "Which one starts with C?", the letter said by its name (letter houses).
@@ -164,6 +167,9 @@ function collect(D) {
   for (const x of sentences) { words.add(x.w[0]); x.alike.forEach(w => words.add(w)); x.other.forEach(([w]) => words.add(w)); }
   // Long vowels: every word, its short twin (what she picked, "kit…") and the rhymes.
   for (const w of longWords.concat(first(D.LONG_TWINS), longRhymes.flatMap(r => first(r.set)))) words.add(w);
+  // Blending's first steps: the one-sound pictures (what she picked, "dog…",
+  // and the answer, "sun!") and the two-sound words.
+  for (const w of D.ONE_SOUND.flatMap(x => first(x.words)).concat(first(D.TWO_SOUNDS))) words.add(w);
   // Words said when she taps a thing on the map (js/touch.js).
   for (const w of D.PROP_WORDS) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
@@ -196,7 +202,10 @@ function collect(D) {
   // what to do as one starts and hands over the coins. Everything else in
   // them is the host's own question lines and the narrator's words and
   // sounds, listed above.
-  lines(N, ['miniRhyme', 'miniSpell', 'miniBlend', 'miniRead', 'miniDone'].filter(k => D.LINES[k]));
+  lines(N, ['miniRhyme', 'miniSpell', 'miniBlend', 'miniRead', 'miniDone', 'miniSound'].filter(k => D.LINES[k]));
+  // The sound magic (js/blend-magic.js): its hello, 🐢, 🐇 and the pop, and
+  // blending's two-sound step opening.
+  lines(N, ['magicHello', 'magicSlow', 'magicFast', 'magicPop', 'blendTwo'].filter(k => D.LINES[k]));
   // Today's adventures and the treasure chest (js/quest.js). Tapping a
   // quest's picture says its word, which is recorded with the words below.
   lines(N, ['questHello', 'questReady', 'questChest'].filter(k => D.LINES[k]));
@@ -208,7 +217,8 @@ function collect(D) {
   lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'openMonster', 'medalVillage', 'album']);
   for (const l of D.TOWN_HOUSES) lines(N, ['medalHouse'], { letter: l.letter });
   const stickers = [...D.WORD_FAMILIES.flat(), ...D.RHYME_SETS.flatMap(r => r.set), ...sentences.map(x => x.w),
-    ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat(), ...D.LONG_VOWELS.flatMap(g => g.words), ...D.LONG_RHYMES.flatMap(r => r.set)].map(([w]) => w);
+    ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat(), ...D.LONG_VOWELS.flatMap(g => g.words), ...D.LONG_RHYMES.flatMap(r => r.set),
+    ...D.ONE_SOUND.flatMap(x => x.words), ...D.TWO_SOUNDS].map(([w]) => w);
   for (const w of stickers) if (/^[a-z]+$/.test(w) && !/^(ch|sh|th|wh|ph|gh|kn|wr)/.test(w) && w !== 'one') add(N, `${w} starts with ${w[0].toUpperCase()}.`);
   for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS, D.MONSTER_STARS]) lines(N, ['locked'], { stars });
   for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
