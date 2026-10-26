@@ -16,6 +16,7 @@
 // Progress.settings(s)     the parent's settings in a save, each as set last
 // Progress.setting(e, k)   a stamped setting in an edition (the picture hints)
 // Progress.stamp(x, k, v)  a change the parent makes, stamped (js/parent.js)
+// Progress.firstSteps(s, k) where a copy without blending's first steps is in them
 
 const Progress = (() => {
   // Save format 2 (fmt: 2): counters per edition, earned[device] and
@@ -195,19 +196,46 @@ const Progress = (() => {
     }
     return out;
   }
+  // Blending's first steps (one sound, two sounds: TIERS in js/data.js) are
+  // counted in `blendFirst`, from the first step up to 3, three sounds; from
+  // there on `blend` says how far she is, with the tiers blending had before
+  // them. So a tab still on an older version, which knows only `blend`,
+  // reads and moves her tier there as it always did. A copy from before the
+  // first steps has no `blendFirst`: if she plays blend there (answers
+  // behind it), she is past them; otherwise she is at the start.
+  const FIRST_STEPS = { blendFirst: 'blend' };
+  function firstSteps(skill, key) {
+    const e = isObj(skill) ? skill[FIRST_STEPS[key]] : null;
+    const played = isObj(e) && (n(e.n) > 0 || n(e.t) > 1 || n(e.best) > 1 || e.placed === true);
+    return played ? { t: 3, best: 3, w: [], last: [], placed: true, easy: false, n: n(e.n) } : null;
+  }
   // Skill per question kind: the entry with more answers behind it, unless a
   // parent set the tier by hand later in one copy (`set`, Quiz.setTier): then
-  // that one. Answers and the best tier never go back.
+  // that one. Answers and the best tier never go back. A copy without the
+  // first steps counts as above (firstSteps), but its best tier only if it wins.
+  // The letters she knows (`letters`, blending's one-sound step: { s: {
+  // right, hit, last } }) join letter by letter, each count the larger.
   function joinSkill(a, b) {
     if (!isObj(a) || !isObj(b)) return a === undefined ? b : a;
+    const filled = new Set();
+    for (const key of Object.keys(FIRST_STEPS)) {
+      if (has(a, key) === has(b, key)) continue;
+      const own = firstSteps(has(a, key) ? b : a, key);
+      if (!own) continue;
+      filled.add(own);
+      if (has(a, key)) b = Object.assign({}, b, { [key]: own });
+      else a = Object.assign({}, a, { [key]: own });
+    }
     const out = Object.assign({}, b, a);
     for (const k of Object.keys(b)) {
       const x = a[k];
       const y = b[k];
       if (!has(a, k) || !isObj(x) || !isObj(y)) continue;
+      if (k === 'letters') { out[k] = grow(x, y); continue; }
       const set = n(y.set) - n(x.set);
-      const e = out[k] = Object.assign({}, set > 0 || (!set && n(y.n) > n(x.n)) ? y : x);
-      for (const f of ['n', 'best']) if (has(x, f) || has(y, f)) e[f] = Math.max(n(x[f]), n(y[f]));
+      const won = set > 0 || (!set && n(y.n) > n(x.n)) ? y : x;
+      const e = out[k] = Object.assign({}, won);
+      for (const f of ['n', 'best']) if ((has(x, f) || has(y, f)) && !(f === 'best' && filled.has(won === x ? y : x))) e[f] = Math.max(n(x[f]), n(y[f]));
     }
     return out;
   }
@@ -455,6 +483,6 @@ const Progress = (() => {
   }
   const same = (a, b) => canon(editions(a)) === canon(editions(b));
 
-  return { FMT, device, tally, count, merge, history, played, stars, same, editions, stamp,
+  return { FMT, device, tally, count, merge, history, played, stars, same, editions, stamp, firstSteps,
     settings: s => joinSettings(s), setting: (x, k) => stampOf(x, k, 0).v };
 })();

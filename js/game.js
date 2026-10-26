@@ -296,13 +296,14 @@ function setPaused(on) {
 }
 
 // Whether anything that stops the game is still showing: a question, a
-// present, a card (js/album.js, friend.js, minigame.js, quest.js), the
-// parent panel, the sleeping town, a scene change, or the robot's cave fight
-// or a Crystal Cave monster's magic with its dialog stepped aside
-// (js/captain-cave.js, js/cave-magic.js). Every close sets
-// state.busy from this, so closing one thing never frees the game under
-// another, nor leaves it stuck with nothing open.
-const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests'];
+// present, a card (js/album.js, friend.js, minigame.js, quest.js), the sound
+// magic (js/blend-magic.js, its dialog stepped aside), the parent panel, the
+// sleeping town, a scene change, or the robot's cave fight or a Crystal Cave
+// monster's magic with its dialog stepped aside (js/captain-cave.js,
+// js/cave-magic.js). Every close sets state.busy from this, so closing one
+// thing never frees the game under another, nor leaves it stuck with
+// nothing open.
+const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic'];
 function busyNow() {
   const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
   return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep || caveFighting();
@@ -651,10 +652,19 @@ function openDialog(npc) {
   ui.choices.classList.toggle('four', q.options.length > 3);
   ui.choices.classList.toggle('spell', !!q.tiles);
   if (q.tiles) renderSpell(q);
-  ui.dialog.classList.remove('hidden');
   ui.reward.classList.add('hidden');
   // The cards wait until she has heard the word (Quiz.READY in q.ask).
-  listen(q, [{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), 12000);
+  const ask = () => {
+    ui.dialog.classList.remove('hidden');
+    listen(q, [{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), 12000);
+  };
+  // The first question at a new step of blending: the sound magic shows
+  // how, first, with an easy word (js/blend-magic.js); then the dialog.
+  const intro = blendMagicIntro(q);
+  if (intro) {
+    ui.dialog.classList.add('hidden');
+    openBlendMagic(intro, { intro: true, done: () => { if (state.question === q) ask(); } });
+  } else ask();
   save();
 }
 
@@ -718,8 +728,10 @@ function answeredRight(q, btn) {
   const praise = comboCheer(q) || line('praise');
   ui.text.textContent = praise;
   Sound.correct();
-  // A kind of question just went up to a new tier.
-  const levelUp = q.levelUp ? [{ pause: 300 }, { text: line('levelUp'), narrator: true }] : [];
+  // A kind of question just went up to a new tier; blending's to two sounds,
+  // every letter known, says so once that line is recorded.
+  const up = q.twoOpen && Sound.hasClip(line('blendTwo')) ? line('blendTwo') : line('levelUp');
+  const levelUp = q.levelUp ? [{ pause: 300 }, { text: up, narrator: true }] : [];
   if (q.levelUp) later(600, showLevelUp);
   checkMedals();
   // Cave monsters pay in coins instead of a star and a present.
@@ -781,11 +793,34 @@ function showAnswer(q, o) {
   });
   const showMe = line('showMe');
   const tap = isCaptain() && state.talking.monster ? villainTapLine() : { text: line('tapIt') };
+  // A nudge if she hasn't tapped it a while later.
+  const nudge = () => later(16000, () => { if (state.question === q && !q.done && !q.locked) Sound.say([tap], voiceOf(state.talking)); });
+  // A blend question's answer is the sound magic with its word (js/blend-magic.js):
+  // what she picked, then the dialog steps aside for the show, and comes
+  // back with the card glowing for her to tap.
+  if (q.magic) {
+    const picked = o ? q.picked(o) : [];
+    ui.text.textContent = shownText(picked) || showMe;
+    q.locked = true;
+    q.turn = (q.turn || 0) + 1; // no earlier listen() lets her answer now
+    ui.dialog.classList.add('listening');
+    blendMagicAfter(picked, voiceOf(state.talking), 4000, () => {
+      if (state.question !== q) return;
+      ui.dialog.classList.add('hidden');
+      openBlendMagic(q.magic, { done: () => {
+        if (state.question !== q) return;
+        ui.dialog.classList.remove('hidden');
+        ui.text.textContent = tap.text;
+        listen(q, [tap], 3000);
+        nudge();
+      } });
+    });
+    return;
+  }
   const parts = (o ? q.picked(o).concat({ pause: 400 }) : []).concat({ text: showMe }, { pause: 300 }, q.model);
   ui.text.textContent = `${shownText(parts)} ${tap.text}`;
   listen(q, parts.concat(Quiz.READY, { pause: 300 }, tap), 8000);
-  // A nudge if she hasn't tapped it a while later.
-  later(16000, () => { if (state.question === q && !q.done && !q.locked) Sound.say([tap], voiceOf(state.talking)); });
+  nudge();
 }
 
 // "⭐ 레벨 업!" over the game, with a fanfare.
@@ -824,6 +859,7 @@ function finishShown(q, btn) {
 }
 
 function closeDialog() {
+  closeBlendMagic(); // its show, if one plays over it (js/blend-magic.js)
   ui.dialog.classList.add('hidden');
   ui.dialog.classList.remove('listening');
   kidDrawingShow(null);
@@ -2573,9 +2609,11 @@ function worldToTile(sc, wx, wy) {
 // card (the chest opening, stickers flying in, her friend's party), or came
 // just as the card came up (the little game's end, with her finger still
 // tapping the last fish): that is all it does, and a later tap outside
-// closes it.
+// closes it. The sound magic (js/blend-magic.js) is something she does,
+// over the dialog or the game: it stays too.
 const OUTSIDE_CARDS = [
   { id: 'sleep' },
+  { id: 'magic' },
   { id: 'reward' },
   { id: 'dialog' },
   { id: 'feed', close: closeFeed, skip: friendSkip },

@@ -17,7 +17,7 @@
 
 // Word banks that may be added to js/data.js; any that exist go in too.
 function albumMoreTables() {
-  /* global CVC_A1 CVC_A2 VCC CCVC CVCC LONG DIGRAPH RHYME_SETS SENTENCES_L1 SENTENCES_L2 LONG_VOWELS LONG_RHYMES */
+  /* global CVC_A1 CVC_A2 VCC CCVC CVCC LONG DIGRAPH RHYME_SETS SENTENCES_L1 SENTENCES_L2 LONG_VOWELS LONG_RHYMES ONE_SOUND TWO_SOUNDS */
   return [
     typeof CVC_A1 !== 'undefined' && CVC_A1, typeof CVC_A2 !== 'undefined' && CVC_A2, typeof VCC !== 'undefined' && VCC,
     typeof CCVC !== 'undefined' && CCVC, typeof CVCC !== 'undefined' && CVCC, typeof LONG !== 'undefined' && LONG,
@@ -25,6 +25,8 @@ function albumMoreTables() {
     typeof SENTENCES_L1 !== 'undefined' && SENTENCES_L1, typeof SENTENCES_L2 !== 'undefined' && SENTENCES_L2,
     // The Monster Village's long vowels (a word without a picture has no sticker spot).
     typeof LONG_VOWELS !== 'undefined' && LONG_VOWELS, typeof LONG_RHYMES !== 'undefined' && LONG_RHYMES,
+    // Blending's first steps: the one-sound pictures (insect, juice...) and the two-sound words.
+    typeof ONE_SOUND !== 'undefined' && ONE_SOUND, typeof TWO_SOUNDS !== 'undefined' && TWO_SOUNDS,
   ];
 }
 

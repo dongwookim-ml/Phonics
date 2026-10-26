@@ -1163,6 +1163,10 @@ body.captain.fairy { background: linear-gradient(#bfe6ff, #e0f2ff 50%, #dff6e0);
 .l-chip.good { background: #dff4e6; }
 .l-chip.mid { background: #fff2cc; }
 .l-chip.low { background: #ffe0e4; }
+/* The letters she knows, in blending's one-sound row. */
+.k-letters { grid-column: 1 / -1; gap: 3px; }
+.k-letters .l-chip { padding: 0 6px; font-family: "Baloo 2", var(--ui-font); font-weight: 800; color: #b4a8c4; }
+.k-letters .l-chip.good { color: var(--accent-ink); }
 .parent-setting { display: flex; align-items: center; gap: 8px; font-size: 15px; }
 .parent-setting input { width: 20px; height: 20px; }
 .parent-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -1940,4 +1944,198 @@ body.captain .drawing .photo::before { background: rgba(143, 196, 255, 0.8); }
 @media (max-width: 560px) {
   .drawing { grid-area: pt; width: 64px; align-self: stretch; min-height: 96px; }
   .drawing .by { font-size: 10px; }
+}
+
+/* ---- The sound magic: blending she does herself (js/blend-magic.js) ---- */
+
+.magic {
+  --b: 96px; /* a bubble */
+  position: fixed;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 22;
+  width: min(720px, calc(100vw - 24px));
+  height: min(310px, calc(100vh - var(--hud) - 28px));
+  height: min(310px, calc(100dvh - var(--hud) - 28px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  background: radial-gradient(circle at 50% 30%, #fffdf6, #ffe4f2);
+  border: 4px solid var(--ink);
+  border-radius: 26px;
+  box-shadow: 0 0 0 5px var(--gold) inset, 0 10px 0 rgba(74, 44, 79, 0.25);
+  animation: rise 0.25s ease;
+}
+.magic.hidden { display: none; }
+body.captain .magic { background: radial-gradient(circle at 50% 30%, #fbfdff, #d8e8ff); }
+.magic .mg-close { position: absolute; top: -20px; right: -10px; z-index: 1; box-shadow: 0 4px 0 rgba(74, 44, 79, 0.25); }
+.mg-stage { position: relative; flex: 1; min-height: 0; }
+/* The bubbles in a row: far apart, closer (🐢), touching (🐇), squashed (✨),
+   in the middle with the turtle's (rabbit's) path under them. */
+.mg-stage { --top: calc(50% - (var(--b) + 52px) / 2); }
+.magic.short .mg-stage { --top: calc(50% - var(--b) / 2); }
+.mg-row {
+  --m: calc((100% / var(--n, 3) - var(--b)) * 0.42);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--top);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.magic.slow .mg-row { --m: calc((100% / var(--n, 3) - var(--b)) * 0.14); }
+.magic.fast .mg-row { --m: 1px; }
+.magic.smash .mg-row { --m: calc(var(--b) * -0.48); }
+.mg-bubble {
+  flex: none;
+  width: var(--b);
+  height: var(--b);
+  margin: 0 var(--m);
+  display: grid;
+  place-items: center;
+  font-family: "Baloo 2", var(--ui-font);
+  font-weight: 800;
+  font-size: calc(var(--b) * 0.56);
+  line-height: 1;
+  color: var(--ink);
+  background: radial-gradient(circle at 32% 28%, #ffffff 0 11%, rgba(255, 255, 255, 0) 24%), radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 70%), var(--c, #ffb3d4);
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 4px 0 rgba(74, 44, 79, 0.2);
+  transform: scale(0);
+  transition: margin var(--ms, 0.45s) ease-in-out, transform 0.25s ease, opacity 0.3s ease, box-shadow 0.2s ease;
+}
+/* A long vowel says its name: its capital, in the colour of the letters. */
+.mg-bubble.name { color: #fff; background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85) 0 9%, rgba(255, 255, 255, 0) 22%), var(--accent-ink); }
+.mg-bubble.in { transform: scale(1); }
+.mg-bubble.in.say { transform: scale(1.16); box-shadow: 0 0 0 6px #fff6a8, 0 0 26px 10px rgba(255, 214, 77, 0.85); }
+.mg-bubble.pop-in { animation: mg-in 0.4s ease; }
+.mg-bubble.wobble { animation: mg-wobble 0.9s ease-in-out; }
+.mg-bubble.bump { animation: mg-bump 0.28s ease; }
+.magic.fast .mg-bubble { transition: margin var(--ms, 0.35s) cubic-bezier(0.3, 1.7, 0.5, 1), transform 0.2s ease, opacity 0.3s ease, box-shadow 0.15s ease; }
+.magic.smash .mg-bubble { transition: margin 0.26s ease-in, transform 0.26s ease-in, opacity 0.2s ease; transform: scale(0.8); }
+.magic.popped .mg-bubble { opacity: 0; transform: scale(0.2); }
+@keyframes mg-in { 0% { transform: scale(0); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes mg-wobble { 25% { rotate: -7deg; } 75% { rotate: 7deg; } }
+@keyframes mg-bump { 40% { translate: 0 -12px; scale: 1.05 0.92; } }
+/* The turtle creeping and the rabbit (rocket) hopping along under them. */
+.mg-runner {
+  position: absolute;
+  top: calc(var(--top) + var(--b) + 8px);
+  left: 8%;
+  font-size: 44px;
+  line-height: 1;
+  transition-property: left, opacity;
+  transition-timing-function: linear;
+  pointer-events: none;
+}
+.mg-runner.crawl { animation: mg-crawl 0.8s ease-in-out infinite; }
+.mg-runner.hop { animation: mg-hop 0.3s ease-in-out infinite; }
+@keyframes mg-crawl { 50% { translate: 0 -3px; } }
+@keyframes mg-hop { 50% { translate: 0 -16px; } }
+/* The pop: the picture and its word come out of where the bubbles met. */
+.mg-pop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+.magic.popped .mg-pop { opacity: 1; }
+.magic.popped .mg-pic, .magic.popped .mg-word { animation: mg-pic 0.6s ease; }
+.mg-pic { font-size: calc(var(--b) * 1.05); line-height: 1.1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; filter: drop-shadow(0 4px 0 rgba(74, 44, 79, 0.18)); }
+.mg-word { font-family: "Baloo 2", var(--ui-font); font-weight: 800; font-size: calc(var(--b) * 0.46); line-height: 1; }
+.mg-word .first { color: var(--accent-ink); }
+@keyframes mg-pic { 0% { transform: scale(0.1); } 60% { transform: scale(1.22); } 100% { transform: scale(1); } }
+.mg-spark {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  font-size: 26px;
+  line-height: 1;
+  pointer-events: none;
+  animation: mg-spark 1s ease-out forwards;
+}
+@keyframes mg-spark {
+  from { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.2); opacity: 0; }
+}
+/* The three things to tap: big pictures, no words; the next one bounces. */
+.mg-steps { display: flex; justify-content: center; gap: 22px; }
+.mg-step {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  font-size: 50px;
+  line-height: 1;
+  background: var(--paper);
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 5px 0 rgba(74, 44, 79, 0.25);
+  opacity: 0.55;
+  cursor: default;
+}
+.mg-step.hidden { display: none; }
+.mg-step.next { opacity: 1; background: #fff4b8; border-color: #e0a52a; cursor: pointer; animation: breathe 0.9s ease infinite, glow 0.9s ease infinite; }
+.mg-step.done { opacity: 0.35; }
+.mg-step.next:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(74, 44, 79, 0.25); }
+.mg-step.hint::after {
+  content: "👆";
+  position: absolute;
+  right: -16px;
+  bottom: -26px;
+  font-size: 40px;
+  animation: float 0.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.magic.short { --b: 116px; }
+
+/* ---- The Unicorn Village's letters on its game's end card (js/village-games.js) ---- */
+
+.mini-letters { display: grid; grid-template-columns: repeat(13, 1fr); gap: 3px 4px; max-width: 460px; margin: 4px auto 6px; }
+.mini-letters.hidden { display: none; }
+.mini-letters .ml {
+  height: 28px;
+  font-family: "Baloo 2", var(--ui-font);
+  font-weight: 800;
+  font-size: 19px;
+  line-height: 24px;
+  color: #b4a8c4;
+  background: #efeaf4;
+  border: 2px dashed #cdc2da;
+  border-radius: 9px;
+}
+.mini-letters .ml.on { color: var(--accent-ink); background: #fff4b8; border: 2px solid #e0a52a; }
+.mini-letters .ml.new { position: relative; animation: ml-new 0.9s ease; box-shadow: 0 0 14px 4px rgba(255, 214, 77, 0.9); }
+.mini-letters .ml.new::after { content: "✨"; position: absolute; right: -10px; top: -14px; font-size: 18px; animation: float 0.7s ease-in-out infinite; }
+.mini-letters.all .ml { animation: ml-wave 1.2s ease-in-out infinite; animation-delay: calc(var(--i) * 45ms); background: hsl(calc(var(--i) * 14), 95%, 86%); border-color: hsl(calc(var(--i) * 14), 70%, 55%); }
+@keyframes ml-new { 0% { transform: scale(0.6); } 45% { transform: scale(1.5) rotate(-6deg); } 100% { transform: scale(1); } }
+@keyframes ml-wave { 30% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
+/* All lit: two sounds go together now (b + E = 🐝). */
+.ml-two { display: flex; justify-content: center; align-items: center; gap: 6px; margin: 2px 0 6px; font-size: 30px; animation: pop 0.6s ease; }
+.ml-two.hidden { display: none; }
+.ml-two .b { width: 40px; height: 40px; display: grid; place-items: center; font-family: "Baloo 2", var(--ui-font); font-weight: 800; font-size: 24px; background: #ffb3d4; border: 3px solid var(--ink); border-radius: 50%; }
+.ml-two .b.name { color: #fff; background: var(--accent-ink); }
+
+/* A phone held sideways: smaller bubbles, pictures and letters. */
+@media (max-height: 520px) {
+  .magic { --b: 62px; bottom: max(6px, env(safe-area-inset-bottom)); height: min(290px, calc(100dvh - var(--hud) - 14px)); padding: 8px 10px 10px; gap: 4px; border-radius: 18px; }
+  .magic.short { --b: 76px; }
+  .magic .mg-close { top: -14px; right: -6px; }
+  .mg-stage { --top: calc(50% - (var(--b) + 38px) / 2); }
+  .mg-runner { font-size: 32px; top: calc(var(--top) + var(--b) + 4px); }
+  .mg-step { width: 64px; height: 64px; font-size: 34px; border-width: 3px; }
+  .mg-step.hint::after { font-size: 30px; right: -12px; bottom: -18px; }
+  .mg-spark { font-size: 20px; }
+  .mini-letters { max-width: 400px; margin: 2px auto 4px; }
+  .mini-letters .ml { height: 22px; font-size: 15px; line-height: 18px; border-radius: 7px; }
+  .ml-two { font-size: 22px; margin: 0 0 4px; }
+  .ml-two .b { width: 30px; height: 30px; font-size: 18px; }
 }

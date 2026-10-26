@@ -18,7 +18,12 @@
 // three pictures (four letters): its hint after a miss and its answer
 // after two, all lines already recorded. The narrator says what to do once
 // at the start (LINES.miniRhyme...). Answers here don't move her tier or
-// give stars; the coins come at the end.
+// give stars; the coins come at the end. Blending (the Unicorn Village's)
+// starts with its first steps, one sound and two sounds: its answer after
+// two misses is the sound magic (js/blend-magic.js), and at the one-sound
+// step a first try counts towards knowing that letter (so the step can be
+// passed here too), a missed letter comes back two rounds on, and the end
+// card shows the letters she knows.
 
 const VG_GROUND = 104;          // where things stand, in picture pixels
 const VG_ROW = [84, 132, 180];  // the three pictures
@@ -34,10 +39,11 @@ function vgHost(scene) {
   return sc ? sc.npcs.find(n => n.look === look && !n.mount && !n.caught) || null : null;
 }
 
-// Her tier for a kind, capped like the village asks it.
+// Her tier for a kind, capped like the village asks it (counted from after
+// blending's first steps, as the band is).
 function vgTier(kind, cap) {
-  const t = ((state.skill || {})[kind] || {}).t || 1;
-  return Math.max(1, Math.min(t, cap, Quiz.tierMax(kind)));
+  const t = Quiz.skill(kind).t || 1;
+  return Math.max(1, Math.min(t, cap + Quiz.lead(kind), Quiz.tierMax(kind)));
 }
 
 // A game's questions, each with another answer. `cfg` changes the tier's
@@ -148,11 +154,15 @@ function vgGlowRing(g, x, y, rx, ry, now) {
 
 // ---- Games where she picks one of three pictures ------------------------------
 
+// A question as a round: its pictures to pick from.
+const vgRound = q => ({ q, opts: q.options.map(o => ({ o, w: o.wrong, e: vgWord(o.wrong).e, right: !!o.right })) });
+
 // `skin` is the game's look in this edition: its name, pictures, what it
 // says and how it draws. Each picture `it` stands at (it.x, it.y).
 function vgPickGame(scene, cap, skin) {
   const kind = VILLAGE_GAMES[scene].kind;
   const ok = kind === 'rhyme' ? vgClear : undefined;
+  const blend = kind === 'blend';
   const picAt = (it, t, now) => {
     const p = skin.picAt(it, t, now);
     return p && { x: p.x + vgShake(it, now), y: p.y + (1 - vgIn(it, now)) * 10, s: p.s };
@@ -166,8 +176,7 @@ function vgPickGame(scene, cap, skin) {
     title: () => `${vgIcon(scene)} ${skin.name}`,
     pip: () => skin.pip,
     bag: () => skin.bag,
-    rounds: () => vgQuestions(kind, cap, () => ({ n: VILLAGE_GAMES.choices }), ok)
-      .map(q => ({ q, opts: q.options.map(o => ({ o, w: o.wrong, e: vgWord(o.wrong).e, right: !!o.right })) })),
+    rounds: () => vgQuestions(kind, cap, () => ({ n: VILLAGE_GAMES.choices }), ok).map(vgRound),
     items: r => r.opts.map((x, i) => Object.assign({}, x, skin.spot(i), { i, look: skin.looks[(mini.round * 2 + i) % skin.looks.length], state: 'live', born: performance.now() + i * 140, glow: false })),
     clue: r => ({ text: skin.clue(r), color: skin.color }),
     ask: skin.ask,
@@ -180,7 +189,14 @@ function vgPickGame(scene, cap, skin) {
     rows: [24, 118],
     box: it => ({ x0: it.x - 22, x1: it.x + 22, y0: it.y - 50, y1: it.y + 4 }),
     pointAt: (it, t) => picAt(it, t, performance.now()),
-    caught: skin.caught,
+    caught: it => { if (blend) vgTried(true); if (skin.caught) skin.caught(it); },
+    missed: blend ? () => vgTried(false) : undefined,
+    // Blending: the answer after two misses is the sound magic, and the
+    // end card shows her letters.
+    magic: r => r.q.magic || null,
+    picked: (r, it) => r.q.picked(it.o),
+    start: blend ? vgLettersStart : undefined,
+    finish: blend ? vgLettersEnd : undefined,
     update: skin.update,
     draw: {
       backdrop: skin.backdrop,
@@ -452,10 +468,11 @@ const VG_UNICORN = {
   catchMs: 1600,
   looks: ['pink', 'sky', 'mint', 'lavender', 'gold', 'snow', 'rainbow'],
   spot: i => ({ x: VG_ROW[i], y: VG_GROUND }),
-  // One dot for each sound.
-  clue: r => '●'.repeat(r.q.replay.filter(p => p.text).length),
-  // "Listen to the sounds. Tap the picture!" (or "Listen.") then /c/ /a/ /t/.
-  ask: (r, first) => [first ? vgSay('miniBlend') : { text: LINES.listen[0] }, { pause: 450 }].concat(r.q.replay),
+  // One dot for each sound; at the one-sound step its letter ("Ss").
+  clue: r => (r.q.letter ? r.q.letter.toUpperCase() + r.q.letter : '●'.repeat(r.q.replay.filter(p => p.text).length)),
+  // "Listen to the sounds. Tap the picture!" (or "Listen.") then /c/ /a/ /t/;
+  // at the one-sound step "Listen to the sound…" and /s/.
+  ask: (r, first) => [first ? vgSay(r.q.letter ? 'miniSound' : 'miniBlend') : { text: LINES.listen[0] }, { pause: 450 }].concat(r.q.replay),
   replay: r => r.q.replay,
   // On a little cloud over its head, flying along when it gallops off.
   picAt: (it, t, now) => {
@@ -509,6 +526,73 @@ const VG_UNICORN = {
     }
   },
 };
+
+// ---- The Unicorn (Car) Village's letters: blending's one-sound step --------------
+
+// A first try at a round of the one-sound step counts towards knowing its
+// letter (Quiz.practice: the step is passed there too, when it is the
+// last one); a miss brings that letter back two rounds on, with another
+// picture.
+function vgTried(right) {
+  const r = miniRound();
+  if (!r || r.q.kind !== 'oneSound' || r.q.recorded) return;
+  Quiz.practice(r.q, right && !mini.misses);
+  const i = mini.round + 2;
+  if (!right && i < mini.rounds.length && mini.rounds[i].q.letter !== r.q.letter) {
+    mini.rounds[i] = vgRound(Quiz.again(r.q, {}, { n: VILLAGE_GAMES.choices }));
+  }
+}
+
+// The end card shows every letter of the one-sound step small, lit when
+// she knows it. One she got to know in this game sparkles as its sound is
+// said, and when the last one lights up the two-sound step is open: the
+// letters wave, b + E ➜ 🐝 comes up and "You can blend two sounds now!".
+let vgKnew = new Set();
+function vgLettersStart() {
+  vgKnew = new Set(Quiz.letters().filter(x => x.known).map(x => x.l));
+}
+function vgLettersEnd() {
+  if (!mini.rounds.some(r => r.q.kind === 'oneSound')) return [];
+  const box = document.getElementById('mini-letters');
+  const two = document.getElementById('mini-two');
+  const letters = Quiz.letters();
+  const fresh = letters.filter(x => x.known && !vgKnew.has(x.l));
+  box.classList.remove('all');
+  box.innerHTML = letters.map((x, i) => `<span class="ml${x.known && vgKnew.has(x.l) ? ' on' : ''}" data-l="${x.l}" style="--i:${i}">${x.l}</span>`).join('');
+  box.classList.remove('hidden');
+  // Each part plays when the voice gets to it, or on the clock (the sound
+  // off, or slow): after the praise and the coins line.
+  const turn = mini.turn;
+  const parts = [];
+  let at = Sound.muted ? 700 : 2600;
+  const beat = (fn, ms) => {
+    let ran = false;
+    const run = () => { if (!ran && mini.turn === turn) { ran = true; fn(); } };
+    miniLater(Sound.muted ? ms : ms * 1.5 + 1500, run);
+    return { call: run };
+  };
+  for (const x of fresh) {
+    const light = () => {
+      const el = box.querySelector(`[data-l="${x.l}"]`);
+      el.classList.add('on', 'new');
+      Sound.tune('chime');
+    };
+    parts.push({ pause: 300 }, beat(light, at), Quiz.sayPart(x.l));
+    at += 800;
+  }
+  if (fresh.length && letters.every(x => x.known)) {
+    const party = () => {
+      box.classList.add('all');
+      two.innerHTML = '<span class="b">b</span><span class="b name">E</span>➜🐝';
+      two.classList.remove('hidden');
+      Sound.party();
+      for (let i = 0; i < 40; i++) miniSpark(MINI_W / 2 + (Math.random() - 0.5) * 160, MINI_H * 0.45, 1, RAINBOW[i % RAINBOW.length], 80);
+    };
+    const said = Sound.hasClip(line('blendTwo')) ? [{ text: line('blendTwo'), narrator: true }] : [];
+    parts.push({ pause: 400 }, beat(party, at + 300), ...said);
+  }
+  return parts;
+}
 
 // ---- Car Village: hear the sounds, tap the car --------------------------------
 

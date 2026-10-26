@@ -500,7 +500,8 @@ LINES.album = isCaptain() ? ['Your word chip book!', "Let's look at your word ch
 //   vowel      fill in the missing middle letter: c ? t
 //   ending     fill in the missing last letter: ca ?
 //   read       read a written word, pick its picture
-//   blend      hear a word's sounds ("/s/ /u/ /n/"), pick its picture
+//   blend      hear a word's sounds ("/s/ /u/ /n/"), pick its picture; it
+//              starts with one sound, then two (ONE_SOUND, TWO_SOUNDS)
 //   spell      hear a word, tap its letters (Fairy Village)
 const QUIZ_TYPES = {
   town: ['word', 'start', 'rhyme'],
@@ -844,6 +845,11 @@ const MINIMAL_SETS = [
 //   words     which word list (see Quiz bank in js/quiz.js)
 //   minimal   cards are words that differ in one sound (MINIMAL_SETS)
 //   lv        sentence level: 1, 2 or 'old' (SENTENCES)
+//   step      a first step before the tiers a kind had: its questions are
+//             of that kind of their own (blending's oneSound, twoSounds)
+//   then      that many cards once she knows LETTER_MASTERY.more letters
+//   letters   passed only by knowing every letter (LETTER_MASTERY), and a
+//             tier she never goes back down to
 // Spelling: `extra` letter tiles beside the word's own, `vowelFoil` one of
 // them a vowel, `firstGiven` the first letter is already in, `noX` no x
 // words, `setting` only when the parent panel turns it on.
@@ -864,18 +870,95 @@ const TIERS = {
   vowel:     [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],
   ending:    [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],
   read:      [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
-  blend:     [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
+  // One sound, then two (ONE_SOUND, TWO_SOUNDS below), then three-letter words.
+  blend:     [{ step: 'oneSound', n: 2, then: 3, letters: true }, { step: 'twoSounds', n: 2, far: true },
+    { n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, minimal: true }, { n: 3, words: 'BLEND4' }],
   sentence:  [{ n: 2, lv: 1, pics: true }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old', near: true }],
   meaning:   [{ n: 2, lv: 1 }, { n: 3, lv: 1 }, { n: 3, lv: 2 }, { n: 3, lv: 'old' }],
   spell:     SPELL_TIERS,
 };
-// The highest tier each place asks (every place starts at tier 1).
+// The highest tier each place asks (every place starts at tier 1), counted
+// from a kind's first tier without a `step`: blending's first steps come on
+// top, so the forest asks it up to its 6th tier, as up to the 4th before.
 const TIER_BAND = { town: [1, 4], house: [1, 4], forest: [1, 4], unicorn: [1, 3], dungeon: [1, 4], fairy: [1, 6] };
 // Up a tier after 5 right first tries of the last 6 at it (or the first 3
 // in a row, before her first miss of that kind); down after 2 misses in a
 // row. After a miss the next one is a tier easier, and every 4th question
 // is from the tier below; those two don't count.
 const SKILL = { window: 6, promoteAt: 5, placementRun: 3, demoteAfter: 2, reviewEvery: 4 };
+
+// ---- Sound blending's first steps (TIERS.blend, js/quiz.js) ------------------
+
+// Blending ("/s/ … /u/ … /n/", pick ☀️) starts with two steps before the
+// three-letter words:
+//   oneSound   she hears one letter's pure sound ("/s/") and picks the
+//              picture that starts with it, two cards and then three; she
+//              moves on once she knows every letter here (LETTER_MASTERY)
+//   twoSounds  she hears two ("/b/ … E") and picks the picture; a long vowel
+//              is said by its letter's name, as in the Monster Village
+// Every letter but x (no word starts with its /ks/), with words that start
+// with that very sound (no ch for c, th for t, the e of ear or the o of
+// one) and pictures she names for sure; ALIAS keeps a picture she may call
+// something else (👸 a princess) off a question about that other sound.
+const ONE_SOUND = [
+  { l: 'a', words: [['apple', '🍎'], ['ant', '🐜'], ['avocado', '🥑']] },
+  { l: 'b', words: [['bus', '🚌'], ['bed', '🛏️'], ['box', '📦'], ['bee', '🐝'], ['ball', '⚽'], ['banana', '🍌'], ['bear', '🐻'], ['book', '📖'], ['balloon', '🎈']] },
+  { l: 'c', words: [['cat', '🐱'], ['cake', '🎂'], ['cow', '🐮'], ['corn', '🌽'], ['carrot', '🥕'], ['cookie', '🍪'], ['camel', '🐫']] },
+  { l: 'd', words: [['dog', '🐶'], ['door', '🚪'], ['dinosaur', '🦕'], ['donut', '🍩'], ['dice', '🎲'], ['deer', '🦌']] },
+  { l: 'e', words: [['egg', '🥚'], ['elephant', '🐘']] },
+  { l: 'f', words: [['fox', '🦊'], ['fish', '🐟'], ['five', '5️⃣'], ['fire', '🔥'], ['foot', '🦶'], ['fork', '🍴'], ['four', '4️⃣']] },
+  { l: 'g', words: [['guitar', '🎸'], ['ghost', '👻'], ['girl', '👧']] },
+  { l: 'h', words: [['hat', '🎩'], ['hand', '✋'], ['horse', '🐴'], ['house', '🏠'], ['hippo', '🦛'], ['hammer', '🔨'], ['honey', '🍯']] },
+  { l: 'i', words: [['insect', '🦗']] },
+  { l: 'j', words: [['juice', '🧃']] },
+  { l: 'k', words: [['kite', '🪁'], ['key', '🔑'], ['kiwi', '🥝']] },
+  { l: 'l', words: [['leg', '🦵'], ['lion', '🦁'], ['lemon', '🍋'], ['leaf', '🍃'], ['lock', '🔒'], ['lizard', '🦎']] },
+  { l: 'm', words: [['moon', '🌙'], ['monkey', '🐵'], ['mouse', '🐭'], ['milk', '🥛'], ['map', '🗺️'], ['mushroom', '🍄'], ['mango', '🥭']] },
+  { l: 'n', words: [['nose', '👃'], ['nine', '9️⃣']] },
+  { l: 'o', words: [['octopus', '🐙']] },
+  { l: 'p', words: [['pig', '🐷'], ['pen', '🖊️'], ['pizza', '🍕'], ['popcorn', '🍿'], ['pumpkin', '🎃'], ['peach', '🍑']] },
+  { l: 'q', words: [['queen', '👸']] },
+  { l: 'r', words: [['ring', '💍'], ['rainbow', '🌈'], ['robot', '🤖'], ['rice', '🍚']] },
+  { l: 's', words: [['sun', '☀️'], ['sock', '🧦'], ['six', '6️⃣'], ['soap', '🧼'], ['sandwich', '🥪']] },
+  { l: 't', words: [['ten', '🔟'], ['tent', '⛺'], ['tomato', '🍅'], ['tooth', '🦷']] },
+  { l: 'u', words: [['umbrella', '☂️']] },
+  { l: 'v', words: [['violin', '🎻'], ['van', '🚐'], ['volcano', '🌋']] },
+  { l: 'w', words: [['watermelon', '🍉'], ['web', '🕸️']] },
+  { l: 'y', words: [['yoyo', '🪀'], ['yarn', '🧶']] },
+  { l: 'z', words: [['zero', '0️⃣'], ['zebra', '🦓']] },
+];
+Object.assign(ALIAS, { insect: ['bug', 'grasshopper'], juice: ['milk'], queen: ['princess'] });
+// Two-sound words: [word, picture, its sounds], a long vowel as its
+// capital (said by the narrator as the letter's name: b-E is "/b/ … E").
+// Words she names for sure from the picture: no tie (👔 a shirt), tea (🍵 a
+// cup), toe, bow (🎀 a ribbon) or ape (🦍 a monkey).
+const TWO_SOUNDS = [
+  ['bee', '🐝', ['b', 'E']], ['key', '🔑', ['k', 'E']], ['pie', '🥧', ['p', 'I']], ['car', '🚗', ['c', 'R']],
+  ['ear', '👂', ['E', 'r']], ['egg', '🥚', ['e', 'g']], ['ice', '🧊', ['I', 's']], ['eight', '8️⃣', ['A', 't']],
+];
+// The one-sound step is passed by knowing every letter on it. A letter is
+// known once she has picked its picture right on the first try `right`
+// times, and her latest try at it was right. Questions favour letters she
+// doesn't know yet, `working` at a time (new ones in LETTER_ORDER), bring a
+// missed one back `soon` (that many one-sound questions later), and now and
+// then (`review`, a share) ask one she knows. Two cards until she knows
+// `more` letters, then three.
+const LETTER_MASTERY = { right: 2, working: 4, soon: 2, review: 0.2, more: 8 };
+// New letters come in this order, the first ones the easiest to hear apart.
+const LETTER_ORDER = 'satipnckehrmdgoulfbjzwvyq';
+// The easy word the sound magic (js/blend-magic.js) shows the first time
+// she is at the two-sound and the three-sound step.
+const MAGIC_INTRO = { 2: 'bee', 3: 'sun' };
+// Asked by the villager before the sound (the one-sound step).
+LINES.oneSound = ['Which picture starts with this sound?', 'Listen! Which one starts with this sound?'];
+// The narrator: the Unicorn Village's game at the one-sound step, the sound
+// magic (only once they are recorded), and the two-sound step opening.
+LINES.miniSound = ['Listen to the sound. Tap the picture!'];
+LINES.magicHello = ["Let's put the sounds together!"];
+LINES.magicSlow = ['Slowly…'];
+LINES.magicFast = ['Faster!'];
+LINES.magicPop = ['Pop!'];
+LINES.blendTwo = ['You can blend two sounds now!'];
 
 // ---- Long vowels: the Monster Village's questions (level 6) ----------------
 
@@ -1172,6 +1255,8 @@ LINES.fishDone = isCaptain()
 //   forest   rhyme  hop on the mushroom that rhymes (hatch the egg)
 //   fairy    spell  tap the letters of a word she hears, in order
 //   unicorn  blend  hear /c/ /a/ /t/, tap the unicorn (car) with its picture
+//                   (at the first steps /s/ or /b/ … E; its end card shows
+//                   the letters she knows)
 //   dungeon  read   read a word, open the chest (free the crystal) with its picture
 const VILLAGE_GAMES = {
   rounds: FISHING.rounds, choices: 3, coins: FISHING.coins,
