@@ -4,7 +4,11 @@
 // and the day's chest, play time and a parent's wake, stickers, dust fed to
 // a friend, unknown fields, the parent's settings, tiers and picture hints,
 // and the kinds of question this version adds (the long vowels), also next
-// to tabs still on the two older releases (their own merge code, from git).
+// to tabs still on the two older releases (their own merge code, from git);
+// the first blending steps (one sound, two sounds) kept apart from the
+// blend tier so a child already blending keeps her level, also next to tabs
+// on the deployed version; and the letters she knows, merged letter by
+// letter across tablets and editions.
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -453,6 +457,132 @@ if (M1 && M23) {
     check(`new kinds: a tab on the ${name} keeps their answers and tiers through its merge`, has(o, LONG_IDS.concat('word:sun')) && tiers(o), o);
     const next = [A.merge(b, o, 'mine'), A.merge(o, b, 'theirs')];
     check(`new kinds: and this version's next merge after it has them`, next.every(m => has(m, LONG_IDS.concat('word:sun', 'word:dog')) && tiers(m)), next[0]);
+  }
+}
+
+// ---- Blending's first steps (one sound, two sounds) and the letters she knows -------
+// Blending got two tiers before its three-sound words. Her tier counted from
+// one sound is `blendFirst` (up to 3) and, from three sounds on, `blend` in
+// its old count, which tabs on older versions (the first release, the
+// previous one, the deployed game) read and move as they always did. The
+// letters she knows (`letters` in skill, shared by both editions) join
+// letter by letter. `reader` reads a save as a version of the game does:
+// her blending tier (Quiz.skill('blend')) and the letters she knows.
+function reader(ref) {
+  const files = ['js/data.js', 'js/progress.js', 'js/quiz.js'];
+  const read = f => {
+    if (!ref) return fs.readFileSync(path.join(root, f), 'utf8');
+    const r = spawnSync('git', ['-C', root, 'show', `${ref}:${f}`], { maxBuffer: 1 << 26 });
+    return r.status === 0 ? r.stdout.toString() : null;
+  };
+  const src = files.map(read);
+  if (src.some(x => x === null)) return null;
+  const ctx = { location: { search: '' }, crypto: require('crypto').webcrypto, localStorage: { getItem: () => null, setItem() {} } };
+  vm.createContext(ctx);
+  vm.runInContext(`${src.join('\n')}
+function line(k) { return LINES[k][0]; }
+function rec() { return null; }
+function pick(a) { return a[0]; }
+function shuffle(a) { return a; }
+var state = {};`, ctx);
+  const Q = vm.runInContext('Quiz', ctx);
+  const read_ = save => {
+    ctx.state = { skill: JSON.parse(JSON.stringify((save && save.skill) || {})), history: JSON.parse(JSON.stringify((save && save.history) || {})), settings: {} };
+    const k = Q.skill('blend');
+    return { t: k.t, best: k.best, known: Q.letters ? Q.letters().filter(x => x.known).map(x => x.l).join('') : '', skill: ctx.state.skill };
+  };
+  return Object.assign(read_, { Q, ctx });
+}
+{
+  const now = reader();
+  const deployedReader = reader('origin/main');
+  const D = device('princess', 'dD', 'origin/main');
+  const sb = (t, n, extra) => Object.assign({ t, best: t, w: [], last: [], placed: true, easy: false, n }, extra);
+  const blendAnswer = { kind: 'blend', tries: 1, right: 1, wrong: 0, last: 9 };
+  // A child who plays blend keeps her level: her tier, two up (three-letter words were tier 1).
+  const old = play(A, { edition: 'princess' }, 2, 0, { skill: { blend: sb(2, 30) }, history: { 'blend:cat': blendAnswer } });
+  const r1 = now(old);
+  check('blend steps: a child who plays blend keeps her level, two tiers up (her three-letter words)', r1.t === 4 && r1.best === 4, r1);
+  check('blend steps: a new child starts at one sound, also with an untouched entry (a parent panel opened)', now({ skill: {} }).t === 1 && now({ skill: { blend: sb(1, 0, { placed: false }) } }).t === 1);
+  check('blend steps: a child who has only begun (tier 1, a few answers) is at three sounds', now({ skill: { blend: sb(1, 3) } }).t === 3);
+  // A save from before tiers: her tier from her answers, in blending's old count.
+  const many = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`blend:w${i}`, { kind: 'blend', tries: 1, right: i < 10 ? 1 : 0, wrong: i < 10 ? 0 : 1, last: 9 }]));
+  const migrated = now.Q.migrate([many]);
+  check('blend steps: a save from before tiers starts two up, below the hard tiers', migrated.blend.t === 2 && now({ skill: migrated }).t === 4, migrated.blend);
+  // Once: this version's save of it reads the same, and keeps `blend` in its own count.
+  const saved = Object.assign({}, old, { skill: r1.skill });
+  check('blend steps: shifted once (this version\'s save reads the same, `blend` unchanged)', now(saved).t === 4 && saved.skill.blend.t === 2 && saved.skill.blendFirst.t === 3, saved.skill);
+  if (deployedReader) check('blend steps: the deployed game reads blending in its own count, as before', deployedReader(saved).t === 2);
+  const both = A.merge(play(A, saved, 1, 0), play(B, saved, 1, 0), 'mine');
+  check('blend steps: two tablets on this version, joined, still read the same', now(both).t === 4 && now(B.merge(both, saved, 'theirs')).t === 4);
+  // A guest's tablet on this version (one sound, a few answers) joins an
+  // account from before (three-letter words and up): she keeps her level.
+  const guest = { edition: 'princess', stars: 3, skill: { blendFirst: sb(1, 3, { placed: false }), letters: { s: { right: 2, hit: 9, last: 9 } } } };
+  const acct = play(B, { edition: 'princess' }, 5, 0, { skill: { blend: sb(3, 40) } });
+  const g = A.merge(guest, acct, 'foreign');
+  check('blend steps: a guest on this version joining an account from before keeps the account\'s level, and her letters', now(g).t === 5 && now(A.merge(acct, guest, 'foreign')).t === 5 && now(g).known === 's', now(g));
+  // A new child on this version (one sound, 10 answers) and an older copy that
+  // asked blend twice: her steps stay, and her best is not raised.
+  const kid = play(A, { edition: 'princess' }, 1, 0, { skill: { blendFirst: sb(1, 10) } });
+  const older = play(B, { edition: 'princess' }, 1, 0, { skill: { blend: sb(1, 2) } });
+  const kids = [A.merge(kid, older, 'mine'), A.merge(kid, older, 'theirs'), B.merge(older, kid, 'mine')].map(now);
+  check('blend steps: a new child\'s first steps outweigh an older copy with fewer answers, best not raised', kids.every(x => x.t === 1 && x.best === 1), kids);
+  // A parent sets her back to two sounds on this version: both entries are
+  // stamped, so a stale tablet with more answers doesn't undo it, either way.
+  now.ctx.state = { skill: JSON.parse(JSON.stringify(saved.skill)), history: {}, settings: {} };
+  now.Q.setTier('blend', 2);
+  const lowered = Object.assign({}, saved, { skill: now.ctx.state.skill });
+  const stale = Object.assign(play(B, saved, 1, 0), { skill: Object.assign({}, saved.skill, { blend: sb(2, 35), blendFirst: sb(3, 31) }) });
+  const parentWins = [B.merge(stale, lowered, 'mine'), A.merge(lowered, stale, 'mine'), A.merge(lowered, stale, 'theirs')].map(now);
+  check('blend steps: a tier the parent sets on this version stays next to a stale tablet', parentWins.every(x => x.t === 2), parentWins);
+  // The first release keeps the entry with more answers: it never moves
+  // `blendFirst` (it doesn't know it), so the stamp's one more answer wins.
+  const m1 = Object.assign(play(M1 || A, saved, 1, 0), { skill: Object.assign({}, saved.skill, { blend: sb(2, 31) }) });
+  if (M1) check('blend steps: ... and next to a tab on the first release', now(M1.merge(m1, lowered, 'mine')).t === 2);
+  // Tabs on older releases (M1, M2+M3) and the deployed game: they drop the
+  // first steps' answers when they load (kinds they don't know), keep
+  // `blendFirst` and the letters, and move `blend` in its own count, which
+  // this version then reads two up.
+  const L = (right, hit, last) => ({ right, hit, last });
+  const mine = play(A, { edition: 'princess' }, 1, 0, { skill: { blendFirst: sb(3, 30), blend: sb(2, 30), letters: { s: L(2, 10, 10), a: L(2, 20, 20) } },
+    history: { 'oneSound:s': { kind: 'oneSound', tries: 2, right: 2, wrong: 0, last: 10 }, 'twoSounds:bee': { kind: 'twoSounds', tries: 1, right: 1, wrong: 0, last: 11 } } });
+  for (const [name, P] of [['first release', M1], ['previous release', M23], ['deployed game', D]]) {
+    if (!P) continue;
+    // Its copy: loaded from this version's, without those answers, and blend moved up a tier.
+    const theirs = play(P, Object.assign({}, mine, { history: {}, skill: Object.assign({}, mine.skill, { blend: sb(3, 31) }) }), 1, 0);
+    const o = P.merge(theirs, mine, 'mine');
+    const r = now(o);
+    check(`blend steps: a tab on the ${name} keeps the first steps and the letters, and its move counts here`, r.t === 5 && r.known === 'as' && !!o.history['oneSound:s'] && !!o.history['twoSounds:bee'], { t: r.t, known: r.known, skill: o.skill });
+    const back = [A.merge(mine, o, 'theirs'), B.merge(o, mine, 'mine')].map(now);
+    check(`blend steps: ... and this version's next merge after it too`, back.every(x => x.t === 5 && x.known === 'as'), back);
+  }
+}
+{
+  // The letters she knows, field by field: a later miss on one tablet
+  // undoes a letter (her latest try was wrong); a right older than the
+  // other's miss doesn't; two tablets' letters add up; and both editions
+  // share them (skill).
+  const now = reader();
+  const L = (right, hit, last) => ({ right, hit, last });
+  const ed = (P, edition, letters) => play(P, { edition }, 1, 0, { skill: { letters } });
+  const a = ed(A, 'princess', { s: L(2, 100, 100), a: L(2, 50, 50), i: L(3, 90, 90) });
+  const b = ed(B, 'princess', { s: L(1, 40, 120), t: L(2, 70, 70), i: L(1, 30, 60) });
+  const all = [A.merge(a, b, 'mine'), A.merge(a, b, 'theirs'), B.merge(b, a, 'mine'), B.merge(b, a, 'theirs')].map(m => now(m).known);
+  check('letters: joined letter by letter, a later miss counts, an older one doesn\'t (both ways)', all.every(k => k === 'ait'), all);
+  const twice = A.merge(ed(A, 'princess', { p: L(1, 10, 10) }), ed(B, 'princess', { p: L(1, 20, 20) }), 'mine');
+  check('letters: right once on each tablet is right once (as answers join: the larger count)', now(twice).known === '' && twice.skill.letters.p.right === 1);
+  const p = ed(A, 'princess', { s: L(2, 10, 10) });
+  const c = Object.assign(ed(C, 'captain', { a: L(2, 20, 20) }), { other: { princess: { edition: 'princess' } } });
+  const m = C.merge(c, p, 'mine');
+  check('letters: the robot game and the princess game share them', now(m).known === 'as' && now(m.other.princess).known === 'as', [m.skill, m.other.princess.skill]);
+  check('letters: merging again changes nothing', A.same(A.merge(m, p, 'mine'), A.merge(m, m, 'mine')));
+  // An older tab sends its older letters (its own copy wins whole there); this
+  // version's next merge has them all again.
+  for (const [name, P] of [['previous release', M23], ['first release', M1]]) {
+    if (!P) continue;
+    const newer = ed(A, 'princess', { s: L(2, 10, 10), a: L(2, 20, 20), t: L(2, 30, 30) });
+    const o = P.merge(play(P, ed(P, 'princess', { s: L(2, 10, 10) }), 1, 0), newer, 'mine');
+    check(`letters: after a tab on the ${name} sent an older copy, this version's merge has them all`, now(A.merge(newer, o, 'theirs')).known === 'ast' && now(B.merge(o, newer, 'mine')).known === 'ast', o.skill);
   }
 }
 

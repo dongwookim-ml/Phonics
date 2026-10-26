@@ -13,7 +13,10 @@ const PARENT_KINDS = [
   ['vowel', '가운데 소리', placeName('forest')],
   ['ending', '끝소리', placeName('forest')],
   ['read', '읽기', `${placeName('forest')} · ${placeName('fairy')}`],
-  ['blend', '소리 합치기', `${placeName('forest')} · ${placeName('fairy')}`],
+  ['blend', '소리 합치기', `${placeName('forest')} · ${placeName('fairy')} · ${placeName('unicorn')} 놀이`],
+  // Its first steps (1단계 and 2단계 of 소리 합치기), counted on their own.
+  ['oneSound', '소리 합치기 1단계 · 한 소리', '글자 25개'],
+  ['twoSounds', '소리 합치기 2단계 · 두 소리', ''],
   ['sentence', '문장 듣기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
   ['meaning', '뜻 맞추기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
   ['spell', '스펠링', placeName('fairy')],
@@ -152,6 +155,8 @@ function parentLabel(id) {
     const x = SENTENCES.concat(SENTENCES_L1, SENTENCES_L2).find(s => s.s === key);
     return `${key.replace('{}', '___')}${x ? ` (${x.w[0]})` : ''}`;
   }
+  // A letter of blending's one-sound step: its sound.
+  if (kind === 'oneSound') return `/${key}/`;
   // A written-only word (longWord: hope) has no picture.
   const hit = Quiz.words()[key];
   return hit && hit.e ? `${hit.e} ${key}` : key;
@@ -159,7 +164,16 @@ function parentLabel(id) {
 
 // Her tier in a kind (js/quiz.js): "단계 2 / 4" with − and + to set it, the
 // best she has reached, and how many of her last first tries were right.
+// Blending's first steps are tiers of 소리 합치기, set there: the one-sound
+// step shows the letters she knows (lit) instead, the two-sound step nothing.
 function parentTier(kind) {
+  if (kind === 'oneSound') {
+    const letters = Quiz.letters();
+    const chips = letters.map(x => `<span class="l-chip${x.known ? ' good' : ''}">${x.l}</span>`).join('');
+    return `<div class="k-tier"><span class="tier-n">아는 글자 <b>${letters.filter(x => x.known).length}</b> / ${letters.length}</span>
+      <span class="tier-more">두 번 한 번에 맞히고, 마지막에도 맞혀야 알아요</span></div><div class="parent-letters k-letters">${chips}</div>`;
+  }
+  if (!Quiz.tierMax(kind)) return '';
   const k = Quiz.skill(kind);
   const max = Quiz.tierMax(kind);
   const t = Math.min(k.t, max);

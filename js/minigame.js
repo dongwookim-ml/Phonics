@@ -74,6 +74,12 @@ const MINI_EMOJI = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", s
 //   box(it)             where a thing can be tapped, in picture pixels
 //   tap(it)             optional: a game that takes the tap itself (spelling)
 //   caught(it), missed(it), leave(items), update(dt, now)   optional, for the pictures
+//   start(), finish()   optional: as it opens, and what else the end card
+//                       shows and says (the Unicorn Village's letters)
+//   magic(r), picked(r, it)   optional: the round's answer after two misses
+//                       is the sound magic (js/blend-magic.js) with this
+//                       word, after what she picked; so is a first round at
+//                       a new step of blending, before it is asked
 //   pointAt(it, t)      where its picture is (the finger and the 👆 point there)
 //   rows                optional [top, bottom]: the rows of the box that
 //                       must show, so a short screen shows them bigger
@@ -109,10 +115,18 @@ function openMini(npc, g = miniGameOf(npc)) {
   state.busy = true;
   miniClear();
   Object.assign(mini, { game: g, npc, rounds: g.rounds(), round: -1, items: [], caught: [], anim: null, winning: false, sparks: [], ripples: [], last: 0, trolley: 104, tapped: false });
+  if (g.start) g.start();
   mini.title.textContent = g.title();
   mini.end.classList.add('hidden');
   mini.el.classList.remove('hidden');
-  miniNext(true);
+  // The first round at a new step of blending: the sound magic first,
+  // with an easy word (js/blend-magic.js).
+  const intro = g.magic && mini.rounds[0] && blendMagicIntro(mini.rounds[0].q);
+  if (intro) {
+    const turn = ++mini.turn;
+    mini.locked = true;
+    openBlendMagic(intro, { intro: true, done: () => { if (mini.turn === turn) miniNext(true); } });
+  } else miniNext(true);
   if (!mini.loop) mini.loop = requestAnimationFrame(miniFrame);
 }
 
@@ -120,6 +134,7 @@ function closeMini() {
   if (mini.el.classList.contains('hidden')) return;
   Sound.tap();
   Sound.say([]);
+  closeBlendMagic(); // its show, if one plays over it
   miniClear();
   mini.turn++;
   mini.el.classList.add('hidden');
@@ -163,7 +178,7 @@ function miniSay(parts, ms, ready) {
 // stop the win.
 function miniReplay() {
   const r = miniRound();
-  if (!r || mini.anim || mini.winning || !mini.end.classList.contains('hidden')) return;
+  if (!r || mini.anim || mini.winning || !mini.end.classList.contains('hidden') || blendMagicShown()) return;
   Sound.tap();
   // Still waiting for it: ask again, and the things open after it.
   if (mini.locked) miniAsk(false);
@@ -233,7 +248,23 @@ function miniMiss(it) {
   const left = mini.items.some(x => x.state === 'live' && !x.right);
   const show = mini.misses >= 2 || !left;
   if (show) miniGlow(x => x.right);
+  const m = show && g.magic && g.magic(r);
+  if (m) { miniMagic(g.picked(r, it), m); return; }
   miniHint((show ? g.show : g.teach)(r, it), 5000);
+}
+
+// The answer as the sound magic (js/blend-magic.js): what she picked, the
+// show over the game, and then she taps the one glowing.
+function miniMagic(parts, m) {
+  const turn = ++mini.turn;
+  mini.locked = true;
+  let shown = false;
+  const go = () => {
+    if (shown || mini.turn !== turn) return;
+    shown = true;
+    openBlendMagic(m, { done: () => { if (mini.turn === turn) mini.locked = false; } });
+  };
+  miniSay(parts.concat({ pause: 200 }, { call: go }), 4000, go);
 }
 
 // The right one glows, with a 👆 on it.
@@ -265,9 +296,11 @@ function miniFinish() {
   for (let i = 0; i < 40; i++) miniSpark(MINI_W / 2 + (Math.random() - 0.5) * 120, MINI_H * 0.6, 1, MINI_COLORS[i % MINI_COLORS.length], 70);
   mini.catch.textContent = `${g.bag()} ${mini.caught.map(it => it.prize || it.e).join(' ')}`;
   mini.coins.textContent = `🪙 +${FISHING.coins}`;
+  for (const id of ['mini-letters', 'mini-two']) document.getElementById(id).classList.add('hidden');
+  const more = g.finish ? g.finish() : [];
   mini.end.classList.remove('hidden');
   mini.endAt = performance.now();
-  Sound.say([{ pause: 400 }].concat(g.done()), voiceOf(mini.npc));
+  Sound.say([{ pause: 400 }].concat(g.done(), more), voiceOf(mini.npc));
 }
 
 // Round pips (a picture for each one won) and the box at the top.

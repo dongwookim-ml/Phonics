@@ -11,6 +11,8 @@
 //            and a hint, then she tries again (see choose in game.js)
 //   picked(o) just what she picked, before the answer is shown
 //   model    speech parts that show the answer after a second miss
+//   magic    optional { w, e, parts }: blending shows that answer as the
+//            sound magic with this word instead (js/blend-magic.js)
 // `ask` holds Quiz.READY where the target has been heard: the cards can be
 // tapped from there on.
 //
@@ -31,6 +33,8 @@ const Quiz = (() => {
   // A word whose vowel says its name (LONG_VOWELS) also has `long`, its
   // sounds with that vowel as a capital letter (c-A-k), `team`, how the
   // vowel is spelled (a_e, oa), and `says`, the letter whose name it says.
+  // A two-sound word (TWO_SOUNDS, blending's second step) has `two`, its
+  // sounds the same way (b-E).
   let index = null;
   function words() {
     if (index) return index;
@@ -52,6 +56,9 @@ const Quiz = (() => {
     WORD_FAMILIES.forEach(f => f.forEach(([w, e]) => add(w, e)));
     RHYME_SETS.concat(LONG_RHYMES).forEach(r => r.set.forEach(([w, e]) => add(w, e)));
     for (const x of SENTENCES.concat(SENTENCES_L1, SENTENCES_L2)) { add(x.w[0], x.w[1]); x.other.forEach(([w, e]) => add(w, e)); }
+    // Blending's first steps: the one-sound step's pictures, the two-sound words.
+    for (const s of ONE_SOUND) for (const [w, e] of s.words) add(w, e);
+    for (const [w, e, two] of TWO_SOUNDS) { add(w, e); index[w].two = two; }
     return index;
   }
   const entry = ([w]) => words()[w];
@@ -163,6 +170,11 @@ const Quiz = (() => {
     longRead: (npc, cfg) => withId('longRead', BANK[cfg.words]()),
     longWord: (npc, cfg) => withId('longWord', longWords().filter(x => (!cfg.easy || EASY_TEAMS.has(x.team)) && (!cfg.twin || twinOf(x.w)))),
     longRhyme: () => withId('longRhyme', longRhymes().filter(r => rhymePairs(r).length).map(r => ({ r, w: r.set[0][0] }))),
+    // Blending's first steps (TIERS.blend tiers with a `step`): a letter's
+    // pure sound, one question per letter whatever its picture, and the
+    // two-sound words.
+    oneSound: () => withId('oneSound', ONE_SOUND.map(s => ({ l: s.l, w: s.l }))),
+    twoSounds: () => withId('twoSounds', TWO_SOUNDS.map(entry)),
   };
   const history = () => (typeof state !== 'undefined' && state.history) || {};
   const solved = id => (history()[id] || {}).right > 0;
@@ -189,7 +201,7 @@ const Quiz = (() => {
   function take(kind, npc, cfg) {
     const all = pools[kind](npc, cfg);
     const back = want && all.find(x => x.id === want);
-    const x = back || choose(kind, all);
+    const x = back || (kind === 'oneSound' ? chooseLetter(all) : choose(kind, all));
     remember(kind, x.w, all.length);
     return x;
   }
@@ -208,13 +220,99 @@ const Quiz = (() => {
     return list[list.length - 1];
   }
 
+  // ---- Letters she knows (blending's one-sound step) --------------------------
+  // A letter is known once she has picked its picture right on the first try
+  // LETTER_MASTERY.right times and her latest try at it was right. Like her
+  // tiers, that is hers in both editions: state.skill.letters, { s: { right,
+  // hit, last } }, `right` her right first tries, `hit` when the latest of
+  // them was and `last` when her latest try was. Each only grows, so two
+  // tablets' and two editions' join letter by letter, field by field,
+  // without losing either (joinSkill in js/progress.js).
+  function letterLog() {
+    if (typeof state === 'undefined') return {};
+    const all = state.skill || (state.skill = {});
+    return all.letters || (all.letters = {});
+  }
+  function knows(l) {
+    const h = letterLog()[l];
+    return !!h && (h.right | 0) >= LETTER_MASTERY.right && (h.hit || 0) > 0 && h.hit >= (h.last || 0);
+  }
+  const knownLetters = () => ONE_SOUND.filter(s => knows(s.l)).map(s => s.l);
+  // Missed letters to ask again soon, by how many one-sound questions have
+  // been made (this visit): [{ l, due }].
+  let soon = [];
+  let lettersAsked = 0;
+  function missedLetter(l) {
+    soon = soon.filter(s => s.l !== l).concat({ l, due: lettersAsked + LETTER_MASTERY.soon });
+  }
+  // The next letter: a missed one when it is due back, now and then one she
+  // knows, else one she is learning: a few at a time (answered, or asked
+  // lately, as a game's rounds are made all at once), new ones in
+  // LETTER_ORDER, the one she missed last time more often, and never the
+  // same one twice in a row when there is another.
+  function chooseLetter(all) {
+    lettersAsked++;
+    const due = soon.find(s => s.due <= lettersAsked);
+    if (due) {
+      soon = soon.filter(s => s !== due);
+      const back = all.find(x => x.l === due.l);
+      if (back) return back;
+    }
+    const known = all.filter(x => knows(x.l));
+    const open = all.filter(x => !knows(x.l));
+    if (known.length && (!open.length || Math.random() < LETTER_MASTERY.review)) return pick(fresh('oneSound', known));
+    const begun = x => !!letterLog()[x.l] || (recent.oneSound || []).includes(x.l);
+    const tried = open.filter(begun);
+    const next = [...LETTER_ORDER].map(l => open.find(x => x.l === l && !begun(x))).find(Boolean);
+    let list = tried.length < LETTER_MASTERY.working && next ? tried.concat(next) : tried.length ? tried : open;
+    const last = (recent.oneSound || []).slice(-1)[0];
+    if (list.length > 1) list = list.filter(x => x.l !== last);
+    const weight = x => { const h = letterLog()[x.l]; return h && !(h.hit >= h.last) ? 3 : 1; };
+    let r = Math.random() * list.reduce((a, x) => a + weight(x), 0);
+    for (const x of list) if ((r -= weight(x)) < 0) return x;
+    return list[list.length - 1];
+  }
+  // The one-sound step is passed by knowing every letter: she is up a tier
+  // then (a level-up), wherever she answered, a village's game too. Its
+  // ladder is the kind it is a step of (blend).
+  const ladderOf = step => Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === step));
+  function lettersPass(q) {
+    const kind = ladderOf('oneSound');
+    const k = skill(kind);
+    const c = TIERS[kind][k.t - 1];
+    if (!c || !c.letters || !ONE_SOUND.every(s => knows(s.l))) return false;
+    k.t++;
+    k.w = [];
+    if (k.t > (k.best || 1)) { k.best = k.t; if (q) q.levelUp = true; }
+    if (q) q.twoOpen = true;
+    return true;
+  }
+  // A first try at a one-sound question: her count for its letter (each
+  // time later than the one before, even within one millisecond), and a
+  // miss brings the letter back soon.
+  function letterTry(q, right) {
+    const log = letterLog();
+    const e = log[q.letter] || (log[q.letter] = { right: 0, hit: 0, last: 0 });
+    const now = Math.max(Date.now(), (e.last || 0) + 1);
+    if (right && !q.misses) Object.assign(e, { right: (e.right | 0) + 1, hit: now });
+    e.last = now;
+    if (!right) missedLetter(q.letter);
+  }
+
   // ---- Tiers -----------------------------------------------------------------
   // Level 6 is the Monster Village and its tower.
   const placeOf = npc => (npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
   const settings = () => (typeof state !== 'undefined' && state.settings) || {};
   // Tiers a kind has; a tier with a `setting` only once a parent turns it on.
   const allowed = c => !c.setting || settings()[c.setting];
-  const tierMax = kind => TIERS[kind].filter(allowed).length;
+  // A step kind (oneSound) has none of its own: it is a tier of its ladder.
+  const tierMax = kind => (TIERS[kind] || []).filter(allowed).length;
+  // A kind's first steps (blending's one sound and two sounds): tiers with a
+  // `step`, before the ones it had. A place's band counts from after them.
+  const leadOf = kind => (TIERS[kind] || []).filter(c => c.step).length;
+  // The tiers whose questions are of this kind: its own, or for a step kind
+  // the tier of its ladder it is.
+  const tiersOf = kind => (TIERS[kind] ? TIERS[kind].filter(c => !c.step) : Object.values(TIERS).flat().filter(c => c.step === kind));
   const newSkill = () => ({ t: 1, best: 1, w: [], last: [], placed: false, easy: false, n: 0 });
   // Her level in a kind (state.skill, saved): t her tier, best the highest
   // she has reached, w her last first-try answers at t (1 right, 0 missed),
@@ -222,14 +320,48 @@ const Quiz = (() => {
   function skill(kind) {
     if (typeof state === 'undefined') return newSkill();
     const all = state.skill || (state.skill = {});
+    if (leadOf(kind)) return stepped(kind, all);
     return all[kind] || (all[kind] = newSkill());
+  }
+  // A kind with first steps keeps its level in two entries: `<kind>First`
+  // from the first step up to the first tier it had before them (blendFirst:
+  // 1 one sound, 2 two sounds, 3 three sounds), and `<kind>` as before, in
+  // its own count from there (blend: 1 for three-letter words). So a tab
+  // still on an older version of the game, which knows only `blend`, reads
+  // and moves her tier there as it always did (js/progress.js). This is one
+  // view of both: t and best counted from the first step; the rest (w,
+  // last, easy, n, placed) is the entry of the step she is on. A child who
+  // plays blend already when this version first looks is past the steps
+  // (Progress.firstSteps); a new one starts at one sound.
+  function stepped(kind, all) {
+    const lead = leadOf(kind);
+    const key = `${kind}First`;
+    const first = () => all[key] || (all[key] = (typeof Progress !== 'undefined' && Progress.firstSteps(all, key)) || newSkill());
+    const rest = () => all[kind] || (all[kind] = newSkill());
+    const past = () => first().t > lead;
+    const here = () => (past() ? rest() : first());
+    const view = {};
+    Object.defineProperties(view, {
+      t: { enumerable: true,
+        get: () => (past() ? lead + rest().t : first().t),
+        set: t => { if (t <= lead) first().t = t; else { first().t = lead + 1; rest().t = t - lead; } } },
+      best: { enumerable: true,
+        get: () => (first().best > lead ? lead + (rest().best || 1) : first().best || 1),
+        set: b => { if (b <= lead) first().best = b; else { first().best = lead + 1; rest().best = b - lead; } } },
+      // A parent's change is stamped on both (Quiz.setTier).
+      entries: { get: () => [first(), rest()] },
+    });
+    for (const f of ['w', 'last', 'easy', 'n', 'placed', 'set']) {
+      Object.defineProperty(view, f, { enumerable: true, get: () => here()[f], set: v => { here()[f] = v; } });
+    }
+    return view;
   }
   // The tier for the next question: hers, capped by the place, and one
   // lower right after a miss and for every 4th question. Only questions at
   // her own tier count towards moving up or down.
   function tierFor(kind, npc) {
     const k = skill(kind);
-    const hi = Math.min((TIER_BAND[placeOf(npc)] || [1, 1])[1], tierMax(kind));
+    const hi = Math.min((TIER_BAND[placeOf(npc)] || [1, 1])[1] + leadOf(kind), tierMax(kind));
     const own = Math.max(1, Math.min(k.t, hi));
     let t = own;
     if (k.easy || ++k.n % SKILL.reviewEvery === 0) t--;
@@ -239,10 +371,12 @@ const Quiz = (() => {
   // Her first answer to a question (from record): moves her tier. Up after
   // 5 of the last 6 (or, before her first miss, 3 in a row), down after 2
   // misses in a row; never above what this place asks. A new best tier is a
-  // level-up for the child.
+  // level-up for the child. A `letters` tier is passed only by knowing every
+  // letter (lettersPass), and she never goes back down to it.
   function learn(q, right) {
-    const k = skill(q.kind);
-    const max = Math.min(tierMax(q.kind), q.cap || Infinity);
+    const kind = q.ladder || q.kind;
+    const k = skill(kind);
+    const max = Math.min(tierMax(kind), q.cap || Infinity);
     k.last = (k.last || []).concat(right ? 1 : 0).slice(-10);
     k.easy = !right;
     if (!q.counts) return;
@@ -251,11 +385,13 @@ const Quiz = (() => {
     const sum = k.w.reduce((a, b) => a + b, 0);
     const run = k.w.slice(-SKILL.placementRun);
     const placing = !k.placed && run.length === SKILL.placementRun && run.every(Boolean);
+    const tiers = TIERS[kind];
+    if (tiers[k.t - 1].letters) return;
     if (k.t < max && (placing || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
       k.t++;
       k.w = [];
       if (k.t > (k.best || 1)) { k.best = k.t; q.levelUp = true; }
-    } else if (k.t > 1 && k.w.length >= SKILL.demoteAfter && k.w.slice(-SKILL.demoteAfter).every(x => !x)) {
+    } else if (k.t > 1 && !tiers[k.t - 2].letters && k.w.length >= SKILL.demoteAfter && k.w.slice(-SKILL.demoteAfter).every(x => !x)) {
       k.t--;
       k.w = [];
     }
@@ -265,6 +401,8 @@ const Quiz = (() => {
   // at 75%. Spelling stops at 2 (its higher tiers are new words). No kind
   // starts at its top tier or at one that puts sounds she can't tell apart
   // side by side (`near`, `minimal`): the old game never asked those.
+  // Blending's is in its own count, after its first steps (see stepped):
+  // she plays it, so she is past them.
   function migrate(histories) {
     const per = {};
     for (const hist of histories) for (const h of Object.values(hist || {})) {
@@ -277,7 +415,8 @@ const Quiz = (() => {
     for (const [kind, p] of Object.entries(per)) {
       if (p.tries < 8) continue;
       const r = p.right / p.tries;
-      const hard = TIERS[kind].findIndex((c, i) => c.near || c.minimal || i === TIERS[kind].length - 1);
+      const own = tiersOf(kind);
+      const hard = own.findIndex((c, i) => c.near || c.minimal || i === own.length - 1);
       const t = Math.max(1, Math.min(r >= 0.9 ? 3 : r >= 0.75 ? 2 : 1, kind === 'spell' ? 2 : 3, hard));
       out[kind] = Object.assign(newSkill(), { t, best: t, placed: true });
     }
@@ -296,7 +435,19 @@ const Quiz = (() => {
     if (!right) h.wrong++;
     else if (!q.misses && !q.retry) h.right++;
     h.last = Date.now();
-    if (!q.retry && TIERS[q.kind]) learn(q, right && !q.misses);
+    if (!q.retry && TIERS[q.ladder || q.kind]) learn(q, right && !q.misses);
+    // The one-sound step: her letters (in both editions), and passing it.
+    if (q.kind === 'oneSound') { letterTry(q, right); lettersPass(q); }
+  }
+  // A first try in a village's game (js/village-games.js): only a letter of
+  // the one-sound step counts, towards knowing it (and passing the step);
+  // nothing there is kept in her history or moves her tier otherwise. True
+  // when the step was passed just now.
+  function practice(q, right) {
+    if (!q || q.kind !== 'oneSound' || q.recorded || typeof state === 'undefined') return false;
+    q.recorded = true;
+    letterTry(q, right);
+    return lettersPass(null);
   }
 
   // ---- Speech ----------------------------------------------------------------
@@ -351,6 +502,10 @@ const Quiz = (() => {
     return out;
   }
   const nameSounded = x => nameSounds(x).concat({ pause: 250 }, say(`${x.w}!`));
+  // Blending's first steps say a word's sounds the same way: "/b/ … E", a
+  // capital said as the letter's name.
+  const partSound = p => (/^[A-Z]$/.test(p) ? letterName(p) : sound(p));
+  const partSounds = (parts, gap = 160) => parts.flatMap(p => [partSound(p), { pause: gap }]);
   // What makes the vowel say its name, said by the narrator after a miss:
   // "Magic e makes the A say its name!", "O A says O!".
   const rule = x => ({
@@ -518,8 +673,12 @@ const Quiz = (() => {
       };
     },
 
-    // Hear a word's sounds one by one ("/s/ … /u/ … /n/") and pick its picture.
+    // Hear a word's sounds one by one ("/s/ … /u/ … /n/") and pick its
+    // picture. Its first steps (a tier with a `step`) are questions of their
+    // own kinds (below). After a second miss the answer is the sound magic
+    // (`magic`, js/blend-magic.js) with this word.
     blend(npc, cfg) {
+      if (cfg.step) return builders[cfg.step](npc, cfg);
       const t = take('blend', npc, cfg);
       const list = similar(t, cfg, cfg.minimal ? minimalWords() : BANK[cfg.words]().filter(clear), true);
       const ask = line('blend');
@@ -537,9 +696,104 @@ const Quiz = (() => {
         teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(sounds(t, 600)),
         picked: o => [named(o.wrong)],
         model: sounded(t),
+        magic: { w: t.w, e: t.e, parts: graphemes(t) },
+      };
+    },
+
+    // Blending's first step: she hears one letter's pure sound ("/s/") and
+    // picks the picture that starts with it (ONE_SOUND). The letter shows in
+    // its dot. A tier with `then` has that many cards once she knows
+    // LETTER_MASTERY.more letters. The answer after a second miss is the
+    // short sound magic: the letter's bubble, its sound, then the picture.
+    oneSound(npc, cfg) {
+      const x = take('oneSound', npc, cfg);
+      const L = x.l;
+      const t = soundWord(L);
+      const n = cfg.then && knownLetters().length >= LETTER_MASTERY.more ? cfg.then : cfg.n;
+      const ask = line('oneSound');
+      return {
+        kind: 'oneSound', id: x.id, target: t.w, letter: L,
+        clue: `<span class="clue-sounds"><span class="dot name">${L}</span></span>`,
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 500 }, sound(L), READY],
+        replay: [sound(L)],
+        options: deal(t, soundCards(t, L, n - 1), o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        // "/s/ … sun!"
+        answer: [sound(L), { pause: 250 }, say(`${t.w}!`)],
+        solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
+        // "dog… Listen. /s/"
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), sound(L)],
+        picked: o => [named(o.wrong)],
+        model: [sound(L), { pause: 300 }, say(`${t.w}!`)],
+        magic: { w: t.w, e: t.e, parts: [L] },
+      };
+    },
+
+    // Blending's second step: two sounds ("/b/ … E", TWO_SOUNDS), pick the
+    // picture. The other cards are two-sound words too; at a `far` tier
+    // they start with another sound, not one she can't tell from it yet,
+    // and end with another. Each sound's dot shows its letter.
+    twoSounds(npc, cfg) {
+      const t = take('twoSounds', npc, cfg);
+      const list = twoCards(t, cfg);
+      const ask = line('blend');
+      const slow = partSounds(t.two, 450);
+      const said = partSounds(t.two).concat({ pause: 250 }, say(`${t.w}!`));
+      return {
+        kind: 'twoSounds', id: t.id, target: t.w,
+        clue: `<span class="clue-sounds">${t.two.map(p => `<span class="dot name">${p}</span>`).join('')}</span>`,
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 500 }].concat(slow, READY),
+        replay: slow,
+        options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: said,
+        solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${t.w}</span>`,
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(partSounds(t.two, 600)),
+        picked: o => [named(o.wrong)],
+        model: said,
+        magic: { w: t.w, e: t.e, parts: t.two },
       };
     },
   };
+
+  // The picture for a letter of the one-sound step: one she has no other
+  // name for when there is one (0️⃣ over 🦓, a horse to her), and not the
+  // one she had for it last time.
+  const lastPicture = {};
+  function soundWord(L) {
+    const all = ONE_SOUND.find(s => s.l === L).words.map(([w]) => words()[w]).filter(clear);
+    const own = all.filter(x => !x.aka.length);
+    let list = own.length ? own : all;
+    if (list.length > 1) list = list.filter(x => x.w !== lastPicture[L]);
+    const t = pick(list);
+    lastPicture[L] = t.w;
+    return t;
+  }
+  // The other cards of the one-sound step: other letters' pictures, none
+  // she could call by a name that starts with this sound or one she can't
+  // tell from it yet (a c says /k/), and no two that start alike.
+  function soundCards(t, L, n) {
+    const k = l => (l === 'c' ? 'k' : l);
+    const clash = (a, b) => sameSound(a, b) || sameSound(k(a), k(b)) || nearPair(k(a), k(b));
+    const heads = x => [x.l].concat(x.aka.map(a => a[0]));
+    const pool = ONE_SOUND.filter(s => s.l !== L).flatMap(s => s.words.map(([w]) => Object.assign({ l: s.l }, words()[w])));
+    const ok = (x, out) => clear(x) && !alike(x, t) && !heads(x).some(h => clash(h, L)) &&
+      !out.some(o => o.e === x.e || alike(o, x) || heads(o).some(h => heads(x).some(g => clash(h, g))));
+    return others(pool, n, ok);
+  }
+  // The other cards of the two-sound step: other two-sound words, `far` as
+  // above when there are enough; a c heard as k, and a long vowel's name
+  // never taken for the short one (E, e).
+  function twoCards(t, cfg) {
+    const k = p => (p.toLowerCase() === 'c' ? 'k' : p);
+    const clash = (a, b) => k(a).toLowerCase() === k(b).toLowerCase() || sameSound(k(a), k(b)) || hardPair(k(a), k(b));
+    const far = x => !clash(x.two[0], t.two[0]) && !clash(x.two[1], t.two[1]);
+    const pool = TWO_SOUNDS.map(entry).filter(x => x.w !== t.w && !alike(x, t));
+    const ok = strict => (x, out) => (!strict || !cfg.far || far(x)) && !out.some(o => o.e === x.e || alike(o, x) || clash(o.two[0], x.two[0]));
+    const out = others(pool, cfg.n - 1, ok(true));
+    for (const x of shuffle(pool)) if (out.length < cfg.n - 1 && !out.includes(x) && ok(false)(x, out)) out.push(x);
+    return out;
+  }
 
   // Rhymes: the other cards come from rhymes with another vowel; at the top
   // tier one has the same vowel (cat, can). `sets` are the rhymes a kind
@@ -880,21 +1134,26 @@ const Quiz = (() => {
     const tier = force && force.tier ? { t: force.tier, cfg: Object.assign({}, TIERS[kind][force.tier - 1], force.cfg), counts: false } : tierFor(kind, npc);
     return build(kind, npc, tier);
   }
+  // A first step's question is of its own kind (`kind`, for its id and
+  // answers), on its ladder's tiers (`ladder`, whose tier it moves).
   function build(kind, npc, tier) {
     const q = builders[kind](npc, tier.cfg);
+    const own = q.kind || kind;
     // Questions, hints and answers are said plainly, never lifted (js/audio.js).
     for (const p of [].concat(q.ask, q.replay, q.answer)) if (p && typeof p === 'object') p.plain = true;
     if (!q.prompt) q.prompt = (q.ask.find(p => p.text && !p.file && !p.narrator) || { text: '' }).text;
-    return Object.assign(q, { kind, tier: tier.t, counts: tier.counts, cap: tier.cap, review: reviewing(kind, npc, tier.cfg), done: false, misses: 0 });
+    return Object.assign(q, { kind: own, ladder: kind, tier: tier.t, counts: tier.counts, cap: tier.cap, review: reviewing(own, npc, tier.cfg), done: false, misses: 0 });
   }
   // A missed question comes back with the same target, at the same tier,
   // with new options in a new order. It is a retry: putting it right
-  // doesn't count as solved yet.
-  function again(old, npc) {
+  // doesn't count as solved yet. `cfg` changes the tier's settings, as for
+  // a forced question (a village's game).
+  function again(old, npc, cfg) {
     want = old.id;
     try {
-      const t = Math.min(old.tier || 1, TIERS[old.kind].length);
-      const q = build(old.kind, npc, { t, cfg: TIERS[old.kind][t - 1], counts: false });
+      const kind = old.ladder || old.kind;
+      const t = Math.min(old.tier || 1, TIERS[kind].length);
+      const q = build(kind, npc, { t, cfg: Object.assign({}, TIERS[kind][t - 1], cfg), counts: false });
       return Object.assign(q, { retry: q.id === old.id });
     } finally { want = null; }
   }
@@ -913,15 +1172,33 @@ const Quiz = (() => {
     // over the other tablet's tier when the saves are joined (js/progress.js),
     // and counts as one more answer (`n`): the first release (M1), which
     // keeps the entry with more answers, then keeps it too.
+    // A kind kept in two entries (blending, see stepped) has both stamped.
+    // Blending set past its first tier is past the one-sound step, as if
+    // she knew every letter.
     setTier(kind, t) {
       const k = skill(kind);
       const to = Math.max(1, Math.min(tierMax(kind), t));
-      if (to !== k.t) Object.assign(k, { set: Math.max(Date.now(), (Number(k.set) || 0) + 1), n: (k.n | 0) + 1 });
+      if (to !== k.t) for (const e of k.entries || [k]) Object.assign(e, { set: Math.max(Date.now(), (Number(e.set) || 0) + 1), n: (e.n | 0) + 1 });
       Object.assign(k, { t: to, w: [], placed: true, easy: false });
     },
     kinds: Object.keys(pools),
-    // Every id a kind can ask here, at any tier the parent's settings allow.
-    pool: (kind, npc = {}) => (pools[kind] ? [...new Set(TIERS[kind].filter(allowed).flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),
+    // Every id a kind can ask here, at any tier the parent's settings allow
+    // (blending's first steps are kinds of their own).
+    pool: (kind, npc = {}) => (pools[kind] ? [...new Set(tiersOf(kind).filter(allowed).flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),
+    // How many first steps a kind has before its own tiers (a place's band
+    // counts from after them).
+    lead: leadOf,
+    // Blending's one-sound step: every letter, and whether she knows it.
+    letters: () => ONE_SOUND.map(s => ({ l: s.l, known: knows(s.l) })),
+    practice,
+    // The sound magic for a word (js/blend-magic.js): { w, e, parts }.
+    magic(w) {
+      const x = words()[w];
+      return x && { w, e: x.e, parts: x.two || graphemes(x) };
+    },
+    // How the sound magic says a sound (a capital as the letter's name) and the word.
+    sayPart: partSound,
+    sayWord: w => say(`${w}!`),
     words,
     get recent() { return recent; },
     set recent(saved) { recent = saved && !Array.isArray(saved) && typeof saved === 'object' ? saved : {}; },

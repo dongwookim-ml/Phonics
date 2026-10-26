@@ -22,6 +22,9 @@
 //    when this version signs out; a save with this version's new clothes
 //    and treasures loads in the deployed game without an error, and the
 //    treasure shelf it drops comes back with this version's next save;
+//    blending's first steps next to it: her level kept here (two tiers up)
+//    and in its own count there, its move counted here, and the letters she
+//    knows and her first steps' answers kept;
 //  - a tab still on the first release (FIRST_REF, default eee606ec) next to
 //    the parent's settings: they stay.
 // Run: node tools/check-sync.js  (needs the playwright package and Chromium,
@@ -605,6 +608,49 @@ async function deployedLogout(browser, deployed) {
   await N.ctx.close();
 }
 
+async function deployedBlend(browser, deployed) {
+  // Blending's first steps (js/quiz.js): a child who played blend before
+  // (three-letter words and up, tier 2 in its old count) keeps her level
+  // here, two tiers up; the deployed game on the same account reads and
+  // moves blending in its own count, and this version reads its move two
+  // up; the letters she knows (skill) and her first steps' answers
+  // (history, which the deployed game drops) come back.
+  const acct = await newAccount();
+  const sk = (t, n) => ({ t, best: t, w: [], last: [], placed: true, easy: false, n });
+  await api('PUT', '/save', { save: { edition: 'princess', fmt: 2, stars: 20, earned: { _: { stars: 20 } }, spent: {}, skill: { blend: sk(2, 30) },
+    history: { 'blend:cat': { kind: 'blend', tries: 3, right: 2, wrong: 1, last: 5 } } }, base: 0 }, acct.token);
+  const N = await tablet(browser);
+  const O = await tablet(browser, { dir: deployed });
+  await login(N, acct);
+  await login(O, acct);
+  for (const t of [N, O]) await t.page.evaluate(() => document.getElementById('start-btn').click()).catch(() => {});
+  const view = t => t.page.evaluate(() => ({ t: Quiz.skill('blend').t, known: typeof Quiz.letters === 'function' ? Quiz.letters().filter(x => x.known).map(x => x.l).join('') : null }));
+  const first = { here: await view(N), deployed: await view(O) };
+  // Here she gets to know s and t; there blending moves up a tier.
+  await N.page.evaluate(() => {
+    for (const l of 'st') state.skill.letters[l] = { right: 2, hit: 10, last: 10 };
+    state.history['oneSound:s'] = { kind: 'oneSound', tries: 2, right: 2, wrong: 0, last: 10 };
+    save();
+  });
+  await settle(N);
+  for (let i = 0; i < 2; i++) {
+    await O.page.evaluate(() => { const k = Quiz.skill('blend'); Object.assign(k, { t: 3, best: 3, n: (k.n | 0) + 5 }); save(); }).catch(() => {});
+    await earnOld(O, 'o');
+    await settle(O).catch(() => {});
+  }
+  await settle(N);
+  const after = { here: await view(N), deployed: await view(O).catch(() => null) };
+  await Promise.all([N.page.waitForNavigation({ timeout: 15000 }), N.page.evaluate(() => Account.logout())]).catch(() => {});
+  const e = editionOf((await serverSave(acct)).save, 'princess');
+  const saved = { blend: ((e.skill || {}).blend || {}).t, first: ((e.skill || {}).blendFirst || {}).t, letters: Object.keys((e.skill || {}).letters || {}).join(''), answer: !!(e.history || {})['oneSound:s'] };
+  check('deployed tab next to blending\'s first steps: a child who played blend keeps her level here, the deployed game its own count', first.here.t === 4 && first.deployed.t === 2, first);
+  check('deployed tab next to blending\'s first steps: its move counts here two up, and the letters she knows stay', after.here.t === 5 && after.here.known === 'st', after);
+  check('deployed tab next to blending\'s first steps: the account keeps both counts, the letters and the answers', saved.blend === 3 && saved.first === 3 && saved.letters === 'st' && saved.answer, saved);
+  check('deployed tab next to blending\'s first steps: no page errors', !N.errors.length && !O.errors.length, N.errors.concat(O.errors));
+  await O.ctx.close();
+  await N.ctx.close();
+}
+
 async function firstRelease(browser, first) {
   // A tab on the first release (which knows no settings) loaded the save
   // before the parent set anything. She sets 15 minutes and hides the 🔊
@@ -728,6 +774,7 @@ async function deployedWardrobe(browser, deployed) {
       deployedSignedInUpdated: b => signedInUpdated(b, deployed),
       deployedLogout: b => deployedLogout(b, deployed),
       deployedWardrobe: b => deployedWardrobe(b, deployed),
+      deployedBlend: b => deployedBlend(b, deployed),
     });
   }
   if (first) parts.firstRelease = b => firstRelease(b, first);

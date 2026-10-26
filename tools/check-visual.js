@@ -12,7 +12,12 @@
 //   at the top fitting its text, its button in the host's dialog, ✖ and 🔊
 //   and the end card's 🔁 / 👋 64 px (52 on a phone), every thing to tap
 //   in every round at least that big and inside the picture, and its
-//   pictures big enough to see,
+//   pictures big enough to see; the Unicorn game's end card with her 25
+//   letters in two rows at most, fitting the card,
+// - the sound magic (js/blend-magic.js): the card on screen under the HUD,
+//   its 🐢 / 🐇 / ✨ buttons and ✖ big enough, the sound bubbles inside the
+//   card slow and fast, and the picture and word that pop out inside it,
+//   big enough and clear of the buttons,
 // - the wardrobe and the shop on every tab, for a girl, a boy and the
 //   robot: on screen, the picture tabs on one row, tabs and pictures 64 px
 //   (52 on a phone), every picture inside its tile, a row of them showing,
@@ -344,10 +349,56 @@ function ask(kind, scene) {
           const least = Math.min(...g.draw.labels(performance.now() / 1000, performance.now() + 2000).map(l => css(l.size)));
           if (key !== 'fish' && least < (phone ? 24 : 40)) out.push(`${key} game: pictures only ${Math.round(least)}px`);
           document.getElementById('mini-end').classList.remove('hidden');
+          // The Unicorn Village's end card with every letter of blending's
+          // one-sound step and the two-sound badge (the most it shows).
+          if (key === 'unicorn') {
+            const box = document.getElementById('mini-letters');
+            box.innerHTML = ONE_SOUND.map(s => `<span class="ml on">${s.l}</span>`).join('');
+            box.classList.remove('hidden');
+            const two = document.getElementById('mini-two');
+            two.innerHTML = '<span class="b">b</span><span class="b name">E</span>➜🐝';
+            two.classList.remove('hidden');
+            if (new Set([...box.children].map(x => Math.round(x.getBoundingClientRect().top))).size > 2) out.push('unicorn game: the letters on the end card take more than two rows');
+          }
           small('.mini-end .answer button', big, true);
           const end = document.getElementById('mini-end').getBoundingClientRect();
           if (end.top < card.top || end.bottom > card.bottom) out.push(`${key} game: the end card runs out of the card`);
+          for (const id of ['mini-letters', 'mini-two']) document.getElementById(id).classList.add('hidden');
           closeMini();
+        }
+
+        // The sound magic (js/blend-magic.js): on screen under the HUD, its
+        // steps and ✖ big enough to tap, every bubble (four sounds: frog)
+        // and then the picture and its word inside the card.
+        state.busy = false;
+        const mg = document.getElementById('magic');
+        const hud = document.querySelector('.hud').getBoundingClientRect().bottom;
+        for (const m of [Quiz.magic('frog'), Quiz.magic('bee'), { w: 'sun', e: '☀️', parts: ['s'] }]) {
+          openBlendMagic(m);
+          mg.style.animation = 'none';
+          mg.querySelectorAll('.mg-bubble').forEach(b => b.classList.add('in'));
+          const box = mg.getBoundingClientRect();
+          if (!onScreen(mg) || box.top < hud - 0.5) out.push(`magic (${m.w}): the card is off the screen or under the HUD`);
+          small('.mg-step:not(.hidden)', big);
+          small('.mg-close', big);
+          for (const cls of ['', 'slow', 'fast']) {
+            if (cls) mg.classList.add(cls);
+            mg.querySelectorAll('.mg-bubble').forEach(b => { b.style.transition = 'none'; });
+            const outside = [...mg.querySelectorAll('.mg-bubble')].filter(b => !inBox(b, box));
+            if (outside.length) out.push(`magic (${m.w}${cls ? `, ${cls}` : ''}): ${outside.length} bubble(s) outside the card`);
+            const steps = mg.querySelector('.mg-steps').getBoundingClientRect();
+            const low = Math.max(...[...mg.querySelectorAll('.mg-bubble, .mg-runner')].map(b => b.getBoundingClientRect().bottom));
+            if (low > steps.top + 1) out.push(`magic (${m.w}${cls ? `, ${cls}` : ''}): the bubbles reach the buttons`);
+          }
+          mg.classList.add('smash', 'popped');
+          mg.querySelectorAll('.mg-pic, .mg-word').forEach(x => { x.style.animation = 'none'; });
+          for (const sel of ['.mg-pic', '.mg-word']) if (!inBox(mg.querySelector(sel), box)) out.push(`magic (${m.w}): ${sel} outside the card`);
+          const pic = mg.querySelector('.mg-pic').getBoundingClientRect();
+          if (pic.height < (phone ? 50 : 80)) out.push(`magic (${m.w}): the picture is only ${Math.round(pic.height)}px`);
+          if (mg.querySelector('.mg-pop').getBoundingClientRect().bottom > mg.querySelector('.mg-steps').getBoundingClientRect().top + 1) out.push(`magic (${m.w}): the picture reaches the buttons`);
+          closeBlendMagic();
+          mg.querySelectorAll('.mg-pic, .mg-word').forEach(x => { x.style.animation = ''; });
+          mg.style.animation = '';
         }
 
         // The HUD with everything showing (js/album.js): the stars toward the

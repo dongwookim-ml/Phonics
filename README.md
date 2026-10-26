@@ -94,6 +94,45 @@ npx http-server -p 8080 .
   `MINIMAL_SETS`, `RHYME_SETS`, `SENTENCES_L1`/`_L2`); `ALIAS` lists other
   names for pictures so a wrong card is never right by her name for it, and
   `WEAK_PICTURES` keeps pictures with another name off picture-only cards.
+- **Sound blending in small steps**: blending (hear /c/ /a/ /t/, pick the
+  🐱) starts with two easier steps before the three-sound words (the first
+  two tiers of `TIERS.blend`, each with a `step` that builds its own kind
+  of question):
+  1. One sound (`oneSound`): she hears one pure sound (/s/, never "suh")
+     and picks the picture that starts with it, from two cards, then three.
+     Each of 25 letters (no x) has pictures she names for sure (`ONE_SOUND`
+     in `js/data.js`). She passes this step by knowing all 25 letters, not
+     by a run of right answers: a letter is known once she has got it right
+     on the first try twice and her latest try at it was right
+     (`LETTER_MASTERY`). Most questions are letters she doesn't know yet,
+     four at a time in `LETTER_ORDER` (s a t i p n first), a letter she
+     missed comes back two questions later, and now and then one she knows
+     comes back for review. Her letters (`state.skill.letters`) are shared
+     by both editions and merged letter by letter across tablets.
+  2. Two sounds (`twoSounds`): "/b/ … E" and the 🐝; a long vowel is said by
+     its letter name, like the Monster Village's (`TWO_SOUNDS`: bee, key,
+     pie, car, ear, egg, ice, eight).
+  Then come the three-sound words as before. The two steps are kept apart
+  from the blend tier in the save (`state.skill.blendFirst`, `FIRST_STEPS`
+  in `js/progress.js`), so a child who was blending before keeps her level
+  and a tab still on an older version reads and moves the blend tier as it
+  always did; `Quiz.skill('blend')` puts the two together, and each place's
+  cap (`TIER_BAND`) is counted after the steps. A child who has played
+  blending before starts past them. The parent panel has a row for each
+  step (the one-sound row shows the letters she knows), and − / + on
+  소리 합치기 moves her through them (+ past one sound needs no letters).
+- **The sound magic (`js/blend-magic.js`)**: a five-second show of putting
+  sounds together. Each sound pops up in a bubble and is said; 🐢 says
+  them slowly (stretched where a sound can be held: sss-uuu-nnn), 🐇 (🚀 for
+  the robot) says them fast, and ✨ (💥) pops the bubbles into the picture
+  and the word, with sparkles. A step she leaves alone plays by itself, it
+  moves on timers with the sound off, and ✖ skips it. It shows the first
+  time she reaches two sounds (bee) and three sounds (sun), once each
+  (`MAGIC_INTRO`, kept in `state.guide.magic`), and as the answer after a
+  second miss on a blend question, in a dialog and in the Unicorn
+  Village's game, before she taps the glowing card; at one sound it is
+  short (its bubble and ✨). While it shows the game is busy, a tap outside
+  does nothing and the parent panel pauses it.
 - **Long vowels (the Monster Village's questions)**: the next step after
   short vowels and blends, where the vowel says its own name: a magic e
   (cake, kite, bone, cube), the vowel teams ee and ea (bee, leaf), ai and ay
@@ -351,7 +390,12 @@ npx http-server -p 8080 .
     the right one flies up into the next slot (spell, three-letter words;
     the first letter given at her first tier).
   - Unicorn Village, from the ranch girl: she hears /c/ /a/ /t/ and taps
-    the unicorn whose cloud shows the 🐱, which gallops off (blend).
+    the unicorn whose cloud shows the 🐱, which gallops off (blend). At
+    one sound the letter is at the top (Ss) and she hears /s/; her first
+    tries count towards the letters she knows (a missed letter comes back
+    two rounds on), and the end card shows all 25, the ones she knows lit
+    and a new one sparkling with its sound; all 25 lit is a party, and two
+    sounds open. Two misses show the sound magic as the answer.
   - Crystal Cave, from the baby dragon: "cat" is written at the top and
     nobody says it; she opens the treasure chest with the 🐱 (read).
   In the robot edition: Dinosaur Village's triceratops has eggs that hatch
@@ -624,7 +668,10 @@ without scrolling, every page of the books she reads herself fits its
 word tiles in two rows at most, every little game (the pond's and each
 village's) fits the screen with its top row on one line, its buttons and
 every picture or letter to tap in every round at least 64 px (52 on the
-phone), and its pictures big enough to see, and the wardrobe and the shop
+phone), and its pictures big enough to see (the Unicorn game's end card
+with her 25 letters in two rows at most), the sound magic on screen under
+the HUD with its buttons big enough and its bubbles, picture and word
+inside the card, and the wardrobe and the shop
 fit on every tab for a girl, a boy and the robot (the picture tabs on one
 row, tabs and pictures 64 px or 52 on the phone, every picture inside its
 tile, a row of them showing, the mirror and the buttons on screen). On a
@@ -682,13 +729,19 @@ The other checks, all run by
   plays nothing and breaks nothing without Web Audio), and the monsters
   she drew in both editions (each one draws, its dialog shows her drawing
   inside the dialog and off the cards at every size, anyone else's shows
-  the portrait, and closing hides it).
+  the portrait, and closing hides it), and blending's first steps in both
+  editions (one sound passed only by knowing every letter, the sound magic
+  once per step and after a second miss, busy, outside taps, the parent
+  panel, ✖, the play limit, and the letters on the Unicorn game's end
+  card).
 - `node tools/check-sync.js`: tablets on one account against a local
   server (needs Python with `fastapi` and `uvicorn`), among them the
   day's chest opened on two tablets before they sync (it pays once), also
   next to the deployed game (`origin/main`: it loads a save with new clothes
-  and treasures without an error, and the treasure shelf it drops comes
-  back) and the first release (`eee606ec`); with
+  and treasures without an error, the treasure shelf it drops comes back,
+  and a child who played blending there keeps her level here, past the new
+  first steps, while it moves blending in its own count) and the first
+  release (`eee606ec`); with
   `SYNC_SERVER_REF=origin/main` against the server still deployed.
 - `pytest server`: the server, on SQLite or the Postgres at `DATABASE_URL`.
 
@@ -788,7 +841,8 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/library.js`: the book list, the reader and the book quiz
 - `js/friend.js`: feeding the fairy friend (helper buddy) and how it grows
 - `js/minigame.js`: the little games' rounds, hints, coins and card, and the fishing (magnet crane) game at the pond
-- `js/village-games.js`: the game in each village (rhyme, spell, blend, read) in both editions
+- `js/village-games.js`: the game in each village (rhyme, spell, blend, read) in both editions, and the letters on the Unicorn game's end card
+- `js/blend-magic.js`: the sound magic, a little show of blending (bubbles, 🐢 slow, 🐇 fast, ✨ pop)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
