@@ -122,7 +122,7 @@ function openMini(npc, g = miniGameOf(npc)) {
   mini.el.classList.remove('hidden');
   // The first round at a new step of blending: the sound magic first,
   // with an easy word (js/blend-magic.js).
-  const intro = g.magic && mini.rounds[0] && blendMagicIntro(mini.rounds[0].q, mini.rounds.map(r => r.q && r.q.target));
+  const intro = g.magic && mini.rounds[0] && blendMagicIntro(mini.rounds[0].q, mini.rounds.slice(1).map(r => r.q && r.q.target));
   if (intro) {
     const turn = ++mini.turn;
     mini.locked = true;

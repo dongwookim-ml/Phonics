@@ -86,17 +86,17 @@ function mgLine(kind) {
 
 // The first question at a new step of blending (her own tier, 2 or 3,
 // before she has seen it there): the easy word to show it with, once.
-// Never the answer of the question it comes before (nor of `avoid`, the
-// minigame's other rounds), and not one of its cards if the other will do.
+// Never the answer of the question it comes before, and if the other will
+// do, none of its cards nor of `avoid` (the answers of a minigame's later
+// rounds).
 function blendMagicIntro(q, avoid = []) {
   if (!q || q.ladder !== 'blend' || typeof state === 'undefined') return null;
   const t = Quiz.skill('blend').t;
   const seen = ((state.guide || {}).magic) | 0;
   if (q.tier !== t || seen >= t || !MAGIC_INTRO[t]) return null;
-  const answers = [q.target].concat(avoid);
-  const cards = (q.options || []).map(o => o.wrong);
-  const ok = MAGIC_INTRO[t].filter(w => !answers.includes(w));
-  const w = ok.find(w => !cards.includes(w)) || ok[0];
+  const near = (q.options || []).map(o => o.wrong).concat(avoid);
+  const ok = MAGIC_INTRO[t].filter(w => w !== q.target);
+  const w = ok.find(w => !near.includes(w)) || ok[0];
   const m = w && Quiz.magic(w);
   if (!m) return null;
   if (!state.guide) state.guide = {};
