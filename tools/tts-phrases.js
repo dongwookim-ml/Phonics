@@ -130,7 +130,9 @@ function collect(D) {
       }
       add(v, 'hmm, hmm', 0.85);
     }
-    if (unicorn.has(look)) lines(v, ['newUnicorn']);
+    // A unicorn (car) given as a present: the cave's and the Monster Village's
+    // people give them too (rewardChoices in js/game.js, from level 3).
+    if (unicorn.has(look) || monsterVillage.has(look)) lines(v, ['newUnicorn']);
     if (monsters.has(look)) lines(v, ['caught'].concat(D.CAVE_LINES ? D.CAVE_LINES.villain : []));
     if (fairies.has(look)) lines(v, ['newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'poorPond', 'soldOut']);
