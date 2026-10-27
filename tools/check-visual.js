@@ -18,10 +18,11 @@
 //   its 🐢 / 🐇 / ✨ buttons and ✖ big enough, the sound bubbles inside the
 //   card slow and fast, and the picture and word that pop out inside it,
 //   big enough and clear of the buttons,
-// - the wardrobe and the shop on every tab, for a girl, a boy and the
-//   robot: on screen, the picture tabs on one row, tabs and pictures 64 px
-//   (52 on a phone), every picture inside its tile, a row of them showing,
-//   the mirror showing her, and the buttons on screen,
+// - the wardrobe, the shop and the hair salon on every tab, for a girl, a
+//   boy and the robot (no salon): on screen, the picture tabs on one row,
+//   tabs and pictures 64 px (52 on a phone), every picture inside its
+//   tile, a row of them showing, the mirror showing her, and the buttons
+//   on screen,
 // - ▶ on the start screen and the guest button on the login screen show
 //   without scrolling, also with Safari's toolbars (1024 x 700),
 // - with every counter and button showing (the next-gate and gift meters
@@ -259,7 +260,7 @@ function ask(kind, scene) {
         small('.choices.spell .tile', phone ? 56 : 68, true);
         small('.choices.spell .erase', phone ? 56 : 68, true);
         closeDialog();
-        // The wardrobe (and the shop) on every tab, for a girl and a boy:
+        // The wardrobe (the shop, the salon) on every tab, for a girl and a boy:
         // on screen, the tabs on one row, tabs and pictures big enough to
         // tap, every picture inside its tile, nothing wider than its box, a
         // whole row of pictures showing, and the mirror showing her.
@@ -308,6 +309,18 @@ function ask(kind, scene) {
             fits(`shop ${look} ${slot}`, 'shop', '#shop-tabs .wd-tab', '#shop-items', 'shop-preview', ['#shop-buy', '#shop-done']);
           }
           closeShop();
+          // The hair salon (js/salon.js), one picked on each tab.
+          if (!isCaptain()) {
+            state.busy = false;
+            openSalon(sceneFor('town').npcs.find(x => x.salon));
+            for (const slot of SALON_TABS) {
+              salon.tab = slot;
+              salonChoose(salonItems(slot).find(it => !it.mine));
+              renderSalon();
+              fits(`salon ${look} ${slot}`, 'salon', '#salon-tabs .wd-tab', '#salon-items', 'salon-preview', ['#salon-buy', '#salon-done']);
+            }
+            closeSalon();
+          }
         }
         if (!isCaptain()) { setPlayer({ title: 'princess', look: 'girl' }); wearLook(); }
         state.scene = sceneFor('yuna');
@@ -416,8 +429,9 @@ function ask(kind, scene) {
 
         // The HUD with everything showing (js/album.js): the stars toward the
         // last gate, the gift meter, coins and dust, and every button with
-        // the ride: on one row, on screen, clear of the buttons.
-        Object.assign(state, { stars: DUNGEON_STARS - 3, coins: 15, dust: 15, gifts: 2 });
+        // the ride: on one row, on screen, clear of the buttons. (Counters
+        // fresh too: the gates count the stars earned, not just these.)
+        Object.assign(state, { stars: DUNGEON_STARS - 3, coins: 15, dust: 15, gifts: 2, tally: Progress.tally({}) });
         state.owned.ride.push(Object.keys(WARDROBE.find(x => x.slot === 'ride').items).find(v => v !== 'none'));
         renderRide();
         renderStars(false);

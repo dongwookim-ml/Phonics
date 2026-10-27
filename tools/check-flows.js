@@ -2490,6 +2490,136 @@ async function blendSteps(browser, edition) {
   await ctx.close();
 }
 
+// The hair salon in town (js/salon.js, the princess edition): a tap on the
+// hairdresser opens its card. A new hairstyle costs its stars: they leave
+// the ⭐ count but not the stars she has earned, so a gate she opened stays
+// open; it is hers and on her, and the card stays open. With too few stars
+// nothing changes; one she has had is free; a hair colour has its own price.
+// The wardrobe's hairstyle tab sends her to the salon; hairstyles are never
+// presents nor in the shop; spent stars stay spent over a reload. The
+// captain edition has no salon.
+async function hairSalon(browser, edition, look) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const r = await page.evaluate(async look => {
+    const wait = ok => new Promise(res => { const t0 = performance.now(); const go = () => (ok() || performance.now() - t0 > 15000 ? res() : setTimeout(go, 50)); go(); });
+    const settled = () => !ui.fade.classList.contains('on') && !state.hero.path.length;
+    const town = sceneFor('town');
+    const keeper = town.npcs.find(n => n.salon);
+    const building = town.objects.find(o => o.kind === 'salon');
+    if (isCaptain()) return { captain: { keeper: !!keeper, building: !!building, slot: WARDROBE.some(w => w.slot === 'style'), card: !!salonUi.card } };
+    if (!Sound.muted) Sound.toggleMute();
+    if (look === 'boy') { setPlayer({ title: 'prince', look: 'boy' }); wearLook(); }
+    const shown = () => !salonUi.card.classList.contains('hidden');
+    const pics = () => [...salonUi.items.querySelectorAll('.wd-item')];
+    const out = {};
+    changeScene('town');
+    await wait(() => state.scene === town && settled());
+    state.stars = FOREST_STARS + 2;
+    save();
+    renderStars();
+    // A tap on the hairdresser walks her there and opens the card.
+    placeHero(keeper.c + 3, keeper.r);
+    snapCamera();
+    const box = screen.getBoundingClientRect();
+    const p = tileCenter(town, keeper.c, keeper.r);
+    const sx = (p.x - Math.round(state.cam.x)) * state.scale;
+    const sy = (p.y - 10 - Math.round(state.cam.y)) * state.scale;
+    state.busy = false;
+    screen.dispatchEvent(new PointerEvent('pointerdown', { clientX: box.left + sx * box.width / screen.width, clientY: box.top + sy * box.height / screen.height, bubbles: true }));
+    await wait(shown);
+    const styles = Object.entries(HAIR_STYLES).filter(([, it]) => suits(it));
+    out.open = { shown: shown(), busy: state.busy, tab: salon.tab, pics: pics().length, styles: styles.length, stars: salonUi.stars.textContent,
+      prices: pics().map(b => b.querySelector('.price').textContent), worn: pics().filter(b => b.classList.contains('worn')).length, buy: salonUi.buy.classList.contains('hidden') };
+    // A new one: picked, it shows its price; ✂️ pays and puts it on.
+    const newOne = styles.findIndex(([v]) => !state.owned.style.includes(v));
+    const value = styles[newOne][0];
+    const was = heroSprite(state.outfit, 0).canvas.toDataURL();
+    pics()[newOne].click();
+    out.pick = { pick: salon.pick && salon.pick.value, buy: !salonUi.buy.classList.contains('hidden'), text: salonUi.buy.textContent, lit: pics().filter(b => b.classList.contains('on')).length };
+    const earned = starsEarned();
+    salonUi.buy.click();
+    const forest = exitSpots(town).find(sp => sp.link && sp.link.needStars === FOREST_STARS);
+    const said = [];
+    const showPlace0 = window.showPlace;
+    const walkTo0 = window.walkTo;
+    window.showPlace = t => said.push(t);
+    window.walkTo = () => { said.push('walk'); return true; };
+    goLink(forest.tiles);
+    window.showPlace = showPlace0;
+    window.walkTo = walkTo0;
+    out.bought = { stars: state.stars, earned: starsEarned(), before: earned, style: state.outfit.style, value, mine: state.owned.style.includes(value), shown: shown(),
+      sprite: heroSprite(state.outfit, 0).canvas.toDataURL() !== was, hud: ui.stars.querySelector('.count').textContent, forest: said.join(), gift: notYet({ forest: true }),
+      tick: pics()[newOne].querySelector('.price').textContent, buy: salonUi.buy.classList.contains('hidden') };
+    // Another new one (7 → 2), then too few stars for a third: nothing changes.
+    pics()[styles.findIndex(([v]) => !state.owned.style.includes(v))].click();
+    salonUi.buy.click();
+    out.second = { stars: state.stars, earned: starsEarned() };
+    const another = styles.findIndex(([v]) => !state.owned.style.includes(v));
+    pics()[another].click();
+    const outfit = JSON.stringify(state.outfit);
+    salonUi.buy.click();
+    out.poor = { stars: state.stars, outfit: JSON.stringify(state.outfit) === outfit, mine: state.owned.style.includes(styles[another][0]), msg: salonUi.msg.textContent };
+    // Back to the one she had: free.
+    const first = styles.findIndex(([v]) => v === (look === 'boy' ? 'short' : 'long'));
+    pics()[first].click();
+    out.back = { text: salonUi.buy.textContent };
+    salonUi.buy.click();
+    out.back = Object.assign(out.back, { stars: state.stars, style: state.outfit.style });
+    // The hair colour tab: its own price.
+    salonUi.tabs.querySelectorAll('.wd-tab')[1].click();
+    out.colours = { tab: salon.tab, prices: pics().map(b => b.querySelector('.price').textContent) };
+    closeSalon();
+    out.closed = { shown: shown(), busy: state.busy };
+    // The wardrobe's hairstyle tab: hers to wear, the others at the salon.
+    changeScene('yuna');
+    await wait(() => state.scene === sceneFor('yuna') && settled());
+    openWardrobe();
+    wdTab = 'style';
+    renderWardrobe();
+    const items = [...document.querySelectorAll('#wd-slots .wd-item')];
+    const locked = items[styles.findIndex(([v]) => !state.owned.style.includes(v))];
+    const wearing = state.outfit.style;
+    locked.click();
+    out.wardrobe = { pics: items.length, styles: styles.length, note: document.querySelector('#wd-slots .wd-title .nm').textContent, same: state.outfit.style === wearing };
+    items[newOne].click();
+    out.wardrobe.wore = state.outfit.style;
+    closeWardrobe();
+    // Never a present nor in the shop, and not counted with the presents.
+    out.never = { shop: shopItems().filter(it => it.slot === 'style').length };
+    const npc = sceneFor('forest').npcs.find(n => !n.mount && !n.shop && !n.monster);
+    const slots = new Set();
+    for (let i = 0; i < 40 && hasNewGift(npc); i++) { offerReward(npc); slots.add(state.gift.slot); acceptReward(true); }
+    out.never.presents = slots.has('style');
+    out.never.slots = [...slots];
+    return out;
+  }, look);
+  const tag = `hair salon (${edition}${look ? ` ${look}` : ''})`;
+  if (r.captain) {
+    check(`${tag}: no salon, hairdresser nor hairstyle tab in the captain edition`, !r.captain.keeper && !r.captain.building && !r.captain.slot && r.captain.card, r.captain);
+  } else {
+    check(`${tag}: a tap on the hairdresser opens the card on the hairstyles, hers ticked and on her, the rest ⭐5`,
+      r.open.shown && r.open.busy && r.open.tab === 'style' && r.open.pics === r.open.styles && r.open.stars.includes('12') && r.open.worn === 1 && r.open.buy
+      && r.open.prices.filter(t => t === '✓').length >= 1 && r.open.prices.filter(t => t.includes('5')).length === r.open.styles - r.open.prices.filter(t => t === '✓').length, r.open);
+    check(`${tag}: a new one picked: lit, and ✂️ says its price`, r.pick.buy && r.pick.lit === 1 && r.pick.text.includes('5'), r.pick);
+    check(`${tag}: ✂️ pays 5 stars (12 → 7), it is hers and on her, the card stays open`, r.bought.stars === 7 && r.bought.hud === '7' && r.bought.style === r.bought.value && r.bought.mine && r.bought.shown
+      && r.bought.sprite && r.bought.tick === '✓' && r.bought.buy, r.bought);
+    check(`${tag}: the stars she earned still count (12), so the forest she opened stays open with 7 left`, r.bought.earned === 12 && r.bought.before === 12 && r.bought.forest === 'walk' && !r.bought.gift, r.bought);
+    check(`${tag}: another new one: 7 → 2, still 12 earned`, r.second.stars === 2 && r.second.earned === 12, r.second);
+    check(`${tag}: too few stars for a third: nothing changes, and she hears how many more`, r.poor.stars === 2 && r.poor.outfit && !r.poor.mine && r.poor.msg.includes('별'), r.poor);
+    check(`${tag}: back to the one she had: free`, !r.back.text.includes('⭐') && r.back.stars === 2 && r.back.style === (look === 'boy' ? 'short' : 'long'), r.back);
+    check(`${tag}: the hair colour tab: ⭐3 for a new colour`, r.colours.tab === 'hair' && r.colours.prices.some(t => t.includes('3')) && r.colours.prices.includes('✓'), r.colours);
+    check(`${tag}: closing it frees the game`, !r.closed.shown && !r.closed.busy, r.closed);
+    check(`${tag}: the wardrobe's hairstyle tab: one she hasn't had sends her to the salon; hers she can wear`, r.wardrobe.pics === r.wardrobe.styles && r.wardrobe.note.includes('미용실') && r.wardrobe.same && r.wardrobe.wore === r.bought.value, r.wardrobe);
+    check(`${tag}: hairstyles are never presents nor in the shop`, !r.never.shop && !r.never.presents && r.never.slots.length > 0, r.never);
+    await page.reload();
+    await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+    const after = await page.evaluate(() => ({ stars: state.stars, earned: starsEarned(), owned: state.owned.style }));
+    check(`${tag}: after a reload: 2 stars, 12 earned, the hairstyles still hers`, after.stars === 2 && after.earned === 12 && after.owned.includes(r.bought.value), after);
+  }
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 // A gate added in an update (the Monster Village): a child already past its
 // stars gets its party once, after her next answer; one who reaches it
 // later gets it as she crosses, and not again.
@@ -2534,6 +2664,7 @@ async function lateGate(browser) {
     gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
     kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate,
     monsterTower: b => monsterTower(b, 'princess'), monsterTowerCaptain: b => monsterTower(b, 'captain'),
+    salon: b => hairSalon(b, 'princess', 'girl'), salonBoy: b => hairSalon(b, 'princess', 'boy'), salonCaptain: b => hairSalon(b, 'captain'),
     blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };
   try {
     for (const [name, run] of Object.entries(parts)) if (!process.env.ONLY || name.includes(process.env.ONLY)) await run(browser);

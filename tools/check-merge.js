@@ -7,8 +7,9 @@
 // to tabs still on the two older releases (their own merge code, from git);
 // the first blending steps (one sound, two sounds) kept apart from the
 // blend tier so a child already blending keeps her level, also next to tabs
-// on the deployed version; and the letters she knows, merged letter by
-// letter across tablets and editions.
+// on the deployed version; the letters she knows, merged letter by letter
+// across tablets and editions; and stars spent at the hair salon, gone from
+// the count but not from the stars she has earned.
 // Run: node tools/check-merge.js
 
 const fs = require('fs');
@@ -620,6 +621,29 @@ var state = {};`, ctx);
   check('friends: merging again changes nothing', A.same(A.merge(m, ed({ pink: { _: 10, dB: 5 } }), 'mine'), m));
   const g = A.merge(ed({ pink: { dA: 20 } }), ed({ pink: { dA: 15 } }), 'foreign');
   check('friends: a guest\'s feeds go on top of the account\'s (20 + 15)', fed(g.friends.pink) === 35, g.friends);
+}
+
+// ---- Stars spent at the hair salon (js/salon.js) -------------------------------------
+{
+  const st = (P, s) => ({ stars: s.stars, tally: P.tally(s) });
+  const a0 = play(A, { edition: 'princess' }, 12, 0);
+  const a = play(A, a0, -5, 0); // a new hairstyle on this tablet
+  const b = play(B, a0, 3, 0); // 3 more stars on the other, before they synced
+  const m = A.merge(a, b, 'mine');
+  check('salon: spent stars stay spent, the other tablet\'s add up (12 - 5 + 3)', m.stars === 10 && B.merge(b, a, 'theirs').stars === 10, m.stars);
+  check('salon: every star earned still counts for the gates (12 + 3)', A.earned(st(A, m), 'stars') === 15 && A.earned(st(A, a), 'stars') === 12 && A.earned(st(B, b), 'stars') === 15, m.earned);
+  check('salon: merging again, either way round, changes nothing', A.same(A.merge(m, a, 'mine'), m) && A.same(B.merge(b, m, 'theirs'), m));
+  // Stars she won since the last save count as earned before the salon takes some.
+  const live = st(A, a0);
+  live.stars += 2;
+  A.count(live);
+  live.stars -= 5;
+  A.count(live);
+  check('salon: stars not saved yet count as earned, then the spent ones go (14, 9 left)', A.earned(live, 'stars') === 14 && live.stars === 9, live);
+  // An older version of the game, which knows nothing of it, plays on after.
+  const byOld = playOld(a, 1, 0);
+  const mo = A.merge(a, byOld, 'mine');
+  check('salon: next to an older version, its total is kept (7 + 1)', mo.stars === 8 && A.earned(st(A, mo), 'stars') >= 12, [mo.stars, mo.earned]);
 }
 
 // ---- Fields this version doesn't know, and broken entries ---------------------------
