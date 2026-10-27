@@ -355,8 +355,9 @@ async function quests(browser, edition) {
     out.allOpen = q.picks.every(questOpen);
     // A new player is only asked for what she can do: nothing behind a gate,
     // no feeding without a friend, over a month of days.
-    const stars = state.stars;
-    state.stars = 0;
+    // (Counters fresh too: the gates count every star earned.)
+    const { stars, tally } = state;
+    Object.assign(state, { stars: 0, tally: Progress.tally({}) });
     state.outfit = Object.assign({}, state.outfit, { fairy: 'none' });
     const seen = new Set();
     const locked = [];
@@ -367,7 +368,7 @@ async function quests(browser, edition) {
       }
     }
     out.newPlayer = { seen: [...seen], locked };
-    state.stars = stars;
+    Object.assign(state, { stars, tally });
     // Her friend on, for the feeding quest.
     const friend = Object.keys(FAIRIES).find(k => k !== 'none');
     if (!state.owned.fairy.includes(friend)) state.owned.fairy.push(friend);
