@@ -2081,11 +2081,12 @@ async function kidMonsters(browser, edition) {
 }
 
 // The Monster Village and its tower (js/monster-village.js): everyone out
-// in the village is one of the monsters she drew (the ones after the first
-// five), asking the village's questions with her drawing in the dialog. In
-// by the tower's door, up its stairs to the second floor (its name shown,
-// the ones who live there; a tap on any part of a long one talks to it),
-// down again to the foot of the stairs, and out to the door she went in by.
+// in the village is one of the monsters she drew, asking the village's
+// questions with her drawing in the dialog, and a tap on any part of a
+// long one talks to it. In by the tower's door, up its stairs to the
+// second floor (its name shown, the ones who live there), down again to
+// the foot of the stairs, and out to the door she went in by. Each of her
+// monsters is in one place only.
 async function monsterTower(browser, edition) {
   const { page, ctx, errors } = await game(browser, { edition });
   const r = await page.evaluate(async () => {
@@ -2105,21 +2106,17 @@ async function monsterTower(browser, edition) {
     openDialog(npc);
     out.talk = { asked: !!state.question, drawing: !document.getElementById('dlg-drawing').classList.contains('hidden') };
     closeDialog();
-    const door = village.doors.find(d => d.target === 'tower');
-    enterDoor(door);
-    await wait(() => state.scene === sceneFor('tower') && settled());
-    out.tower = { inside: state.scene === sceneFor('tower'), looks: kids(state.scene).map(k => k.look).join() };
-    tapObject(state.scene.objects.find(o => o.stairs));
-    await wait(() => state.scene === sceneFor('tower2') && settled());
-    out.up = { there: state.scene === sceneFor('tower2'), at: at(), label: ui.place.textContent, monsters: kids(state.scene), busy: state.busy };
     // A tap on any part of a long one talks to it: the caterpillar's head
-    // and tail, the snake's head and its fish's tail (pixels of the art).
+    // and tail, the snake's head and its fish's tail (pixels of the art),
+    // standing next to it.
     const said = [];
     const talk = window.talkTo;
     window.talkTo = m => said.push(m.look);
     const box = screen.getBoundingClientRect();
     out.taps = [['kidmon8', 4, 7], ['kidmon8', 27, 12], ['kidmon12', 6, 10], ['kidmon12', 38, 14]].map(([look, col, row]) => {
       const n = state.scene.npcs.find(m => m.look === look);
+      placeHero(n.c + 1, n.r + 1);
+      snapCamera();
       const p = tileCenter(state.scene, n.c, n.r);
       const sp = kidMonsterSprite(look, 0);
       const wx = p.x - sp.ax + col + 1;
@@ -2134,6 +2131,13 @@ async function monsterTower(browser, edition) {
       return `${look}@${col}:${said.join() || 'nobody'}`;
     });
     window.talkTo = talk;
+    const door = village.doors.find(d => d.target === 'tower');
+    enterDoor(door);
+    await wait(() => state.scene === sceneFor('tower') && settled());
+    out.tower = { inside: state.scene === sceneFor('tower'), looks: kids(state.scene).map(k => k.look).join() };
+    tapObject(state.scene.objects.find(o => o.stairs));
+    await wait(() => state.scene === sceneFor('tower2') && settled());
+    out.up = { there: state.scene === sceneFor('tower2'), at: at(), label: ui.place.textContent, monsters: kids(state.scene), busy: state.busy };
     tapObject(state.scene.objects.find(o => o.stairs));
     await wait(() => state.scene === sceneFor('tower') && settled());
     out.down = { there: state.scene === sceneFor('tower'), at: at(), label: ui.place.textContent };
@@ -2147,10 +2151,12 @@ async function monsterTower(browser, edition) {
   const theirs = await page.evaluate(() => ({ village: MONSTER_NPCS.map(n => n.look).join(), up: TOWER2_NPCS.map(n => n.look).join(), floor1: TOWER_NPCS.map(n => n.look).join(),
     upName: place('tower2'), downName: place('tower') }));
   check(`${tag}: everyone out in the village is one of her monsters, named as she drew them, asking the village's questions`,
-    want(r.village) === theirs.village && r.village.length >= 5 && r.village.every(k => k.kid && k.named && k.level === 6) && r.talk.asked && r.talk.drawing, r);
-  check(`${tag}: up the stairs from the ground floor to the second floor, where the next five live`, r.tower.inside && r.tower.looks === theirs.floor1 && r.up.there && r.up.at === '9,4'
+    want(r.village) === theirs.village && r.village.length >= 3 && r.village.every(k => k.kid && k.named && k.level === 6) && r.talk.asked && r.talk.drawing, r);
+  check(`${tag}: up the stairs from the ground floor to the second floor, where a few more of her monsters live`, r.tower.inside && r.tower.looks === theirs.floor1 && r.up.there && r.up.at === '9,4'
     && r.up.label === theirs.upName && want(r.up.monsters) === theirs.up && r.up.monsters.every(k => k.kid && k.named && k.level === 6) && !r.up.busy, r);
   check(`${tag}: a tap on a long monster's head or tail talks to it`, r.taps.every(t => t.split(':')[1] === t.split('@')[0]), r.taps);
+  const all = [theirs.village, theirs.floor1, theirs.up].join().split(',');
+  check(`${tag}: each of her monsters is in one place only`, new Set(all).size === all.length, all);
   check(`${tag}: down again to the foot of the stairs, and out to the door she went in by`, r.down.there && r.down.at === '10,4' && r.down.label === theirs.downName
     && r.out.there && r.out.at === r.out.door && !r.out.busy, r);
   check(`${tag}: no page errors`, !errors.length, errors);

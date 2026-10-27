@@ -1,7 +1,7 @@
-// Her own monsters: the little monsters the child drew herself. The first
-// five live on the Monster Tower's ground floor; the ones she drew after on
-// its second floor and out in the Monster Village round it
-// (js/monster-village.js).
+// Her own monsters: the little monsters the child drew herself. Each lives
+// in one place: on a floor of the Monster Tower or out in the Monster
+// Village round it (MONSTER_NPCS, TOWER_NPCS, TOWER2_NPCS in js/data.js;
+// js/monster-village.js).
 // Any villager with one of these looks is one of them, in either edition:
 // drawCharacter (js/game.js) draws it with drawKidMonster, its ♪ goes a
 // little higher (kidBubbleLift, from drawOverlay), and its dialog shows her
@@ -712,8 +712,9 @@ Object.assign(VOICES, {
   kidmon3: { gender: 'male',   tts: 'am_adam',  lift: 0.94, pitch: 0.9,  rate: 0.95, voice: ['Oliver', 'Gordon', 'Microsoft Brian'] },
   kidmon4: { gender: 'female', tts: 'af_aoede',  pitch: 1.35, rate: 0.95, voice: ['Samantha', 'Karen', 'Microsoft Aria'] },
   kidmon5: { gender: 'female', tts: 'af_kore',   lift: 1.06, pitch: 1.4,  rate: 1.0,  voice: ['Tessa', 'Zoe', 'Microsoft Jenny'] },
-  // The ones after share voices the Monster Village had already (so its
-  // questions are recorded in them), each lifted to sound like itself.
+  // The ones she drew after the first five share voices the Monster Village
+  // had already (so its questions are recorded in them), each lifted to
+  // sound like itself.
   kidmon6: { gender: 'male',   tts: 'am_michael', lift: 1.1,  pitch: 1.2,  rate: 0.95, voice: ['Daniel', 'Fred', 'Microsoft Guy'] },
   kidmon7: { gender: 'female', tts: 'af_nova',   lift: 1.14, pitch: 1.6,  rate: 1.0,  voice: ['Junior', 'Zoe', 'Microsoft Ana'] },
   kidmon8: { gender: 'male',   tts: 'am_liam',   lift: 1.02, pitch: 1.1,  rate: 1.0,  voice: ['Oliver', 'Tom', 'Microsoft Brian'] },

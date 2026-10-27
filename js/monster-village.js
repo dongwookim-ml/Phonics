@@ -319,8 +319,8 @@ function buildMonsterTower() {
 
 // The second floor: a playroom under the roof, with her pictures pinned up
 // on the walls, round windows onto the night sky, a crayon table and a toy
-// chest, and the monsters she drew after the first five. Down the stairs in
-// the front corner, back to the ground floor.
+// chest, and a few more of her monsters. Down the stairs in the front
+// corner, back to the ground floor.
 function buildMonsterTower2() {
   const sc = makeScene('tower', 12, 10, 130, 50);
   sc.floorTint = '#d8c8f4';

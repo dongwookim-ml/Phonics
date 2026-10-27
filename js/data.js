@@ -1327,34 +1327,26 @@ const MONSTER_STARS = 40;
 PLACES.monster = '👾 몬스터 마을';
 PLACES.tower = '🗼 몬스터 탑';
 PLACES.tower2 = '🗼 몬스터 탑 2층';
-// Out in the village: the ones she drew after the first five, who live on
-// the tower's second floor and come out to play.
+// Each of her monsters lives in one place, with room round it: three on
+// each floor of the tower, the rest out in the village (the long ones,
+// the caterpillar and the snake, where there is room to stretch).
 const MONSTER_NPCS = [
-  { look: 'kidmon6',  c: 5,  r: 10 },
-  { look: 'kidmon7',  c: 18, r: 7 },
+  { look: 'kidmon2',  c: 5,  r: 10 },
+  { look: 'kidmon3',  c: 18, r: 7 },
   { look: 'kidmon8',  c: 19, r: 17 },
   { look: 'kidmon9',  c: 10, r: 18 },
-  { look: 'kidmon10', c: 14, r: 20 },
-  { look: 'kidmon11', c: 20, r: 15 },
+  { look: 'kidmon10', c: 16, r: 22 },
   { look: 'kidmon12', c: 7,  r: 14 },
 ];
-// The monsters in the tower, each one of her drawings: the first five on
-// the ground floor, the rest upstairs.
 const TOWER_NPCS = [
-  { look: 'kidmon1', c: 2, r: 3 },
-  { look: 'kidmon2', c: 6, r: 2 },
-  { look: 'kidmon3', c: 9, r: 4 },
-  { look: 'kidmon4', c: 3, r: 7 },
-  { look: 'kidmon5', c: 8, r: 7 },
+  { look: 'kidmon1', c: 2, r: 4 },
+  { look: 'kidmon4', c: 6, r: 2 },
+  { look: 'kidmon5', c: 8, r: 6 },
 ];
 const TOWER2_NPCS = [
-  { look: 'kidmon6',  c: 1, r: 3 },
-  { look: 'kidmon7',  c: 4, r: 1 },
-  { look: 'kidmon8',  c: 3, r: 6 },
-  { look: 'kidmon9',  c: 8, r: 2 },
-  { look: 'kidmon10', c: 6, r: 7 },
-  { look: 'kidmon11', c: 2, r: 8 },
-  { look: 'kidmon12', c: 5, r: 4 },
+  { look: 'kidmon6',  c: 2, r: 3 },
+  { look: 'kidmon7',  c: 6, r: 1 },
+  { look: 'kidmon11', c: 5, r: 7 },
 ];
 // Said as she comes in (the narrator, like the other places).
 LINES.monster = ['Welcome to the Monster Village!', 'Rawr! The monsters are happy to see you!'];
