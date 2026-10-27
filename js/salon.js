@@ -74,7 +74,7 @@ function drawSalon(ctx, k) {
 
 // ---- The salon card -------------------------------------------------------------
 
-// What the salon has on a tab: everything in it that suits her, hers first.
+// What the salon has on a tab: everything in it that suits her.
 function salonItems(slot) {
   const items = WARDROBE.find(w => w.slot === slot).items;
   return Object.entries(items)

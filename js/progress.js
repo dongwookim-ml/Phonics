@@ -41,6 +41,7 @@ const Progress = (() => {
   const FMT = 2;
   const FIELDS = ['stars', 'coins', 'dust'];
   const OLD = '_';
+  const FIX = '~';
   const n = x => { const v = Math.floor(Number(x)); return Number.isFinite(v) && v > 0 ? v : 0; };
   const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -109,12 +110,20 @@ const Progress = (() => {
   }
 
   // Whatever changed in the live counters since the last save is this
-  // device's: called by save() in js/game.js.
+  // device's: called by save() in js/game.js. Two tablets that spent the
+  // same stars before they synced leave a total below 0 (shown as 0); what
+  // brings it back to 0 goes under this device's FIX entry, which counts in
+  // the totals but is not earned.
   function count(st) {
     const t = st.tally || (st.tally = { earned: {}, spent: {} });
     const have = totals(t);
     for (const f of FIELDS) {
-      const d = (Number(st[f]) || 0) - have[f];
+      let d = (Number(st[f]) || 0) - have[f];
+      if (have[f] < 0 && d > 0) {
+        const fix = Math.min(d, -have[f]);
+        add(t.earned, FIX + device, f, fix);
+        d -= fix;
+      }
       if (d > 0) add(t.earned, device, f, d);
       else if (d < 0) add(t.spent, device, f, -d);
     }
@@ -122,10 +131,13 @@ const Progress = (() => {
   }
 
   // All of `f` ever earned, also what has been spent since: the counters'
-  // earned, and the live count's rise since the last save.
+  // earned (not the FIX entries), and the live count's rise since the last
+  // save (from 0 when the total is below it).
   function earned(st, f) {
     const t = st.tally || { earned: {}, spent: {} };
-    return sum(t.earned, f) + Math.max(0, (Number(st[f]) || 0) - totals(t)[f]);
+    let got = 0;
+    for (const [k, e] of Object.entries(t.earned)) if (isObj(e) && !k.startsWith(FIX)) got += n(e[f]);
+    return got + Math.max(0, (Number(st[f]) || 0) - Math.max(0, totals(t)[f]));
   }
 
   function counters(l, s, foreign) {

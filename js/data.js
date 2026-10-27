@@ -1174,7 +1174,7 @@ const SALON_PRICE = { style: 5, hair: 3 };
 PLACES.salon = '💇 미용실';
 LOOKS.stylist = { hair: '#ff8fc0', shirt: '#ffffff', pants: '#b98cff', hat: 'none' };
 VOICES.stylist = { gender: 'female', tts: 'af_jessica', lift: 1.08, pitch: 1.3, rate: 1.0, voice: ['Samantha', 'Karen', 'Microsoft Aria'] };
-PERSONA.stylist = ['Welcome to the hair salon, {title} {name}!', 'Hello! Shall we try a new hairstyle today?', 'Snip, snip! Come in, {title} {name}!'];
+PERSONA.stylist = ['Welcome to the hair salon, {title} {name}!', 'Hello! Shall we try a new hairstyle today?', 'Come on in, {title} {name}! Time for a new look!'];
 // The hairdresser: as the salon opens, a new look, too few stars.
 LINES.salon = ['Pick a hairstyle you like!', 'Which one would you like to try?'];
 LINES.salonDone = ['Ta-da! You look wonderful!', 'All done! Do you like it?', 'So pretty! Look in the mirror!'];

@@ -1308,9 +1308,8 @@ function pictureSource(slot, value) {
     else drawHeroBack(back.getContext('2d'), value, 2, 5, w);
     return [back, trimBox(back)];
   }
-  if (slot === 'head' || slot === 'hair') return [cv, [2, 0, 18, 18]];
-  // A hairstyle: her head, with room for pigtails, a ponytail or a bun.
-  if (slot === 'style') return [cv, [0, 0, 22, 20]];
+  // Her head, with room for pigtails, a ponytail or a bun.
+  if (slot === 'head' || slot === 'hair' || slot === 'style') return [cv, [0, 0, 22, 20]];
   // Something in her hand: just the thing, without her.
   if (slot === 'hand') {
     const thing = changedPixels(cv, heroSprite(Object.assign({}, o, { hand: 'none' }), 0).canvas);
@@ -2469,7 +2468,10 @@ function onPointer(e) {
       if (n.mount) {
         const isNext = (c, r) => Math.abs(c - n.c) + Math.abs(r - n.r) === 1;
         if (!walkTo(isNext, getOn)) getOn();
-      } else { guideTalked(); talkTo(n); }
+      } else {
+        if (guideAsks(n)) guideTalked(); // js/guide.js: a shop's keeper asks nothing
+        talkTo(n);
+      }
       return;
     }
   }

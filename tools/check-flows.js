@@ -2518,6 +2518,10 @@ async function hairSalon(browser, edition, look) {
     state.stars = FOREST_STARS + 2;
     save();
     renderStars();
+    // Next to her, the first steps' 👆 and the idle nudge come from someone who asks.
+    placeHero(keeper.c + 1, keeper.r);
+    out.guide = { nearest: guideNearest() && guideNearest().name, keeper: keeper.name };
+    const step = (state.guide = { step: 0 });
     // A tap on the hairdresser walks her there and opens the card.
     placeHero(keeper.c + 3, keeper.r);
     snapCamera();
@@ -2528,6 +2532,8 @@ async function hairSalon(browser, edition, look) {
     state.busy = false;
     screen.dispatchEvent(new PointerEvent('pointerdown', { clientX: box.left + sx * box.width / screen.width, clientY: box.top + sy * box.height / screen.height, bubbles: true }));
     await wait(shown);
+    out.guide.step = step.step;
+    state.guide = { step: 3 };
     const styles = Object.entries(HAIR_STYLES).filter(([, it]) => suits(it));
     out.open = { shown: shown(), busy: state.busy, tab: salon.tab, pics: pics().length, styles: styles.length, stars: salonUi.stars.textContent,
       prices: pics().map(b => b.querySelector('.price').textContent), worn: pics().filter(b => b.classList.contains('worn')).length, buy: salonUi.buy.classList.contains('hidden') };
@@ -2601,6 +2607,7 @@ async function hairSalon(browser, edition, look) {
     check(`${tag}: a tap on the hairdresser opens the card on the hairstyles, hers ticked and on her, the rest ⭐5`,
       r.open.shown && r.open.busy && r.open.tab === 'style' && r.open.pics === r.open.styles && r.open.stars.includes('12') && r.open.worn === 1 && r.open.buy
       && r.open.prices.filter(t => t === '✓').length >= 1 && r.open.prices.filter(t => t.includes('5')).length === r.open.styles - r.open.prices.filter(t => t === '✓').length, r.open);
+    check(`${tag}: the first steps' 👆 and the idle nudge never come from the hairdresser, and a tap on her isn't a talk`, !!r.guide.nearest && r.guide.nearest !== r.guide.keeper && r.guide.step === 0, r.guide);
     check(`${tag}: a new one picked: lit, and ✂️ says its price`, r.pick.buy && r.pick.lit === 1 && r.pick.text.includes('5'), r.pick);
     check(`${tag}: ✂️ pays 5 stars (12 → 7), it is hers and on her, the card stays open`, r.bought.stars === 7 && r.bought.hud === '7' && r.bought.style === r.bought.value && r.bought.mine && r.bought.shown
       && r.bought.sprite && r.bought.tick === '✓' && r.bought.buy, r.bought);

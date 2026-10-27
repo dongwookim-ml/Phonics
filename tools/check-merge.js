@@ -640,6 +640,17 @@ var state = {};`, ctx);
   live.stars -= 5;
   A.count(live);
   check('salon: stars not saved yet count as earned, then the spent ones go (14, 9 left)', A.earned(live, 'stars') === 14 && live.stars === 9, live);
+  // Both tablets spend the same 12 stars before they sync: 0 left, never
+  // below, and still 12 earned, also after the next save and the next star.
+  const both = A.merge(play(A, a0, -10, 0), play(B, a0, -10, 0), 'mine');
+  const after = st(A, both);
+  const was = A.earned(after, 'stars');
+  A.count(after);
+  const saved = A.earned(after, 'stars');
+  after.stars += 1;
+  A.count(after);
+  check('salon: the same stars spent on two tablets: 0 left, still 12 earned, and the next star makes 13', both.stars === 0 && was === 12 && saved === 12 && A.earned(after, 'stars') === 13 && after.stars === 1
+    && A.merge(Object.assign({}, both, { stars: 1, earned: after.tally.earned, spent: after.tally.spent }), b, 'mine').stars === 1 + 3, [both.stars, was, saved, A.earned(after, 'stars'), after.tally]);
   // An older version of the game, which knows nothing of it, plays on after.
   const byOld = playOld(a, 1, 0);
   const mo = A.merge(a, byOld, 'mine');

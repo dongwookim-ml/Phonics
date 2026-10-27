@@ -37,14 +37,15 @@ addEventListener('keydown', () => { guide.lastTap = performance.now(); }, true);
 // The town is on screen: past the start screen and not asleep.
 const guidePlaying = () => ui.start.classList.contains('hidden') && !guide.asleep;
 
-// The villager nearest to her who can be talked to (not a shop, a ride or
-// a caught monster).
+// The villager nearest to her who can be talked to (not a shopkeeper, the
+// hairdresser, a ride or a caught monster).
+const guideAsks = n => !n.mount && !n.shop && !n.salon && !n.caught;
 function guideNearest() {
   const h = state.hero;
   let best = null;
   let far = Infinity;
   for (const n of state.scene.npcs) {
-    if (n.mount || n.shop || n.caught) continue;
+    if (!guideAsks(n)) continue;
     const d = Math.hypot(n.c - h.c, n.r - h.r);
     if (d < far) { far = d; best = n; }
   }

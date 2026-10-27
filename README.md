@@ -565,7 +565,9 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit (an
   are joined, and stars, coins and fairy dust are counted per device
   (`earned` / `spent` in the save, which is marked `fmt: 2`), so both
   tablets' stars add up; stars spent at the hair salon are `spent` too, so
-  the stars earned (what the gates count) stay right across tablets. The
+  the stars earned (what the gates count) stay right across tablets (two
+  tablets that spent the same stars before syncing leave 0, and what puts
+  the total back to 0 is kept apart under `~` + device, never as earned). The
   save keeps the plain totals and any fields a
   newer version added, so an older version of the game can still read it.
   Totals uploaded by an older version (no `fmt`) are taken as a floor
