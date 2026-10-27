@@ -33,11 +33,11 @@ function questDay() {
 // album has stickers left to find, her friend is on and still growing.
 function questOpen(kind) {
   const q = QUESTS[kind];
-  if (!q || (q.stars && state.stars < q.stars)) return false;
+  if (!q || (q.stars && starsEarned() < q.stars)) return false;
   if (kind === 'sticker') return albumWords().filter(x => !state.stickers[x.w]).length >= q.n * 3;
   if (kind === 'feed') {
     const key = friendWorn();
-    return !!key && !friendGrown(key) && (state.dust >= q.n || state.stars >= FAIRY_STARS);
+    return !!key && !friendGrown(key) && (state.dust >= q.n || starsEarned() >= FAIRY_STARS);
   }
   return true;
 }

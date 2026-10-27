@@ -271,17 +271,21 @@ const GATE_LINES = { forest: 'openForest', fairy: 'openFairy', unicorn: 'openUni
 
 // ⭐ 7/10 🌲: the stars needed for the next gate that is still shut, with a
 // bar that fills from the last gate that opened. Hidden once all are open.
+// Gates count every star she has earned (starsEarned in js/game.js): after
+// the hair salon the ⭐ count is less, so the meter shows her earned ones
+// after it (⭐ 3 · 13/20 🌲).
 function renderGateMeter() {
   const gates = albumGates();
-  const next = gates.find(g => state.stars < g.stars);
+  const earned = starsEarned();
+  const next = gates.find(g => earned < g.stars);
   albumUi.gate.classList.toggle('hidden', !next);
   ui.stars.classList.toggle('to-gate', !!next);
   if (!next) return;
-  const from = gates.filter(g => g.stars <= state.stars).reduce((a, g) => Math.max(a, g.stars), 0);
-  albumUi.gateNeed.textContent = `/${next.stars}`;
+  const from = gates.filter(g => g.stars <= earned).reduce((a, g) => Math.max(a, g.stars), 0);
+  albumUi.gateNeed.textContent = earned === state.stars ? `/${next.stars}` : `· ${earned}/${next.stars}`;
   albumUi.gateIcon.textContent = albumIcon(next.key);
-  albumUi.gateBar.style.width = `${Math.round((100 * (state.stars - from)) / (next.stars - from))}%`;
-  ui.stars.title = `${placeName(next.key)}까지 별 ${next.stars - state.stars}개`;
+  albumUi.gateBar.style.width = `${Math.round((100 * (earned - from)) / (next.stars - from))}%`;
+  ui.stars.title = `${placeName(next.key)}까지 별 ${next.stars - earned}개`;
 }
 
 // After a star: a gate whose stars were just reached opens with a party,
@@ -290,12 +294,14 @@ function renderGateMeter() {
 // once, for a child already past its stars, after her first answer since
 // (state.guide.opened, saved).
 const LATE_GATES = ['monster'];
+// `before`: the stars she had earned before this one (starsEarned).
 function gateCheck(before) {
   const opened = state.guide && (state.guide.opened = state.guide.opened || {});
+  const earned = starsEarned();
   for (const g of albumGates()) {
     const late = opened && LATE_GATES.includes(g.key) && before >= g.stars && !opened[g.key];
-    if ((before < g.stars && state.stars >= g.stars) || late) fanfareLater(() => gateFanfare(g));
-    if (opened && LATE_GATES.includes(g.key) && state.stars >= g.stars) opened[g.key] = true;
+    if ((before < g.stars && earned >= g.stars) || late) fanfareLater(() => gateFanfare(g));
+    if (opened && LATE_GATES.includes(g.key) && earned >= g.stars) opened[g.key] = true;
   }
 }
 

@@ -270,7 +270,7 @@ function parentStats() {
     .join('');
   parentUi.panel.querySelector('.parent-body').innerHTML = `
     <div class="parent-tiles">
-      ${tile('⭐', '별', state.stars)}${tile('🪙', '코인', state.coins | 0)}${isCaptain() ? tile('⚡', '배터리', state.dust | 0) : tile('✨', '요정의 가루', state.dust | 0)}
+      ${tile('⭐', starsEarned() > state.stars ? `별 (모은 별 ${starsEarned()})` : '별', state.stars)}${tile('🪙', '코인', state.coins | 0)}${isCaptain() ? tile('⚡', '배터리', state.dust | 0) : tile('✨', '요정의 가루', state.dust | 0)}
       ${tile('📝', '답한 횟수', answers)}${tile('✅', '맞힌 문제', solvedCount)}
     </div>
     <p class="parent-note parent-quests">${parentEsc(questParentLine())}</p>

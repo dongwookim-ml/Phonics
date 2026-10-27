@@ -266,6 +266,7 @@ function buildTown() {
   sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS, links: toForest });
   addTownFairyGate(sc);
   addTownMonsterGate(sc, addSideGate); // js/monster-village.js
+  addTownSalon(sc); // the hair salon, js/salon.js
   renderGround(sc);
   return sc;
 }

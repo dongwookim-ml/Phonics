@@ -568,7 +568,7 @@ function selfFinish() {
   log.read++;
   log.last = Date.now();
   questAdd('book'); // today's adventures (js/quest.js), as a story does
-  const before = state.stars;
+  const before = starsEarned();
   if (first) {
     state.stars++;
     questAdd('stars'); // as a star from a right answer does

@@ -188,6 +188,23 @@ const HAIR_COLORS = {
   purple: { name: '보라 머리', icon: '💜', c: ['#8a5ad0', '#c4a2ff'] },
   mint:  { name: '민트 머리', icon: '🌱', c: ['#3fb498', '#9aecd4'] },
 };
+// Hairstyles: the shape of her hair, cut at the hair salon in town
+// (js/salon.js) for stars, then hers to wear like the rest. A girl's and a
+// boy's styles each suit that look only. Drawn by HAIR_STYLE_ART in
+// js/sprites.js.
+const HAIR_STYLES = {
+  long:     { name: '긴 생머리',   icon: '💁‍♀️', girl: true },
+  bob:      { name: '단발머리',    icon: '✂️', girl: true },
+  pigtails: { name: '양갈래 머리', icon: '🎀', girl: true },
+  ponytail: { name: '포니테일',    icon: '🎗️', girl: true },
+  bun:      { name: '똥머리',      icon: '🍡', girl: true },
+  braids:   { name: '땋은 머리',   icon: '🥨', girl: true },
+  curly:    { name: '곱슬머리',    icon: '🌀', girl: true },
+  short:    { name: '짧은 머리',   icon: '💇‍♂️', boy: true },
+  spiky:    { name: '뾰족 머리',   icon: '⚡', boy: true },
+  curls:    { name: '곱슬 앞머리', icon: '🌀', boy: true },
+  shaggy:   { name: '덥수룩 머리', icon: '🦁', boy: true },
+};
 
 // Treasures are not worn: they stand on the treasure shelf, the wardrobe's
 // last tab. Each one is a present like the clothes.
@@ -234,9 +251,9 @@ const UNICORNS = {
   night:    { name: '달빛 유니콘',   icon: '🌙', unicorn: true, body: '#6a6ac8', shade: '#48489a', mane: ['#ffe066', '#ffffff', '#ffe066'], horn: '#ffe066' },
 };
 
-const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', back: 'none', ride: 'none' };
+const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', style: 'long', back: 'none', ride: 'none' };
 // What a boy hero starts in, and what replaces anything that only suits girls.
-const DEFAULT_BOY_OUTFIT = { dress: 'sky', shape: 'tunic', head: 'circlet', hand: 'none', hair: 'brown', back: 'none', ride: 'none' };
+const DEFAULT_BOY_OUTFIT = { dress: 'sky', shape: 'tunic', head: 'circlet', hand: 'none', hair: 'brown', style: 'short', back: 'none', ride: 'none' };
 
 // ---- People --------------------------------------------------------------
 
@@ -1145,6 +1162,23 @@ LINES.poor = ['Oh, you need a few more coins. Catch some monsters in the cave!',
 // Before the cave opens, coins come from the fishing game at the town pond.
 LINES.poorPond = ['Oh, you need a few more coins. Go fishing at the town pond!', 'Almost! Catch some fish at the pond for more coins.'];
 LINES.soldOut = ['Wow, you have everything already!', 'You bought all my treasures! Amazing!'];
+
+// ---- Hair salon (the princess edition's town) ---------------------------
+
+// The salon cuts a new hairstyle (HAIR_STYLES) or colours her hair
+// (HAIR_COLORS) for stars (js/salon.js); one she has had before is free.
+// Stars spent there are gone from the ⭐ count, but every gate and goal
+// counts all the stars she has ever earned (starsEarned in js/game.js), so
+// nothing she opened closes again.
+const SALON_PRICE = { style: 5, hair: 3 };
+PLACES.salon = '💇 미용실';
+LOOKS.stylist = { hair: '#ff8fc0', shirt: '#ffffff', pants: '#b98cff', hat: 'none' };
+VOICES.stylist = { gender: 'female', tts: 'af_jessica', lift: 1.08, pitch: 1.3, rate: 1.0, voice: ['Samantha', 'Karen', 'Microsoft Aria'] };
+PERSONA.stylist = ['Welcome to the hair salon, {title} {name}!', 'Hello! Shall we try a new hairstyle today?', 'Snip, snip! Come in, {title} {name}!'];
+// The hairdresser: as the salon opens, a new look, too few stars.
+LINES.salon = ['Pick a hairstyle you like!', 'Which one would you like to try?'];
+LINES.salonDone = ['Ta-da! You look wonderful!', 'All done! Do you like it?', 'So pretty! Look in the mirror!'];
+LINES.salonPoor = ['Oh, you need a few more stars. Answer some questions and come back!', 'Almost! Earn a few more stars, then come back.'];
 
 // Shop-only treasures, bought with coins. `price` is in coins; everything
 // else in the shop is priced by shopPrice() in js/game.js.

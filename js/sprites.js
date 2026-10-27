@@ -2266,11 +2266,62 @@ function drawHeroBack(ctx, back, OXp, OYp, W) {
   if (cape.clasp) for (const x of [OXp + 3, OXp + 13]) { px(ctx, x, OYp + 12, 2, 2, '#ffd34d'); px(ctx, x + 1, OYp + 13, 1, 1, '#e0a52a'); }
 }
 
+// ---- Hairstyles -------------------------------------------------------------
+
+// How each hairstyle (HAIR_STYLES in js/data.js, cut at the hair salon,
+// js/salon.js) changes the hero's head (PRINCESS_TOP or BOY_TOP): `rows` in
+// place of the top's, bitmaps drawn behind her (`back`) and over her
+// (`front`, under head things), at grid positions (x, y from the top left
+// of the head; the canvas has room for 2 px either side and 5 above), in
+// the hero's palette (h H her hair colour, o ink, r R ribbon). `short`: no
+// hair over her shoulders.
+const HAIR_STYLE_ART = {
+  // Long and straight, down her back (the starting style).
+  long: { back: [[1, 13, ['hh', 'hh', 'hh', 'hh', 'hh', 'hh', 'hh']], [15, 13, ['hh', 'hh', 'hh', 'hh', 'hh', 'hh', 'hh']]] },
+  // Cut at her chin.
+  bob: { rows: { 11: '..ohhossssssohho..', 12: '...ooooossooooo...' }, short: true },
+  // Two bunches at the sides, tied with pink ribbons.
+  pigtails: { rows: { 11: '..ohhossssssohho..', 12: '...ooooossooooo...' }, short: true, front: [[-2, 3, ['..rr', '.rRr', 'ohhr', 'ohHo', 'ohho', 'ohHo', '.oho', '.oho', '..o.']], [16, 3, ['rr..', 'rRr.', 'rhho', 'oHho', 'ohho', 'oHho', 'oho.', 'oho.', '.o..']]] },
+  // Pulled back into one tail, swinging out to the side, with a ribbon.
+  ponytail: { rows: { 11: '..ohhossssssohho..', 12: '...ooooossooooo...' }, short: true, back: [[14, 1, ['.rr..', 'rRro.', '.ohho', '.ohHho', '..ohho', '..oHho', '..ohho', '..ohHo', '...oho', '...oho', '...oho', '....o.']]] },
+  // Up in a round bun on top, with a ribbon round it.
+  bun: { rows: { 11: '..ohhossssssohho..', 12: '...ooooossooooo...' }, short: true, front: [[5, -5, ['..oooo..', '.ohhHHo.', 'ohhHhhho', 'ohhhhhho', '.orrrro.']]] },
+  // Two braids over her shoulders, pink ribbons at the ends.
+  braids: { front: [[1, 12, ['ohHo', 'oHho', 'ohHo', 'oHho', 'ohHo', 'oHho', 'orro', '.oo.']], [13, 12, ['ohHo', 'oHho', 'ohHo', 'oHho', 'ohHo', 'oHho', 'orro', '.oo.']]] },
+  // Big and curly all round, down to her shoulders.
+  curly: { back: [[-1, 4, ['..oh', '.ohh', 'ohhh', 'oHhh', '.ohh', 'ohhh', 'oHhh', '.ohh', 'ohhh', 'oHhh', '.ohh', 'ohhh', 'oHhh', '.ohh', '..oo']], [15, 4, ['ho..', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hhHo', 'hho.', 'oo..']]], front: [[3, -1, ['.oo..oo..oo.', 'ohhoohhoohho']]] },
+  // Short (the starting style).
+  short: {},
+  // Spiky on top.
+  spiky: { rows: { 0: '...ohhhhhhhhho....' }, front: [[3, -3, ['..o...o...o.', '.oho.oho.oho', 'ohhhohhhohhh']]] },
+  // A row of curls on top.
+  curls: { front: [[2, -2, ['..oo..oo..oo.', '.ohhoohhoohho.', 'ohhhhhhhhhhhh']]] },
+  // Long and shaggy, over his forehead and ears.
+  shaggy: { rows: { 5: '..ohhhhhhhhhhhho..', 6: '..ohhssssssssshho.', 7: '..ohhssksssksshho.', 8: '..ohhssksssksshho.', 9: '..ohhspssssspshho.', 10: '...ohssssmssssho..', 11: '....oosssssssoo...' } },
+};
+
+// The art of the hairstyle `outfit` has, or the starting one.
+const hairArt = (outfit, boy) => HAIR_STYLE_ART[outfit.style] || HAIR_STYLE_ART[boy ? 'short' : 'long'];
+// The head with a hairstyle's own rows; with nothing over the shoulders for
+// a short one (the sleeve, or the outline, where the hair was).
+function styledTop(top, art) {
+  const rows = top.map((row, i) => (art.rows && art.rows[i]) || row);
+  if (!art.short) return rows;
+  return rows.map((row, i) => (i < 13 ? row : [...row].map((ch, x) => {
+    if (ch !== 'h' && ch !== 'H') return ch;
+    const inner = row[x < 9 ? x + 1 : x - 1];
+    return inner === '.' || inner === 'o' ? 'o' : inner;
+  }).join('')));
+}
+function drawHairBits(ctx, bits, pal, OXp, OYp) {
+  for (const [x, y, rows] of bits || []) drawBitmap(ctx, rows, pal, OXp + x, OYp + y);
+}
+
 const princessCache = new Map();
 
 // Returns { canvas, ax, ay } for an outfit and walk frame.
 function princessSprite(outfit, frame) {
-  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.back}|${frame}`;
+  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.style}|${outfit.back}|${frame}`;
   if (princessCache.has(key)) return princessCache.get(key);
   const W = 22;
   const H = 34;
@@ -2292,12 +2343,14 @@ function princessSprite(outfit, frame) {
     Object.assign(skirt, PRINCESS_WALK[shape]);
   }
   const tops = PRINCESS_TOPS[shape] || [];
-  const top = PRINCESS_TOP.map((row, i) => tops[i - 13] || row);
+  const cut = hairArt(outfit, false);
+  const top = styledTop(PRINCESS_TOP.map((row, i) => tops[i - 13] || row), cut);
   drawHeroBack(ctx, outfit.back, OXp, OYp, W);
-  // Long hair behind the dress.
-  for (let y = 13; y < 20; y++) { px(ctx, OXp + 1, OYp + y, 2, 1, pal.h); px(ctx, OXp + 15, OYp + y, 2, 1, pal.h); }
+  // Her hair behind her (long hair down her back, a ponytail), then her, then hair over her.
+  drawHairBits(ctx, cut.back, pal, OXp, OYp);
   drawBitmap(ctx, top, pal, OXp, OYp);
   drawBitmap(ctx, skirt, pal, OXp, OYp + top.length);
+  drawHairBits(ctx, cut.front, pal, OXp, OYp);
   const head = HEAD_ITEMS[outfit.head];
   if (head) drawBitmap(ctx, head.rows, pal, OXp + head.x, OYp + head.y);
   const hand = HAND_BITMAPS[outfit.hand];
@@ -2638,7 +2691,7 @@ const boyCache = new Map();
 // The boy hero, on the princess's canvas size and anchor. Wings never
 // reach a boy (see suits() in game.js); capes and dragon wings do.
 function boySprite(outfit, frame) {
-  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.back}|${frame}`;
+  const key = `${outfit.dress}|${outfit.shape}|${outfit.head}|${outfit.hand}|${outfit.hair}|${outfit.style}|${outfit.back}|${frame}`;
   if (boyCache.has(key)) return boyCache.get(key);
   const W = 22;
   const H = 34;
@@ -2654,10 +2707,13 @@ function boySprite(outfit, frame) {
     else bottom.splice(7, 3, boyStep(bottom[7]), boyStep(bottom[8]), '....oooo..oooo....');
   }
   const tops = BOY_TOPS[shape] || [];
-  const top = BOY_TOP.map((row, i) => tops[i - 13] || row);
+  const cut = hairArt(outfit, true);
+  const top = styledTop(BOY_TOP.map((row, i) => tops[i - 13] || row), cut);
   drawHeroBack(ctx, outfit.back, OXp, OYp, W);
+  drawHairBits(ctx, cut.back, pal, OXp, OYp);
   drawBitmap(ctx, top, pal, OXp, OYp);
   drawBitmap(ctx, bottom, pal, OXp, OYp + top.length);
+  drawHairBits(ctx, cut.front, pal, OXp, OYp);
   const head = BOY_HEAD_ITEMS[outfit.head];
   if (head) drawBitmap(ctx, head.rows, pal, OXp + head.x, OYp + head.y);
   const hand = BOY_HAND_BITMAPS[outfit.hand];

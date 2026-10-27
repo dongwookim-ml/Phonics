@@ -62,6 +62,8 @@ const WARDROBE = [
   { slot: 'shape', title: '드레스 모양', boyTitle: '옷 모양', icon: '👗', boyIcon: '👕', items: DRESS_SHAPES },
   { slot: 'dress', title: '드레스 색', boyTitle: '옷 색', icon: '🎨', items: DRESS_COLORS },
   { slot: 'hair', title: '머리 색', icon: '💇‍♀️', boyIcon: '💇‍♂️', items: HAIR_COLORS },
+  // Hairstyles are cut at the hair salon in town for stars (js/salon.js), never given.
+  ...(isCaptain() ? [] : [{ slot: 'style', title: '머리 모양', icon: '✂️', items: HAIR_STYLES, salon: true }]),
   { slot: 'head', title: '머리 장식', boyTitle: '모자와 왕관', icon: '👑', items: HEADWEAR },
   { slot: 'hand', title: '손에 드는 것', icon: '🪄', boyIcon: '🗡️', items: HAND_ITEMS },
   { slot: 'back', title: '날개와 망토', boyTitle: '망토와 날개', icon: '🦋', boyIcon: '🦸', items: BACK_ITEMS },
@@ -96,6 +98,10 @@ function fitOutfit(outfit) {
   for (const { slot, items } of WORN_SLOTS) if (!suits(items[fit[slot]])) fit[slot] = defaultOutfit()[slot];
   return fit;
 }
+// Every star she has ever earned: what the gates and goals count. The ⭐
+// count (state.stars) is what is left after the hair salon (js/salon.js).
+const starsEarned = () => Progress.earned(state, 'stars');
+
 // The hero's standing sprite: a princess or a boy, by look.
 function heroSprite(outfit, frame) {
   if (isCaptain()) return robotSprite(outfit, frame);
@@ -303,7 +309,7 @@ function setPaused(on) {
 // js/cave-magic.js). Every close sets state.busy from this, so closing one
 // thing never frees the game under another, nor leaves it stuck with
 // nothing open.
-const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic'];
+const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'salon', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic'];
 function busyNow() {
   const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
   return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep || caveFighting();
@@ -612,6 +618,7 @@ function openDialog(npc) {
   if (npc.caught || state.gift) return;
   faceEachOther(npc);
   if (npc.shop) { openShop(npc); return; }
+  if (npc.salon) { openSalon(npc); return; } // the hair salon (js/salon.js)
   state.busy = true;
   state.talking = npc;
   libraryDialog(npc);
@@ -749,7 +756,8 @@ function answeredRight(q, btn) {
   const close = () => { if (state.question === q) closeDialog(); };
   Sound.say([{ text: praise }, { pause: 300 }].concat(q.answer, levelUp, gift ? [] : [{ pause: 700 }, { call: close }]), voiceOf(npc));
   if (npc.level === 5 && !q.misses) addDust();
-  const before = state.stars++;
+  const before = starsEarned();
+  state.stars++;
   questAdd('stars');
   state.answered++;
   save();
@@ -912,7 +920,8 @@ function rewardChoices(level) {
   const o = state.outfit;
   const fresh = [];
   const worn = [];
-  for (const { slot, items } of WARDROBE) {
+  for (const { slot, items, salon } of WARDROBE) {
+    if (salon) continue;
     for (const value of Object.keys(items)) {
       if (value === 'none' || value === o[slot]) continue;
       if (!suits(items[value])) continue;
@@ -935,7 +944,8 @@ function rewardChoices(level) {
 function collected() {
   let have = 0;
   let total = 0;
-  for (const { slot, items } of WARDROBE) {
+  for (const { slot, items, salon } of WARDROBE) {
+    if (salon) continue;
     for (const value of Object.keys(items)) {
       if (value === 'none' || items[value].shop || !suits(items[value])) continue;
       total++;
@@ -1166,7 +1176,13 @@ function wardrobeItem(w, value, item) {
   b.classList.toggle('on', !w.shelf && state.outfit[slot] === value);
   b.classList.toggle('new', !!wdNew && wdNew.slot === slot && wdNew.value === value);
   b.addEventListener('click', () => {
-    if (!owned) { Sound.locked(); replay(b, 'nope'); return; }
+    if (!owned) {
+      Sound.locked();
+      replay(b, 'nope');
+      // A hairstyle she hasn't had yet: the salon in town cuts it.
+      if (w.salon) ui.wdSlots.querySelector('.wd-title .nm').textContent = '✂️ 미용실에서 별로 바꿀 수 있어요';
+      return;
+    }
     if (w.shelf) {
       Sound.tap();
       Sound.sparkle();
@@ -1293,6 +1309,8 @@ function pictureSource(slot, value) {
     return [back, trimBox(back)];
   }
   if (slot === 'head' || slot === 'hair') return [cv, [2, 0, 18, 18]];
+  // A hairstyle: her head, with room for pigtails, a ponytail or a bun.
+  if (slot === 'style') return [cv, [0, 0, 22, 20]];
   // Something in her hand: just the thing, without her.
   if (slot === 'hand') {
     const thing = changedPixels(cv, heroSprite(Object.assign({}, o, { hand: 'none' }), 0).canvas);
@@ -1384,7 +1402,7 @@ function plainCanvas(cv) {
 function renderCoins(pop) {
   ui.coins.querySelector('.count').textContent = state.coins;
   // The coin purse shows up once the cave is open or she has coins.
-  ui.coins.classList.toggle('hidden', !state.coins && state.stars < DUNGEON_STARS);
+  ui.coins.classList.toggle('hidden', !state.coins && starsEarned() < DUNGEON_STARS);
   if (pop) {
     ui.coins.classList.remove('pop');
     void ui.coins.offsetWidth;
@@ -1462,12 +1480,13 @@ function shopPrice(slot, item) {
 // A village's own friends and treasures wait for her there until its gate
 // is open: fishing coins come long before, and the village gives them first.
 const VILLAGE_STARS = { forest: FOREST_STARS, unicorn: UNICORN_STARS, fairy: FAIRY_STARS };
-const notYet = item => Object.entries(VILLAGE_STARS).some(([k, stars]) => item[k] && state.stars < stars);
+const notYet = item => Object.entries(VILLAGE_STARS).some(([k, stars]) => item[k] && starsEarned() < stars);
 
-// Everything she doesn't own yet, shop treasures first.
+// Everything she doesn't own yet, shop treasures first (hairstyles are the salon's).
 function shopItems() {
   const list = [];
-  for (const { slot, items } of WARDROBE) {
+  for (const { slot, items, salon } of WARDROBE) {
+    if (salon) continue;
     for (const [value, item] of Object.entries(items)) {
       if (value === 'none' || !suits(item) || notYet(item) || state.owned[slot].includes(value)) continue;
       list.push({ slot, value, item, label: itemLabel(slot, value), price: shopPrice(slot, item) });
@@ -1551,7 +1570,7 @@ function buyPick() {
   if (state.coins < pick.price) {
     Sound.locked();
     // Until the cave opens, coins come from the pond game in town (js/minigame.js).
-    const cave = state.stars >= DUNGEON_STARS;
+    const cave = starsEarned() >= DUNGEON_STARS;
     const n = pick.price - state.coins;
     ui.shopMsg.textContent = cave ? `코인이 ${n}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎` : `코인이 ${n}개 더 필요해요. 마을 연못에서 낚시를 해 봐요! 🎣`;
     if (isCaptain()) ui.shopMsg.textContent = (cave ? CAPTAIN_TEXT.poor : CAPTAIN_TEXT.poorPond)(n);
@@ -1691,7 +1710,7 @@ function addDust() {
 function renderDust(pop) {
   ui.dust.querySelector('.count').textContent = state.dust;
   // The dust jar shows up once the Fairy Village is open or she has some.
-  ui.dust.classList.toggle('hidden', !state.dust && state.stars < FAIRY_STARS);
+  ui.dust.classList.toggle('hidden', !state.dust && starsEarned() < FAIRY_STARS);
   if (pop) {
     ui.dust.classList.remove('pop');
     void ui.dust.offsetWidth;
@@ -2182,7 +2201,7 @@ function drawOverlay(now) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (!sg.plain) {
-      const text = sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text;
+      const text = sg.needStars && starsEarned() < sg.needStars ? `${sg.text} 🔒 ⭐${starsEarned()}/${sg.needStars}` : sg.text;
       const w = ctx.measureText(text).width + 8 * s;
       const h = 14 * s;
       // A room's name sign stays on screen and below the HUD, so the door
@@ -2209,7 +2228,7 @@ function drawOverlay(now) {
       ctx.stroke();
     }
     ctx.fillStyle = shade(sg.color, -60);
-    ctx.fillText(sg.needStars && state.stars < sg.needStars ? `${sg.text} 🔒 ⭐${state.stars}/${sg.needStars}` : sg.text, p.x, p.y + 0.5 * s);
+    ctx.fillText(sg.needStars && starsEarned() < sg.needStars ? `${sg.text} 🔒 ⭐${starsEarned()}/${sg.needStars}` : sg.text, p.x, p.y + 0.5 * s);
   }
   for (const d of sc.decor) {
     const m = d.touchFx && touchMove(d, now);
@@ -2343,7 +2362,7 @@ function drawExitHints(now) {
     const w = tileCenter(sc, sp.c, sp.r);
     const p = toScreen(w.x, w.y);
     if (p.x < -100 || p.y < -100 || p.x > screen.width + 100 || p.y > screen.height + 100) continue;
-    const locked = sp.link && sp.link.needStars && state.stars < sp.link.needStars;
+    const locked = sp.link && sp.link.needStars && starsEarned() < sp.link.needStars;
     const pulse = 0.5 + 0.5 * Math.sin(now / 450);
 
     // Soft glow on the ground, and on the door itself for wall doors.
@@ -2507,7 +2526,7 @@ function tapObject(o, wx, wy, front) {
     goLink(o.stairs || o.links, true);
     return true;
   }
-  if (o.kind === 'shop') {
+  if (o.kind === 'shop' || o.kind === 'salon') {
     Sound.tap();
     talkTo(o.keeper);
     return true;
@@ -2567,7 +2586,7 @@ function tapOverlay(sc, wx, wy) {
     return true;
   }
   for (const sp of exitSpots(sc)) {
-    const locked = sp.link && sp.link.needStars && state.stars < sp.link.needStars;
+    const locked = sp.link && sp.link.needStars && starsEarned() < sp.link.needStars;
     if (!locked && sp.dir) continue; // arrows on the ground: the tiles themselves
     const w = tileCenter(sc, sp.c, sp.r);
     if (Math.abs(wx - w.x) > 8 || wy < w.y - 27 || wy > w.y - 6) continue;
@@ -2593,10 +2612,10 @@ function linkAt(sc, t, wx, wy) {
 // Goes another way out: a locked one says how many stars it needs, an open
 // one walks her to it (whichever of its tiles is nearest) and through.
 function goLink(group, tap) {
-  const locked = group.find(l => l.needStars && state.stars < l.needStars);
+  const locked = group.find(l => l.needStars && starsEarned() < l.needStars);
   if (locked) {
     Sound.locked();
-    showPlace(`🔒 별 ${locked.needStars}개를 모으면 열려요 (지금 ⭐${state.stars})`);
+    showPlace(`🔒 별 ${locked.needStars}개를 모으면 열려요 (지금 ⭐${starsEarned()})`);
     Sound.say([{ text: line('locked', { stars: locked.needStars }) }]);
     return;
   }
@@ -2635,6 +2654,7 @@ const OUTSIDE_CARDS = [
   { id: 'reader' },
   { id: 'wardrobe', close: closeWardrobe },
   { id: 'shop', close: () => { Sound.tap(); closeShop(); } },
+  { id: 'salon', close: () => { Sound.tap(); closeSalon(); } },
   { id: 'library', close: () => { Sound.tap(); closeLibrary(); } },
   { id: 'album', close: closeAlbum, skip: e => albumUi.skipped === e },
   { id: 'quests', close: closeQuests, skip: e => questUi.skipped === e },

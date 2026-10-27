@@ -139,6 +139,7 @@ function collect(D) {
     if (monsters.has(look)) lines(v, ['caught'].concat(D.CAVE_LINES ? D.CAVE_LINES.villain : []));
     if (fairies.has(look)) lines(v, ['newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'poorPond', 'soldOut']);
+    if (look === 'stylist') lines(v, ['salon', 'salonDone', 'salonPoor']);
     // Anyone who gives presents (not the cave villains), and the shop.
     const gives = town.has(look) || forest.has(look) || fairies.has(look) || monsterVillage.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
     if (gives) for (const t of partShow) add(v, t);

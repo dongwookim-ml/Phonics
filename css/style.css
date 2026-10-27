@@ -996,6 +996,11 @@ body.monster { background: linear-gradient(#2a2458, #5a4aa0 50%, #9a88d8); }
 .wd-item.treasure.shop-item { border-bottom-width: 3px; }
 .shop .answer { margin-top: 2px; }
 .shop .answer button.hidden { display: none; }
+/* The hair salon (js/salon.js): the shop's card in pink, prices in stars, a ✓ on hers. */
+.salon { background: radial-gradient(circle at 30% 20%, #fff8fc, #ffd8ec); }
+.salon .wd-count { color: #c0508a; }
+.salon .shop-item.mine .price { background: #e4f8e0; color: #3a8a48; }
+.salon .shop-item.worn { box-shadow: 0 0 0 3px #ff9cc8; }
 @media (max-width: 560px) {
   .shop-items { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
   .shop-item .price { font-size: 13px; padding: 2px 6px 2px 3px; }

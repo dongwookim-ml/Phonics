@@ -8,6 +8,7 @@
 // Progress.device          this device's id in the counters
 // Progress.tally(ed)       one edition's counters: { earned, spent }
 // Progress.count(state)    puts the live stars, coins and dust in the counters
+// Progress.earned(state, f) all of f ever earned (stars spent at the salon too)
 // Progress.history(h)      the question history without broken entries
 // Progress.merge(l, s, how) the local save and the server's, as one
 // Progress.played(save)    whether a save has any progress
@@ -118,6 +119,13 @@ const Progress = (() => {
       else if (d < 0) add(t.spent, device, f, -d);
     }
     return { earned: t.earned, spent: t.spent };
+  }
+
+  // All of `f` ever earned, also what has been spent since: the counters'
+  // earned, and the live count's rise since the last save.
+  function earned(st, f) {
+    const t = st.tally || { earned: {}, spent: {} };
+    return sum(t.earned, f) + Math.max(0, (Number(st[f]) || 0) - totals(t)[f]);
   }
 
   function counters(l, s, foreign) {
@@ -486,6 +494,6 @@ const Progress = (() => {
   }
   const same = (a, b) => canon(editions(a)) === canon(editions(b));
 
-  return { FMT, device, tally, count, merge, history, played, stars, same, editions, stamp, firstSteps,
+  return { FMT, device, tally, count, earned, merge, history, played, stars, same, editions, stamp, firstSteps,
     settings: s => joinSettings(s), setting: (x, k) => stampOf(x, k, 0).v };
 })();
