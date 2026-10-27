@@ -248,7 +248,8 @@ npx http-server -p 8080 .
   the right leads to the princess's own room. Tap the wardrobe or the mirror
   to change clothes freely. A row of picture tabs (she can't read yet) has
   one tab per kind: 👗 dresses (👕 a boy's clothes), 🎨 colours, 💇 hair,
-  👑 head, 🪄 hand (🗡️), 🦋 wings and capes (🦸), 🧚 fairy friends,
+  ✂️ hairstyles (the princess edition; one she hasn't had says it is cut at
+  the hair salon in town), 👑 head, 🪄 hand (🗡️), 🦋 wings and capes (🦸), 🧚 fairy friends,
   🦄 unicorns and 💎 the treasure shelf. Each thing is a picture: her
   wearing it (the whole of her for clothes and colours, her head for hats
   and hair), or the thing itself (what she holds, wings and capes, the
@@ -332,6 +333,20 @@ npx http-server -p 8080 .
   prices; the mirror shows her with the one picked on (a treasure on its
   own). Prices are in `shopPrice()` in `js/game.js` (treasures 3 coins, a
   village's 5), or `price` on an item.
+- **Hair salon** (the princess edition): the pink cottage with the striped
+  awning and the barber's pole by the main road, south of the letter houses
+  (💇 미용실). Tap it or the hairdresser (✂️ bubble) to change her hair for
+  stars: a ✂️ tab of hairstyles (long, bob, pigtails, ponytail, bun,
+  braids, curls for a girl; short, spiky, curls, shaggy for a boy) at 5
+  stars and a 🎨 tab of hair colours at 3 (`SALON_PRICE` in `js/data.js`).
+  One she has had before is free (✓). The mirror shows her with the one
+  picked; ✂️ pays and puts it on, and the card stays open for another go.
+  Stars spent here leave the ⭐ count, but the gates, signs, goals and the
+  next-gate meter count every star she has ever earned (`starsEarned()`,
+  `Progress.earned`), so nothing she opened shuts again; the meter shows
+  "⭐ 3 · 13/15" once the two differ, and the parent screen shows both.
+  Hairstyles are never presents nor in the shop. Code in `js/salon.js`,
+  the hair art in `HAIR_STYLE_ART` in `js/sprites.js`.
 - **Fairy Village (level 5)**: a gate at the east end of town's lower road
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
@@ -549,7 +564,9 @@ The name, title and look (girl or boy), stars, coins, fairy dust, the outfit (an
   in place, without a reload (`js/progress.js`). Answers, presents and books
   are joined, and stars, coins and fairy dust are counted per device
   (`earned` / `spent` in the save, which is marked `fmt: 2`), so both
-  tablets' stars add up. The save keeps the plain totals and any fields a
+  tablets' stars add up; stars spent at the hair salon are `spent` too, so
+  the stars earned (what the gates count) stay right across tablets. The
+  save keeps the plain totals and any fields a
   newer version added, so an older version of the game can still read it.
   Totals uploaded by an older version (no `fmt`) are taken as a floor
   under one "old client" entry, never added on top of the per-device
@@ -854,6 +871,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/minigame.js`: the little games' rounds, hints, coins and card, and the fishing (magnet crane) game at the pond
 - `js/village-games.js`: the game in each village (rhyme, spell, blend, read) in both editions, and the letters on the Unicorn game's end card
 - `js/blend-magic.js`: the sound magic, a little show of blending (bubbles, 🐢 slow, 🐇 fast, ✨ pop)
+- `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
