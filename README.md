@@ -362,7 +362,13 @@ npx http-server -p 8080 .
   now and then a witch flies across on her broom, strings of lights hang
   between the lamp posts across the roads, leaves and sweets lie on the
   ground, it is dusk and the music turns spooky (its own tunes for the
-  town, the villages, the caves and the rooms, `HW_TUNES`);
+  town, the villages, the caves and the rooms, `HW_TUNES`). The little
+  games play as before in a Halloween look: a night sky with a moon, bats,
+  cobwebs and lanterns; ghost fish in the pond (the robot's crane lifts
+  pumpkins), pumpkins to hop on, bats carrying the letter bubbles in a
+  pumpkin frame, sweet-coloured chests, crystals and eggs, and Halloween
+  names and pictures (유령 물고기 낚시, 호박 점프 놀이, 박쥐 글자 놀이,
+  사탕 상자 놀이...);
   the rooms get a garland and a cobweb with a spider, and a lantern by the
   wall; the villagers wear witch hats, pumpkin hats, cat ears or a bat band
   (the royals keep their crowns, the robots their own heads), and the game

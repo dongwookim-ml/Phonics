@@ -238,6 +238,10 @@ function vgShroom(color, grey) {
   }, grey));
 }
 
+// What she hops on: the toadstool, or what the season puts there instead
+// (a pumpkin at Halloween, VG_FOREST.hop from js/halloween.js).
+const vgHop = (color, grey) => (VG_FOREST.hop || vgShroom)(color, grey);
+
 // A stump with rings on top.
 function vgStump(g) {
   const { x, y } = VG_STUMP;
@@ -316,7 +320,7 @@ const VG_FOREST = {
   },
   item(g, it, x, y) {
     vgShadow(g, x, VG_GROUND, 14);
-    g.drawImage(vgShroom(it.look, it.state === 'out'), x - 21, y - 37 + (it.state === 'out' ? 3 : 0));
+    g.drawImage(vgHop(it.look, it.state === 'out'), x - 21, y - 37 + (it.state === 'out' ? 3 : 0));
   },
   // The mushroom she picked, squashed a little as she lands, and her on it.
   front(g, t, now) {
@@ -324,7 +328,7 @@ const VG_FOREST = {
     if (it) {
       const k = vgWon(it, now);
       vgShadow(g, it.x, VG_GROUND, 14);
-      g.drawImage(vgShroom(it.look, false), it.x - 21, it.y - 37 + (k > 0.45 && k < 0.62 ? 2 : 0));
+      g.drawImage(vgHop(it.look, false), it.x - 21, it.y - 37 + (k > 0.45 && k < 0.62 ? 2 : 0));
     }
     const h = vgHeroAt(now);
     const s = heroSprite(state.outfit, it && vgWon(it, now) < 0.45 ? 1 : 0);

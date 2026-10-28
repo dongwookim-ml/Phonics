@@ -2683,6 +2683,17 @@ async function halloween(browser, edition) {
       const props = town0.objects.filter(o => o.halloween && o.react);
       out.town = { kinds: [...new Set(props.map(o => o.react.word))].sort().join(), houses: houses.length, painted: houses.filter(o => o.hwPlain).length,
         big: houses.filter(h => props.some(o => o.canvas.height > 24 && town0.doors.some(d => d.obj === h && Math.max(Math.abs(o.c0 - d.c), Math.abs(o.r0 - d.r)) <= 3))).length };
+      // The little games: their names and pictures, and each draws a frame without trouble.
+      out.games = Object.entries(MINI_GAMES).map(([k, g]) => `${k}:${g.title()}:${g.pip()}:${g.bag()}`).join(' ');
+      out.drawn = [];
+      for (const [k, g] of Object.entries(MINI_GAMES)) {
+        try {
+          const c = document.createElement('canvas').getContext('2d');
+          g.draw.backdrop(c, 260, 160, 26, 16, 1.5);
+          if (k === 'forest' && VG_FOREST.hop) VG_FOREST.hop('#ff8a2a', false);
+          out.drawn.push(k);
+        } catch (e) { out.drawn.push(`${k}: ${e.message}`); }
+      }
       out.music = { town: musicPlaceOf(town0), forest: musicPlaceOf(sceneFor('forest')), room: musicPlaceOf(sceneFor('yuna')), cave: musicPlaceOf(sceneFor('dungeon')) };
       out.tunes = Object.keys(HW_TUNES).map(k => { const b = musicBuild(HW_TUNES[k], 0, 1); const mel = HW_TUNES[k].melody.split(/[\s|]+/).filter(Boolean).length; return mel === b.steps ? null : `${k}: ${mel} notes for ${b.steps} steps`; }).filter(Boolean);
       // Tapping a pumpkin and a ghost in town.
@@ -2725,6 +2736,8 @@ async function halloween(browser, edition) {
   if (edition === 'princess') check(`${tag}: villagers wear a hat for the night, the king keeps his crown`, on.r.hat.fisher !== off.r.hat.fisher && on.r.hat.king === off.r.hat.king);
   check(`${tag}: the town has many kinds of things (${on.r.town.kinds}), a big one by most houses, and every house painted on its roof and walls`,
     on.r.town.kinds.split(',').length >= 7 && on.r.town.big >= on.r.town.houses * 0.6 && on.r.town.painted === on.r.town.houses, on.r.town);
+  check(`${tag}: the little games have Halloween names and pictures (${on.r.games})`, /유령 물고기|호박 크레인/.test(on.r.games) && /호박 점프|할로윈 공룡알/.test(on.r.games) && /박쥐 글자|할로윈 드론/.test(on.r.games)
+    && on.r.drawn.every(d => !d.includes(':')) && off.r.drawn.every(d => !d.includes(':')) && !/할로윈|유령|호박|박쥐|사탕/.test(off.r.games), { on: on.r.games, off: off.r.games, drawn: on.r.drawn });
   check(`${tag}: spooky music: the town, the villages, the caves and the rooms each have theirs, and each tune is whole`,
     on.r.music.town === 'spooky' && on.r.music.forest === 'spookyWalk' && on.r.music.cave === 'spookyCave' && on.r.music.room === 'spookyHome' && !on.r.tunes.length
     && off.r.music.town === 'town' && off.r.music.room === 'home', { on: on.r.music, off: off.r.music, tunes: on.r.tunes });

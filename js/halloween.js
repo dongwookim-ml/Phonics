@@ -1108,3 +1108,179 @@ function halloweenTap(wx, wy) {
   touchReact(g, { word: 'ghost', fx: 'boo' }, { x: p.x, y: p.y }, { x: p.x, y: p.y - 18 });
   return true;
 }
+
+// ---- The little games (js/minigame.js, js/village-games.js) -------------------------
+
+// Every game plays as before, in a Halloween look: a night sky over its own
+// picture with a moon, bats, cobwebs in the corners and lanterns at the
+// sides; ghost fish in the pond (the robot's crane lifts pumpkins), pumpkins
+// to hop on instead of toadstools, bats carrying the fairies' letter
+// bubbles, sweet-coloured chests, crystals and eggs, and names and pictures
+// to match. With Halloween off none of this is touched.
+const HW_GAMES = {
+  fish: { label: () => (isCaptain() ? '🧲 호박 크레인' : '🎣 유령 물고기 낚시'), title: () => (isCaptain() ? '🧲 호박 크레인' : '👻 유령 물고기 낚시'), pip: () => (isCaptain() ? '🎃' : '👻'), bag: () => '🎃' },
+};
+const HW_SKINS = () => ({
+  VG_FOREST: { name: '호박 점프 놀이', pip: '🎃', bag: '🍬', looks: ['#ff8a2a', '#b98cff', '#ffb347', '#f4ece0', '#8fd05a'], hop: hwHopPumpkin },
+  VG_DINO: { name: '할로윈 공룡알 놀이', bag: '🎃', looks: ['#ff8a2a', '#b98cff', '#8fd05a', '#ffd34d', '#f4ece0'] },
+  VG_UNICORN: { name: '할로윈 유니콘 달리기', bag: '🍬' },
+  VG_CARS: { name: '할로윈 자동차 경주', bag: '🎃' },
+  VG_CHESTS: { name: '사탕 상자 놀이', pip: '🍬', bag: '🎃', looks: ['#e8762a', '#7a4ab8', '#4a3a58', '#4a9a5a', '#c8502a'] },
+  VG_CRYSTALS: { name: '할로윈 크리스탈 놀이', bag: '🎃', looks: ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d', '#ff6fa8'] },
+  VG_FAIRY_SKIN: { name: '박쥐 글자 놀이', pip: '🦇', badge: '🦇', bag: '🍬', color: '#7a4ab8', sparkle: '#ff9a3a', ink: '#4a2a6a', carrier: hwBatCarrier, tile: hwTileBubble(), frame: hwPumpkinFrame },
+  VG_DRONE_SKIN: { name: '할로윈 드론 배달 놀이', bag: '🎃' },
+});
+if (HALLOWEEN_ON) hwDressGames();
+
+function hwDressGames() {
+  for (const [key, own] of Object.entries(HW_GAMES)) if (MINI_GAMES[key]) Object.assign(MINI_GAMES[key], own);
+  const skins = { VG_FOREST, VG_DINO, VG_UNICORN, VG_CARS, VG_CHESTS, VG_CRYSTALS, VG_FAIRY_SKIN, VG_DRONE_SKIN };
+  for (const [name, own] of Object.entries(HW_SKINS())) Object.assign(skins[name], own);
+  if (MINI_GAMES.fish) MINI_GAMES.fish.draw.item = hwFishItem;
+  for (const g of Object.values(MINI_GAMES)) {
+    const own = g.draw.backdrop;
+    const ground = g === MINI_GAMES.fish ? 34 : VG_GROUND - 2;
+    const sky = g === MINI_GAMES.fish ? 22 : VG_GROUND - 40;
+    const cave = g.scene === 'dungeon';
+    g.draw.backdrop = (c, LW, LH, bx, by, t) => { own(c, LW, LH, bx, by, t); hwMiniNight(c, LW, bx, by, t, ground, sky, cave); };
+  }
+}
+
+// Over a game's own backdrop: dusk, a moon (not in a cave), bats, cobwebs
+// and lanterns. `ground` is where things stand, `sky` how far down the sky
+// goes (picture pixels, from the box's top).
+function hwMiniNight(g, LW, bx, by, t, ground, sky, cave) {
+  g.fillStyle = 'rgba(50,25,100,0.22)';
+  g.fillRect(0, 0, LW, by + ground + 40);
+  // The moon, with its glow.
+  const mx = cave ? -100 : LW - 24;
+  const my = Math.max(10, Math.min(16, by + sky / 2));
+  g.fillStyle = 'rgba(255,240,180,0.22)';
+  g.beginPath();
+  g.arc(mx, my, 13, 0, Math.PI * 2);
+  g.fill();
+  for (let j = -8; j <= 8; j++) for (let i = -8; i <= 8; i++) if (i * i + j * j <= 64) px(g, mx + i, my + j, 1, 1, (i + 3) ** 2 + (j - 2) ** 2 <= 5 || (i - 3) ** 2 + (j + 3) ** 2 <= 2 ? '#f0dc8a' : '#fff3b0');
+  // Bats across the sky.
+  for (let i = 0; i < 4; i++) {
+    const x = ((t * (12 + i * 4) + i * 70) % (LW + 40)) - 20;
+    const y = 6 + ((i * 9) % Math.max(8, by + sky - 14)) + Math.sin(t * 3 + i) * 2;
+    const s = hwSprite(HW_BAT[Math.floor(t * 8 + i) % 2], HW_BAT_PAL, false);
+    g.drawImage(s.canvas, Math.round(x), Math.round(y));
+  }
+  drawBitmap(g, HW_WEB, HW_WEB_PAL, 0, 0);
+  drawBitmap(g, HW_WEB, HW_WEB_PAL, LW - HW_WEB[0].length, 0, true);
+  // Lanterns at the sides, outside the box.
+  const jack = hwSprite(HW_JACK, HW_PAL, false);
+  for (const x of [bx - 22, bx - 46, bx + MINI_W + 8, bx + MINI_W + 32]) {
+    if (x > -10 && x < LW - 6) g.drawImage(jack.canvas, Math.round(x), Math.round(by + ground - jack.ay));
+  }
+}
+
+// The pond's fish as little ghosts (the robot's crane lifts pumpkins), each
+// with its white patch for the picture where the fish's was.
+function hwFishItem(g, it, t, now) {
+  const p = miniItemAt(it, t);
+  if (it.glow && it.state === 'live') {
+    const col = Math.floor(now / 200) % 2 ? '#fff27a' : '#ffc21a';
+    for (let a = 0; a < Math.PI * 2; a += 0.12) px(g, Math.round(p.x + Math.cos(a) * 19), Math.round(p.y + Math.sin(a) * 12), 1, 1, col);
+  }
+  if (isCaptain()) {
+    g.drawImage(hwCratePumpkin(), p.x - 13, p.y - 12);
+    return;
+  }
+  const s = hwGhostFish(Math.floor(t * 4 + it.ph) % 2);
+  if (it.vx < 0) {
+    g.save();
+    g.translate(p.x + 16, p.y - 8);
+    g.scale(-1, 1);
+    g.drawImage(s, 0, 0);
+    g.restore();
+  } else g.drawImage(s, p.x - 16, p.y - 8);
+}
+
+// A ghost fish facing right: see-through white, a wavy tail, a white patch
+// for its picture, an eye and a smile. Frame 1 flicks the tail.
+const hwFishCache = [];
+function hwGhostFish(frame) {
+  if (hwFishCache[frame]) return hwFishCache[frame];
+  const W = 33;
+  const H = 17;
+  const cy = 8.5;
+  const kind = (x, y) => {
+    const u = (x + 0.5 - 18) / 11.5;
+    const v = (y + 0.5 - cy) / 6.8;
+    if (u * u + v * v <= 1) return 'body';
+    const tx = x + 0.5;
+    const wave = Math.sin(tx * 1.2 + frame * 2) * 1.2;
+    if (tx >= 1 && tx <= 8 && Math.abs(y + 0.5 - cy - wave) <= 1.2 + (8 - tx) * 0.7) return 'tail';
+    return null;
+  };
+  const cv = makeCanvas(W, H);
+  const g = cv.getContext('2d');
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const k = kind(x, y);
+    if (k) px(g, x, y, 1, 1, k === 'tail' ? 'rgba(232,226,255,0.85)' : y > cy + 2.5 ? '#e6e0f8' : 'rgba(250,248,255,0.95)');
+    else if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => kind(x + dx, y + dy))) px(g, x, y, 1, 1, '#9a90c8');
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (((x + 0.5 - 16) / 6.2) ** 2 + ((y + 0.5 - cy) / 5.6) ** 2 <= 1) px(g, x, y, 1, 1, '#ffffff');
+  }
+  px(g, 24, 5, 2, 2, '#2a2040');
+  px(g, 27, 9, 2, 1, '#ff8ab0');
+  px(g, 26, 11, 3, 1, '#3a2c50');
+  hwFishCache[frame] = cv;
+  return cv;
+}
+
+// The crane's pumpkin: orange, with a white label for its picture.
+let hwCrate = null;
+function hwCratePumpkin() {
+  if (hwCrate) return hwCrate;
+  hwCrate = vgSprite(26, 22, set => {
+    vgOval(set, 13, 13, 12, 8.5, (x, y) => ((x === 6 || x === 19) ? '#e2661c' : y < 9 ? '#ffa040' : '#ff8a2a'));
+    for (let y = 1; y <= 4; y++) set(13, y, '#4f8a3a');
+    set(14, 2, '#78b04a');
+    vgOval(set, 13, 13, 7, 5.5, '#ffffff');
+  });
+  return hwCrate;
+}
+
+// A pumpkin to hop on, the size of the toadstool, with a pale patch on top
+// for the picture (`color`: orange, or a white, purple or green pumpkin).
+function hwHopPumpkin(color, grey) {
+  return vgCached(`hwpumpkin|${color}|${grey}`, () => vgSprite(42, 38, set => {
+    vgOval(set, 21, 22, 19.5, 14.5, (x, y) => {
+      const ridge = [8, 14, 21, 28, 34].some(r => Math.abs(x - r) < 0.6);
+      return ridge ? shade(color, -30) : y > 30 ? shade(color, -22) : x < 10 ? shade(color, -12) : x > 32 ? shade(color, 14) : color;
+    });
+    for (let y = 2; y <= 8; y++) { set(20, y, '#5a7a3a'); set(21, y, '#4f8a3a'); }
+    for (const [x, y] of [[22, 3], [23, 2], [24, 2], [25, 3]]) set(x, y, '#78b04a');
+    vgOval(set, 21, 13, 8.5, 6.5, '#fff8ec');
+  }, grey));
+}
+
+// A bat carrying a letter bubble on a thread.
+function hwBatCarrier(g, x, y, it, now) {
+  const s = hwSprite(HW_BAT[Math.floor(now / 140 + it.i) % 2], HW_BAT_PAL, false, 2);
+  g.drawImage(s.canvas, Math.round(x - s.ax), Math.round(y - 30));
+  px(g, Math.round(x), Math.round(y - 19), 1, 6, '#5a4478');
+}
+
+// The bubbles in Halloween colours.
+function hwTileBubble() {
+  const COLS = ['#ff9a3a', '#b77aff', '#7ad870', '#ffd34d', '#ff6fa8'];
+  return (g, x, y, it, now) => vgBubble(g, x, y, it.state === 'out' && now - it.t0 < 420 ? '#c8c4d4' : COLS[it.i % COLS.length]);
+}
+
+// A jack-o'-lantern ring round the picture, its stem on top.
+function hwPumpkinFrame(g, x, y) {
+  vgStamp(g, 'hwframe', x, y, [39, 41, 19, 21], (c, x, y) => {
+    for (let j = -16; j <= 16; j++) for (let i = -16; i <= 16; i++) {
+      const d = i * i + j * j;
+      if (d > 256) continue;
+      px(c, x + i, y + j, 1, 1, d > 225 ? '#a8501a' : d > 169 ? ((Math.abs(i) % 6 < 1) ? '#e2661c' : '#ff8a2a') : d > 150 ? '#e2661c' : '#ffffff');
+    }
+    px(c, x - 1, y - 20, 3, 5, '#4f8a3a');
+    px(c, x + 2, y - 20, 3, 2, '#78b04a');
+  });
+}
