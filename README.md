@@ -348,12 +348,21 @@ npx http-server -p 8080 .
   Hairstyles are never presents nor in the shop. Code in `js/salon.js`,
   the hair art in `HAIR_STYLE_ART` in `js/sprites.js`.
 - **Halloween** (both editions, 1 October to 7 November every year by the
-  tablet's clock, `HALLOWEEN_DAYS`): every village is dressed up. Glowing
-  jack-o'-lanterns, pumpkins, hay bales and candy pails stand beside the
-  roads (tap one: "pumpkin!", "hay!", "candy!"), smiling tombstones in the
-  Monster Village ("boo!"), little ghosts float about (tap one: "ghost!"),
-  bats loop over the sky, strings of lights hang between the lamp posts
-  across the roads, leaves and sweets lie on the ground and it is dusk;
+  tablet's clock, `HALLOWEEN_DAYS`): every village is dressed up. In front
+  of each house stands something big, as people dress up their gardens: a
+  stack of jack-o'-lanterns, a big ghost or a spider (twice the size, like
+  garden inflatables), a skeleton, a witch at her cauldron, a coffin with
+  eyes peeping out, a scarecrow or tombstones; each house has lights down
+  its roof's edges, a witch who flew into its roof (or a cat, a spider or a
+  lantern on top) and bats and a cobweb on its walls. Glowing
+  jack-o'-lanterns, tombstones, black cats, cauldrons, pumpkins, hay bales
+  and candy pails stand beside the roads; every one says its word when
+  tapped ("pumpkin!", "skeleton!", "witch!", "coffin!", "spider!", "pot!"...).
+  Little ghosts float about (tap one: "ghost!"), bats loop over the sky and
+  now and then a witch flies across on her broom, strings of lights hang
+  between the lamp posts across the roads, leaves and sweets lie on the
+  ground, it is dusk and the music turns spooky (its own tunes for the
+  town, the villages, the caves and the rooms, `HW_TUNES`);
   the rooms get a garland and a cobweb with a spider, and a lantern by the
   wall; the villagers wear witch hats, pumpkin hats, cat ears or a bat band
   (the royals keep their crowns, the robots their own heads), and the game
