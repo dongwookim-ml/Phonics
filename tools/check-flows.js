@@ -2414,7 +2414,8 @@ async function blendSteps(browser, edition) {
     // 🔁 at two sounds: the magic first.
     document.getElementById('mini-again').click();
     await sleep(100);
-    out.again = { magic: blendMagicShown(), w: blendMagic.m && blendMagic.m.w, round: mini.round, kind: mini.rounds[0].q.kind, targets: mini.rounds.map(x => x.q.target) };
+    out.again = { magic: blendMagicShown(), w: blendMagic.m && blendMagic.m.w, round: mini.round, kind: mini.rounds[0].q.kind, targets: mini.rounds.map(x => x.q.target),
+      first: (mini.rounds[0].q.options || []).map(o => o.wrong) };
     for (let i = 0; i < 300 && blendMagicShown(); i++) { const b = blendMagic.buttons.find(x => x.classList.contains('next')); if (b) b.click(); await sleep(100); }
     out.again.after = { round: mini.round, magic: blendMagicShown() };
     closeMini();
@@ -2484,8 +2485,9 @@ async function blendSteps(browser, edition) {
   check(`${tag}: the Unicorn game at one sound: its letter at the top, a first try counts, a missed letter comes back two rounds on`, r.game.kind === 'oneSound' && r.game.clue === r.game.letter.toUpperCase() + r.game.letter && r.game.counted && r.game.back, r.game);
   check(`${tag}: the Unicorn game: two misses show the magic over the game, the right one glowing, and then she can tap`, r.game.magic.shown && r.game.magic.locked && r.game.magic.glow && !r.game.magic.after.locked && !r.game.magic.after.shown, r.game.magic);
   check(`${tag}: the end card shows every letter, the new one sparkling; all lit: the party, and two sounds open`, r.game.end.shown && r.game.end.letters === 24 && r.game.end.fresh === 'z' && r.game.end.lit === 24 && r.game.end.all && r.game.end.two && r.game.end.tier === 2 && r.game.end.fits, r.game.end);
+  // (The other word will do unless it is a later round's answer or one of the first round's pictures.)
   check(`${tag}: 🔁 at two sounds starts with the magic (not its first round's word, nor a later one's if the other will do), then the rounds`, r.game.again.magic && MAGIC_INTRO[2].includes(r.game.again.w) && r.game.again.w !== r.game.again.targets[0] &&
-    (!r.game.again.targets.includes(r.game.again.w) || MAGIC_INTRO[2].every(w => r.game.again.targets.includes(w))) && r.game.again.kind === 'twoSounds' && r.game.again.after.round === 0 && !r.game.again.after.magic && r.game.closed.busy === false && !r.game.closed.magic, r.game.again);
+    (!r.game.again.targets.includes(r.game.again.w) || MAGIC_INTRO[2].every(w => r.game.again.targets.includes(w) || r.game.again.first.includes(w))) && r.game.again.kind === 'twoSounds' && r.game.again.after.round === 0 && !r.game.again.after.magic && r.game.closed.busy === false && !r.game.closed.magic, r.game.again);
   check(`${tag}: past the play limit the magic plays on, and the town sleeps once it and the question are over`, r.limit.during.magic && !r.limit.during.asleep && r.limit.after.asleep && !r.limit.after.magic, r.limit);
   check(`${tag}: put back at one sound by a parent, the letters she knew count once she gets them right again`, r.back.two === 24 && r.back.one === 0 && r.back.again === 'b' && r.back.tier === 1, r.back);
   check(`${tag}: no page errors`, !errors.length, errors);
