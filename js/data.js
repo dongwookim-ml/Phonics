@@ -1432,7 +1432,7 @@ LINES.knock = ['Knock, knock! Hello?', 'Can I come in?', "Let's peek inside!"];
 // are recorded already from the word lists above; these are the extra ones.
 const PROP_WORDS = ['fountain', 'flower', 'bush', 'plant', 'table', 'harp', 'chest', 'coin', 'crystal', 'unicorn', 'drone', 'gear', 'gate',
   // Halloween's things (js/halloween.js).
-  'pumpkin', 'ghost', 'candy', 'hay', 'boo'];
+  'pumpkin', 'ghost', 'candy', 'hay', 'boo', 'cat', 'pot', 'skeleton', 'witch', 'coffin', 'spider', 'scarecrow'];
 // Halloween: the narrator's hello as the game starts, instead of LINES.start
 // (js/halloween.js), in both editions.
 LINES.halloween = ['Happy Halloween, {title} {name}! Look, the whole town is dressed up!', 'Trick or treat, {title} {name}! Shall we go and find the pumpkins?'];

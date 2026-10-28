@@ -257,6 +257,8 @@ const Sound = (() => {
         rumble: [[[82, 0, 0.3], [73, 0.2, 0.4], [65, 0.45, 0.4]], 'square'],
         // A ghost's woo-oo (js/halloween.js).
         spooky: [[[659, 0, 0.18], [622, 0.16, 0.18], [587, 0.32, 0.18], [523, 0.48, 0.4]], 'triangle'],
+        // A skeleton's bones clattering (js/halloween.js).
+        rattle: [[[1200, 0, 0.03], [900, 0.06, 0.03], [1300, 0.12, 0.03], [1000, 0.18, 0.03], [1400, 0.24, 0.05]], 'square'],
         // Bubbles bursting (the sound magic, js/blend-magic.js).
         pop: [[[1568, 0, 0.04], [784, 0.03, 0.05], [2093, 0.07, 0.16]], 'triangle'],
       }[name];

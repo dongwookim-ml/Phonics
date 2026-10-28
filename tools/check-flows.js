@@ -2670,12 +2670,21 @@ async function halloween(browser, edition) {
         out.scenes[n] = {
           outdoor: !!sc.outdoor, props: props.length, garland: sc.objects.some(o => o.halloween && o.background), ghosts: (sc.hwGhosts || []).length, bats: (sc.hwBats || []).length,
           // What the village is without them.
-          sig: JSON.stringify({ objects: sc.objects.filter(o => !o.halloween).map(o => [o.c0, o.r0, o.c1, o.r1, o.x, o.y, o.w, o.h].join()),
+          // (A house painted for the night is compared as it was, picture and all.)
+          sig: JSON.stringify({ objects: sc.objects.filter(o => !o.halloween).map(o => Object.assign({}, o, o.hwPlain)).map(o => [o.c0, o.r0, o.c1, o.r1, o.x, o.y, o.w, o.h, o.canvas && o.canvas.width > 40 ? o.canvas.toDataURL().length : ''].join()),
             blocked: sc.tiles.flatMap((row, r) => row.map((t, c) => (t.blocked && !props.some(o => o.c0 === c && o.r0 === r) ? `${c},${r}` : null))).filter(Boolean).join(' '),
             lamps: sc.lamps.filter(l => !l.halloween).map(l => [l.x, l.y].join()).join(' '), npcs: sc.npcs.map(v => [v.look, v.c, v.r].join()).join(' ') }),
         };
       }
       out.hat = { fisher: villagerSprite('fisher', 0).canvas.toDataURL(), king: villagerSprite('king', 0).canvas.toDataURL() };
+      // The town: many kinds of things, a big one by most houses, every house painted.
+      const town0 = sceneFor('town');
+      const houses = [...new Set(town0.doors.map(d => d.obj).filter(Boolean))];
+      const props = town0.objects.filter(o => o.halloween && o.react);
+      out.town = { kinds: [...new Set(props.map(o => o.react.word))].sort().join(), houses: houses.length, painted: houses.filter(o => o.hwPlain).length,
+        big: houses.filter(h => props.some(o => o.canvas.height > 24 && town0.doors.some(d => d.obj === h && Math.max(Math.abs(o.c0 - d.c), Math.abs(o.r0 - d.r)) <= 3))).length };
+      out.music = { town: musicPlaceOf(town0), forest: musicPlaceOf(sceneFor('forest')), room: musicPlaceOf(sceneFor('yuna')), cave: musicPlaceOf(sceneFor('dungeon')) };
+      out.tunes = Object.keys(HW_TUNES).map(k => { const b = musicBuild(HW_TUNES[k], 0, 1); const mel = HW_TUNES[k].melody.split(/[\s|]+/).filter(Boolean).length; return mel === b.steps ? null : `${k}: ${mel} notes for ${b.steps} steps`; }).filter(Boolean);
       // Tapping a pumpkin and a ghost in town.
       document.getElementById('start-btn').click();
       out.hello = said.slice();
@@ -2714,6 +2723,11 @@ async function halloween(browser, edition) {
   check(`${tag}: a tapped pumpkin says "pumpkin!" and a tapped ghost "ghost!", and she stays put`, !!on.r.taps && on.r.taps.said.join() === 'pumpkin!,ghost!' && !on.r.taps.walking, on.r.taps);
   check(`${tag}: the game starts with "Happy Halloween" or "Trick or treat"`, /Halloween|Trick or treat/.test(on.r.hello.join(' ')) && on.r.start !== off.r.start, { on: on.r.hello, off: off.r.start });
   if (edition === 'princess') check(`${tag}: villagers wear a hat for the night, the king keeps his crown`, on.r.hat.fisher !== off.r.hat.fisher && on.r.hat.king === off.r.hat.king);
+  check(`${tag}: the town has many kinds of things (${on.r.town.kinds}), a big one by most houses, and every house painted on its roof and walls`,
+    on.r.town.kinds.split(',').length >= 7 && on.r.town.big >= on.r.town.houses * 0.6 && on.r.town.painted === on.r.town.houses, on.r.town);
+  check(`${tag}: spooky music: the town, the villages, the caves and the rooms each have theirs, and each tune is whole`,
+    on.r.music.town === 'spooky' && on.r.music.forest === 'spookyWalk' && on.r.music.cave === 'spookyCave' && on.r.music.room === 'spookyHome' && !on.r.tunes.length
+    && off.r.music.town === 'town' && off.r.music.room === 'home', { on: on.r.music, off: off.r.music, tunes: on.r.tunes });
   const left = names.filter(n => off.r.scenes[n].props || off.r.scenes[n].garland || off.r.scenes[n].ghosts || off.r.scenes[n].bats);
   check(`${tag}: with ?halloween=0 there is none of it, and the hello is the usual one`, !off.r.on && !left.length && !/Halloween/.test(off.r.hello.join(' ')), left);
   const changed = names.filter(n => on.r.scenes[n].sig !== off.r.scenes[n].sig);

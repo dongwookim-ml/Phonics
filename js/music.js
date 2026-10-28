@@ -277,8 +277,8 @@ function musicListening() {
 }
 
 function musicPlaceOf(sc) {
-  if (!sc || sc === state.scenes.castle || sc === state.scenes.castle2) return 'town';
-  return MUSIC_PLACES[sc.kind] || 'home';
+  const place = !sc || sc === state.scenes.castle || sc === state.scenes.castle2 ? 'town' : MUSIC_PLACES[sc.kind] || 'home';
+  return HALLOWEEN_MUSIC[place] || place; // the season's own tunes (js/halloween.js)
 }
 
 // Sound.say started (true) or finished its queue (false).

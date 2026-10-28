@@ -1,10 +1,14 @@
-// Halloween: every village dressed up for it, in both editions. Glowing
-// jack-o'-lanterns, pumpkins, hay bales and candy pails line the roads
-// (tap one and it says its word), little ghosts float about (tap one:
-// "ghost!"), bats flap across the sky, strings of orange and purple lights
-// hang between the lamps, fallen leaves and sweets lie on the ground, cute
-// tombstones stand in the Monster Village, the villagers wear witch hats,
-// pumpkin hats and cat ears, and the rooms have a garland and a cobweb.
+// Halloween: every village dressed up for it, in both editions. In front of
+// each house a big thing, as people dress up their gardens (a stack of
+// jack-o'-lanterns, a skeleton, a witch at her cauldron, a coffin, a big
+// ghost, a spider, a scarecrow, tombstones); on its roof a witch who flew
+// into it, a cat, a spider or a lantern, and bats and a cobweb on its walls.
+// Jack-o'-lanterns, tombstones, black cats, cauldrons, pumpkins, hay bales
+// and candy pails line the roads (tap any of them and it says its word),
+// little ghosts float about (tap one: "ghost!"), bats flap and a witch flies
+// across the sky, strings of lights hang between the lamps, leaves and
+// sweets lie on the ground, the villagers wear witch hats, pumpkin hats and
+// cat ears, the rooms have a garland and a cobweb, and the music is spooky.
 //
 // It is only laid on top: the villages themselves (js/world.js and the
 // other scene builders, js/data.js) are not changed. Each scene, once
@@ -38,12 +42,62 @@ const HALLOWEEN_ON = (() => {
 // The narrator's hello as the game starts (LINES.halloween in js/data.js).
 if (HALLOWEEN_ON && LINES.halloween) LINES.start = LINES.halloween;
 
+// Spooky tunes for the season, in the same little band (js/music.js): the
+// town, the other villages, the caves and the Monster Village, and rooms.
+const HW_TUNES = {
+  // The town: a creeping walk in D minor.
+  spooky: {
+    step: 0.3, bar: 8,
+    chords: 'Dm Dm Gm A Dm Bb A Dm',
+    melody: 'D5 - A4 - D5 - F5 - | E5 - D5 - A4 - - - | Bb4 - D5 - G5 - F5 - | E5 - C#5 - A4 - . . |' +
+      'F5 - E5 - F5 - A5 - | G5 - F5 - D5 - Bb4 - | E5 - D5 - C#5 - E5 - | D5 - - - - - . .',
+    arp: '0 . 2 . 1 . 2 .',
+    bass: '0 - - - 2 - - -',
+  },
+  // The villages: a tiptoeing 6/8 in A minor.
+  spookyWalk: {
+    step: 0.27, bar: 6,
+    chords: 'Am Am Dm E Am F E Am',
+    melody: 'A4 - C5 E5 - C5 | A4 - - E4 - - | D5 - F5 A5 - F5 | G#5 - - E5 - - |' +
+      'A5 - G5 E5 - C5 | F5 - E5 C5 - A4 | B4 - G#4 E4 - G#4 | A4 - - - - .',
+    arp: '0 . 2 . 3 .',
+    bass: '0 - - 2 - -',
+  },
+  // The caves and the Monster Village: slow, with a sliding sigh, in E minor.
+  spookyCave: {
+    step: 0.4, bar: 8, arpLift: 12,
+    chords: 'Em Em C B Em Am B Em',
+    melody: 'E5 - - - D#5 - - - | E5 - B4 - G4 - - - | C5 - - - B4 - A4 - | B4 - - - . . . . |' +
+      'G5 - - - F#5 - E5 - | E5 - C5 - A4 - - - | B4 - D#5 - F#5 - - - | E5 - - - . . . .',
+    arp: '. . 2 . . . 3 .',
+    bass: '0 - - - - - - -',
+  },
+  // Rooms: a music-box waltz in A minor.
+  spookyHome: {
+    step: 0.32, bar: 6,
+    chords: 'Am Dm E Am F Dm E Am',
+    melody: 'E5 - A5 - C6 - | D5 - F5 - A5 - | G#5 - - - E5 - | A5 - - - - - |' +
+      'C6 - B5 - A5 - | F5 - A5 - D5 - | E5 - G#5 - B5 - | A5 - - - - .',
+    arp: '0 . 1 . 2 .',
+    bass: '0 - - - - -',
+  },
+};
+if (HALLOWEEN_ON) Object.assign(MUSIC_TUNES, HW_TUNES);
+// Which of them each place plays instead of its own (musicPlaceOf).
+const HALLOWEEN_MUSIC = HALLOWEEN_ON ? { town: 'spooky', forest: 'spookyWalk', fairy: 'spookyWalk', unicorn: 'spookyWalk', cave: 'spookyCave', home: 'spookyHome' } : {};
+
 // Taps: a pumpkin hops in a shower of orange, a ghost says boo.
 Object.assign(TOUCH_FX, {
   pumpkin: { move: 'hop', colors: ['#ff8a2a', '#ffd34d', '#ffb45a', '#ffffff'], star: true, tune: 'boing' },
   candy:   { move: 'hop', colors: ['#ff6fa8', '#5ad0e8', '#ffd34d', '#b58cff', '#ffffff'], star: true, tune: 'chime' },
   hay:     { move: 'shake', colors: ['#f0cf6a', '#d4aa44', '#ffe9a0'], fall: true },
   boo:     { move: 'hop', pop: '👻', colors: ['#ffffff', '#e8e0ff', '#d8f0ff'], tune: 'spooky' },
+  cat:     { move: 'hop', pop: '🐾', tune: 'chime' },
+  pot:     { move: 'none', colors: ['#6fe060', '#d8ff9a', '#c8ffb8', '#3fd04a'], up: true, tune: 'splash' },
+  rattle:  { move: 'shake', colors: ['#ffffff', '#f6f2ea', '#c8c0d0'], tune: 'rattle' },
+  witch:   { move: 'hop', colors: ['#6fe060', '#b77aff', '#ffd34d', '#ffffff'], star: true, tune: 'spooky' },
+  coffin:  { move: 'shake', pop: '🦇', tune: 'spooky' },
+  spider:  { move: 'shake', pop: '🕸️', tune: 'boing' },
 });
 
 // ---- Pictures ---------------------------------------------------------------
@@ -56,6 +110,16 @@ const HW_PAL = {
 };
 const HW_GHOST_PAL = { o: '#a59cd0', w: '#ffffff', W: '#e6e0f8', g: '#4a3a58', p: '#ffb0c8' };
 const HW_BAT_PAL = { b: '#3a2a50', B: '#5a4478', y: '#ffe680' };
+const HW_CAT_PAL = { g: '#2e2238', y: '#d8ff5a', p: '#ff8ab0' };
+const HW_POT_PAL = { g: '#2e2a3a', d: '#5a5470', E: '#6fe060', y: '#d8ff9a', w: '#c8ffb8' };
+const HW_BONE_PAL = { o: '#3a2a48', w: '#f6f2ea', k: '#3a2a48' };
+const HW_WITCH_PAL = Object.assign({}, HW_POT_PAL, { o: '#2e2238', v: '#6a3fa8', V: '#4f2c86', n: '#ff8a2a', r: '#ff6a3a', s: '#ffe0c8', k: '#2e2238', p: '#ffadbc', m: '#d0606a', t: '#8a5a2a', h: '#f0cf6a' });
+const HW_COFFIN_PAL = { o: '#2e2238', h: '#8a5a44', H: '#6a4434', g: '#1e1628', y: '#ffe680' };
+const HW_SPIDER_PAL = { w: 'rgba(255,255,255,0.8)', g: '#2e2238', y: '#ffffff', p: '#ff8ab0' };
+const HW_SCARE_PAL = { e: '#4f8a3a', t: '#8a5a2a', o: '#6a3418', n: '#ff8a2a', N: '#e2661c', y: '#ffe680', d: '#d04a4a', r: '#ffd34d', c: '#5a7ad0', C: '#3f5ab0', h: '#f0cf6a', k: '#5a3a28' };
+const HW_STONE_PAL = { g: '#4a3a58', s: '#c4c0d4', S: '#a29cb8', m: '#6fb04a', M: '#4f8a3a', w: '#f6f2ea', k: '#3a2a48' };
+const HW_CRASH_PAL = { o: '#2e2238', k: '#3a2a48', v: '#6a3fa8', r: '#ff8a2a', t: '#8a5a2a' };
+const HW_WEB_PAL = { w: 'rgba(255,255,255,0.85)' };
 
 // A jack-o'-lantern: its eyes and grin glow from the candle inside.
 const HW_JACK = [
@@ -175,6 +239,311 @@ const HW_BAT = [[
   'B.........B',
 ]];
 
+// A black cat sitting with its tail curled, eyes aglow.
+const HW_CAT = [
+  '.g...g......',
+  '.gg.gg......',
+  '.ggggg......',
+  'gyggyg......',
+  'gggggg......',
+  '.gpgg.......',
+  '.gggg....g..',
+  '.ggggg....g.',
+  'gggggg....g.',
+  'gggggg...g..',
+  'ggggggg.gg..',
+  'gggggggggg..',
+  '.gg..gg.....',
+];
+// A little cauldron, bubbling green.
+const HW_POT = [
+  '...w....E...',
+  '.E..Ew.E..w.',
+  '..EEEEEEEE..',
+  '.gEEyEEEEEg.',
+  'gggggggggggg',
+  '.gdgggggggg.',
+  'gdggggggggg.',
+  'gdggggggggg.',
+  '.gggggggggg.',
+  '..gggggggg..',
+  '..g......g..',
+];
+
+// ---- Big things for the front of a house ----------------------------------
+
+// Two jack-o'-lanterns, one on the other.
+const HW_BIG_JACK = [
+  '...........tE...........',
+  '...........t.EE.........',
+  '.......oooottoooo.......',
+  '......onnNnnnnNnno......',
+  '.....onnNynnnnyNnno.....',
+  '.....onnNyynnyyNnno.....',
+  '.....onYnnnnnnnnYno.....',
+  '.....onyYyyyyyyYyno.....',
+  '......onnNyynyNnno......',
+  '...oooooooooooooooooo...',
+  '..onnnNnnnnnnnnnnNnnno..',
+  '.onnnNnnnnnnnnnnnnNnnno.',
+  'onnnNnnyynnnnnnyynnNnnno',
+  'onnnNnyyyynnnnyyyynNnnno',
+  'onnnNnnnnnnyynnnnnnNnnno',
+  'onnnNnnnnnnnnnnnnnnNnnno',
+  'onnYnnnnnnnnnnnnnnnnYnno',
+  'onnyyYyyyyyyyyyyyyYyynno',
+  'onnyyyYyyynnnyyyYyyyynno',
+  '.onnnNyynnnnnnnnyyNnnno.',
+  '..onnNnnnnnnnnnnnnNnno..',
+  '...oooooooooooooooooo...',
+];
+// A friendly skeleton, waving.
+const HW_SKELETON = [
+  '....ooooo.......',
+  '...owwwwwo......',
+  '..owwwwwwwo...o.',
+  '..owkkwkkwo..owo',
+  '..owkkwkkwo..owo',
+  '..owwwkwwwo..owo',
+  '...owwwwwo..owo.',
+  '...okwkwko..owo.',
+  '....ooooo..owo..',
+  '.....owo..owo...',
+  '..ooowwwooow....',
+  '.owowkwkwwoo....',
+  '.owowwwwwo......',
+  'owo.okwkwo......',
+  'owo.owwwwo......',
+  'owo..okwo.......',
+  '.wo..owwo.......',
+  '.....okwo.......',
+  '....owwwwo......',
+  '...owwoowwo.....',
+  '...owo..owo.....',
+  '...owo..owo.....',
+  '...owo..owo.....',
+  '...owo..owo.....',
+  '..owwo..owwo....',
+  '..oooo..oooo....',
+];
+// A witch stirring her cauldron.
+const HW_WITCH = [
+  '........oo................',
+  '.......ovvo...............',
+  '......ovvvo...............',
+  '......ovvVvo..............',
+  '.....ovvvVvo..............',
+  '.....onnnnnno.............',
+  '..oooovvvvvvoooo..........',
+  '.oooooooooooooooo.........',
+  '....orrsssssrro...........',
+  '....orsksskssro...........',
+  '....orsssssssro...........',
+  '....orspsmspsro...........',
+  '....orrsssssrro...........',
+  '....orroooooorr...........',
+  '....ovvvvvvvvo...t........',
+  '...ovvvVvvvvvvsst.........',
+  '...ovvvVvvvvvvo..t........',
+  '..ovvvvVvvvvvo....t.......',
+  '..ovvvvvVvvvvo....t.......',
+  '..ovvvvvVvvvvvo..EtE..w...',
+  '.ovvvvvvVvvvvvo.EEEEEEEE..',
+  '.ovvvvvvvVvvvvo.gEEyEEEEg.',
+  '.ovvvvvvvVvvvvvgggggggggggg',
+  'ovvvvvvvvvVvvvvo.gdgggggggg',
+  'ovvvvvvvvvVvvvvogdgggggggg.',
+  'onnnnnnnnnnnnnno.gdggggggg.',
+  '.oooooooooooooo..gggggggg..',
+  '.....oko..oko.....g......g.',
+];
+// An upright coffin, its lid ajar and eyes peeping out.
+const HW_COFFIN = [
+  '.....ooooooo....',
+  '....ohhhhhhho...',
+  '...ohHHHHHHHho..',
+  '..ohHHHHHHHHHho.',
+  '.ohHHHHHHHHHHHho',
+  '.ohHgHHHHHgHHHho',
+  '.ohHggHgHggHHHgo',
+  '.ohHgggggggHHgyo',
+  '.ohHHgHgHgHHHggo',
+  '.ohHHHHHHHHHHgyo',
+  '..ohHHHHHHHHHggo',
+  '..ohHHHHHHHHHggo',
+  '..ohHHHHHHHHHggo',
+  '..ohHHHHHHHHHggo',
+  '...ohHHHHHHHHgo.',
+  '...ohHHHHHHHHgo.',
+  '...ohHHHHHHHHgo.',
+  '...ohHHHHHHHHgo.',
+  '....ohHHHHHHhgo.',
+  '....ohHHHHHHhgo.',
+  '.....ohhhhhhhoo.',
+  '.....ooooooooo..',
+];
+// A big ghost on a pole, like the blown-up ones in gardens.
+const HW_BIG_GHOST = [
+  '......oooooo......',
+  '....oowwwwwwoo....',
+  '...owwwwwwwwwwo...',
+  '..owwwwwwwwwwwwo..',
+  '..owwwwwwwwwwwwo..',
+  '.owwggwwwwwwggwwo.',
+  '.owwggwwwwwwggwwo.',
+  '.owwggwwwwwwggwwo.',
+  '.owpwwwwwwwwwwpwo.',
+  'owwwwwwggggwwwwwwo',
+  'owwwwwwggggwwwwwwo',
+  'owwwwwwwggwwwwwwwo',
+  'owwwwwwwwwwwwwwwwo',
+  'owWwwwwwwwwwwwwWwo',
+  'owwWwwwwwwwwwwWwwo',
+  'owwwWwwwwwwwwWwwwo',
+  'owwwwwwwwwwwwwwwwo',
+  'owwwwwwwwwwwwwwwwo',
+  'owoowwwoowwwoowwoo',
+  '.o..oww..ow..oo...',
+  '.....oo...o.......',
+];
+// A big spider in its web.
+const HW_SPIDER = [
+  'w.......w.......w...',
+  '.w......w......w....',
+  '..w.....w.....w.....',
+  '...wwwwwwwwwwwww....',
+  '....w...gg...w......',
+  'g..g.w.gggg.w.g..g..',
+  '.g.g..gggggg..g.g...',
+  '..ggggwgyygyggggg...',
+  '.g.ggggyyyyyggg..g..',
+  'g..g.ggggggggg.g..g.',
+  '..g..ggggpggggg..g..',
+  '.g...ggggggggg....g.',
+  'g.....ggggggg......g',
+  '.......ggggg........',
+];
+// A scarecrow with a pumpkin for a head.
+const HW_SCARECROW = [
+  '.......et.......',
+  '.......tt.......',
+  '....oooooooo....',
+  '...onnNnnNnno...',
+  '...onynnnnyno...',
+  '...onnnyynnno...',
+  '...onyyyyyyno...',
+  '....oooooooo....',
+  '.......tt.......',
+  'hh.oddddddddo.hh',
+  'hhoddrddrddddohh',
+  'tttddddddddddttt',
+  '...odrddddrdo...',
+  '...oddddddddo...',
+  '...ocCcCcCcCo...',
+  '...occccccccco..',
+  '...oCcCcCcCcCo..',
+  '...occo..occo...',
+  '....hh....hh....',
+  '.......tt.......',
+  '.......tt.......',
+  '.......tt.......',
+  '.......tt.......',
+  '.......tt.......',
+  '......kttk......',
+];
+// Two tombstones and a little skull.
+const HW_GRAVES = [
+  '...gggggg...............',
+  '..gsssssSg.....gggg.....',
+  '.gsssssssSg...gssssg....',
+  '.gssgssgsSg..gssssSSg...',
+  '.gssgssgsSg..gsgssgSg...',
+  '.gsssssssSg..gssssSSg...',
+  '.gsgsssgsSg..gsggggSg...',
+  '.gssgggssSg..gssssSSg...',
+  '.gsssssssSg..gssssSSg...',
+  '.gsssssssSg..gssssSSg.ww',
+  '.gsssssssSg..gssssSSgwkw',
+  'mMgggggggggmMggggggggwww',
+  'MmmMmmMmmMmMmmMmmMmmMmMm',
+];
+
+// ---- On the houses ----------------------------------------------------------
+
+// A witch who flew into the roof: her legs, striped stockings, shoes and broom.
+const HW_CRASH = [
+  '..o..........o..',
+  '.oko........oko.',
+  'okko........okko',
+  '.oko........oko.',
+  '..ovo......ovo..',
+  '..oro......oro..',
+  '..ovo......ovo..',
+  '...oro....oro...',
+  '...ovo....ovo...',
+  '....oro..oro..ttt',
+  '....ovvvvvvo.tt..',
+  '.....oooooo.tt...',
+];
+// A black cat on the ridge, back arched.
+const HW_ROOF_CAT = [
+  '..........g.g',
+  '..........ggg',
+  '.ggg.....gyggy',
+  'g..gg...gggggg',
+  '.g..ggggggggg.',
+  '.....ggggggg..',
+  '....gg.gg.gg..',
+];
+// A spider hanging from the eaves on its thread.
+const HW_ROOF_SPIDER = [
+  '....w....',
+  '....w....',
+  '....w....',
+  '..g.w.g..',
+  '.g.ggg.g.',
+  'g.gyggyg.g',
+  '.ggggggg.',
+  'g.ggggg.g',
+  '.g.....g.',
+];
+// A bat pinned on a wall.
+const HW_WALL_BAT = [
+  'b.........b',
+  'bb..b.b..bb',
+  'bbbbbbbbbbb',
+  '.bbbbybybb.',
+  '..b.bbb.b..',
+];
+// A cobweb in a corner.
+const HW_WEB = [
+  'wwwwwwwwwww',
+  'w..w...w..w',
+  'w.w.w.w.ww.',
+  'ww...w..w..',
+  'w.w..w.w...',
+  'w..w.ww....',
+  'w...ww.....',
+  'w..w.......',
+  'w.w........',
+  'ww.........',
+  'w..........',
+];
+// A witch on her broom, flying across the sky.
+const HW_FLYING_WITCH = [
+  '.....oo.............',
+  '....ovvo............',
+  '...ovvVvo...........',
+  '..onnnnnno..........',
+  'oooooooooooo........',
+  '...orssssro.........',
+  '...orskssro.........',
+  '....ovvvvvo.........',
+  '...ovvvvvvvsst......',
+  'hhhttttttttttttttttt',
+  'hhh.oo.oo...........',
+];
+
 // The villagers' hats for the night (drawn where their own hat goes).
 const HW_HATS = {
   witch: { x: 1, y: -8, pal: { v: '#6a3fa8', V: '#8f62d0', n: '#ff8a2a' }, rows: [
@@ -235,22 +604,29 @@ function halloweenHat(lookKey, look) {
 }
 
 const hwSprites = new Map();
-// A bitmap as a canvas, its bottom middle the anchor, with a soft shadow.
-function hwSprite(rows, pal, shadow = true) {
-  if (hwSprites.has(rows)) return hwSprites.get(rows);
-  const w = rows[0].length;
-  const h = rows.length;
+// A bitmap as a canvas, its bottom middle the anchor, with a soft shadow;
+// `scale` 2 blows it up like the giant inflatables in front gardens.
+function hwSprite(rows, pal, shadow = true, scale = 1) {
+  const key = scale === 1 ? rows : `${scale}:${rows.join('|')}`;
+  if (hwSprites.has(key)) return hwSprites.get(key);
+  const w = Math.max(...rows.map(r => r.length)) * scale;
+  const h = rows.length * scale;
   const cv = makeCanvas(w + 4, h + 2);
   const ctx = cv.getContext('2d');
   if (shadow) {
     ctx.fillStyle = 'rgba(40,30,70,0.22)';
     ctx.beginPath();
-    ctx.ellipse(cv.width / 2, h, w / 2, 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(cv.width / 2, h, w / 2, 2 * scale, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  drawBitmap(ctx, rows, pal, 2, 0);
+  if (scale === 1) drawBitmap(ctx, rows, pal, 2, 0);
+  else {
+    const one = hwSprite(rows, pal, false);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(one.canvas, 2, 0, one.canvas.width - 4, one.canvas.height - 2, 2, 0, w, h);
+  }
   const sprite = { canvas: cv, ax: cv.width / 2, ay: h };
-  hwSprites.set(rows, sprite);
+  hwSprites.set(key, sprite);
   return sprite;
 }
 
@@ -288,19 +664,22 @@ function hwReach(sc, from) {
 // The tiles where things may stand: on the floor beside the ways (never on
 // a road or path), clear of the water, the villagers, doors, ways out and
 // gate mats, other things and their fronts. `pick(t, c, r)` narrows them;
-// they come nearest a way first (outdoors), else in a fixed jumble.
-function hwSpots(sc, pick) {
+// they come nearest a way first (outdoors), else in a fixed jumble. A tall
+// thing (`opt.tall`) keeps further from the villagers and the ways out, and
+// may stand right by the house it is for (`opt.house`).
+function hwSpots(sc, pick, opt = {}) {
   const outs = hwOuts(sc);
-  const things = sc.objects.filter(o => !o.background && o.c0 >= 0);
+  const things = sc.objects.filter(o => !o.background && o.c0 >= 0 && o !== opt.house);
   const fronts = things.flatMap(o => o.front || []);
+  const gap = opt.tall ? 1 : 0;
   const spots = [];
   for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) {
     const t = tileAt(sc, c, r);
     const at = { c, r };
     if (!hwFloor(t) || hwWay(t) || hwWet(sc, c, r) || !pick(t, c, r)) continue;
-    if (sc.npcs.some(n => hwNear(n, at, KID_MONSTERS[n.look] ? 3 : 2))) continue;
-    if (outs.some(o => hwNear(o, at, 2)) || fronts.some(f => hwNear(f, at, 1))) continue;
-    if (sc.start && hwNear(sc.start, at, 1)) continue;
+    if (sc.npcs.some(n => hwNear(n, at, (KID_MONSTERS[n.look] ? 3 : 2) + gap))) continue;
+    if (outs.some(o => hwNear(o, at, o.obj && o.obj === opt.house ? 1 : 2)) || fronts.some(f => hwNear(f, at, 1))) continue;
+    if (sc.start && hwNear(sc.start, at, 1 + gap)) continue;
     if (things.some(o => c >= o.c0 - 1 && c <= o.c1 + 1 && r >= o.r0 - 1 && r <= o.r1 + 1)) continue;
     let way = false;
     for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) if (hwWay(tileAt(sc, c + dc, r + dr))) way = true;
@@ -354,21 +733,135 @@ function halloweenDress(sc) {
   else hwIndoors(sc);
 }
 
+// The small things along the roads: [bitmap, palette, what a tap says,
+// where its glow is, how many for every 110 tiles].
+const HW_SMALL = [
+  [HW_JACK, HW_PAL, { word: 'pumpkin', fx: 'pumpkin' }, 7, 0.5],
+  [HW_STONE, HW_STONE_PAL, { word: 'boo', fx: 'boo' }, undefined, 0.25],
+  [HW_CAT, HW_CAT_PAL, { word: 'cat', fx: 'cat' }, undefined, 0.2],
+  [HW_POT, HW_POT_PAL, { word: 'pot', fx: 'pot' }, 3, 0.2],
+  [HW_PUMPKIN, HW_PAL, { word: 'pumpkin', fx: 'pumpkin' }, undefined, 0.2],
+  [HW_HAY, HW_PAL, { word: 'hay', fx: 'hay' }, undefined, 0.2],
+  [HW_PAIL, HW_PAL, { word: 'candy', fx: 'candy' }, 5, 0.2],
+];
+// The big ones, one in front of each house, as people dress up their gardens.
+// [bitmap, palette, what a tap says, where its glow is, how many times
+// bigger: the blown-up ones are twice the size, taller than the villagers].
+const HW_BIG = [
+  [HW_BIG_JACK, HW_PAL, { word: 'pumpkin', fx: 'pumpkin' }, 26, 2],
+  [HW_SKELETON, HW_BONE_PAL, { word: 'skeleton', fx: 'rattle' }],
+  [HW_WITCH, HW_WITCH_PAL, { word: 'witch', fx: 'witch' }, 21],
+  [HW_COFFIN, HW_COFFIN_PAL, { word: 'coffin', fx: 'coffin' }],
+  [HW_BIG_GHOST, HW_GHOST_PAL, { word: 'ghost', fx: 'boo' }, undefined, 2],
+  [HW_SPIDER, HW_SPIDER_PAL, { word: 'spider', fx: 'spider' }, undefined, 2],
+  [HW_SCARECROW, HW_SCARE_PAL, { word: 'scarecrow', fx: 'hay' }, 5],
+  [HW_GRAVES, HW_STONE_PAL, { word: 'boo', fx: 'boo' }],
+];
+
 function hwOutdoors(sc) {
-  const jack = hwSprite(HW_JACK, HW_PAL);
   const area = sc.W * sc.D;
-  const base = Math.round(area / 110);
+  const base = area / 110;
+  hwHouses(sc);
   const spots = hwSpots(sc, () => true);
-  // Tombstones in the Monster Village, a little way off the roads.
-  if (sc.kind === 'monster') hwPlace(sc, spots.filter(s => !s.way), 6, 2, s => hwProp(sc, s, hwSprite(HW_STONE, HW_PAL), { word: 'boo', fx: 'boo' }));
-  hwPlace(sc, spots, base, 3, s => hwProp(sc, s, jack, { word: 'pumpkin', fx: 'pumpkin' }, 7));
-  hwPlace(sc, spots, Math.round(base * 0.4), 3, s => hwProp(sc, s, hwSprite(HW_PUMPKIN, HW_PAL), { word: 'pumpkin', fx: 'pumpkin' }));
-  hwPlace(sc, spots, Math.max(2, Math.round(base * 0.25)), 3, s => hwProp(sc, s, hwSprite(HW_HAY, HW_PAL), { word: 'hay', fx: 'hay' }));
-  hwPlace(sc, spots, Math.max(2, Math.round(base * 0.2)), 3, s => hwProp(sc, s, hwSprite(HW_PAIL, HW_PAL), { word: 'candy', fx: 'candy' }, 5));
+  // More tombstones in the Monster Village, a little way off the roads.
+  if (sc.kind === 'monster') hwPlace(sc, spots.filter(s => !s.way), 5, 2, s => hwProp(sc, s, hwSprite(HW_STONE, HW_STONE_PAL), { word: 'boo', fx: 'boo' }));
+  for (const [rows, pal, react, glow, share] of HW_SMALL) {
+    hwPlace(sc, spots, Math.max(1, Math.round(base * share)), 3, s => hwProp(sc, s, hwSprite(rows, pal), react, glow));
+  }
   hwLeaves(sc);
   hwLights(sc);
   hwGhosts(sc, Math.max(3, Math.round(area / 300)));
   hwBats(sc, 8);
+  sc.hwWitch = { y: sc.height * (0.2 + 0.2 * hash(sc.W, sc.D, 1401)), phase: hash(sc.W, sc.D, 1402) * 30 };
+}
+
+// Every house (anything with a door) gets a big thing in its front garden,
+// and something on its roof and walls.
+function hwHouses(sc) {
+  const houses = [...new Set(sc.doors.map(d => d.obj).filter(Boolean))];
+  houses.forEach((o, i) => {
+    const doors = sc.doors.filter(d => d.obj === o);
+    const far = (c, r) => Math.min(...doors.map(d => Math.max(Math.abs(c - d.c), Math.abs(r - d.r))));
+    // Two or three steps from a door, not right in front of it.
+    const inFront = (c, r) => doors.some(d => Math.abs((c - r) - (d.c - d.r)) <= 1 && c + r > d.c + d.r);
+    const spots = hwSpots(sc, (t, c, r) => far(c, r) >= 2 && far(c, r) <= 3 && !inFront(c, r), { tall: true, house: o })
+      .sort((a, b) => far(a.c, a.r) - far(b.c, b.r) || a.k - b.k);
+    const [rows, pal, react, glow, scale = 1] = HW_BIG[(i + Math.floor(hash(o.c0, o.r0, 1501) * HW_BIG.length)) % HW_BIG.length];
+    hwPlace(sc, spots, 1, 2, s => hwProp(sc, s, hwSprite(rows, pal, true, scale), react, glow === undefined ? undefined : glow * scale));
+    hwDecorate(sc, o, i);
+  });
+}
+
+// Paints a house's roof and walls: a witch who flew into the roof, a cat
+// on the ridge, a spider or a jack-o'-lantern on top, bats on the walls
+// and a cobweb in a corner. They become part of the house (a tap on them is
+// a tap on the house). Only where the house is painted: nothing floats.
+function hwDecorate(sc, o, i) {
+  if (!o.canvas || !o.alpha || o.hwDone) return;
+  o.hwDone = true;
+  const PAD = 16;
+  const cv = makeCanvas(o.canvas.width, o.canvas.height + PAD);
+  const ctx = cv.getContext('2d');
+  ctx.drawImage(o.canvas, 0, PAD);
+  // The house as it was, kept (the checks compare it with the year-round one).
+  o.hwPlain = { canvas: o.canvas, y: o.y, h: o.h };
+  Object.assign(o, { canvas: cv, y: o.y - PAD, h: o.h + PAD });
+  const img = ctx.getImageData(0, 0, cv.width, cv.height).data;
+  const solid = (x, y) => x >= 0 && y >= 0 && x < cv.width && y < cv.height && img[(y * cv.width + x) * 4 + 3] > 200;
+  const fits = (rows, x, y) => rows.every((row, j) => [...row].every((ch, k) => ch === '.' || solid(x + k, y + j)));
+  const put = (rows, pal, x, y, flip) => drawBitmap(ctx, rows, pal, Math.round(x), Math.round(y), flip);
+  // On top: the first row where the roof is at least 14 pixels wide (not a
+  // windmill's sail nor a spire's tip).
+  let top = null;
+  for (let y = 0; y < cv.height && !top; y++) {
+    let run = 0;
+    for (let x = 0; x < cv.width; x++) {
+      run = solid(x, y) ? run + 1 : 0;
+      if (run >= 14) { top = { x: x - 6, y }; break; }
+    }
+  }
+  // Lights draped down the roof's two edges from the top, some glowing.
+  let y0 = 0;
+  while (y0 < cv.height && ![...Array(cv.width).keys()].some(x => solid(x, y0))) y0++;
+  const span = Math.min(48, Math.round((cv.height - y0) * 0.45));
+  const BULB = ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d'];
+  for (let y = y0 + 3, n = 0; y < y0 + span; y += 4, n++) {
+    let left = 0;
+    let right = cv.width - 1;
+    while (left < cv.width && !solid(left, y)) left++;
+    while (right > left && !solid(right, y)) right--;
+    if (right - left < 6) continue;
+    for (const [x, side] of [[left + 1, 0], [right - 2, 1]]) {
+      px(ctx, x, y - 1, 1, 1, '#4a3450');
+      px(ctx, x, y, 2, 2, BULB[(n + side * 2) % BULB.length]);
+      if (n % 2 === side) sc.lamps.push({ x: o.x + x + 1, y: o.y + y + 1, small: true, halloween: true });
+    }
+  }
+  const pick = (i + Math.floor(hash(o.c0, o.r0, 1601) * 4)) % 4;
+  if (top) {
+    if (pick === 0) put(HW_CRASH, HW_CRASH_PAL, top.x - 8, top.y + 4 - HW_CRASH.length + 3);
+    else if (pick === 1) put(HW_ROOF_CAT, HW_CAT_PAL, top.x - 7, top.y - HW_ROOF_CAT.length + 1);
+    else if (pick === 2) put(HW_JACK, HW_PAL, top.x - 8, top.y - HW_JACK.length + 2);
+    else put(HW_ROOF_SPIDER, HW_SPIDER_PAL, top.x + 2, top.y + 2);
+  }
+  // On the front walls, in the canvas: bats, and a cobweb by a corner.
+  const k = boxCorners(sc, o.c0, o.r0, o.c1 - o.c0 + 1, o.r1 - o.r0 + 1);
+  const at = P => ({ x: P.x - o.x, y: P.y - o.y });
+  const walls = [wall(at(k.L), at(k.B)), wall(at(k.B), at(k.R))];
+  let bats = 0;
+  walls.forEach((W, w) => {
+    for (const [u, v] of [[0.18, 20], [0.8, 26], [0.3, 30], [0.68, 16]]) {
+      if (bats >= 3) break;
+      const p = wallPt(W, W.len * u, v);
+      if (Math.abs(u - 0.5) < 0.2 && w === 0) continue; // the door
+      if (fits(HW_WALL_BAT, p.x - 5, p.y - 2) && hash(o.c0 + w, o.r0 + v, 1701) < 0.7) { put(HW_WALL_BAT, HW_BAT_PAL, p.x - 5, p.y - 2); bats++; }
+    }
+  });
+  for (const v of [30, 24, 18]) {
+    const p = wallPt(walls[0], 1, v);
+    if (fits(HW_WEB, p.x, p.y)) { put(HW_WEB, HW_WEB_PAL, p.x, p.y); break; }
+  }
+  o.alpha = ctx.getImageData(0, 0, cv.width, cv.height).data;
 }
 
 // Rooms: a garland along the top of the walls, a cobweb in the corner, a
@@ -377,7 +870,10 @@ function hwIndoors(sc) {
   const cave = sc.kind === 'dungeon' || sc.caveWalls;
   if (sc.wallH) hwWalls(sc, sc.wallH, !cave);
   const spots = hwSpots(sc, (t, c, r) => c <= 1 || r <= 1);
-  hwPlace(sc, spots, sc.W * sc.D >= 70 ? 2 : 1, 3, s => hwProp(sc, s, hwSprite(HW_JACK, HW_PAL), { word: 'pumpkin', fx: 'pumpkin' }, 7));
+  hwPlace(sc, spots, 1, 3, s => hwProp(sc, s, hwSprite(HW_JACK, HW_PAL), { word: 'pumpkin', fx: 'pumpkin' }, 7));
+  // And a black cat or a cauldron in a bigger room.
+  const [rows, pal, react, glow] = HW_SMALL[hash(sc.W, sc.D, 1801) < 0.5 ? 2 : 3];
+  if (sc.W * sc.D >= 70) hwPlace(sc, spots, 1, 3, s => hwProp(sc, s, hwSprite(rows, pal), react, glow));
   if (cave) hwBats(sc, 3);
 }
 
@@ -573,6 +1069,17 @@ function halloweenDraw(ctx, sc, now, view) {
     ctx.globalAlpha = 0.88;
     ctx.drawImage(sprite.canvas, Math.round(p.x - sprite.ax), Math.round(p.y - sprite.ay / 2));
     ctx.globalAlpha = 1;
+  }
+  // Now and then a witch flies across on her broom.
+  if (sc.hwWitch) {
+    const lap = 26;
+    const u = ((t + sc.hwWitch.phase) % lap) / 16;
+    if (u < 1) {
+      const sprite = hwSprite(HW_FLYING_WITCH, HW_WITCH_PAL, false);
+      const x = -40 + u * (sc.width + 80);
+      const y = sc.hwWitch.y + Math.sin(u * 12) * 6 - u * 60;
+      ctx.drawImage(sprite.canvas, Math.round(x - sprite.ax), Math.round(y - sprite.ay));
+    }
   }
   for (const b of sc.hwBats) {
     const a = t * b.speed + b.phase;
