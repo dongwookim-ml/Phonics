@@ -207,6 +207,7 @@ async function play(browser, edition) {
     // Halloween (js/halloween.js): the hello, and every kind of thing tapped.
     step('halloween', () => {
       Sound.say([{ text: line('start'), pitch: 1.3 }]);
+      Sound.say([{ text: line('halloweenHi'), narrator: true }]); // the greeting on the first screens, tapped
       for (const n of ['town', 'monster']) for (const o of sceneFor(n).objects.filter(x => x.halloween && x.react)) touchReact({}, o.react, o, o);
       for (const g of sceneFor('town').hwGhosts) touchReact({}, { word: 'ghost', fx: 'boo' }, g, g);
     });

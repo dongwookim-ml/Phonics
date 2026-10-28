@@ -1436,3 +1436,5 @@ const PROP_WORDS = ['fountain', 'flower', 'bush', 'plant', 'table', 'harp', 'che
 // Halloween: the narrator's hello as the game starts, instead of LINES.start
 // (js/halloween.js), in both editions.
 LINES.halloween = ['Happy Halloween, {title} {name}! Look, the whole town is dressed up!', 'Trick or treat, {title} {name}! Shall we go and find the pumpkins?'];
+// The greeting on the login and start screens, said when tapped.
+LINES.halloweenHi = ['Happy Halloween!'];

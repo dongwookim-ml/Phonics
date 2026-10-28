@@ -372,7 +372,10 @@ npx http-server -p 8080 .
   the rooms get a garland and a cobweb with a spider, and a lantern by the
   wall; the villagers wear witch hats, pumpkin hats, cat ears or a bat band
   (the royals keep their crowns, the robots their own heads), and the game
-  starts with "Happy Halloween, Princess Yuna!". It is only laid on top:
+  starts with "Happy Halloween, Princess Yuna!". The login and start
+  screens show "🎃 Happy Halloween! 👻" under the game's name (tap it to
+  hear it) over a dusk sky, with bats, pumpkins, a ghost and cobwebs
+  floating behind, never in the way of a tap. It is only laid on top:
   `js/halloween.js` dresses each scene once it is built (beside the roads,
   never on one, nor near a door, gate or the water, and never on a tile
   whose loss would cut anything off), and the scene builders and data are

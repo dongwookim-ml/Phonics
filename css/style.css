@@ -2147,3 +2147,37 @@ body.magic-on .mini-head { pointer-events: none; opacity: 0.5; }
   .ml-two { font-size: 22px; margin: 0 0 4px; }
   .ml-two .b { width: 30px; height: 30px; font-size: 18px; }
 }
+
+/* ---- Halloween (js/halloween.js) ---- */
+
+/* The login and start screens: a dusk sky, "🎃 Happy Halloween! 👻" under
+   the game's name (tap it to hear it), and bats, pumpkins, a ghost and
+   cobwebs floating behind everything, never in the way of a tap. */
+.start.hw { isolation: isolate; background: radial-gradient(circle at 50% 38%, #fff3e0, #ffc58a 58%, #b88ae8); }
+body.captain .start.hw { background: radial-gradient(circle at 50% 38%, #f4f6ff, #ffc58a 58%, #8a9ae8); }
+.start h1 .hw-hello {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.5em;
+  color: #ff9a3a;
+  cursor: pointer;
+  text-shadow: 0 2px 0 var(--ink), 2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 -2px 0 var(--ink);
+  animation: float 2.4s ease-in-out infinite;
+}
+.hw-deco { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.hw-deco i { position: absolute; font-style: normal; font-size: 44px; line-height: 1; }
+.hw-deco .bat { top: 10%; left: -60px; animation: hw-fly 16s linear infinite; }
+.hw-deco .bat:nth-child(2) { top: 26%; font-size: 32px; animation-duration: 21s; animation-delay: -7s; }
+.hw-deco .bat:nth-child(3) { top: 62%; font-size: 36px; animation-duration: 18s; animation-delay: -12s; }
+.hw-deco .pumpkin { bottom: 10px; left: 12px; font-size: 56px; }
+.hw-deco .pumpkin + .pumpkin { left: auto; right: 12px; }
+.hw-deco .ghost { bottom: 14px; left: calc(50% - 25px); font-size: 50px; animation: float 3s ease-in-out infinite; }
+.hw-deco .web { top: -4px; left: -4px; font-size: 60px; opacity: 0.85; }
+.hw-deco .web + .web { left: auto; right: -4px; transform: scaleX(-1); }
+@keyframes hw-fly { 0% { transform: translate(0, 0); } 25% { transform: translate(30vw, -16px); } 50% { transform: translate(60vw, 10px); } 75% { transform: translate(90vw, -12px); } 100% { transform: translate(calc(100vw + 120px), 0); } }
+@media (max-height: 520px) {
+  .start h1 .hw-hello { font-size: 0.6em; text-shadow: 0 1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink), 0 -1px 0 var(--ink); }
+  .hw-deco i { font-size: 30px; }
+  .hw-deco .pumpkin { font-size: 36px; }
+  .hw-deco .web { font-size: 40px; }
+}

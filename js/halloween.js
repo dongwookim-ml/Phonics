@@ -42,6 +42,26 @@ const HALLOWEEN_ON = (() => {
 // The narrator's hello as the game starts (LINES.halloween in js/data.js).
 if (HALLOWEEN_ON && LINES.halloween) LINES.start = LINES.halloween;
 
+// The login and start screens: the greeting under the game's name (tap it
+// and the narrator says it), a dusk sky, and things floating behind (CSS:
+// .start.hw, .hw-hello, .hw-deco in css/style.css).
+function hwScreens() {
+  for (const id of ['login', 'start']) {
+    const el = document.getElementById(id);
+    const h1 = el && el.querySelector('h1');
+    if (!h1) continue;
+    el.classList.add('hw');
+    h1.insertAdjacentHTML('beforeend', '<br><span class="hw-hello" role="button">🎃 Happy Halloween! 👻</span>');
+    h1.querySelector('.hw-hello').addEventListener('click', () => {
+      Sound.unlock();
+      Sound.say([{ text: line('halloweenHi'), narrator: true }]);
+    });
+    el.insertAdjacentHTML('afterbegin', '<div class="hw-deco" aria-hidden="true"><i class="bat">🦇</i><i class="bat">🦇</i><i class="bat">🦇</i>'
+      + '<i class="pumpkin">🎃</i><i class="pumpkin">🎃</i><i class="ghost">👻</i><i class="web">🕸️</i><i class="web">🕸️</i></div>');
+  }
+}
+if (HALLOWEEN_ON) hwScreens();
+
 // Spooky tunes for the season, in the same little band (js/music.js): the
 // town, the other villages, the caves and the Monster Village, and rooms.
 const HW_TUNES = {
