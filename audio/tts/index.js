@@ -2316,7 +2316,7 @@ const TTS_INDEX = {
 "bone!": "95b17c6834",
 "bone, cone!": "ad17ea5f9b",
 "bone, phone!": "14733b201d",
-"boo": "1cdebd0406",
+"boo": "1dd3167e87",
 "boo!": "cff48dcb8a",
 "book": "5902c490fd",
 "book starts with B.": "409667ee2f",
