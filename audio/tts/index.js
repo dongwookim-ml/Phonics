@@ -1648,6 +1648,7 @@ const TTS_INDEX = {
 "H": "4925103ffd",
 "H says hhh.": "a45c6e26e1",
 "Happy": "6b72ff2338",
+"Happy Halloween!": "e949b460f9",
 "Happy Halloween, Captain Max! Look, the whole town is dressed up!": "d57c861e3e",
 "Happy Halloween, Captain Yuna! Look, the whole town is dressed up!": "85132cb30a",
 "Happy Halloween, Explorer Yuna! Look, the whole town is dressed up!": "95f86f2132",
