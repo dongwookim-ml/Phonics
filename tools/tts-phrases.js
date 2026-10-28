@@ -196,7 +196,7 @@ function collect(D) {
     if (g.team.includes('_')) lines(N, ['magicE'], { letter: g.says });
     else lines(N, ['vowelTeam'], { team: g.team.toUpperCase().split('').join(' '), letter: g.says });
   }
-  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower', 'tower2']);
+  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower', 'tower2', 'halloween']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
   // The villages' little games (js/village-games.js): the narrator says

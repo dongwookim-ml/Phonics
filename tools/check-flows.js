@@ -2628,6 +2628,98 @@ async function hairSalon(browser, edition, look) {
   await ctx.close();
 }
 
+// Halloween (js/halloween.js), in each edition: with ?halloween=1 every
+// village has its pumpkins, ghosts and bats and every room its lantern or
+// garland, none of them cutting off a tile she could reach; a pumpkin and
+// a ghost say their words when tapped, the villagers wear a hat for the
+// night (the king keeps his crown) and the game starts with "Happy
+// Halloween". With ?halloween=0 there is none of it, and taking the
+// decorations away from a dressed village gives back exactly the village.
+async function halloween(browser, edition) {
+  const SCENES = () => ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2',
+    ...TOWN_HOUSES.map(h => `house-${h.letter}`), ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
+  const look = async on => {
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route(/^https?:/, r => (own(r) ? r.continue() : r.abort()));
+    await page.addInitScript(() => localStorage.setItem('pixeltown-guest', '1'));
+    await page.goto(`${URL}?edition=${edition}&halloween=${on}`);
+    await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+    const r = await page.evaluate(async names => {
+      if (!Sound.muted) Sound.toggleMute();
+      const said = [];
+      const say = Sound.say;
+      Sound.say = (parts, who) => { for (const p of [].concat(parts)) if (p && p.text) said.push(p.text); return say(parts, who); };
+      const out = { on: HALLOWEEN_ON, start: LINES.start[0], scenes: {}, cut: [] };
+      const reach = (sc, from) => hwReach(sc, from);
+      for (const n of eval(names)()) {
+        const sc = sceneFor(n);
+        const props = sc.objects.filter(o => o.halloween && !o.background);
+        // Every tile still reachable but the ones the things stand on.
+        const from = sc.start || (sc.exitTiles || [sc.exit])[0] || (sc.links || [])[0] || sc.doors[0];
+        if (from && props.length) {
+          const now = reach(sc, from);
+          props.forEach(o => { tileAt(sc, o.c0, o.r0).blocked = false; });
+          const free = reach(sc, from);
+          props.forEach(o => { tileAt(sc, o.c0, o.r0).blocked = true; });
+          if (free - now !== props.length) out.cut.push(`${n}: ${free - now} tiles for ${props.length} things`);
+        }
+        out.scenes[n] = {
+          outdoor: !!sc.outdoor, props: props.length, garland: sc.objects.some(o => o.halloween && o.background), ghosts: (sc.hwGhosts || []).length, bats: (sc.hwBats || []).length,
+          // What the village is without them.
+          sig: JSON.stringify({ objects: sc.objects.filter(o => !o.halloween).map(o => [o.c0, o.r0, o.c1, o.r1, o.x, o.y, o.w, o.h].join()),
+            blocked: sc.tiles.flatMap((row, r) => row.map((t, c) => (t.blocked && !props.some(o => o.c0 === c && o.r0 === r) ? `${c},${r}` : null))).filter(Boolean).join(' '),
+            lamps: sc.lamps.filter(l => !l.halloween).map(l => [l.x, l.y].join()).join(' '), npcs: sc.npcs.map(v => [v.look, v.c, v.r].join()).join(' ') }),
+        };
+      }
+      out.hat = { fisher: villagerSprite('fisher', 0).canvas.toDataURL(), king: villagerSprite('king', 0).canvas.toDataURL() };
+      // Tapping a pumpkin and a ghost in town.
+      document.getElementById('start-btn').click();
+      out.hello = said.slice();
+      const town = sceneFor('town');
+      const pumpkin = town.objects.find(o => o.halloween && o.react && o.react.word === 'pumpkin');
+      if (pumpkin) {
+        state.cam.x = pumpkin.x + pumpkin.w / 2 - view.width / 2;
+        state.cam.y = pumpkin.y + pumpkin.h / 2 - view.height / 2;
+        const box = screen.getBoundingClientRect();
+        const at = (wx, wy) => ({ clientX: box.left + ((wx - Math.round(state.cam.x)) * state.scale) * box.width / screen.width, clientY: box.top + ((wy - Math.round(state.cam.y)) * state.scale) * box.height / screen.height, bubbles: true });
+        state.busy = false;
+        said.length = 0;
+        screen.dispatchEvent(new PointerEvent('pointerdown', at(pumpkin.x + pumpkin.w / 2, pumpkin.y + pumpkin.h - 6)));
+        const g = town.hwGhosts[0];
+        const gp = hwGhostAt(g, performance.now());
+        state.cam.x = gp.x - view.width / 2;
+        state.cam.y = gp.y - view.height / 2;
+        screen.dispatchEvent(new PointerEvent('pointerdown', at(gp.x, gp.y)));
+        await new Promise(res => setTimeout(res, 400));
+        out.taps = { said: said.filter(t => /^(pumpkin|ghost)!$/.test(t)), walking: state.hero.path.length > 0 };
+      }
+      Sound.say = say;
+      return out;
+    }, SCENES.toString());
+    await ctx.close();
+    return { r, errors };
+  };
+  const on = await look(1);
+  const off = await look(0);
+  const tag = `Halloween (${edition})`;
+  const names = Object.keys(on.r.scenes);
+  const outdoors = names.filter(n => on.r.scenes[n].outdoor);
+  const bare = names.filter(n => on.r.scenes[n].outdoor ? !on.r.scenes[n].props || !on.r.scenes[n].ghosts || !on.r.scenes[n].bats : !on.r.scenes[n].props && !on.r.scenes[n].garland);
+  check(`${tag}: every village has pumpkins, ghosts and bats, every room a lantern or a garland (${outdoors.length} villages, ${names.length - outdoors.length} rooms)`, on.r.on && outdoors.length >= 5 && !bare.length, bare);
+  check(`${tag}: nothing cuts off a tile she could walk to`, !on.r.cut.length, on.r.cut);
+  check(`${tag}: a tapped pumpkin says "pumpkin!" and a tapped ghost "ghost!", and she stays put`, !!on.r.taps && on.r.taps.said.join() === 'pumpkin!,ghost!' && !on.r.taps.walking, on.r.taps);
+  check(`${tag}: the game starts with "Happy Halloween" or "Trick or treat"`, /Halloween|Trick or treat/.test(on.r.hello.join(' ')) && on.r.start !== off.r.start, { on: on.r.hello, off: off.r.start });
+  if (edition === 'princess') check(`${tag}: villagers wear a hat for the night, the king keeps his crown`, on.r.hat.fisher !== off.r.hat.fisher && on.r.hat.king === off.r.hat.king);
+  const left = names.filter(n => off.r.scenes[n].props || off.r.scenes[n].garland || off.r.scenes[n].ghosts || off.r.scenes[n].bats);
+  check(`${tag}: with ?halloween=0 there is none of it, and the hello is the usual one`, !off.r.on && !left.length && !/Halloween/.test(off.r.hello.join(' ')), left);
+  const changed = names.filter(n => on.r.scenes[n].sig !== off.r.scenes[n].sig);
+  check(`${tag}: without its decorations every place is exactly as it is the rest of the year`, !changed.length, changed);
+  check(`${tag}: no page errors`, !on.errors.length && !off.errors.length, [...on.errors, ...off.errors]);
+}
+
 // A gate added in an update (the Monster Village): a child already past its
 // stars gets its party once, after her next answer; one who reaches it
 // later gets it as she crosses, and not again.
@@ -2672,6 +2764,7 @@ async function lateGate(browser) {
     gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
     kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate,
     monsterTower: b => monsterTower(b, 'princess'), monsterTowerCaptain: b => monsterTower(b, 'captain'),
+    halloween: b => halloween(b, 'princess'), halloweenCaptain: b => halloween(b, 'captain'),
     salon: b => hairSalon(b, 'princess', 'girl'), salonBoy: b => hairSalon(b, 'princess', 'boy'), salonCaptain: b => hairSalon(b, 'captain'),
     blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };
   try {

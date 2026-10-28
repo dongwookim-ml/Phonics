@@ -191,7 +191,7 @@ function ask(kind, scene) {
       const page = await browser.newPage({ viewport: { width: w, height: h } });
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
-      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0`);
+      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0&halloween=1`);
       await page.evaluate(() => document.fonts.ready);
       console.log(`${edition} ${w}x${h}`);
 
@@ -562,7 +562,7 @@ function ask(kind, scene) {
       const page = await browser.newPage({ viewport: { width: w, height: h } });
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
-      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0`);
+      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0&halloween=1`);
       await page.evaluate(() => document.fonts.ready);
       console.log(`${edition} ${w}x${h} (upright: her books)`);
       await page.click('#login-guest');

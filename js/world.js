@@ -332,6 +332,7 @@ function makeNpc(def, letter) {
 
 // Draws the two back walls of a room as one object behind everything.
 function addRoomWalls(sc, H, wallColor, trim, extraDraw) {
+  sc.wallH = H; // for what hangs on them (js/halloween.js)
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
   const back = { x: k.L.x - 4, y: k.T.y - H - 6, w: k.R.x - k.L.x + 8, h: H + 12 + (k.R.y - k.T.y) };
   const obj = addObject(sc, { c: -1, r: -1, w: 1, d: 1 }, back, ctx => {
@@ -1021,6 +1022,7 @@ function addForestShop(sc) {
 
 // Back walls of rock with glowing crystals and wall torches.
 function addCaveWalls(sc, H) {
+  Object.assign(sc, { wallH: H, caveWalls: true }); // for what hangs on them (js/halloween.js)
   const k = boxCorners(sc, 0, 0, sc.W, sc.D);
   const back = { x: k.L.x - 4, y: k.T.y - H - 30, w: k.R.x - k.L.x + 8, h: H + 36 + (k.R.y - k.T.y) };
   const WA = wall(k.L, k.T);

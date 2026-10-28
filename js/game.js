@@ -336,6 +336,7 @@ function sceneFor(target) {
     else if (house) state.scenes[target] = buildHouseInterior(house);
     // A place that doesn't exist takes her to the town instead of breaking.
     else return sceneFor('town');
+    halloweenDress(state.scenes[target]); // js/halloween.js: only while it is Halloween
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
   }
@@ -1993,6 +1994,9 @@ function drawScene(now) {
     vctx.fillStyle = sc.kind === 'dungeon' ? 'rgba(40,30,120,0.16)' : 'rgba(50,40,130,0.22)';
     vctx.fillRect(0, 0, view.width, view.height);
   }
+  // Halloween's ghosts, bats and lights (js/halloween.js).
+  vctx.setTransform(1, 0, 0, 1, -cx, -cy);
+  halloweenDraw(vctx, sc, now, view);
 }
 
 function drawCharacter(ch, now) {
@@ -2451,8 +2455,9 @@ function onPointer(e) {
   const wy = sy / state.scale + Math.round(state.cam.y);
   state.ripples.push({ x: sx, y: sy, t0: performance.now() });
 
-  // Her fairy friend and the games' bubbles (🎣 over the pond) fly over everything.
-  if (friendTap(wx, wy) || miniTap(wx, wy)) return;
+  // Her fairy friend, the games' bubbles (🎣 over the pond) and Halloween's
+  // ghosts fly over everything.
+  if (friendTap(wx, wy) || miniTap(wx, wy) || halloweenTap(wx, wy)) return;
 
   // Villagers first: they are small and stand in front of things. The
   // front-most one takes a tap where two overlap; a monster she drew is

@@ -1,7 +1,8 @@
 // Every scene in both editions can be walked: the tiles she arrives on are
 // free, and from each of them every villager, door, link, way out, bookcase
 // and wardrobe can be reached, also with the unicorn (or car) parked next
-// to her.
+// to her. Halloween's pumpkins are out (?halloween=1, js/halloween.js), as
+// they only ever take tiles away.
 // Run: node tools/check-reach.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -17,7 +18,7 @@ const root = path.join(__dirname, '..');
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.route(/^https?:/, r => r.abort());
-    await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}`);
+    await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=1`);
     await page.click('#login-guest');
     const report = await page.evaluate(() => {
       const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];

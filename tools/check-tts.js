@@ -5,7 +5,8 @@
 //  - while playing both editions (dialogs right and wrong, presents, the
 //    shop, the cave, the Monster Village and its tower once they are in,
 //    doors and links, riding, the wardrobe, the library, and
-//    every little game with two misses and to the end) with the default
+//    every little game with two misses and to the end, and Halloween's
+//    hello and things to tap, js/halloween.js) with the default
 //    name, nothing is said that has no recording (it would come from the
 //    live server, or the device's own voice).
 // A missing file or a page error always fails. Lines listed but not
@@ -70,7 +71,7 @@ async function play(browser, edition) {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/^https?:/, r => r.abort());
-  await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}`);
+  await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=1`);
   await page.click('#login-guest');
   const r = await page.evaluate(async () => {
     const norm = t => String(t).trim().replace(/\s+/g, ' ');
@@ -203,6 +204,13 @@ async function play(browser, edition) {
     for (const n of ['town', 'forest', 'unicorn', 'fairy', 'castle', 'castle2', 'yuna', 'dungeon']) {
       for (const l of sceneFor(n).links || []) step(`${n} → ${l.target}`, () => { changeScene(n); flush(); followLink(l); });
     }
+    // Halloween (js/halloween.js): the hello, and every kind of thing tapped.
+    step('halloween', () => {
+      Sound.say([{ text: line('start'), pitch: 1.3 }]);
+      for (const n of ['town', 'monster']) for (const o of sceneFor(n).objects.filter(x => x.halloween && x.react)) touchReact({}, o.react, o, o);
+      for (const g of sceneFor('town').hwGhosts) touchReact({}, { word: 'ghost', fx: 'boo' }, g, g);
+    });
+    await new Promise(res => setTimeout(res, 300)); // the words come a moment after the tap
     Sound.say = say;
     return { spoken, missing: Object.entries(missing).sort((a, b) => b[1] - a[1]), steps };
   });
