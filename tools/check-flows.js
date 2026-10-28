@@ -153,7 +153,8 @@ async function game(browser, { seed, user, server, edition, days, start = true, 
       if (shift) window.Date = class extends D { constructor(...a) { super(...(a.length ? a : [D.now() + shift])); } static now() { return D.now() + shift; } };
     });
   }
-  await page.goto(edition ? `${URL}?edition=${edition}` : URL);
+  // The game as it is the rest of the year (Halloween has its own check).
+  await page.goto(`${URL}?halloween=0${edition ? `&edition=${edition}` : ''}`);
   await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
   if (start) await page.evaluate(() => document.getElementById('start-btn').click());
   return { page, ctx, errors };
@@ -294,7 +295,7 @@ async function audioUnlock(browser) {
       get() { return desc.get.call(this); },
     });
   });
-  await page.goto(URL);
+  await page.goto(`${URL}?halloween=0`);
   await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
   await page.click('#title-chips .chip');
   await page.waitForTimeout(800);
@@ -1758,7 +1759,7 @@ async function musicFlows(browser, edition) {
   p2.on('pageerror', e => errs.push(e.message));
   await p2.route(/^https?:/, rt => (own(rt) ? rt.continue() : rt.abort()));
   await p2.addInitScript(() => { localStorage.setItem('pixeltown-guest', '1'); delete window.AudioContext; delete window.webkitAudioContext; });
-  await p2.goto(`${URL}?edition=${edition}`);
+  await p2.goto(`${URL}?edition=${edition}&halloween=0`);
   await p2.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
   await p2.click('#start-btn', { force: true });
   const none = await p2.evaluate(async () => {
@@ -2656,7 +2657,7 @@ async function halloween(browser, edition) {
       const reach = (sc, from) => hwReach(sc, from);
       for (const n of eval(names)()) {
         const sc = sceneFor(n);
-        const props = sc.objects.filter(o => o.halloween && !o.background);
+        const props = sc.objects.filter(o => o.halloween && o.react); // the things standing on tiles
         // Every tile still reachable but the ones the things stand on.
         const from = sc.start || (sc.exitTiles || [sc.exit])[0] || (sc.links || [])[0] || sc.doors[0];
         if (from && props.length) {

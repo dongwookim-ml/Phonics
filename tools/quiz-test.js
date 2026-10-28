@@ -71,7 +71,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}`);
+    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&halloween=0`);
     await page.click('#login-guest');
     const report = await page.evaluate(([rounds, asked, cuts, newEmoji, u13]) => {
       const problems = [];

@@ -103,7 +103,7 @@ const editionOf = (save, ed) => (save.edition === ed ? save : (save.other || {})
 
 // ---- Tablets -------------------------------------------------------------------
 
-const gameUrl = (dir, edition) => `file://${path.join(dir, 'index.html')}${edition === 'captain' ? '?edition=captain' : ''}`;
+const gameUrl = (dir, edition) => `file://${path.join(dir, 'index.html')}?halloween=0${edition === 'captain' ? '&edition=captain' : ''}`;
 
 // A tablet: its own browser storage, optionally seeded before the first
 // load, running this game or the one in `dir`.

@@ -356,13 +356,17 @@ npx http-server -p 8080 .
   across the roads, leaves and sweets lie on the ground and it is dusk;
   the rooms get a garland and a cobweb with a spider, and a lantern by the
   wall; the villagers wear witch hats, pumpkin hats, cat ears or a bat band
-  (the royals keep their crowns), and the game starts with "Happy
-  Halloween, Princess Yuna!". It is only laid on top: `js/halloween.js`
-  dresses each scene once it is built (never on a tile whose loss would
-  cut anything off), and the scene builders and data are not changed, so
-  outside those days, or with `?halloween=0` in the address, every village
-  is exactly as it was (`?halloween=1` shows it on any day; the reach,
-  visual and voice checks run with it on).
+  (the royals keep their crowns, the robots their own heads), and the game
+  starts with "Happy Halloween, Princess Yuna!". It is only laid on top:
+  `js/halloween.js` dresses each scene once it is built (beside the roads,
+  never on one, nor near a door, gate or the water, and never on a tile
+  whose loss would cut anything off), and the scene builders and data are
+  not changed, so outside those days every village is exactly as it was.
+  Opening the game once with `?halloween=0` in the address turns it off on
+  that tablet for good, `?halloween=1` shows it on any day, and
+  `?halloween=auto` goes back to the dates. The smoke and reach checks run
+  both ways, the visual and voice checks with it on, the other flows
+  without it, and `ONLY=halloween node tools/check-flows.js` checks it.
 - **Fairy Village (level 5)**: a gate at the east end of town's lower road
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling

@@ -15,13 +15,19 @@
 // anything and every village is just as it is the rest of the year.
 //
 // When: from HALLOWEEN_DAYS.from to .until every year (on this device's
-// clock), or as the address says: ?halloween=1 shows it on any day,
-// ?halloween=0 never.
+// clock), unless the address said otherwise once on this device:
+// ?halloween=0 turns it off for good (the villages as they are all year),
+// ?halloween=1 shows it on any day, ?halloween=auto goes back to the dates.
 
 const HALLOWEEN_DAYS = { from: [10, 1], until: [11, 7] }; // [month, day]
 const HALLOWEEN_ON = (() => {
   let ask = null;
   try { ask = new URLSearchParams(location.search).get('halloween'); } catch (e) { /* no address */ }
+  try {
+    if (ask === '0' || ask === '1') localStorage.setItem('pixeltown-halloween', ask);
+    else if (ask === 'auto') localStorage.removeItem('pixeltown-halloween');
+    else ask = localStorage.getItem('pixeltown-halloween');
+  } catch (e) { /* private mode: for this visit only */ }
   if (ask === '1' || ask === '0') return ask === '1';
   const d = new Date();
   const md = (d.getMonth() + 1) * 100 + d.getDate();
@@ -255,6 +261,10 @@ function hwSprite(rows, pal, shadow = true) {
 const HW_WAYS = new Set(['road', 'plaza', 'path', 'rainbow', 'petals', 'dronetarmac', 'droneapron']);
 const hwWay = t => !!t && (HW_WAYS.has(t.type) || !!t.car || !!t.dirt);
 const hwFloor = t => !!t && !t.blocked && t.type !== 'water' && !t.mat && !t.rug;
+const hwWet = (sc, c, r) => [-1, 0, 1].some(dr => [-1, 0, 1].some(dc => (tileAt(sc, c + dc, r + dr) || {}).type === 'water'));
+// Doors, ways out and gate mats, which nothing may stand near.
+const hwOuts = sc => [...sc.doors, ...(sc.links || []), ...(sc.exitTiles || (sc.exit ? [sc.exit] : [])),
+  ...sc.tiles.flatMap((row, r) => row.map((t, c) => (t.mat || t.rug ? { c, r } : null))).filter(Boolean)];
 const hwNear = (a, b, d) => Math.abs(a.c - b.c) <= d && Math.abs(a.r - b.r) <= d;
 
 // How many tiles she can reach from `from`, by steps across.
@@ -275,18 +285,19 @@ function hwReach(sc, from) {
   return n;
 }
 
-// The tiles where things may stand: on the floor, clear of the villagers,
-// doors, ways out, other things and their fronts. `pick(t, c, r)` narrows
-// them; they come nearest a way first (outdoors), else in a fixed jumble.
+// The tiles where things may stand: on the floor beside the ways (never on
+// a road or path), clear of the water, the villagers, doors, ways out and
+// gate mats, other things and their fronts. `pick(t, c, r)` narrows them;
+// they come nearest a way first (outdoors), else in a fixed jumble.
 function hwSpots(sc, pick) {
-  const outs = [...sc.doors, ...(sc.links || []), ...(sc.exitTiles || (sc.exit ? [sc.exit] : []))];
+  const outs = hwOuts(sc);
   const things = sc.objects.filter(o => !o.background && o.c0 >= 0);
   const fronts = things.flatMap(o => o.front || []);
   const spots = [];
   for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) {
     const t = tileAt(sc, c, r);
     const at = { c, r };
-    if (!hwFloor(t) || !pick(t, c, r)) continue;
+    if (!hwFloor(t) || hwWay(t) || hwWet(sc, c, r) || !pick(t, c, r)) continue;
     if (sc.npcs.some(n => hwNear(n, at, KID_MONSTERS[n.look] ? 3 : 2))) continue;
     if (outs.some(o => hwNear(o, at, 2)) || fronts.some(f => hwNear(f, at, 1))) continue;
     if (sc.start && hwNear(sc.start, at, 1)) continue;
@@ -413,6 +424,7 @@ function hwLights(sc) {
     lamps.forEach((b, k) => { if (k !== i && (j < 0 || dist(a, b) < dist(a, lamps[j]))) j = k; });
     if (j >= 0) pairs.add(i < j ? `${i},${j}` : `${j},${i}`);
   });
+  const postOf = l => posts.find(o => Math.abs(l.x - (o.x + 6)) <= 1 && l.y >= o.y && l.y <= o.y + 16);
   for (const pair of pairs) {
     const [a, b] = pair.split(',').map(i => lamps[i]);
     const d = dist(a, b);
@@ -425,16 +437,39 @@ function hwLights(sc) {
       bulbs.push(p);
       if (k % 2) sc.lamps.push({ x: p.x, y: p.y, small: true, halloween: true });
     }
-    sc.hwLights.push({ a, b, bulbs });
+    // Drawn in its place among the things (behind a house in front of
+    // it), as deep as the two posts; there is nothing on it to tap.
+    const s = { a, b, bulbs };
+    const [pa, pb] = [postOf(a), postOf(b)];
+    sc.hwLights.push(s);
+    sc.objects.push({ c0: Math.min(pa.c0, pb.c0), r0: Math.min(pa.r0, pb.r0), c1: Math.max(pa.c1, pb.c1), r1: Math.max(pa.r1, pb.r1),
+      x: Math.min(a.x, b.x) - 2, y: Math.min(a.y, b.y) - 2, w: Math.abs(b.x - a.x) + 4, h: Math.abs(b.y - a.y) + 14,
+      halloween: true, animated: (ctx, t) => hwDrawLights(ctx, s, t) });
   }
 }
 
-// Ghosts float clear of the villagers, doors, ways out, signs and anything
-// that does something when tapped (a tree behind one may be hidden), so a
-// tap on one is never meant for something under it.
+// One string: its wire and its bulbs, twinkling.
+function hwDrawLights(ctx, s, t) {
+  ctx.fillStyle = '#4a3450';
+  const pts = [s.a, ...s.bulbs, s.b];
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1];
+    const q = pts[i];
+    const steps = Math.max(1, Math.round(Math.abs(q.x - p.x)));
+    for (let k = 0; k < steps; k++) ctx.fillRect(Math.round(p.x + ((q.x - p.x) * k) / steps), Math.round(p.y + ((q.y - p.y) * k) / steps), 1, 1);
+  }
+  s.bulbs.forEach((b, i) => {
+    ctx.fillStyle = Math.sin(t * 3 + i) > -0.6 ? b.col : shade(b.col, -70);
+    ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y), 2, 2);
+  });
+}
+
+// Ghosts float clear of the villagers, doors, ways out, signs, water and
+// anything that does something when tapped (a tree behind one may be
+// hidden), so a tap on one is never meant for something under it.
 function hwGhosts(sc, n) {
-  const outs = [...sc.doors, ...(sc.links || [])];
-  const boxes = sc.objects.filter(o => !o.background && (o.kind || o.links || o.stairs || o.keeper || o.halloween || sc.doors.some(d => d.obj === o)));
+  const outs = hwOuts(sc);
+  const boxes = sc.objects.filter(o => !o.background && (o.kind || o.links || o.stairs || o.keeper || o.halloween || o.react || sc.doors.some(d => d.obj === o)));
   const free = (x, y) => !boxes.some(o => x + 10 > o.x && x - 10 < o.x + o.w && y + 10 > o.y && y - 10 < o.y + o.h)
     && !sc.signs.some(g => Math.abs(g.x - x) < 50 && Math.abs(g.y - y) < 24);
   const spots = [];
@@ -442,7 +477,8 @@ function hwGhosts(sc, n) {
     const at = { c, r };
     if (sc.npcs.some(v => hwNear(v, at, 4)) || outs.some(o => hwNear(o, at, 3))) continue;
     const p = tileCenter(sc, c, r);
-    if (free(p.x, p.y - 30)) spots.push({ c, r, k: hash(c, r, 1201) });
+    // What is under it on the screen, two tiles behind its own.
+    if (free(p.x, p.y - 30) && !hwWet(sc, c, r) && !hwWet(sc, c - 2, r - 2)) spots.push({ c, r, k: hash(c, r, 1201) });
   }
   spots.sort((a, b) => a.k - b.k);
   for (const s of spots) {
@@ -520,7 +556,7 @@ function hwWalls(sc, H, flags) {
 // ---- Every frame ---------------------------------------------------------------------
 
 // Drawn over the scene (drawScene in js/game.js, in world pixels): a dusk
-// outdoors, the lights, the ghosts and the bats.
+// outdoors, the ghosts and the bats (the lights are drawn with the things).
 function halloweenDraw(ctx, sc, now, view) {
   if (!sc.hwUsed) return;
   const t = now / 1000;
@@ -530,20 +566,6 @@ function halloweenDraw(ctx, sc, now, view) {
     ctx.fillStyle = 'rgba(60,28,110,0.13)';
     ctx.fillRect(0, 0, view.width, view.height);
     ctx.restore();
-  }
-  for (const s of sc.hwLights) {
-    ctx.fillStyle = '#4a3450';
-    const pts = [s.a, ...s.bulbs, s.b];
-    for (let i = 1; i < pts.length; i++) {
-      const p = pts[i - 1];
-      const q = pts[i];
-      const steps = Math.max(1, Math.round(Math.abs(q.x - p.x)));
-      for (let k = 0; k < steps; k++) ctx.fillRect(Math.round(p.x + ((q.x - p.x) * k) / steps), Math.round(p.y + ((q.y - p.y) * k) / steps), 1, 1);
-    }
-    s.bulbs.forEach((b, i) => {
-      ctx.fillStyle = Math.sin(t * 3 + i) > -0.6 ? b.col : shade(b.col, -70);
-      ctx.fillRect(Math.round(b.x) - 1, Math.round(b.y), 2, 2);
-    });
   }
   for (const g of sc.hwGhosts) {
     const p = hwGhostAt(g, now);

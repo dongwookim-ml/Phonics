@@ -3,7 +3,7 @@
 // girl and a boy hero and for the robot hero of the captain edition. Every
 // door must be reachable and lead back out where it was. Every wardrobe
 // thing that suits the hero draws (walking, riding, in a portrait and as its
-// wardrobe picture) and shows on the hero.
+// wardrobe picture) and shows on the hero. Also with Halloween on.
 // Run: node tools/smoke.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -27,11 +27,13 @@ for (const s of scripts) {
 
 (async () => {
   const browser = await launch();
-  for (const [edition, look, title] of [['princess', 'girl', 'princess'], ['princess', 'boy', 'prince'], ['captain', 'robot', 'captain']]) {
+  // Each of them the rest of the year and at Halloween (js/halloween.js).
+  for (const [edition, look, title, halloween] of [['princess', 'girl', 'princess', 0], ['princess', 'boy', 'prince', 0], ['captain', 'robot', 'captain', 0],
+    ['princess', 'girl', 'princess', 1], ['captain', 'robot', 'captain', 1]]) {
     const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}`);
+    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&halloween=${halloween}`);
     await page.waitForTimeout(300);
     // Play without an account, so the login screen doesn't block the test.
     await page.click('#login-guest');
@@ -101,7 +103,7 @@ for (const s of scripts) {
       return { bad, n };
     });
     if (!items.n) items.bad.push('no wardrobe items');
-    for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}: ${e}`); failed++; }
+    for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}${halloween ? ' (Halloween)' : ''}: ${e}`); failed++; }
     await page.close();
   }
   await browser.close();
