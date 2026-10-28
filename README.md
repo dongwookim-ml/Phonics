@@ -347,6 +347,22 @@ npx http-server -p 8080 .
   "⭐ 3 · 13/15" once the two differ, and the parent screen shows both.
   Hairstyles are never presents nor in the shop. Code in `js/salon.js`,
   the hair art in `HAIR_STYLE_ART` in `js/sprites.js`.
+- **Halloween** (both editions, 1 October to 7 November every year by the
+  tablet's clock, `HALLOWEEN_DAYS`): every village is dressed up. Glowing
+  jack-o'-lanterns, pumpkins, hay bales and candy pails stand beside the
+  roads (tap one: "pumpkin!", "hay!", "candy!"), smiling tombstones in the
+  Monster Village ("boo!"), little ghosts float about (tap one: "ghost!"),
+  bats loop over the sky, strings of lights hang between the lamp posts
+  across the roads, leaves and sweets lie on the ground and it is dusk;
+  the rooms get a garland and a cobweb with a spider, and a lantern by the
+  wall; the villagers wear witch hats, pumpkin hats, cat ears or a bat band
+  (the royals keep their crowns), and the game starts with "Happy
+  Halloween, Princess Yuna!". It is only laid on top: `js/halloween.js`
+  dresses each scene once it is built (never on a tile whose loss would
+  cut anything off), and the scene builders and data are not changed, so
+  outside those days, or with `?halloween=0` in the address, every village
+  is exactly as it was (`?halloween=1` shows it on any day; the reach,
+  visual and voice checks run with it on).
 - **Fairy Village (level 5)**: a gate at the east end of town's lower road
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
@@ -874,6 +890,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/village-games.js`: the game in each village (rhyme, spell, blend, read) in both editions, and the letters on the Unicorn game's end card
 - `js/blend-magic.js`: the sound magic, a little show of blending (bubbles, 🐢 slow, 🐇 fast, ✨ pop)
 - `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
+- `js/halloween.js`: Halloween, laid over every village and room from 1 October to 7 November (`?halloween=0/1`)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
