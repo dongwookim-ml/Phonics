@@ -278,7 +278,8 @@ function musicListening() {
 
 function musicPlaceOf(sc) {
   const place = !sc || sc === state.scenes.castle || sc === state.scenes.castle2 ? 'town' : MUSIC_PLACES[sc.kind] || 'home';
-  return HALLOWEEN_MUSIC[place] || place; // the season's own tunes (js/halloween.js)
+  // The season's own tunes (js/halloween.js; a tab with an older copy of it has none).
+  return (typeof HALLOWEEN_MUSIC !== 'undefined' && HALLOWEEN_MUSIC[place]) || place;
 }
 
 // Sound.say started (true) or finished its queue (false).

@@ -2186,6 +2186,7 @@ function drawOverlay(now) {
   ctx.globalCompositeOperation = 'lighter';
   for (const l of sc.lamps) {
     const p = toScreen(l.x, l.y);
+    if (p.x < -60 || p.y < -60 || p.x > screen.width + 60 || p.y > screen.height + 60) continue;
     const r = ((l.small ? 7 : l.big ? 46 : 18) + Math.sin(now / 300 + l.x) * 1.5) * s;
     ctx.globalAlpha = l.small ? 0.3 + 0.15 * Math.sin(now / 600 + l.x * 3) : 0.35;
     ctx.drawImage(glow(), p.x - r, p.y - r, r * 2, r * 2);

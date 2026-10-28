@@ -607,11 +607,12 @@ const hwSprites = new Map();
 // A bitmap as a canvas, its bottom middle the anchor, with a soft shadow;
 // `scale` 2 blows it up like the giant inflatables in front gardens.
 function hwSprite(rows, pal, shadow = true, scale = 1) {
-  const key = scale === 1 ? rows : `${scale}:${rows.join('|')}`;
-  if (hwSprites.has(key)) return hwSprites.get(key);
+  const own = hwSprites.get(rows) || hwSprites.set(rows, new Map()).get(rows);
+  const key = `${scale}|${shadow}`;
+  if (own.has(key)) return own.get(key);
   const w = Math.max(...rows.map(r => r.length)) * scale;
   const h = rows.length * scale;
-  const cv = makeCanvas(w + 4, h + 2);
+  const cv = makeCanvas(w + 4, h + 2 * scale);
   const ctx = cv.getContext('2d');
   if (shadow) {
     ctx.fillStyle = 'rgba(40,30,70,0.22)';
@@ -623,10 +624,10 @@ function hwSprite(rows, pal, shadow = true, scale = 1) {
   else {
     const one = hwSprite(rows, pal, false);
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(one.canvas, 2, 0, one.canvas.width - 4, one.canvas.height - 2, 2, 0, w, h);
+    ctx.drawImage(one.canvas, 2, 0, one.canvas.width - 4, rows.length, 2, 0, w, h);
   }
   const sprite = { canvas: cv, ax: cv.width / 2, ay: h };
-  hwSprites.set(key, sprite);
+  own.set(key, sprite);
   return sprite;
 }
 
@@ -748,7 +749,7 @@ const HW_SMALL = [
 // [bitmap, palette, what a tap says, where its glow is, how many times
 // bigger: the blown-up ones are twice the size, taller than the villagers].
 const HW_BIG = [
-  [HW_BIG_JACK, HW_PAL, { word: 'pumpkin', fx: 'pumpkin' }, 26, 2],
+  [HW_BIG_JACK, HW_PAL, { word: 'pumpkin', fx: 'pumpkin' }, 13, 2],
   [HW_SKELETON, HW_BONE_PAL, { word: 'skeleton', fx: 'rattle' }],
   [HW_WITCH, HW_WITCH_PAL, { word: 'witch', fx: 'witch' }, 21],
   [HW_COFFIN, HW_COFFIN_PAL, { word: 'coffin', fx: 'coffin' }],
@@ -820,16 +821,25 @@ function hwDecorate(sc, o, i) {
       if (run >= 14) { top = { x: x - 6, y }; break; }
     }
   }
-  // Lights draped down the roof's two edges from the top, some glowing.
+  // Lights draped down the roof's two edges from where it is wide, on the
+  // widest stretch of each row (not a flag or a pole beside it), some glowing.
   let y0 = 0;
-  while (y0 < cv.height && ![...Array(cv.width).keys()].some(x => solid(x, y0))) y0++;
+  for (let run = 0; y0 < cv.height; y0++) {
+    run = 0;
+    let best = 0;
+    for (let x = 0; x < cv.width; x++) { run = solid(x, y0) ? run + 1 : 0; best = Math.max(best, run); }
+    if (best >= 14) break;
+  }
   const span = Math.min(48, Math.round((cv.height - y0) * 0.45));
   const BULB = ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d'];
-  for (let y = y0 + 3, n = 0; y < y0 + span; y += 4, n++) {
+  for (let y = y0 + 2, n = 0; y < y0 + span; y += 4, n++) {
     let left = 0;
-    let right = cv.width - 1;
-    while (left < cv.width && !solid(left, y)) left++;
-    while (right > left && !solid(right, y)) right--;
+    let right = -1;
+    for (let x = 0, start = 0; x <= cv.width; x++) {
+      if (x < cv.width && solid(x, y)) continue;
+      if (x - start > right - left + 1) { left = start; right = x - 1; }
+      start = x + 1;
+    }
     if (right - left < 6) continue;
     for (const [x, side] of [[left + 1, 0], [right - 2, 1]]) {
       px(ctx, x, y - 1, 1, 1, '#4a3450');
