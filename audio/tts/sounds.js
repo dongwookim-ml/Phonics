@@ -11,7 +11,7 @@ const TTS_SOUNDS = {
 "b": {
 "anchor": "bus",
 "anchorClip": "de08be0585",
-"clip": "af0b0ea444",
+"clip": "819363920b",
 "kind": "vstop",
 "ms": 101,
 "where": "initial"
@@ -19,7 +19,7 @@ const TTS_SOUNDS = {
 "c": {
 "anchor": "cat",
 "anchorClip": "320d54fcad",
-"clip": "1a1ddbd945",
+"clip": "8ce0e59cee",
 "kind": "stop",
 "ms": 130,
 "where": "initial"
@@ -27,7 +27,7 @@ const TTS_SOUNDS = {
 "ch": {
 "anchor": "chick",
 "anchorClip": "9c68d4cf55",
-"clip": "9aedd6b1df",
+"clip": "3580cb87cb",
 "kind": "affricate",
 "ms": 200,
 "where": "initial"
@@ -35,7 +35,7 @@ const TTS_SOUNDS = {
 "ck": {
 "anchor": "cat",
 "anchorClip": "320d54fcad",
-"clip": "a217d54f93",
+"clip": "9961ac0c3d",
 "kind": "stop",
 "ms": 130,
 "where": "initial"
@@ -43,7 +43,7 @@ const TTS_SOUNDS = {
 "d": {
 "anchor": "dog",
 "anchorClip": "7758bbe68f",
-"clip": "198ff38ac6",
+"clip": "bbc73f8d16",
 "kind": "vstop",
 "ms": 112,
 "where": "initial"
@@ -67,7 +67,7 @@ const TTS_SOUNDS = {
 "g": {
 "anchor": "gas",
 "anchorClip": "4117baf0db",
-"clip": "6547c7ce72",
+"clip": "0f198048a1",
 "kind": "vstop",
 "ms": 98,
 "where": "initial"
@@ -91,7 +91,7 @@ const TTS_SOUNDS = {
 "j": {
 "anchor": "jet",
 "anchorClip": "6506af3065",
-"clip": "88ac29b9ff",
+"clip": "03bc8716d6",
 "kind": "vaffricate",
 "ms": 177,
 "where": "initial"
@@ -99,7 +99,7 @@ const TTS_SOUNDS = {
 "k": {
 "anchor": "cat",
 "anchorClip": "320d54fcad",
-"clip": "c5bd2de15b",
+"clip": "f200df0fa5",
 "kind": "stop",
 "ms": 130,
 "where": "initial"
@@ -147,7 +147,7 @@ const TTS_SOUNDS = {
 "p": {
 "anchor": "pig",
 "anchorClip": "533ec974da",
-"clip": "5200bde453",
+"clip": "b8e178d19d",
 "kind": "stop",
 "ms": 130,
 "where": "initial"
@@ -155,7 +155,7 @@ const TTS_SOUNDS = {
 "q": {
 "anchor": "queen",
 "anchorClip": "ba0eeacd20",
-"clip": "10b3a5ea48",
+"clip": "16903b7035",
 "kind": "kw",
 "ms": 190,
 "where": "initial"
@@ -187,7 +187,7 @@ const TTS_SOUNDS = {
 "t": {
 "anchor": "top",
 "anchorClip": "409d998f2a",
-"clip": "0e9bbf09dc",
+"clip": "8c327f5dde",
 "kind": "stop",
 "ms": 130,
 "where": "initial"
