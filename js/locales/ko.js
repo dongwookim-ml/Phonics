@@ -739,5 +739,13 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "books.threePigsArt5": "짚집과 나뭇가지 집이 무너지고 두 돼지가 안전하게 달아나요.",
   "books.threePigsArt6": "첫째와 둘째 돼지가 셋째 돼지가 맞아주는 벽돌집으로 달려가요.",
   "books.threePigsArt7": "늑대가 세게 불어도 벽돌집은 튼튼하고 돼지 삼형제는 안에서 안전해요.",
-  "books.threePigsArt8": "늑대가 달아나고 돼지 삼형제가 벽돌집 옆에서 웃어요."
+  "books.threePigsArt8": "늑대가 달아나고 돼지 삼형제가 벽돌집 옆에서 웃어요.",
+  "books.ducklingArt1": "엄마 오리가 둥지 속 작은 크림색 알 세 개와 커다란 회색 알 하나를 바라봐요.",
+  "books.ducklingArt2": "작은 노란 오리 세 마리 옆에서 커다란 회색 아기 오리가 알에서 나와요.",
+  "books.ducklingArt3": "노란 오리들이 등을 돌리고 회색 아기 오리는 떨어져 서서 슬퍼해요.",
+  "books.ducklingArt4": "회색 아기 오리가 겨울의 얼어붙은 연못 옆 눈 덮인 갈대 아래 혼자 있어요.",
+  "books.ducklingArt5": "봄이 되어 회색 어린 새가 호수 위의 흰 백조 두 마리를 바라봐요.",
+  "books.ducklingArt6": "어린 흰 백조가 고개를 숙여 물에 비친 자신의 흰 모습을 바라봐요.",
+  "books.ducklingArt7": "흰 백조 두 마리가 어린 백조를 반기며 함께 헤엄치자고 해요.",
+  "books.ducklingArt8": "행복한 어린 백조가 밝은 봄날 호수에서 새 친구들과 헤엄쳐요."
 };

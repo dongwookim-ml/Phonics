@@ -21,12 +21,12 @@ const root = path.join(__dirname, '..');
         openLibrary();
       });
       const cover = page.locator('.lib-book .cover-art');
-      assert.equal(await cover.count(), 3);
+      assert.equal(await cover.count(), 4);
       for (const image of await cover.all()) {
         await image.scrollIntoViewIfNeeded();
         await image.evaluate(image => image.decode());
       }
-      for (const bookId of ['lion-mouse', 'red-hen', 'three-pigs']) {
+      for (const bookId of ['lion-mouse', 'red-hen', 'three-pigs', 'ugly-duckling']) {
       for (const [width, height] of [[1024, 768], [768, 1024], [844, 390], [390, 844]]) {
         await page.setViewportSize({ width, height });
         for (let i = 0; i < 8; i++) {
@@ -75,7 +75,7 @@ const root = path.join(__dirname, '..');
       await page.waitForFunction(() => !document.querySelector('#rd-pic img'));
       assert.ok((await page.locator('#rd-pic').innerText()).length);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${edition}/${language}: 3 covers, 24 illustrated pages at 4 sizes, quiz/summary, other books, self-reader, failed-image fallback`);
+      console.log(`PASS ${edition}/${language}: 4 covers, 32 illustrated pages at 4 sizes, quiz/summary, other books, self-reader, failed-image fallback`);
       await page.close();
     }
   } finally { await browser.close(); }

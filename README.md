@@ -20,13 +20,15 @@ and an illustrated cover. **The Little Red Hen** has eight comic-style scenes
 with bold outlines, vivid colours and expressive characters, plus its own cover.
 **The Three Little Pigs** has eight minimal ink sketches with thin imperfect
 black lines and partial colouring that leaves roughly half of each form white.
+**The Ugly Duckling** has eight tactile cut-paper collage scenes, with gentle
+seasonal colours and a white-swan ending used for the cover.
 The other books keep their existing artwork. Story
 sentences, recorded narration, page order and comprehension questions are unchanged.
 The reader places art beside the sentences on wide screens and above them on
 portrait screens, and keeps emoji as a fallback if an image fails to load.
 
 Assets are local WebP files in `img/books/lion-mouse/`, `img/books/red-hen/` and
-`img/books/three-pigs/`, so
+`img/books/three-pigs/` and `img/books/ugly-duckling/`, so
 reading does not depend on an external image service. `artwork.json` in each
 folder records the built-in imagegen prompts and the shared character references.
 The existing texts are simple retellings of traditional tales. No

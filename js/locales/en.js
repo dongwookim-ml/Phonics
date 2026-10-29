@@ -739,5 +739,13 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "books.threePigsArt5": "The straw and stick houses fall apart as the two pigs run safely away.",
   "books.threePigsArt6": "The first two pigs run to the brick house, where their brother welcomes them.",
   "books.threePigsArt7": "The wolf blows hard, but the brick house stands firm with all three pigs safe inside.",
-  "books.threePigsArt8": "The three pigs smile beside their brick house as the wolf runs away."
+  "books.threePigsArt8": "The three pigs smile beside their brick house as the wolf runs away.",
+  "books.ducklingArt1": "A mother duck watches three small cream eggs and one large gray egg in her nest.",
+  "books.ducklingArt2": "A large gray duckling hatches beside three smaller yellow ducklings.",
+  "books.ducklingArt3": "The yellow ducks turn away while the gray duckling stands apart and feels sad.",
+  "books.ducklingArt4": "The gray duckling shelters alone among snowy reeds beside a frozen winter pond.",
+  "books.ducklingArt5": "In spring, the young gray bird sees two white swans on the lake.",
+  "books.ducklingArt6": "The young white swan bends down and sees his own white reflection in the water.",
+  "books.ducklingArt7": "Two white swans welcome the young swan to swim with them.",
+  "books.ducklingArt8": "The happy young swan glides with his new friends on a bright spring lake."
 };
