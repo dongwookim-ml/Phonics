@@ -232,6 +232,19 @@ def active_db(x):
     return float(db(np.mean(10 ** (f['e'][keep] / 10))))
 
 
+def lift_gain(y, kind, word):
+    """How many dB to raise a sound cut from `word` (samples) by: up to
+    KINDS[kind]['lift'] dB of the word's level, never down, at most 18 dB,
+    and no more than the encoder's limiter can take on its peak (it shaves
+    up to 4 dB off a click's very top)."""
+    lift = KINDS.get(kind, {}).get('lift')
+    if lift is None or not len(y):
+        return 0.0
+    want = active_db(word) + lift - active_db(y)
+    room = LIMIT_DB - float(db(np.max(np.abs(y)) ** 2)) + 4
+    return float(max(0.0, min(want, room, 18.0)))
+
+
 def true_peak(x):
     """True peak in dBTP: the sample peak after 4x oversampling."""
     if not len(x):
@@ -357,6 +370,10 @@ def band_env(x, a, b, win=0.01):
 # entry in the clip id of its sounds, so changing `cut` or `length` gives
 # those sounds, and every line made from them, new clips (and new URLs).
 # `range`: the lengths check_sound() accepts.
+# `lift`: a stop is a click and a breath, and cut from its word it is far
+# quieter than the word (/g/ 15 dB under "gas", /b/ 9 under "bus"): too faint
+# to make out ("너무 짧아서 무슨 소리인지 모르겠어"). Those kinds are raised to
+# `lift` dB of the word's level, as far as their peak allows (lift_gain).
 KINDS = {
     'nasal':     {'hold': 0.55, 'voiced': True},
     'liquid':    {'hold': 0.55, 'voiced': True},
@@ -364,11 +381,11 @@ KINDS = {
     'vfricative': {'hold': 0.55, 'voiced': True},
     'breath':    {'hold': 0.40, 'voiced': False},
     'vowel':     {'hold': 0.40, 'voiced': True},
-    'stop':      {'voiced': False, 'length': 0.13, 'range': [0.10, 0.17], 'cut': 'onset-2'},
-    'vstop':     {'voiced': True, 'length': 0.115, 'range': [0.08, 0.15], 'cut': 'onset-2'},
-    'affricate': {'voiced': False, 'length': 0.20, 'range': [0.15, 0.26], 'cut': 'onset-2'},
-    'vaffricate': {'voiced': True, 'length': 0.18, 'range': [0.14, 0.25], 'cut': 'onset-2'},
-    'kw':        {'voiced': False, 'length': 0.19, 'range': [0.14, 0.25], 'cut': 'onset-2'},
+    'stop':      {'voiced': False, 'length': 0.13, 'range': [0.10, 0.17], 'cut': 'onset-2', 'lift': -3},
+    'vstop':     {'voiced': True, 'length': 0.115, 'range': [0.08, 0.15], 'cut': 'onset-2', 'lift': -3},
+    'affricate': {'voiced': False, 'length': 0.20, 'range': [0.15, 0.26], 'cut': 'onset-2', 'lift': -3},
+    'vaffricate': {'voiced': True, 'length': 0.18, 'range': [0.14, 0.25], 'cut': 'onset-2', 'lift': -3},
+    'kw':        {'voiced': False, 'length': 0.19, 'range': [0.14, 0.25], 'cut': 'onset-2', 'lift': -3},
     'glide':     {'voiced': True, 'length': 0.19, 'range': [0.14, 0.25], 'cut': 'onset-2'},
     'cluster':   {'voiced': False, 'range': [0.08, 0.36]},
 }

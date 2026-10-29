@@ -1036,6 +1036,9 @@ async function cards(browser, edition) {
       }
     }
     out.fish = [...new Set(bad)];
+    // The fisherman asks for a stop three times (/b/ /b/ /b/), any other sound once.
+    const sounds = parts => parts.filter(p => p.text && /^\/\w+\/$/.test(p.text)).map(p => p.text).join(' ');
+    out.fishAsk = ['b', 'g', 'm', 's'].map(l => `${l}: ${sounds(miniQuestion({ info: { letter: l.toUpperCase() } }))}`);
     out.albumLines = LINES.album;
     return out;
   });
@@ -1055,6 +1058,8 @@ async function cards(browser, edition) {
   check(`${tag}: today's play time is saved with both editions`, r.shared);
   check(`${tag}: no fairy or unicorn in the shop before its village opens`, !r.shop.early.length && r.shop.open > 0, r.shop);
   check(`${tag}: no wrong fish she'd name with the round's sound (ALIAS)`, !r.fish.length, r.fish);
+  check(`${tag}: at the pond a stop is asked three times (/b/ /b/ /b/), a long sound once`,
+    r.fishAsk.join('; ') === 'b: /b/ /b/ /b/; g: /g/ /g/ /g/; m: /m/; s: /s/', r.fishAsk);
   check(`${tag}: the album's narrator line fits the edition`, r.albumLines.every(l => /sticker/.test(l) === (edition !== 'captain')), r.albumLines);
   check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();

@@ -496,10 +496,11 @@ function miniRounds() {
   });
 }
 // "/m/": the letter's pure sound, in the narrator's voice (js/audio.js).
-const miniSound = r => ({ text: `/${r.info.letter.toLowerCase()}/`, narrator: true });
-const miniQuestion = r => [{ text: line('fishAsk') }, { pause: 150 }, miniSound(r)];
+// The letter's sound on its own (a stop such as /b/ three times: Quiz.alone).
+const miniSound = r => Quiz.alone(r.info.letter.toLowerCase());
+const miniQuestion = r => [{ text: line('fishAsk') }, { pause: 150 }, ...miniSound(r)];
 // A wrong fish: its word, and the sound again.
-const miniAgain = (r, it) => [{ text: it.w, narrator: true, show: `${it.w}…` }, { pause: 350 }, { text: line('listen') }, { pause: 150 }, miniSound(r)];
+const miniAgain = (r, it) => [{ text: it.w, narrator: true, show: `${it.w}…` }, { pause: 350 }, { text: line('listen') }, { pause: 150 }, ...miniSound(r)];
 
 MINI_GAMES.fish = {
   scene: 'town',
