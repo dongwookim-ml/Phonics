@@ -455,10 +455,15 @@ def make_pure(p, k, path, gain):
     if y is None:
         raise Refused('no clean cut: ' + '; '.join(f"{t['word']}: {t['problem']}" for t in info['tried'])
                       if info['tried'] else 'none of its words is recorded')
-    # The words already have the narrator's gain.
-    ca.encode(y, path, 0.0, pad=0.05)
+    # The words already have the narrator's gain; a stop is raised towards
+    # its word's level (clipaudio.lift_gain), or it is too faint to make out.
+    word = next(x for w, _, x in anchors if w == info['anchor'])
+    lift = ca.lift_gain(y, spec['kind'], word)
+    ca.encode(y, path, lift, pad=0.05)
     rec = {'engine': 'cut', 'gain': gain, 'anchor': info['anchor'], 'where': info['where'], 'ms': info['ms'],
            'source': info['source'], 'tried': [t['word'] for t in info['tried']]}
+    if lift:
+        rec['lift'] = round(lift, 1)
     for k in ('margin', 'lenient'):
         if k in info:
             rec[k] = info[k]

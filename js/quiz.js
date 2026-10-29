@@ -481,6 +481,12 @@ const Quiz = (() => {
   // of just that sound (js/audio.js says the spelling above if it has none).
   // `show` is what the dialog prints for it.
   const sound = l => ({ text: `/${undoubled(l)}/`, narrator: true, show: `${l}…` });
+  const STOP_SOUNDS = ['b', 'd', 'g', 'p', 't', 'k', 'c'];
+  // A stop (b d g p t k c) is over in a tenth of a second: asked for on its
+  // own it is said three times, bounced the way a teacher says it
+  // (/b/ /b/ /b/), or she can't tell what it was ("너무 짧아서 무슨 소리인지
+  // 모르겠어"). Sounding out a word, each sound is said once.
+  const alone = l => (STOP_SOUNDS.includes(undoubled(l)) ? [sound(l), { pause: 220 }, sound(l), { pause: 220 }, sound(l)] : [sound(l)]);
   // "M says mmm." in the narrator's voice.
   const says = l => ({ text: `${l.toUpperCase()} says ${soundOf(l.toLowerCase())}.`, narrator: true });
   // The word she picked, said back.
@@ -590,7 +596,7 @@ const Quiz = (() => {
       const letters = others(LETTERS, cfg.n - 1, ok, cfg.near && (l => nearPair(low(l), t.w[0])));
       const card = l => (cfg.lower ? l.letter.toLowerCase() : l.letter + l.letter.toLowerCase());
       // With `sound`, she hears the word's first sound on its own too: "cat… /k/".
-      const hint = cfg.sound ? [{ pause: 400 }, sound(t.w[0])] : [];
+      const hint = cfg.sound ? [{ pause: 400 }, ...alone(t.w[0])] : [];
       const ask = line('firstSound');
       return {
         id: t.id, target: t.w, clue: `<span class="clue-pic">${t.e}</span>`,
@@ -604,7 +610,7 @@ const Quiz = (() => {
         teach: o => [says(o.wrong), { pause: 400 }, lead('listen'), voiced(t.w, 0.85)],
         picked: o => [says(o.wrong)],
         // "/k/… cat starts with C."
-        model: [sound(t.w[0]), { pause: 300 }, { text: `${t.w} starts with ${L}.`, narrator: true }],
+        model: [...alone(t.w[0]), { pause: 300 }, { text: `${t.w} starts with ${L}.`, narrator: true }],
       };
     },
 
@@ -614,7 +620,7 @@ const Quiz = (() => {
       // One sentence in the asker's voice, the letter said by its name;
       // with `sound`, then the letter's sound on its own.
       const ask = { text: `${line('findStart')} ${L}?` };
-      const hint = cfg.sound ? [{ pause: 400 }, sound(L.toLowerCase())] : [];
+      const hint = cfg.sound ? [{ pause: 400 }, ...alone(L.toLowerCase())] : [];
       const startsWith = o => ({ text: `${o.w} starts with ${o.info.letter}.`, narrator: true });
       return {
         id: t.id, target: t.w, clue: `<span class="clue-letter">${L}${L.toLowerCase()}</span>`,
@@ -626,7 +632,7 @@ const Quiz = (() => {
         // "dog starts with D. C says kuh."
         teach: o => [startsWith(o.item), { pause: 400 }, says(L)],
         picked: o => [startsWith(o.item)],
-        model: [sound(L.toLowerCase()), { pause: 300 }, startsWith(t)],
+        model: [...alone(L.toLowerCase()), { pause: 300 }, startsWith(t)],
       };
     },
 
@@ -683,7 +689,7 @@ const Quiz = (() => {
         replay: [{ text: ask }],
         options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
         answer: [say(`${t.w}!`)],
-        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(soundable(t) ? sounds(t) : [sound(t.w[0])]),
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen')].concat(soundable(t) ? sounds(t) : alone(t.w[0])),
         picked: o => [named(o.wrong)],
         model: sounded(t),
       };
@@ -731,16 +737,16 @@ const Quiz = (() => {
         kind: 'oneSound', id: x.id, target: t.w, letter: L,
         clue: `<span class="clue-sounds"><span class="dot name">${L}</span></span>`,
         prompt: ask,
-        ask: [{ text: ask }, { pause: 500 }, sound(L), READY],
-        replay: [sound(L)],
+        ask: [{ text: ask }, { pause: 500 }, ...alone(L), READY],
+        replay: alone(L),
         options: deal(t, soundCards(t, L, n - 1), o => ({ html: picCard(o.w, o.e), wrong: o.w })),
         // "/s/ … sun!"
         answer: [sound(L), { pause: 250 }, say(`${t.w}!`)],
         solved: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
         // "dog… Listen. /s/"
-        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), sound(L)],
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), ...alone(L)],
         picked: o => [named(o.wrong)],
-        model: [sound(L), { pause: 300 }, say(`${t.w}!`)],
+        model: [...alone(L), { pause: 300 }, say(`${t.w}!`)],
         magic: { w: t.w, e: t.e, parts: [L] },
       };
     },
@@ -1177,6 +1183,8 @@ const Quiz = (() => {
   return {
     READY,
     make,
+    // A letter's sound asked for on its own (a stop three times): the fishing game.
+    alone,
     again,
     record,
     reviewing,

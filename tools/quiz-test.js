@@ -340,7 +340,13 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
               const others_ = q.options.filter(o => !o.right).map(o => String(o.wrong));
               for (const w of others_) if (heads(w).some(h => clash(h, L))) problems.push(`${where}: ${w} (${heads(w).join('/')}) may start like /${L}/`);
               for (let a = 0; a < others_.length; a++) for (let b = a + 1; b < others_.length; b++) if (heads(others_[a]).some(x => heads(others_[b]).some(y => clash(x, y)))) problems.push(`${where}: ${others_[a]} and ${others_[b]} start alike`);
-              for (const [what, parts] of [['asked', q.ask], ['answered', q.answer], ['shown', q.model]]) if (spoken(parts) !== L) problems.push(`${where}: ${what} as ${spoken(parts)}, not /${L}/`);
+              // Its sound alone; a stop (b d g p t k c) bounced three times
+              // when asked and shown (Quiz.alone), once in the answer.
+              const stop = 'bdgptkc'.includes(L);
+              for (const [what, parts] of [['asked', q.ask], ['answered', q.answer], ['shown', q.model]]) {
+                const want = stop && what !== 'answered' ? `${L}-${L}-${L}` : L;
+                if (spoken(parts) !== want) problems.push(`${where}: ${what} as ${spoken(parts)}, not ${want}`);
+              }
               if (!q.magic || q.magic.parts.join() !== L || q.magic.w !== String(right_.wrong)) problems.push(`${where}: its magic is ${JSON.stringify(q.magic)}`);
             }
             if (q.kind === 'twoSounds') {

@@ -67,6 +67,13 @@ def test_cuts():
         if s['kind'] in SHORTEST:
             check(dur >= SHORTEST[s['kind']], f'/{key}/ lasts at least {SHORTEST[s["kind"]] * 1000:.0f} ms')
             check(info['margin'] >= 6, f'/{key}/ stays 6 dB from the vowel ({info["margin"]})')
+        if 'lift' in ca.KINDS[s['kind']]:
+            # Raised as the build raises it: loud enough to make out next to its word.
+            word = next(x for w, _, x in anchors if w == info['anchor'])
+            gain = ca.lift_gain(y, s['kind'], word)
+            under = ca.active_db(word) - (ca.active_db(y) + gain)
+            print(f'      raised {gain:4.1f} dB: {under:4.1f} dB under {info["anchor"]!r}')
+            check(under <= 8, f'/{key}/ is at most 8 dB under its word once raised ({under:.1f})')
 
 
 def test_checks_catch_a_vowel():
