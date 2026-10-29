@@ -731,5 +731,13 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "books.redHenArt5": "The proud hen places her freshly baked, steaming bread on the kitchen table.",
   "books.redHenArt6": "The cat, dog and duck eagerly volunteer to eat the hen’s bread.",
   "books.redHenArt7": "The hen says no to the three friends who did not help her.",
-  "books.redHenArt8": "The hen happily shares the bread with her three little yellow chicks."
+  "books.redHenArt8": "The hen happily shares the bread with her three little yellow chicks.",
+  "books.threePigsArt1": "Three little pigs build houses of straw, sticks and bricks.",
+  "books.threePigsArt2": "The first pig builds a straw house and the second builds a stick house.",
+  "books.threePigsArt3": "The third pig patiently builds a sturdy brick house.",
+  "books.threePigsArt4": "A wolf puffs his cheeks and blows toward the straw house.",
+  "books.threePigsArt5": "The straw and stick houses fall apart as the two pigs run safely away.",
+  "books.threePigsArt6": "The first two pigs run to the brick house, where their brother welcomes them.",
+  "books.threePigsArt7": "The wolf blows hard, but the brick house stands firm with all three pigs safe inside.",
+  "books.threePigsArt8": "The three pigs smile beside their brick house as the wolf runs away."
 };

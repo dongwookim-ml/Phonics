@@ -731,5 +731,13 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "books.redHenArt5": "암탉이 혼자 구운 따끈한 빵을 식탁 위에 올려놓아요.",
   "books.redHenArt6": "고양이와 개와 오리가 암탉의 빵을 먹겠다며 신나게 손을 들어요.",
   "books.redHenArt7": "암탉이 일을 돕지 않은 세 친구에게 안 된다고 말해요.",
-  "books.redHenArt8": "암탉이 노란 병아리 세 마리와 행복하게 빵을 나누어 먹어요."
+  "books.redHenArt8": "암탉이 노란 병아리 세 마리와 행복하게 빵을 나누어 먹어요.",
+  "books.threePigsArt1": "아기 돼지 삼형제가 짚과 나뭇가지와 벽돌로 집을 지어요.",
+  "books.threePigsArt2": "첫째 돼지는 짚으로, 둘째 돼지는 나뭇가지로 집을 지어요.",
+  "books.threePigsArt3": "셋째 돼지가 튼튼한 벽돌집을 차근차근 지어요.",
+  "books.threePigsArt4": "늑대가 볼을 부풀리고 짚으로 만든 집을 향해 바람을 불어요.",
+  "books.threePigsArt5": "짚집과 나뭇가지 집이 무너지고 두 돼지가 안전하게 달아나요.",
+  "books.threePigsArt6": "첫째와 둘째 돼지가 셋째 돼지가 맞아주는 벽돌집으로 달려가요.",
+  "books.threePigsArt7": "늑대가 세게 불어도 벽돌집은 튼튼하고 돼지 삼형제는 안에서 안전해요.",
+  "books.threePigsArt8": "늑대가 달아나고 돼지 삼형제가 벽돌집 옆에서 웃어요."
 };
