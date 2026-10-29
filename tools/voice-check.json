@@ -1,9 +1,9 @@
 {
 "calibration": {"prompt": null, "rates": {"'Um... uh, the.'": "3/40", "'Umm, uh, a, the... Uh, so, um, like, the... a'": "2/40", "None": "3/40"}, "words": 40},
-"index": "ca99219f9bfc",
+"index": "b8c2f3919cf9",
 "model": "small.en",
 "shards": 10,
-"summary": {"different": 3, "ok": 14319, "phonetic": 1058, "unclear": 1031},
+"summary": {"different": 3, "ok": 14320, "phonetic": 1058, "unclear": 1031},
 "unchecked": 0,
 "clips": {
 "af_aoede|. Ding, dong!": {"asr": "different", "heard": "dot ding dong.", "id": "7849a1b159", "status": "unclear"},
@@ -1649,6 +1649,7 @@
 "af_heart|H": {"heard": "H", "id": "4925103ffd", "status": "ok", "words": [["H", 0.0, 0.38, 0.51]]},
 "af_heart|H says hhh.": {"heard": "H says.", "id": "a45c6e26e1", "status": "phonetic"},
 "af_heart|Happy": {"heard": "Happy.", "id": "6b72ff2338", "status": "ok", "words": [["Happy.", 0.0, 0.38, 0.88]]},
+"af_heart|Happy Halloween!": {"heard": "Happy Halloween!", "id": "e949b460f9", "status": "ok"},
 "af_heart|Happy Halloween, Captain Max! Look, the whole town is dressed up!": {"heard": "Happy Halloween, Captain Max! Look, the whole town is dressed up!", "id": "d57c861e3e", "status": "ok"},
 "af_heart|Happy Halloween, Captain Yuna! Look, the whole town is dressed up!": {"heard": "Happy Halloween, Captain Yuna. Look, the whole town is dressed up.", "id": "85132cb30a", "status": "ok"},
 "af_heart|Happy Halloween, Explorer Yuna! Look, the whole town is dressed up!": {"heard": "Happy Halloween, Explorer Yuna! Look, the whole town is dressed up!", "id": "95f86f2132", "status": "ok"},

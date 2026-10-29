@@ -2698,6 +2698,10 @@ async function halloween(browser, edition) {
       }
       out.music = { town: musicPlaceOf(town0), forest: musicPlaceOf(sceneFor('forest')), room: musicPlaceOf(sceneFor('yuna')), cave: musicPlaceOf(sceneFor('dungeon')) };
       out.tunes = Object.keys(HW_TUNES).map(k => { const b = musicBuild(HW_TUNES[k], 0, 1); const mel = HW_TUNES[k].melody.split(/[\s|]+/).filter(Boolean).length; return mel === b.steps ? null : `${k}: ${mel} notes for ${b.steps} steps`; }).filter(Boolean);
+      // The greeting on the login and start screens; a tap on it says it.
+      out.screens = { hello: [...document.querySelectorAll('#login h1 .hw-hello, #start h1 .hw-hello')].length, deco: document.querySelectorAll('.hw-deco').length };
+      const hello = document.querySelector('#start .hw-hello');
+      if (hello) { said.length = 0; hello.click(); out.screens.said = said.slice(); }
       // Tapping a pumpkin and a ghost in town.
       document.getElementById('start-btn').click();
       out.hello = said.slice();
@@ -2734,6 +2738,8 @@ async function halloween(browser, edition) {
   check(`${tag}: every village has pumpkins, ghosts and bats, every room a lantern or a garland (${outdoors.length} villages, ${names.length - outdoors.length} rooms)`, on.r.on && outdoors.length >= 5 && !bare.length, bare);
   check(`${tag}: nothing cuts off a tile she could walk to`, !on.r.cut.length, on.r.cut);
   check(`${tag}: a tapped pumpkin says "pumpkin!" and a tapped ghost "ghost!", and she stays put`, !!on.r.taps && on.r.taps.said.join() === 'pumpkin!,ghost!' && !on.r.taps.walking, on.r.taps);
+  check(`${tag}: the login and start screens say "Happy Halloween!" (tap it to hear it), with bats and pumpkins behind; none of it with ?halloween=0`,
+    on.r.screens.hello === 2 && on.r.screens.deco === 2 && (on.r.screens.said || []).join() === 'Happy Halloween!' && !off.r.screens.hello && !off.r.screens.deco, { on: on.r.screens, off: off.r.screens });
   check(`${tag}: the game starts with "Happy Halloween" or "Trick or treat"`, /Halloween|Trick or treat/.test(on.r.hello.join(' ')) && on.r.start !== off.r.start, { on: on.r.hello, off: off.r.start });
   if (edition === 'princess') check(`${tag}: villagers wear a hat for the night, the king keeps his crown`, on.r.hat.fisher !== off.r.hat.fisher && on.r.hat.king === off.r.hat.king);
   check(`${tag}: the town has many kinds of things (${on.r.town.kinds}), a big one by most houses, and every house painted on its roof and walls`,

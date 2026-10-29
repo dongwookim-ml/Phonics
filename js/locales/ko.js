@@ -714,5 +714,6 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "ui.listen": "들어보기",
   "game.heroHeading": "{0} {1}의",
   "game.captainHeading": "{1} {0}의",
-  "ui.english": "English"
+  "ui.english": "English",
+  "halloween.screenGreeting": "🎃 해피 할로윈! 👻"
 };

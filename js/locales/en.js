@@ -714,5 +714,6 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "ui.listen": "Listen",
   "game.heroHeading": "{1} {0}'s",
   "game.captainHeading": "{1} {0}'s",
-  "ui.english": "English"
+  "ui.english": "English",
+  "halloween.screenGreeting": "🎃 Happy Halloween! 👻"
 };
