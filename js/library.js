@@ -80,7 +80,7 @@ function renderLibrary() {
   libraryEl('library').querySelector('.wd-name').textContent = place('library');
   const read = BOOKS.filter(b => state.books && state.books[b.id] && state.books[b.id].read > 0).length;
   const mine = DECODABLE_BOOKS.filter(selfDone).length;
-  libraryEl('lib-count').textContent = `읽은 책 ${read + mine} / ${BOOKS.length + DECODABLE_BOOKS.length}`;
+  libraryEl('lib-count').textContent = I18n.t('library.booksRead', read + mine, BOOKS.length + DECODABLE_BOOKS.length);
   const list = libraryEl('lib-books');
   list.innerHTML = '';
   // Her own books first, then the stories read to her.
@@ -96,7 +96,7 @@ function renderLibrary() {
     b.classList.toggle('read', log.read > 0);
     b.style.setProperty('--cover', book.color);
     b.innerHTML = `<span class="cv">${book.cover}</span>` +
-      `<span class="en">${book.title}</span><span class="ko">${book.ko}</span>` +
+      `<span class="en">${book.title}</span>` + (I18n.language === 'ko' ? `<span class="ko">${book.label}</span>` : '') +
       `<span class="coins">${'🪙'.repeat(got)}${'<i>○</i>'.repeat(book.quiz.length - got)}</span>` +
       (log.read > 0 ? '<span class="tick">✓</span>' : '');
     b.addEventListener('click', () => { Sound.tap(); openBook(book); });
@@ -144,7 +144,7 @@ function openBook(book) {
   libraryEl('library').classList.add('hidden');
   libraryEl('reader').classList.remove('hidden');
   readerMode(false);
-  libraryEl('rd-title').textContent = `${book.cover} ${book.ko}`;
+  libraryEl('rd-title').textContent = `${book.cover} ${book.label}`;
   renderBookPage();
   bookSay([{ text: `${book.title}.`, narrator: true, rate: 0.85 }, { pause: 700 }], bookRead);
 }
@@ -184,10 +184,10 @@ function renderBookHighlight() {
   const play = libraryEl('rd-play');
   if (library.mode === 'read') {
     play.textContent = library.playing ? '⏸' : '🔊';
-    play.title = library.playing ? '잠깐 멈춰요' : '읽어 주세요';
+    play.title = library.playing ? I18n.t('library.pause') : I18n.t('library.readToMe');
   } else {
     play.textContent = '🔊';
-    play.title = '다시 듣기';
+    play.title = I18n.t('library.listenAgain');
   }
 }
 
@@ -350,19 +350,19 @@ function bookSummary() {
   library.mode = 'summary';
   const n = book.quiz.length;
   const coins = z.coins ? `<div class="rd-got">🪙 +${z.coins}</div>`
-    : z.right ? '<div class="rd-note">이 책의 코인은 벌써 받았어요 ✨</div>' : '';
+    : z.right ? I18n.t('library.youAlreadyEarnedTheCoinsFor') : '';
   libraryEl('rd-q').innerHTML = `<div class="rd-summary"><div class="rd-big">${book.cover}</div>` +
-    `<div class="rd-score">${n}개 중 ${z.right}개 맞혔어요!</div>` +
+    I18n.t('library.youGotOutOfRight', n, z.right) +
     `<div class="rd-stars">${'⭐'.repeat(z.right)}${'☆'.repeat(n - z.right)}</div>${coins}</div>`;
   const opts = libraryEl('rd-options');
   opts.innerHTML = '';
   const again = document.createElement('button');
   again.className = 'rd-wide yes';
-  again.textContent = '📚 다른 책 읽기';
+  again.textContent = I18n.t('library.readAnotherBook');
   again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(); });
   const bye = document.createElement('button');
   bye.className = 'rd-wide no';
-  bye.textContent = '나갈래요 👋';
+  bye.textContent = I18n.t('library.leave');
   bye.addEventListener('click', () => { Sound.tap(); closeLibrary(); });
   opts.append(again, bye);
   renderBookPage();
@@ -383,8 +383,8 @@ const SELF_PLAY_MS = 8000; // ▶ shows up after this long on a page anyway
 // The shelf and the party in each edition's words: the robot's HQ library
 // reads like a mission.
 const selfText = () => (isCaptain()
-  ? { shelf: '🚀 내가 읽는 책', stories: '📖 읽어 주는 책', done: '미션 완료! 혼자 다 읽었어요!', again: '미션 완료! 또 읽었어요!', icon: '🚀' }
-  : { shelf: '✏️ 내가 읽는 책', stories: '📖 읽어 주는 책', done: '혼자 다 읽었어요!', again: '또 읽었어요!', icon: '👑' });
+  ? { shelf: I18n.t('library.booksICanRead'), stories: I18n.t('library.readAloudBooks'), done: I18n.t('library.missionCompleteIReadItAll'), again: I18n.t('library.missionCompleteIReadItAgain'), icon: '🚀' }
+  : { shelf: I18n.t('library.booksICanRead2'), stories: I18n.t('library.readAloudBooks'), done: I18n.t('library.iReadItAllMyself'), again: I18n.t('library.iReadItAgain'), icon: '👑' });
 
 // Her tier in reading a word and picking its picture (the `read` questions,
 // js/quiz.js): the highest she has reached, or the one a parent set. Books
@@ -417,9 +417,9 @@ function selfCover(book) {
   b.dataset.id = book.id;
   b.style.setProperty('--cover', book.color);
   // The star she gets the first time, or the level a locked one needs.
-  const note = !open ? `읽기 ${book.level}단계` : done ? '⭐' : '<i>☆</i>';
+  const note = !open ? I18n.t('library.readingLevel', book.level) : done ? '⭐' : '<i>☆</i>';
   b.innerHTML = `<span class="cv">${book.cover}</span>${open ? '' : '<span class="lock">🔒</span>'}` +
-    `<span class="en">${book.title}</span><span class="ko">${book.ko}</span><span class="coins">${note}</span>` +
+    `<span class="en">${book.title}</span>` + (I18n.language === 'ko' ? `<span class="ko">${book.label}</span>` : '') + `<span class="coins">${note}</span>` +
     (done ? '<span class="tick">✓</span>' : '');
   b.addEventListener('click', () => {
     if (!selfOpen(book)) { selfLocked(b); return; }
@@ -500,7 +500,7 @@ function selfTileHtml(t) {
 function renderSelfPlay(pop) {
   const play = libraryEl('rd-play');
   play.textContent = '▶';
-  play.title = '읽어 주세요';
+  play.title = I18n.t('library.readToMe');
   play.classList.toggle('wait', !library.self.ready[library.page]);
   if (pop && library.self.ready[library.page]) {
     play.classList.remove('pop');
@@ -581,7 +581,7 @@ function selfFinish() {
   const text = selfText();
   libraryEl('rd-q').innerHTML = `<div class="rd-summary"><div class="rd-big">${book.cover}</div>` +
     `<div class="rd-end">${text.icon} I can read!</div><div class="rd-score">${first ? text.done : text.again}</div>` +
-    `${first ? '<div class="rd-got">⭐ +1</div>' : '<div class="rd-note">⭐ 이 책의 별은 벌써 받았어요</div>'}</div>`;
+    `${first ? '<div class="rd-got">⭐ +1</div>' : I18n.t('library.youAlreadyEarnedTheStarFor')}</div>`;
   libraryEl('rd-options').innerHTML = '';
   Sound.party();
   bookCheer();
@@ -605,11 +605,11 @@ function selfEndButtons(book) {
   if (library.mode !== 'selfEnd' || library.book !== book || opts.children.length) return;
   const again = document.createElement('button');
   again.className = 'rd-wide yes';
-  again.textContent = '📚 다른 책 읽기';
+  again.textContent = I18n.t('library.readAnotherBook');
   again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(); });
   const bye = document.createElement('button');
   bye.className = 'rd-wide no';
-  bye.textContent = '나갈래요 👋';
+  bye.textContent = I18n.t('library.leave');
   bye.addEventListener('click', () => { Sound.tap(); closeLibrary(); });
   opts.append(again, bye);
 }
@@ -641,7 +641,7 @@ function drawBookHints(now) {
     ctx.font = `800 ${(loud ? 9 : 7) * s}px "Baloo 2", "Trebuchet MS", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const text = '📖 책 읽기';
+    const text = I18n.t('library.readABook');
     const bw = ctx.measureText(text).width + 8 * s;
     const bh = (loud ? 13 : 10) * s;
     ctx.fillStyle = '#ffffff';

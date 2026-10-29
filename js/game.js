@@ -59,17 +59,17 @@ const ui = {
 // picture for the tab (`icon`, and `boyIcon` / `boyTitle` for a boy). The
 // treasure shelf comes last: treasures are kept, not worn (`shelf`).
 const WARDROBE = [
-  { slot: 'shape', title: '드레스 모양', boyTitle: '옷 모양', icon: '👗', boyIcon: '👕', items: DRESS_SHAPES },
-  { slot: 'dress', title: '드레스 색', boyTitle: '옷 색', icon: '🎨', items: DRESS_COLORS },
-  { slot: 'hair', title: '머리 색', icon: '💇‍♀️', boyIcon: '💇‍♂️', items: HAIR_COLORS },
+  { slot: 'shape', title: I18n.t('game.dressStyle'), boyTitle: I18n.t('game.outfitStyle'), icon: '👗', boyIcon: '👕', items: DRESS_SHAPES },
+  { slot: 'dress', title: I18n.t('game.dressColour'), boyTitle: I18n.t('game.outfitColour'), icon: '🎨', items: DRESS_COLORS },
+  { slot: 'hair', title: I18n.t('game.hairColour'), icon: '💇‍♀️', boyIcon: '💇‍♂️', items: HAIR_COLORS },
   // Hairstyles are cut at the hair salon in town for stars (js/salon.js), never given.
-  ...(isCaptain() ? [] : [{ slot: 'style', title: '머리 모양', icon: '✂️', items: HAIR_STYLES, salon: true }]),
-  { slot: 'head', title: '머리 장식', boyTitle: '모자와 왕관', icon: '👑', items: HEADWEAR },
-  { slot: 'hand', title: '손에 드는 것', icon: '🪄', boyIcon: '🗡️', items: HAND_ITEMS },
-  { slot: 'back', title: '날개와 망토', boyTitle: '망토와 날개', icon: '🦋', boyIcon: '🦸', items: BACK_ITEMS },
-  { slot: 'fairy', title: '요정 친구 (요정 마을)', icon: '🧚', items: FAIRIES },
-  { slot: 'ride', title: '유니콘 (유니콘 마을)', icon: '🦄', items: UNICORNS },
-  { slot: 'treasure', title: '보물 선반', icon: '💎', items: TREASURES, shelf: true },
+  ...(isCaptain() ? [] : [{ slot: 'style', title: I18n.t('game.hairstyle'), icon: '✂️', items: HAIR_STYLES, salon: true }]),
+  { slot: 'head', title: I18n.t('game.hairAccessories'), boyTitle: I18n.t('game.hatsAndCrowns'), icon: '👑', items: HEADWEAR },
+  { slot: 'hand', title: I18n.t('game.handAccessories'), icon: '🪄', boyIcon: '🗡️', items: HAND_ITEMS },
+  { slot: 'back', title: I18n.t('game.wingsAndCapes'), boyTitle: I18n.t('game.capesAndWings'), icon: '🦋', boyIcon: '🦸', items: BACK_ITEMS },
+  { slot: 'fairy', title: I18n.t('game.fairyFriendsFairyVillage'), icon: '🧚', items: FAIRIES },
+  { slot: 'ride', title: I18n.t('game.unicornsUnicornVillage'), icon: '🦄', items: UNICORNS },
+  { slot: 'treasure', title: I18n.t('captain-hero.treasureShelf'), icon: '💎', items: TREASURES, shelf: true },
 ];
 if (isCaptain()) captainWardrobe(WARDROBE); // robot parts, js/captain-hero.js
 // The slots that are worn (all but the treasure shelf).
@@ -108,7 +108,7 @@ function heroSprite(outfit, frame) {
   return isBoy() ? boySprite(outfit, frame) : princessSprite(outfit, frame);
 }
 // "윤아님" style title on screen, such as 공주님.
-const titleKo = () => TITLES[PLAYER.title].ko;
+const titleLabel = () => TITLES[PLAYER.title].label;
 
 // Hangul to Latin letters (Revised Romanization, syllable by syllable) so
 // the English voice can say a Korean name. Parents can fix it by hand.
@@ -469,7 +469,7 @@ function enterDoor(door) {
     Sound.say([{ text: line('tower'), pitch: 1.3 }]);
   } else if (door.obj.info) {
     const info = door.obj.info;
-    changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? '공방' : '집'}`);
+    changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? I18n.t('game.workshop') : I18n.t('game.house')}`);
     Sound.say([{ text: line('house', { letter: info.letter }) }]);
     questAdd('house'); // today's adventures (js/quest.js)
   } else {
@@ -506,7 +506,7 @@ function parkUnicorn() {
   const path = findPath(sc, h, (c, r) => (c !== h.c || r !== h.r) && !busy(c, r));
   if (!path || !path.length) return;
   const spot = path[path.length - 1];
-  const npc = { mount: true, name: isCaptain() ? '자동차' : '유니콘', c: spot.c, r: spot.r, flip: state.hero.flip, phase: 0 };
+  const npc = { mount: true, name: isCaptain() ? I18n.t('captain-car.car') : I18n.t('game.unicorn'), c: spot.c, r: spot.r, flip: state.hero.flip, phase: 0 };
   sc.npcs.push(npc);
   state.parked = { sc, npc };
 }
@@ -533,7 +533,7 @@ function getOff() {
   if (!state.mounted) return;
   state.mounted = false;
   parkUnicorn();
-  showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.wait : '🦄 유니콘은 밖에서 기다려요');
+  showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.wait : I18n.t('game.yourUnicornWillWaitOutside'));
   Sound.say([{ text: line('dismount'), pitch: 1.3 }]);
   renderRide();
 }
@@ -542,11 +542,11 @@ function toggleRide() {
   Sound.tap();
   if (!hasUnicorn()) {
     const first = state.owned.ride.find(v => v !== 'none');
-    if (!first) { showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.find : '🦄 유니콘 마을에서 유니콘을 만나요'); return; }
+    if (!first) { showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.find : I18n.t('game.meetAUnicornInUnicornVillage')); return; }
     state.outfit = Object.assign({}, state.outfit, { ride: first });
     save();
   }
-  if (!state.scene.outdoor) { showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.indoors : '🏠 집 안에서는 유니콘을 탈 수 없어요'); return; }
+  if (!state.scene.outdoor) { showPlace(isCaptain() ? CAPTAIN_RIDE_TEXT.indoors : I18n.t('game.youCanTRideAUnicorn')); return; }
   if (state.mounted) { getOff(); return; }
   const p = state.parked;
   if (p && p.sc === state.scene) {
@@ -632,7 +632,7 @@ function openDialog(npc) {
   if (back) npc.missed = null;
   state.question = q;
   musicUpdate(); // the music stays down until the question closes (js/music.js)
-  if (q.review) ui.name.insertAdjacentHTML('beforeend', ' <span class="review-tag">복습</span>');
+  if (q.review) ui.name.insertAdjacentHTML('beforeend', I18n.t('game.review'));
   // A captain-edition villain shows its hearts and taunts between questions.
   // In a letter house the host skips the chat and teaches the letter instead.
   // Others say their own hello the first time she talks to them, and just a
@@ -839,7 +839,7 @@ function showAnswer(q, o) {
 function showLevelUp() {
   const el = document.createElement('div');
   el.className = 'level-up';
-  el.textContent = '⭐ 레벨 업!';
+  el.textContent = I18n.t('game.levelUp');
   document.body.append(el);
   Sound.levelUp();
   burstAtHero(40);
@@ -908,7 +908,7 @@ function giveGift(q) {
 function itemLabel(slot, value) {
   const v = WARDROBE.find(w => w.slot === slot).items[value];
   if (isCaptain()) return captainItemLabel(slot, v);
-  return slot === 'dress' ? `${v.icon} ${v.name} ${isBoy() ? '옷' : '드레스'}` : `${v.icon} ${v.name}`;
+  return slot === 'dress' ? `${v.icon} ${v.name} ${isBoy() ? I18n.t('game.outfit') : I18n.t('game.dress')}` : `${v.icon} ${v.name}`;
 }
 
 // What someone at `level` can give: everything new that suits the hero and
@@ -970,7 +970,7 @@ function offerReward(npc) {
     state.owned[gift.slot].push(gift.value);
     save();
   }
-  rewardText(gift, `🎁 ${npc ? npc.name : ''}의 선물!`);
+  rewardText(gift, I18n.t('game.aGiftFrom', npc ? npc.name : ''));
   ui.dialog.classList.add('hidden');
   ui.reward.classList.remove('hidden');
   showPresent(gift, wearing(gift));
@@ -991,9 +991,9 @@ function rewardText(gift, title) {
   const fairy = slot === 'fairy';
   const shelf = isShelf(slot);
   ui.rewardTitle.textContent = title;
-  ui.rewardName.textContent = !isNew ? label : ride || fairy ? `${label} · 새 친구가 생겼어요!` : shelf ? `${label} · 보물 선반에 쏙!` : `${label} · 옷장에 쏙!`;
-  ui.rewardYes.textContent = ride ? '지금 탈래요 🦄' : fairy ? '같이 다닐래요 🧚' : shelf ? '보물 선반에 둘래요 💎' : '지금 입을래요 💖';
-  ui.rewardNo.textContent = !isNew ? '그대로 할래요' : ride ? '마구간에 둘래요 🏡' : fairy ? '꽃밭에 둘래요 🌷' : '옷장에 넣을래요 🎀';
+  ui.rewardName.textContent = !isNew ? label : ride || fairy ? I18n.t('captain-hero.youHaveANewFriend', label) : shelf ? I18n.t('captain-hero.onTheTreasureShelf', label) : I18n.t('game.intoYourWardrobe', label);
+  ui.rewardYes.textContent = ride ? I18n.t('game.rideNow') : fairy ? I18n.t('game.comeWithMe') : shelf ? I18n.t('game.putOnTheTreasureShelf') : I18n.t('game.wearItNow');
+  ui.rewardNo.textContent = !isNew ? I18n.t('captain-hero.keepThisOne') : ride ? I18n.t('game.leaveInTheStable') : fairy ? I18n.t('game.leaveInTheFlowerGarden') : I18n.t('game.putInTheWardrobe');
   if (isCaptain()) captainRewardText(isNew, label, ride, fairy, shelf);
   ui.rewardNo.classList.toggle('hidden', shelf);
 }
@@ -1046,7 +1046,7 @@ function acceptReward(yes) {
 function showPresent(gift, next) {
   const shelf = isShelf(gift.slot);
   ui.reward.classList.toggle('treasure', shelf);
-  ui.pvNew.nextElementSibling.textContent = shelf ? '새 보물' : '바꾸면';
+  ui.pvNew.nextElementSibling.textContent = shelf ? I18n.t('game.newTreasure') : I18n.t('game.after');
   if (shelf) {
     if (isCaptain()) captainRewardShow(gift, state.outfit, state.outfit, false);
     drawTreasure(ui.pvNew, gift.value);
@@ -1157,7 +1157,7 @@ function renderWardrobe() {
   if (isCaptain()) captainStage(ui.wdPreview, state.outfit, wdShown === 'ride');
   else drawPortrait(ui.wdPreview, heroPortrait(state.outfit, wdShown === 'ride'));
   const { have, total } = collected();
-  ui.wdCount.textContent = `모은 선물 ${have} / ${total}`;
+  ui.wdCount.textContent = I18n.t('game.giftsCollected', have, total);
   if (isCaptain()) ui.wdCount.textContent = CAPTAIN_TEXT.collected(have, total);
   const tabs = wardrobeTabs();
   const w = tabs.find(t => t.slot === wdTab) || tabs[0];
@@ -1181,7 +1181,7 @@ function wardrobeItem(w, value, item) {
       Sound.locked();
       replay(b, 'nope');
       // A hairstyle she hasn't had yet: the salon in town cuts it.
-      if (w.salon) ui.wdSlots.querySelector('.wd-title .nm').textContent = '✂️ 미용실에서 별로 바꿀 수 있어요';
+      if (w.salon) ui.wdSlots.querySelector('.wd-title .nm').textContent = I18n.t('game.tradeStarsForANewLook');
       return;
     }
     if (w.shelf) {
@@ -1431,7 +1431,7 @@ function catchMonster(npc, said) {
     save();
     renderCoins(true);
     Sound.coin();
-    showPlace(`🪙 코인 ${coins}개!`);
+    showPlace(I18n.t('captain-cave.coins', coins));
     Sound.say([{ text: line('caught') }], voiceOf(npc));
   });
 }
@@ -1501,7 +1501,7 @@ function openShop(npc) {
   const items = shopItems();
   state.shopPick = items[0] || null;
   state.shopTab = state.shopPick && state.shopPick.slot;
-  ui.shopMsg.textContent = items.length ? '갖고 싶은 걸 골라 보세요!' : '와! 벌써 다 모았어요 ✨';
+  ui.shopMsg.textContent = items.length ? I18n.t('game.chooseSomethingYouLike') : I18n.t('game.wowYouHaveCollectedEverything');
   renderShop();
   ui.shop.classList.remove('hidden');
   const hello = line(`persona-${npc.look}`, {}, PERSONA[npc.look]);
@@ -1539,12 +1539,12 @@ function renderShop() {
     ui.shopItems.append(b);
   }
   ui.shopBuy.classList.toggle('hidden', !pick);
-  if (pick) ui.shopBuy.textContent = `🪙 ${pick.price}개로 살래요`;
+  if (pick) ui.shopBuy.textContent = I18n.t('game.buyForCoins', pick.price);
 }
 
 function shopChoose(it) {
   state.shopPick = it || null;
-  ui.shopMsg.textContent = it && it.item.shop ? '✨ 상점에만 있는 보물이에요!' : '갖고 싶은 걸 골라 보세요!';
+  ui.shopMsg.textContent = it && it.item.shop ? I18n.t('game.aTreasureOnlySoldHere') : I18n.t('game.chooseSomethingYouLike');
   if (isCaptain() && it && it.item.shop) ui.shopMsg.textContent = CAPTAIN_TEXT.shopOnly;
 }
 
@@ -1572,7 +1572,7 @@ function buyPick() {
     // Until the cave opens, coins come from the pond game in town (js/minigame.js).
     const cave = starsEarned() >= DUNGEON_STARS;
     const n = pick.price - state.coins;
-    ui.shopMsg.textContent = cave ? `코인이 ${n}개 더 필요해요. 반짝 동굴에서 몬스터를 잡아 봐요! 💎` : `코인이 ${n}개 더 필요해요. 마을 연못에서 낚시를 해 봐요! 🎣`;
+    ui.shopMsg.textContent = cave ? I18n.t('game.youNeedMoreCoinsCatchMonsters', n) : I18n.t('game.youNeedMoreCoinsTryFishing', n);
     if (isCaptain()) ui.shopMsg.textContent = (cave ? CAPTAIN_TEXT.poor : CAPTAIN_TEXT.poorPond)(n);
     Sound.say([{ text: line(cave ? 'poor' : 'poorPond') }], voiceOf(npc));
     return;
@@ -1585,7 +1585,7 @@ function buyPick() {
   // The same "wear it now?" card as a present.
   state.gift = { slot: pick.slot, value: pick.value, label: pick.label, isNew: true };
   state.giver = npc;
-  rewardText(state.gift, '🛍️ 샀어요!');
+  rewardText(state.gift, I18n.t('game.boughtIt'));
   ui.reward.classList.remove('hidden');
   showPresent(state.gift, wearing(state.gift));
   Sound.party();
@@ -1704,7 +1704,7 @@ function addDust() {
   state.dust += n;
   questAdd('dust', n);
   renderDust(true);
-  showPlace(isCaptain() ? `⚡ 배터리 ${n}개!` : `✨ 요정의 가루 ${n}개!`);
+  showPlace(isCaptain() ? I18n.t('game.batteries', n) : I18n.t('game.fairyDust', n));
 }
 
 function renderDust(pop) {
@@ -2623,7 +2623,7 @@ function goLink(group, tap) {
   const locked = group.find(l => l.needStars && starsEarned() < l.needStars);
   if (locked) {
     Sound.locked();
-    showPlace(`🔒 별 ${locked.needStars}개를 모으면 열려요 (지금 ⭐${starsEarned()})`);
+    showPlace(I18n.t('game.opensAtStarsYouHave', locked.needStars, starsEarned()));
     Sound.say([{ text: line('locked', { stars: locked.needStars }) }]);
     return;
   }
@@ -2799,8 +2799,8 @@ function wearLook() {
   for (const { slot } of WORN_SLOTS) if (!state.owned[slot].includes(state.outfit[slot])) state.owned[slot].push(state.outfit[slot]);
 }
 function renderStart() {
-  ui.startTitle.textContent = isCaptain() ? `${titleKo()} ${PLAYER.shown}의` : `${PLAYER.shown} ${titleKo()}의`;
-  ui.wdTitle.textContent = `${isBoy() ? '👑' : '🎀'} ${titleKo()}님의 옷장`;
+  ui.startTitle.textContent = I18n.t(isCaptain() ? 'game.captainHeading' : 'game.heroHeading', playerDisplayName(), titleLabel());
+  ui.wdTitle.textContent = I18n.t('game.sWardrobe', isBoy() ? '👑' : '🎀', titleLabel());
   if (isCaptain()) ui.wdTitle.textContent = CAPTAIN_TEXT.workbench();
   document.title = `${ui.startTitle.textContent} ${placeName('game')}`;
   ui.titleChips.querySelectorAll('.chip').forEach(b => b.classList.toggle('on', b.dataset.title === PLAYER.title));
@@ -2820,7 +2820,7 @@ for (const [key, t] of Object.entries(TITLES)) {
   const b = document.createElement('button');
   b.className = 'chip';
   b.dataset.title = key;
-  b.innerHTML = `<span class="ic">${t.icon}</span>${t.ko}`;
+  b.innerHTML = `<span class="ic">${t.icon}</span>${t.label}`;
   b.addEventListener('click', () => {
     Sound.unlock();
     Sound.tap();
@@ -2830,7 +2830,7 @@ for (const [key, t] of Object.entries(TITLES)) {
   });
   ui.titleChips.append(b);
 }
-for (const [look, label] of [['girl', '👧 여자'], ['boy', '👦 남자']]) {
+for (const [look, label] of [['girl', I18n.t('game.girl')], ['boy', I18n.t('game.boy')]]) {
   const b = document.createElement('button');
   b.className = 'chip';
   b.dataset.look = look;

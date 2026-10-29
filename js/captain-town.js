@@ -9,41 +9,41 @@
 
 // Who lives in Robot Town. Same spots as the princess villagers.
 const ROBOT_TOWN_NPCS = [
-  { name: '경비 로봇',     look: 'botguard',  c: 18, r: 11 },
-  { name: '꽃밭 로봇',     look: 'botgarden', c: 5,  r: 17 },
-  { name: '할머니 로봇',   look: 'botgranny', c: 16, r: 18 },
-  { name: '낚시 로봇',     look: 'botfisher', c: 27, r: 28 },
-  { name: '빵 굽는 로봇',  look: 'botchef',   c: 12, r: 16 },
-  { name: '꼬마 로봇',     look: 'botkid',    c: 34, r: 19 },
-  { name: '음악 로봇',     look: 'botdj',     c: 26, r: 20 },
-  { name: '농장 로봇',     look: 'botfarm',   c: 9,  r: 31 },
+  { name: I18n.t('captain-town.guardRobot'),     look: 'botguard',  c: 18, r: 11 },
+  { name: I18n.t('captain-town.gardenRobot'),     look: 'botgarden', c: 5,  r: 17 },
+  { name: I18n.t('captain-town.grandmaRobot'),   look: 'botgranny', c: 16, r: 18 },
+  { name: I18n.t('captain-town.fishingRobot'),     look: 'botfisher', c: 27, r: 28 },
+  { name: I18n.t('captain-town.bakerRobot'),  look: 'botchef',   c: 12, r: 16 },
+  { name: I18n.t('captain-town.littleRobot'),     look: 'botkid',    c: 34, r: 19 },
+  { name: I18n.t('captain-town.musicRobot'),     look: 'botdj',     c: 26, r: 20 },
+  { name: I18n.t('captain-town.farmerRobot'),     look: 'botfarm',   c: 9,  r: 31 },
 ];
 // Who runs each letter workshop (by letter; the houses keep their spots).
 const ROBOT_HOUSE_FOLK = {
-  A: { who: '우주비행사 로봇', look: 'botastro' },
-  B: { who: '공놀이 로봇',     look: 'botkid' },
-  C: { who: '고양이 로봇',     look: 'botcat' },
-  D: { who: '강아지 로봇',     look: 'botdog' },
-  F: { who: '소방관 로봇',     look: 'botfire' },
-  G: { who: '선물 할머니 로봇', look: 'botgranny' },
-  H: { who: '헬리콥터 로봇',   look: 'botheli' },
-  M: { who: '달님 로봇',       look: 'botdj' },
-  N: { who: '너트 로봇',       look: 'botfarm' },
-  P: { who: '피자 요리 로봇',  look: 'botchef' },
-  S: { who: '별님 로봇',       look: 'botgarden' },
-  T: { who: '기차 로봇',       look: 'botguard' },
+  A: { who: I18n.t('captain-town.astronautRobot'), look: 'botastro' },
+  B: { who: I18n.t('captain-town.ballPlayingRobot'),     look: 'botkid' },
+  C: { who: I18n.t('captain-town.catRobot'),     look: 'botcat' },
+  D: { who: I18n.t('captain-town.puppyRobot'),     look: 'botdog' },
+  F: { who: I18n.t('captain-town.firefighterRobot'),     look: 'botfire' },
+  G: { who: I18n.t('captain-town.giftGivingGrandmaRobot'), look: 'botgranny' },
+  H: { who: I18n.t('captain-town.helicopterRobot'),   look: 'botheli' },
+  M: { who: I18n.t('captain-town.moonRobot'),       look: 'botdj' },
+  N: { who: I18n.t('captain-town.nutRobot'),       look: 'botfarm' },
+  P: { who: I18n.t('captain-town.pizzaChefRobot'),  look: 'botchef' },
+  S: { who: I18n.t('captain-town.starRobot'),       look: 'botgarden' },
+  T: { who: I18n.t('captain-town.trainRobot'),       look: 'botguard' },
 };
 // Captain HQ: the commander and crew stand where the king, queen and maid do.
 const CAPTAIN_HQ_NPCS = [
-  { name: '사령관 로봇', look: 'botboss',  c: 4,  r: 1 },
-  { name: '조종사 로봇', look: 'botpilot', c: 7,  r: 1 },
-  { name: '정비 대원',   look: 'botcrew',  c: 10, r: 8 },
+  { name: I18n.t('captain-town.commanderRobot'), look: 'botboss',  c: 4,  r: 1 },
+  { name: I18n.t('captain-town.pilotRobot'), look: 'botpilot', c: 7,  r: 1 },
+  { name: I18n.t('captain-town.mechanic'),   look: 'botcrew',  c: 10, r: 8 },
 ];
 // Upstairs: the librarian (library.js finds her by the `librarian` look)
 // and the radio operator at her console.
 const ROBOT_UP_NPCS = [
-  { name: '본부 사서 로봇', look: 'librarian', c: 2, r: 4 },
-  { name: '통신 로봇',     look: 'botradio',  c: 6, r: 2 },
+  { name: I18n.t('captain-town.headquartersLibrarian'), look: 'librarian', c: 2, r: 4 },
+  { name: I18n.t('captain-town.communicationsRobot'),     look: 'botradio',  c: 6, r: 2 },
 ];
 
 if (isCaptain()) {
@@ -1649,21 +1649,21 @@ function captainHomes(scene, homes) {
 // label on the way in, the pictures on the wall and the thing in the corner
 // ([draw(ctx, sc, x, y, color), what it says and does]).
 const ROBOT_HOME_THEMES = {
-  garage:  { label: '🔧 정비소', pictures: [['🚗', 'car'], ['🔩', 'bolt'], ['🚌', 'bus']],
+  garage:  { label: I18n.t('captain-car.garage'), pictures: [['🚗', 'car'], ['🔩', 'bolt'], ['🚌', 'bus']],
     big: [(ctx, sc, x, y) => { const t = makeTyres(3); ctx.drawImage(t.canvas, x - t.ax, y - t.ay); }, { word: 'tire', fx: 'boing' }] },
-  fire:    { label: '🚒 소방서', pictures: [['🔥', 'fire'], ['🚒', 'truck'], ['🔔', 'bell']],
+  fire:    { label: I18n.t('captain-car.fireStation'), pictures: [['🔥', 'fire'], ['🚒', 'truck'], ['🔔', 'bell']],
     big: [(ctx, sc, x, y) => drawCaptainCar(ctx, x, y, 'fire', 0, { eyes: false }), { word: 'truck', fx: 'honk' }] },
-  wash:    { label: '🫧 세차장', pictures: [['🦆', 'duck'], ['🚗', 'car'], ['☀️', 'sun']],
+  wash:    { label: I18n.t('captain-car.carWash'), pictures: [['🦆', 'duck'], ['🚗', 'car'], ['☀️', 'sun']],
     big: [(ctx, sc, x, y) => drawCaptainCar(ctx, x, y, 'police', 0, { eyes: false }), { word: 'car', fx: 'bubbles' }] },
-  gas:     { label: '⛽ 주유소', pictures: [['⛽', 'gas'], ['🚕', 'taxi'], ['🚚', 'truck']],
+  gas:     { label: I18n.t('captain-car.fuelStation'), pictures: [['⛽', 'gas'], ['🚕', 'taxi'], ['🚚', 'truck']],
     big: [(ctx, sc, x, y) => drawPump(ctx, x, y, '#ec4a3c'), { word: 'gas', fx: 'hop' }] },
-  carhome: { label: '🚗 자동차 집', pictures: [['🚗', 'car'], ['🏠', 'house'], ['⭐', 'star']],
+  carhome: { label: I18n.t('captain-town.carHouse'), pictures: [['🚗', 'car'], ['🏠', 'house'], ['⭐', 'star']],
     big: [(ctx, sc, x, y, col, c, r) => rtToyBox(ctx, sc, c, r), { word: 'box', fx: 'toy' }] },
-  egg:     { label: '🥚 알 집', pictures: [['🥚', 'egg'], ['🦕', 'dinosaur'], ['🌋', 'volcano']],
+  egg:     { label: I18n.t('captain-town.eggHouse'), pictures: [['🥚', 'egg'], ['🦕', 'dinosaur'], ['🌋', 'volcano']],
     big: [(ctx, sc, x, y) => drawDinoNest(ctx, x, y, ['#9fd8ff', '#fff4d8', '#ffc4d4']), { word: 'egg', fx: 'hop' }] },
-  hangar:  { label: '🚁 드론 격납고', pictures: [['🚁', 'helicopter'], ['✈️', 'jet'], ['🚀', 'rocket']],
+  hangar:  { label: I18n.t('captain-town.droneHangar'), pictures: [['🚁', 'helicopter'], ['✈️', 'jet'], ['🚀', 'rocket']],
     big: [(ctx, sc, x, y, col) => drawCargoDrone(ctx, x, y, 0, false, col), { word: 'drone', fx: 'hop' }] },
-  lab:     { label: '🔬 드론 연구소', pictures: [['🤖', 'robot'], ['🚀', 'rocket'], ['🌙', 'moon']],
+  lab:     { label: I18n.t('captain-town.droneLaboratory'), pictures: [['🤖', 'robot'], ['🚀', 'rocket'], ['🌙', 'moon']],
     big: [(ctx, sc, x, y, col, c, r) => rtWorkTable(ctx, sc, c, r, col), RT_FURNITURE.table] },
 };
 
@@ -1923,7 +1923,7 @@ function buildCaptainHQ() {
   addStairs(sc, 10, 0, 2, 3, ctx => rtStairs(ctx, sc, 10, 0, 2, 3),
     [10, 11].map(c => ({ c, r: 3, target: 'castle2', at: { c: 7, r: 4 }, icon: '⬆️' })));
   const up = tileCenter(sc, 10.5, 1);
-  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#4f7fe8', links: sc.links.filter(l => l.target === 'castle2') });
+  sc.signs.push({ x: up.x, y: up.y - 74, text: I18n.t('captain-town.upstairs'), color: '#4f7fe8', links: sc.links.filter(l => l.target === 'castle2') });
   renderGround(sc);
   return sc;
 }

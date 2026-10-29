@@ -7,23 +7,23 @@
 
 // Who lives in Dinosaur Village. They ask the forest questions (level 2).
 const DINO_VILLAGE_NPCS = [
-  { name: '티라노 대장',       look: 'dinoRex',    c: 18, r: 8 },
-  { name: '트리케라 아줌마',   look: 'dinoTops',   c: 12, r: 7 },
-  { name: '스테고 형',         look: 'dinoStego',  c: 21, r: 14 },
-  { name: '브라키오 할아버지', look: 'dinoBronto', c: 25, r: 18 },
-  { name: '프테라 누나',       look: 'dinoPtero',  c: 5,  r: 11 },
-  { name: '안킬로 아저씨',     look: 'dinoAnky',   c: 10, r: 24 },
-  { name: '아기 공룡',         look: 'dinoBaby',   c: 12, r: 20 },
+  { name: I18n.t('captain-dino.captainTRex'),       look: 'dinoRex',    c: 18, r: 8 },
+  { name: I18n.t('captain-dino.auntieTriceratops'),   look: 'dinoTops',   c: 12, r: 7 },
+  { name: I18n.t('captain-dino.bigBrotherStegosaurus'),         look: 'dinoStego',  c: 21, r: 14 },
+  { name: I18n.t('captain-dino.grandpaBrachiosaurus'), look: 'dinoBronto', c: 25, r: 18 },
+  { name: I18n.t('captain-dino.bigSisterPteranodon'),       look: 'dinoPtero',  c: 5,  r: 11 },
+  { name: I18n.t('captain-dino.uncleAnkylosaurus'),     look: 'dinoAnky',   c: 10, r: 24 },
+  { name: I18n.t('captain-dino.babyDinosaur'),         look: 'dinoBaby',   c: 12, r: 20 },
 ];
 
 // The egg huts are homes (see VILLAGE_HOMES in js/data.js), each with one
 // of the dino families inside; the doors face the front-left.
 const DINO_HOMES = [
-  { id: 'egg1', scene: 'forest', c: 4,  r: 3,  w: 2, door: [[5, 5], [4, 5]],     theme: 'egg', color: '#8fd3ff', who: '아기 공룡 꼬물이', look: 'dinoBaby' },
-  { id: 'egg2', scene: 'forest', c: 25, r: 9,  w: 2, door: [[26, 11], [25, 11]], theme: 'egg', color: '#ff9ec4', who: '프테라 동생',     look: 'dinoPtero' },
-  { id: 'egg3', scene: 'forest', c: 9,  r: 8,  w: 2, door: [[10, 10], [9, 10]],  theme: 'egg', color: '#b48cf0', who: '스테고 동생',     look: 'dinoStego' },
-  { id: 'egg4', scene: 'forest', c: 3,  r: 21, w: 2, door: [[4, 23], [3, 23]],   theme: 'egg', color: '#ffd34d', who: '안킬로 삼촌',     look: 'dinoAnky' },
-  { id: 'egg5', scene: 'forest', c: 3,  r: 7,  w: 2, door: [[4, 9], [3, 9]],     theme: 'egg', color: '#9be070', who: '트리케라 언니',   look: 'dinoTops' },
+  { id: 'egg1', scene: 'forest', c: 4,  r: 3,  w: 2, door: [[5, 5], [4, 5]],     theme: 'egg', color: '#8fd3ff', who: I18n.t('captain-dino.wigglesTheBabyDinosaur'), look: 'dinoBaby' },
+  { id: 'egg2', scene: 'forest', c: 25, r: 9,  w: 2, door: [[26, 11], [25, 11]], theme: 'egg', color: '#ff9ec4', who: I18n.t('captain-dino.littlePteranodon'),     look: 'dinoPtero' },
+  { id: 'egg3', scene: 'forest', c: 9,  r: 8,  w: 2, door: [[10, 10], [9, 10]],  theme: 'egg', color: '#b48cf0', who: I18n.t('captain-dino.littleStegosaurus'),     look: 'dinoStego' },
+  { id: 'egg4', scene: 'forest', c: 3,  r: 21, w: 2, door: [[4, 23], [3, 23]],   theme: 'egg', color: '#ffd34d', who: I18n.t('captain-dino.uncleAnkylosaurus2'),     look: 'dinoAnky' },
+  { id: 'egg5', scene: 'forest', c: 3,  r: 7,  w: 2, door: [[4, 9], [3, 9]],     theme: 'egg', color: '#9be070', who: I18n.t('captain-dino.sisterTriceratops'),   look: 'dinoTops' },
 ];
 
 if (isCaptain()) {
@@ -844,7 +844,7 @@ function addDinoShop(sc) {
   const k = boxCorners(sc, S.c, S.r, 3, 3);
   const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 48);
   sc.signs.push({ x: sign.x, y: sign.y, text: place('shop'), color: '#e0a52a' });
-  const keeper = makeNpc({ who: '상점 아저씨', look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
+  const keeper = makeNpc({ who: I18n.t('captain-dino.shopkeeper'), look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
   keeper.shop = true;
   keeper.badge = '🪙';
   obj.keeper = keeper;

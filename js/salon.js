@@ -41,7 +41,7 @@ function addTownSalon(sc) {
   const obj = addObject(sc, { c: S.c, r: S.r, w: 3, d: 3 }, footBounds(sc, S.c, S.r, 3, 3, 110, 12), ctx => drawSalon(ctx, k), { kind: 'salon' });
   const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 50);
   sc.signs.push({ x: sign.x, y: sign.y, text: place('salon'), color: '#e0609a' });
-  const keeper = makeNpc({ who: '미용사 언니', look: 'stylist', c: S.c, r: S.r + 3 }, null);
+  const keeper = makeNpc({ who: I18n.t('salon.hairdresser'), look: 'stylist', c: S.c, r: S.r + 3 }, null);
   Object.assign(keeper, { salon: true, badge: '✂️' });
   obj.keeper = keeper;
   sc.npcs.push(keeper);
@@ -119,14 +119,14 @@ function renderSalon() {
   }
   const wearing = !!pick && state.outfit[pick.slot] === pick.value;
   salonUi.buy.classList.toggle('hidden', !pick || wearing);
-  if (pick) salonUi.buy.textContent = pick.mine ? '✂️ 이걸로 할래요' : `✂️ ⭐ ${pick.price}개로 바꿀래요`;
+  if (pick) salonUi.buy.textContent = pick.mine ? I18n.t('salon.chooseThisLook') : I18n.t('salon.changeForStars', pick.price);
 }
 
 function salonChoose(it) {
   salon.pick = it || null;
-  if (!it) salonUi.msg.textContent = '마음에 드는 머리를 골라 보세요! 💇';
-  else if (state.outfit[it.slot] === it.value) salonUi.msg.textContent = '지금 하고 있는 머리예요 💖';
-  else salonUi.msg.textContent = it.mine ? '전에 해 본 머리예요. 별 없이 바꿀 수 있어요!' : `${it.label}: 별 ${it.price}개`;
+  if (!it) salonUi.msg.textContent = I18n.t('salon.chooseAHairstyleYouLike');
+  else if (state.outfit[it.slot] === it.value) salonUi.msg.textContent = I18n.t('salon.thisIsYourCurrentHairstyle');
+  else salonUi.msg.textContent = it.mine ? I18n.t('salon.youVeWornThisBeforeChange') : I18n.t('salon.stars', it.label, it.price);
 }
 
 // ✂️: too few stars, or the new look, paid for if it is new to her.
@@ -136,7 +136,7 @@ function salonBuy() {
   if (!pick) return;
   if (!pick.mine && state.stars < pick.price) {
     Sound.locked();
-    salonUi.msg.textContent = `별이 ${pick.price - state.stars}개 더 필요해요. 문제를 풀고 다시 와요! ⭐`;
+    salonUi.msg.textContent = I18n.t('salon.youNeedMoreStarsAnswerSome', pick.price - state.stars);
     Sound.say([{ text: line('salonPoor') }], voiceOf(npc));
     return;
   }
@@ -150,7 +150,7 @@ function salonBuy() {
   save();
   renderStars(!pick.mine);
   salonChoose(Object.assign({}, pick, { mine: true }));
-  salonUi.msg.textContent = '✨ 짜잔! 새 머리 완성!';
+  salonUi.msg.textContent = I18n.t('salon.taDaYourNewHairstyle');
   renderSalon();
   Sound.party();
   burstAtHero(30);

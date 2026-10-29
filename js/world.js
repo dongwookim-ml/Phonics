@@ -477,9 +477,9 @@ function buildCastleInterior() {
   furn(0, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 0, 4), FURNITURE.plant);
   furn(11, 4, 1, 1, 30, ctx => drawPlant(ctx, sc, 11, 4), FURNITURE.plant);
 
-  sc.npcs.push(makeNpc({ who: '임금님', look: 'king', c: 4, r: 1 }, null));
-  sc.npcs.push(makeNpc({ who: '왕비님', look: 'queen', c: 7, r: 1 }, null));
-  sc.npcs.push(makeNpc({ who: '시녀', look: 'maid', c: 10, r: 8 }, null));
+  sc.npcs.push(makeNpc({ who: I18n.t('world.king'), look: 'king', c: 4, r: 1 }, null));
+  sc.npcs.push(makeNpc({ who: I18n.t('world.queen'), look: 'queen', c: 7, r: 1 }, null));
+  sc.npcs.push(makeNpc({ who: I18n.t('world.maid'), look: 'maid', c: 10, r: 8 }, null));
   sc.exit = exit;
   sc.exitTiles = [{ c: 5, r: sc.D - 1 }, { c: 6, r: sc.D - 1 }];
   sc.start = { c: 5, r: sc.D - 2 };
@@ -493,7 +493,7 @@ function buildCastleInterior() {
   addStairs(sc, 10, 0, 2, 3, ctx => drawCastleStairs(ctx, sc, 10, 0, 2, 3),
     [10, 11].map(c => ({ c, r: 3, target: 'castle2', at: { c: 7, r: 4 }, icon: '⬆️' })));
   const up = tileCenter(sc, 10.5, 1);
-  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#b98cff', links: sc.links.filter(l => l.target === 'castle2') });
+  sc.signs.push({ x: up.x, y: up.y - 74, text: I18n.t('captain-town.upstairs'), color: '#b98cff', links: sc.links.filter(l => l.target === 'castle2') });
   renderGround(sc);
   return sc;
 }
@@ -645,19 +645,19 @@ function buildYunaRoom() {
 // hang on the wall and say their word when tapped, and `big` is the thing
 // in the corner: [draw(ctx, x, y, color), what it says and does].
 const HOME_THEMES = {
-  mushroom: { label: '🍄 버섯 집', tint: '#d8b48a', trim: '#c89060', rug: 'moss',
+  mushroom: { label: I18n.t('world.mushroomHouse'), tint: '#d8b48a', trim: '#c89060', rug: 'moss',
     pictures: [['🌙', 'moon'], ['🔔', 'bell'], ['⭐', 'star']],
     big: [(ctx, x, y, col) => drawBigShroom(ctx, x, y, col), { word: 'mushroom', fx: 'boing' }] },
-  unicorn: { label: '🦄 유니콘 집', tint: '#f0d4e4', trim: '#e0a8c8', rug: 'rainbow',
+  unicorn: { label: I18n.t('world.unicornHouse'), tint: '#f0d4e4', trim: '#e0a8c8', rug: 'rainbow',
     pictures: [['🌈', 'rainbow'], ['⭐', 'star'], ['☁️', 'cloud']],
     big: [(ctx, x, y) => drawCloudPuff(ctx, x, y - 6, 1.1), { word: 'cloud', fx: 'puff' }] },
-  stable: { label: '🐴 유니콘 마구간', tint: '#e8c890', trim: '#c8905a', rug: 'rainbow', bed: '#ffd66b',
+  stable: { label: I18n.t('world.unicornStable'), tint: '#e8c890', trim: '#c8905a', rug: 'rainbow', bed: '#ffd66b',
     pictures: [['🐴', 'horse'], ['🌈', 'rainbow'], ['🍎', 'apple']],
     big: [(ctx, x, y) => drawCloudPuff(ctx, x, y - 6, 1.1), { word: 'cloud', fx: 'puff' }] },
-  teacup: { label: '🫖 찻잔 집', tint: '#f4dce8', trim: '#e0b0c8', rug: 'petals',
+  teacup: { label: I18n.t('world.teacupHouse'), tint: '#f4dce8', trim: '#e0b0c8', rug: 'petals',
     pictures: [['🐝', 'bee'], ['☕', 'mug'], ['🌙', 'moon']],
     big: [(ctx, x, y, col) => drawGiantFlower(ctx, x, y, col, 30), { word: 'flower', fx: 'petals' }] },
-  tulip: { label: '🌷 튤립 집', tint: '#f0e0c8', trim: '#d8b070', rug: 'petals',
+  tulip: { label: I18n.t('world.tulipHouse'), tint: '#f0e0c8', trim: '#d8b070', rug: 'petals',
     pictures: [['🌹', 'rose'], ['🐝', 'bee'], ['☀️', 'sun']],
     big: [(ctx, x, y, col) => drawGiantFlower(ctx, x, y, col, 30), { word: 'flower', fx: 'petals' }] },
 };
@@ -1013,7 +1013,7 @@ function addForestShop(sc) {
   const k = boxCorners(sc, S.c, S.r, 3, 3);
   const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 48);
   sc.signs.push({ x: sign.x, y: sign.y, text: place('shop'), color: '#e0a52a' });
-  const keeper = makeNpc({ who: '상점 아저씨', look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
+  const keeper = makeNpc({ who: I18n.t('captain-dino.shopkeeper'), look: 'merchant', c: S.c + 3, r: S.r + 3 }, null);
   keeper.shop = true;
   keeper.badge = '🪙';
   obj.keeper = keeper;

@@ -19,33 +19,36 @@ const CAPTAIN_SCENES = {};
 // The hero's name and title, chosen on the start screen and saved.
 // `spoken` is read by the English voice, `shown` is on screen.
 // `look` is 'girl' or 'boy': which hero sprite and wardrobe she or he gets.
-const PLAYER = { spoken: 'Yuna', shown: '윤아', title: 'princess', look: 'girl' };
-if (isCaptain()) Object.assign(PLAYER, { spoken: 'Max', shown: '맥스', title: 'captain', look: 'robot' });
+const PLAYER = { spoken: 'Yuna', shown: I18n.t('data.yuna'), title: 'princess', look: 'girl' };
+if (isCaptain()) Object.assign(PLAYER, { spoken: 'Max', shown: I18n.t('data.max'), title: 'captain', look: 'robot' });
 
-// Titles the hero can pick. `en` is what villagers call her, `ko` is shown.
+// Use the parent's English spelling for personalized labels in the English UI.
+const playerDisplayName = () => I18n.language === 'en' ? PLAYER.spoken : PLAYER.shown;
+
+// Titles the hero can pick. `en` is what villagers call her, `label` is the localized display title.
 // A title with a `look` decides the hero's look; the others let you choose.
 const TITLES = {
-  princess: { ko: '공주',   en: 'Princess', icon: '👸', look: 'girl' },
-  prince:   { ko: '왕자',   en: 'Prince',   icon: '🤴', look: 'boy' },
-  queen:    { ko: '여왕',   en: 'Queen',    icon: '👑', look: 'girl' },
-  king:     { ko: '왕',     en: 'King',     icon: '🤴', look: 'boy' },
-  knight:   { ko: '기사',   en: 'Knight',   icon: '🛡️' },
-  fairy:    { ko: '요정',   en: 'Fairy',    icon: '🧚', look: 'girl' },
-  wizard:   { ko: '마법사', en: 'Wizard',   icon: '🧙' },
-  explorer: { ko: '탐험가', en: 'Explorer', icon: '🧭' },
-  captain:  { ko: isCaptain() ? '캡틴' : '선장', en: 'Captain', icon: isCaptain() ? '🤖' : '⚓', look: isCaptain() ? 'robot' : undefined },
+  princess: { label: I18n.t('data.princess'),   en: 'Princess', icon: '👸', look: 'girl' },
+  prince:   { label: I18n.t('data.prince'),   en: 'Prince',   icon: '🤴', look: 'boy' },
+  queen:    { label: I18n.t('data.queen'),   en: 'Queen',    icon: '👑', look: 'girl' },
+  king:     { label: I18n.t('data.king'),     en: 'King',     icon: '🤴', look: 'boy' },
+  knight:   { label: I18n.t('data.knight'),   en: 'Knight',   icon: '🛡️' },
+  fairy:    { label: I18n.t('data.fairy'),   en: 'Fairy',    icon: '🧚', look: 'girl' },
+  wizard:   { label: I18n.t('data.wizard'), en: 'Wizard',   icon: '🧙' },
+  explorer: { label: I18n.t('data.explorer'), en: 'Explorer', icon: '🧭' },
+  captain:  { label: isCaptain() ? I18n.t('data.captain') : I18n.t('data.captain2'), en: 'Captain', icon: isCaptain() ? '🤖' : '⚓', look: isCaptain() ? 'robot' : undefined },
 };
 
 // Place names, shown on signs and when she arrives. Values may be functions
 // of the hero (her room carries her name); use place(key).
 const PLACES = isCaptain() ? {
-  town: '🤖 로봇 마을', forest: '🦖 공룡 마을', fairy: '🛸 드론 마을', unicorn: '🚗 자동차 마을', dungeon: '😈 악당 동굴',
-  castle: '🛡️ 캡틴 본부', castle2: '📚 본부 2층', library: '📚 본부 도서관', room: () => '🛏️ 캡틴의 방', shop: '🔧 부품 상점',
-  game: '로봇 마을',
+  town: I18n.t('data.robotTown'), forest: I18n.t('data.dinosaurVillage'), fairy: I18n.t('data.droneVillage'), unicorn: I18n.t('data.carVillage'), dungeon: I18n.t('data.villainCave'),
+  castle: I18n.t('data.captainHeadquarters'), castle2: I18n.t('data.headquartersUpstairs'), library: I18n.t('data.headquartersLibrary'), room: () => I18n.t('data.captainSRoom'), shop: I18n.t('data.partsShop'),
+  game: I18n.t('account.robotTown'),
 } : {
-  town: '🌸 소리 마을', forest: '🌲 별빛 숲 마을', fairy: '🧚 요정 마을', unicorn: '🦄 유니콘 마을', dungeon: '💎 반짝 동굴',
-  castle: () => `🏰 ${TITLES[PLAYER.title].ko}님의 성`, castle2: '📚 성 2층', library: '📚 왕실 도서관', room: () => `🎀 ${PLAYER.shown}의 방`, shop: '🎁 별빛 상점',
-  game: '소리 마을',
+  town: I18n.t('data.phonicsTown'), forest: I18n.t('data.starlightForestVillage'), fairy: I18n.t('data.fairyVillage'), unicorn: I18n.t('data.unicornVillage'), dungeon: I18n.t('data.crystalCave'),
+  castle: () => I18n.t('data.sCastle', TITLES[PLAYER.title].label), castle2: I18n.t('data.castleUpstairs'), library: I18n.t('data.royalLibrary'), room: () => I18n.t('data.sRoom', playerDisplayName()), shop: I18n.t('data.starlightShop'),
+  game: I18n.t('account.phonicsTown'),
 };
 const place = key => (typeof PLACES[key] === 'function' ? PLACES[key]() : PLACES[key]);
 // Just the name, without its emoji.
@@ -86,169 +89,169 @@ const USE_RECORDINGS = false;
 
 // [main, shade, light, trim]
 const DRESS_COLORS = {
-  pink:     { name: '분홍',   icon: '💗', c: ['#ff8fc0', '#e0609a', '#ffc8e0', '#ffd34d'] },
-  lavender: { name: '보라',   icon: '💜', c: ['#b9a0ff', '#8f70e0', '#e0d4ff', '#ffd34d'] },
-  sky:      { name: '하늘',   icon: '🩵', c: ['#8fd3ff', '#5aa6e0', '#d4f0ff', '#ffffff'] },
-  mint:     { name: '민트',   icon: '💚', c: ['#8fe8c4', '#4fbf90', '#d4fff0', '#ffd34d'] },
-  gold:     { name: '황금',   icon: '💛', c: ['#ffd66b', '#e0a83a', '#fff2b8', '#ffffff'] },
-  snow:     { name: '하얀',   icon: '🤍', c: ['#ffffff', '#d4d4f0', '#ffffff', '#9fd4ff'] },
-  rose:     { name: '빨간',   icon: '❤️', c: ['#ff6b7f', '#cf3f57', '#ffb4c0', '#ffd34d'] },
-  peach:    { name: '복숭아', icon: '🍑', c: ['#ffb89a', '#e8866a', '#ffe0d2', '#ffffff'] },
-  orange:   { name: '주황',   icon: '🧡', c: ['#ffa04a', '#e0702a', '#ffd4a8', '#ffffff'] },
-  green:    { name: '초록',   icon: '🌿', c: ['#6fcf6a', '#3f9a4a', '#c4f4b8', '#ffd34d'] },
-  aqua:     { name: '바다',   icon: '🌊', c: ['#4fd0d8', '#2a9cb0', '#c0f4f8', '#ffffff'] },
-  navy:     { name: '남색',   icon: '💙', c: ['#4a68d0', '#2e449c', '#9ab2ff', '#ffd34d'] },
-  berry:    { name: '자두',   icon: '🍇', c: ['#c860c0', '#963a94', '#f0b4ec', '#ffd34d'] },
-  choco:    { name: '초코',   icon: '🍫', c: ['#a8704a', '#7a4a30', '#e0b48a', '#ffd34d'] },
-  black:    { name: '까만',   icon: '🖤', c: ['#4a4560', '#2e2a40', '#7a7494', '#ffd34d'] },
-  night:    { name: '밤하늘', icon: '🌌', c: ['#5a5ab8', '#3a3a86', '#9a9ae8', '#ffd34d'], forest: true },
+  pink:     { name: I18n.t('captain-hero.pink'),   icon: '💗', c: ['#ff8fc0', '#e0609a', '#ffc8e0', '#ffd34d'] },
+  lavender: { name: I18n.t('captain-hero.purple'),   icon: '💜', c: ['#b9a0ff', '#8f70e0', '#e0d4ff', '#ffd34d'] },
+  sky:      { name: I18n.t('captain-hero.skyBlue'),   icon: '🩵', c: ['#8fd3ff', '#5aa6e0', '#d4f0ff', '#ffffff'] },
+  mint:     { name: I18n.t('captain-hero.mint'),   icon: '💚', c: ['#8fe8c4', '#4fbf90', '#d4fff0', '#ffd34d'] },
+  gold:     { name: I18n.t('captain-hero.gold'),   icon: '💛', c: ['#ffd66b', '#e0a83a', '#fff2b8', '#ffffff'] },
+  snow:     { name: I18n.t('captain-hero.white'),   icon: '🤍', c: ['#ffffff', '#d4d4f0', '#ffffff', '#9fd4ff'] },
+  rose:     { name: I18n.t('captain-hero.red'),   icon: '❤️', c: ['#ff6b7f', '#cf3f57', '#ffb4c0', '#ffd34d'] },
+  peach:    { name: I18n.t('data.peach'), icon: '🍑', c: ['#ffb89a', '#e8866a', '#ffe0d2', '#ffffff'] },
+  orange:   { name: I18n.t('captain-hero.orange'),   icon: '🧡', c: ['#ffa04a', '#e0702a', '#ffd4a8', '#ffffff'] },
+  green:    { name: I18n.t('captain-hero.green'),   icon: '🌿', c: ['#6fcf6a', '#3f9a4a', '#c4f4b8', '#ffd34d'] },
+  aqua:     { name: I18n.t('data.aqua'),   icon: '🌊', c: ['#4fd0d8', '#2a9cb0', '#c0f4f8', '#ffffff'] },
+  navy:     { name: I18n.t('data.navy'),   icon: '💙', c: ['#4a68d0', '#2e449c', '#9ab2ff', '#ffd34d'] },
+  berry:    { name: I18n.t('data.plum'),   icon: '🍇', c: ['#c860c0', '#963a94', '#f0b4ec', '#ffd34d'] },
+  choco:    { name: I18n.t('data.chocolate'),   icon: '🍫', c: ['#a8704a', '#7a4a30', '#e0b48a', '#ffd34d'] },
+  black:    { name: I18n.t('captain-hero.black'),   icon: '🖤', c: ['#4a4560', '#2e2a40', '#7a7494', '#ffd34d'] },
+  night:    { name: I18n.t('data.midnightBlue'), icon: '🌌', c: ['#5a5ab8', '#3a3a86', '#9a9ae8', '#ffd34d'], forest: true },
 };
 // Dresses for a girl; tunics, coats, suits, armour and robes for a boy,
 // in the colour above.
 const DRESS_SHAPES = {
-  ballgown: { name: '풍성한 드레스', icon: '👗', girl: true },
-  long:     { name: '긴 드레스',     icon: '👘', girl: true },
-  tutu:     { name: '발레 드레스',   icon: '🩰', girl: true },
-  party:    { name: '파티 원피스',   icon: '🎀', girl: true },
-  cake:     { name: '층층 드레스',   icon: '🧁', girl: true },
-  mermaid:  { name: '인어 드레스',   icon: '🧜', girl: true },
-  hanbok:   { name: '꽃 한복',       icon: '🎎', girl: true },
-  petal:    { name: '꽃잎 드레스',   icon: '🌷', girl: true, fairy: true },
-  tunic:    { name: '기사 튜닉',     icon: '👕', boy: true },
-  coat:     { name: '왕자 코트',     icon: '🧥', boy: true },
-  robe:     { name: '임금님 옷',     icon: '🥻', boy: true },
-  suit:     { name: '멋진 정장',     icon: '🤵', boy: true },
-  armour:   { name: '기사 갑옷',     icon: '🛡️', boy: true },
-  sailor:   { name: '세일러복',      icon: '⚓', boy: true },
-  dopo:     { name: '도령 한복',     icon: '🎎', boy: true },
-  explorer: { name: '탐험가 옷',     icon: '🧭', boy: true },
-  wizard:   { name: '마법사 로브',   icon: '🧙', boy: true },
-  leaf:     { name: '나뭇잎 옷',     icon: '🍃', boy: true, fairy: true },
+  ballgown: { name: I18n.t('data.ballGown'), icon: '👗', girl: true },
+  long:     { name: I18n.t('data.longDress'),     icon: '👘', girl: true },
+  tutu:     { name: I18n.t('data.balletDress'),   icon: '🩰', girl: true },
+  party:    { name: I18n.t('data.partyDress'),   icon: '🎀', girl: true },
+  cake:     { name: I18n.t('data.layeredDress'),   icon: '🧁', girl: true },
+  mermaid:  { name: I18n.t('data.mermaidDress'),   icon: '🧜', girl: true },
+  hanbok:   { name: I18n.t('data.floralHanbok'),       icon: '🎎', girl: true },
+  petal:    { name: I18n.t('data.petalDress'),   icon: '🌷', girl: true, fairy: true },
+  tunic:    { name: I18n.t('data.knightSTunic'),     icon: '👕', boy: true },
+  coat:     { name: I18n.t('data.princeSCoat'),     icon: '🧥', boy: true },
+  robe:     { name: I18n.t('data.kingSRobe'),     icon: '🥻', boy: true },
+  suit:     { name: I18n.t('data.smartSuit'),     icon: '🤵', boy: true },
+  armour:   { name: I18n.t('data.knightSArmour'),     icon: '🛡️', boy: true },
+  sailor:   { name: I18n.t('data.sailorSuit'),      icon: '⚓', boy: true },
+  dopo:     { name: I18n.t('data.boySHanbok'),     icon: '🎎', boy: true },
+  explorer: { name: I18n.t('data.explorerOutfit'),     icon: '🧭', boy: true },
+  wizard:   { name: I18n.t('data.wizardSRobe'),   icon: '🧙', boy: true },
+  leaf:     { name: I18n.t('data.leafTunic'),     icon: '🍃', boy: true, fairy: true },
 };
 const HEADWEAR = {
-  none:    { name: '없음',       icon: '' },
-  tiara:   { name: '반짝 티아라', icon: '💎', girl: true },
-  crown:   { name: '황금 왕관',   icon: '👑' },
-  flowers: { name: '꽃 화관',     icon: '🌸', girl: true },
-  bow:     { name: '큰 리본',     icon: '🎀', girl: true },
-  heartband: { name: '하트 머리띠', icon: '💖', girl: true },
-  bunny:   { name: '토끼 머리띠', icon: '🐰', girl: true },
-  kitty:   { name: '고양이 머리띠', icon: '🐱', girl: true },
-  butterfly: { name: '나비 핀',   icon: '🦋', girl: true },
-  starpins: { name: '별 머리핀',  icon: '⭐', girl: true },
-  sunhat:  { name: '밀짚모자',    icon: '👒', girl: true },
-  circlet: { name: '왕자 관',     icon: '💫', boy: true },
-  kingcrown: { name: '임금님 왕관', icon: '👑', boy: true },
-  feather: { name: '깃털 모자',   icon: '🎩', boy: true },
-  helmet:  { name: '기사 투구',   icon: '⛑️', boy: true },
-  pirate:  { name: '해적 모자',   icon: '🏴‍☠️', boy: true },
-  wizardhat: { name: '마법사 모자', icon: '🧙', boy: true },
-  safari:  { name: '탐험가 모자', icon: '🤠', boy: true },
-  cap:     { name: '야구 모자',   icon: '🧢', boy: true },
-  gat:     { name: '선비 갓',     icon: '🎩', boy: true },
-  horn:    { name: '유니콘 뿔',   icon: '🦄', unicorn: true },
+  none:    { name: I18n.t('captain-drone.none'),       icon: '' },
+  tiara:   { name: I18n.t('data.sparklingTiara'), icon: '💎', girl: true },
+  crown:   { name: I18n.t('data.goldenCrown'),   icon: '👑' },
+  flowers: { name: I18n.t('data.flowerCrown'),     icon: '🌸', girl: true },
+  bow:     { name: I18n.t('data.bigRibbon'),     icon: '🎀', girl: true },
+  heartband: { name: I18n.t('data.heartHeadband'), icon: '💖', girl: true },
+  bunny:   { name: I18n.t('data.bunnyHeadband'), icon: '🐰', girl: true },
+  kitty:   { name: I18n.t('data.catHeadband'), icon: '🐱', girl: true },
+  butterfly: { name: I18n.t('data.butterflyClip'),   icon: '🦋', girl: true },
+  starpins: { name: I18n.t('data.starHairClip'),  icon: '⭐', girl: true },
+  sunhat:  { name: I18n.t('data.strawHat'),    icon: '👒', girl: true },
+  circlet: { name: I18n.t('data.princeSCirclet'),     icon: '💫', boy: true },
+  kingcrown: { name: I18n.t('data.kingSCrown'), icon: '👑', boy: true },
+  feather: { name: I18n.t('data.featherHat'),   icon: '🎩', boy: true },
+  helmet:  { name: I18n.t('data.knightSHelmet'),   icon: '⛑️', boy: true },
+  pirate:  { name: I18n.t('data.pirateHat'),   icon: '🏴‍☠️', boy: true },
+  wizardhat: { name: I18n.t('data.wizardHat'), icon: '🧙', boy: true },
+  safari:  { name: I18n.t('data.explorerHat'), icon: '🤠', boy: true },
+  cap:     { name: I18n.t('data.baseballCap'),   icon: '🧢', boy: true },
+  gat:     { name: I18n.t('data.traditionalGat'),     icon: '🎩', boy: true },
+  horn:    { name: I18n.t('data.unicornHorn'),   icon: '🦄', unicorn: true },
 };
 const HAND_ITEMS = {
-  none:    { name: '없음',     icon: '' },
-  wand:    { name: '별 요술봉', icon: '🪄', girl: true },
-  bouquet: { name: '꽃다발',   icon: '💐', girl: true },
-  heartwand: { name: '하트 요술봉', icon: '💗', girl: true },
-  moonwand: { name: '달 요술봉', icon: '🌙', girl: true },
-  parasol: { name: '레이스 양산', icon: '⛱️', girl: true },
-  fan:     { name: '태극 부채', icon: '🪭', girl: true },
-  teddy:   { name: '곰 인형',   icon: '🧸' },
-  balloon: { name: '빨간 풍선', icon: '🎈' },
-  sword:   { name: '용감한 칼', icon: '🗡️', boy: true },
-  sceptre: { name: '황금 홀',   icon: '🔱', boy: true },
-  starsword: { name: '별빛 검', icon: '🌟', boy: true, forest: true },
-  shield:  { name: '기사 방패', icon: '🛡️', boy: true },
-  bow:     { name: '나무 활',   icon: '🏹', boy: true },
-  staff:   { name: '마법 지팡이', icon: '🔮', boy: true },
-  telescope: { name: '망원경',  icon: '🔭', boy: true },
-  flag:    { name: '깃발',      icon: '🚩', boy: true },
+  none:    { name: I18n.t('captain-drone.none'),     icon: '' },
+  wand:    { name: I18n.t('data.starWand'), icon: '🪄', girl: true },
+  bouquet: { name: I18n.t('data.bouquet'),   icon: '💐', girl: true },
+  heartwand: { name: I18n.t('data.heartWand'), icon: '💗', girl: true },
+  moonwand: { name: I18n.t('data.moonWand'), icon: '🌙', girl: true },
+  parasol: { name: I18n.t('data.laceParasol'), icon: '⛱️', girl: true },
+  fan:     { name: I18n.t('data.taegeukFan'), icon: '🪭', girl: true },
+  teddy:   { name: I18n.t('data.teddyBear'),   icon: '🧸' },
+  balloon: { name: I18n.t('data.redBalloon'), icon: '🎈' },
+  sword:   { name: I18n.t('data.braveSword'), icon: '🗡️', boy: true },
+  sceptre: { name: I18n.t('data.goldenSceptre'),   icon: '🔱', boy: true },
+  starsword: { name: I18n.t('data.starlightSword'), icon: '🌟', boy: true, forest: true },
+  shield:  { name: I18n.t('data.knightSShield'), icon: '🛡️', boy: true },
+  bow:     { name: I18n.t('data.woodenBow'),   icon: '🏹', boy: true },
+  staff:   { name: I18n.t('data.magicStaff'), icon: '🔮', boy: true },
+  telescope: { name: I18n.t('captain-hero.telescope'),  icon: '🔭', boy: true },
+  flag:    { name: I18n.t('data.flag'),      icon: '🚩', boy: true },
 };
 // Things worn on the back.
 const BACK_ITEMS = {
-  none:  { name: '없음',       icon: '' },
-  wings: { name: '요정 날개',   icon: '🧚', forest: true, girl: true },
-  cape:  { name: '별빛 망토',   icon: '✨', forest: true },
-  angel: { name: '천사 날개',   icon: '🪽', girl: true },
-  butterfly: { name: '나비 날개', icon: '🦋', fairy: true, girl: true },
-  redcape: { name: '기사 망토', icon: '🦸', boy: true },
-  dragon: { name: '용 날개',    icon: '🐉', forest: true, boy: true },
-  rainbow: { name: '무지개 망토', icon: '🌈', unicorn: true },
+  none:  { name: I18n.t('captain-drone.none'),       icon: '' },
+  wings: { name: I18n.t('data.fairyWings'),   icon: '🧚', forest: true, girl: true },
+  cape:  { name: I18n.t('data.starlightCape'),   icon: '✨', forest: true },
+  angel: { name: I18n.t('data.angelWings'),   icon: '🪽', girl: true },
+  butterfly: { name: I18n.t('data.butterflyWings'), icon: '🦋', fairy: true, girl: true },
+  redcape: { name: I18n.t('data.knightSCape'), icon: '🦸', boy: true },
+  dragon: { name: I18n.t('data.dragonWings'),    icon: '🐉', forest: true, boy: true },
+  rainbow: { name: I18n.t('data.rainbowCape'), icon: '🌈', unicorn: true },
 };
 const HAIR_COLORS = {
-  brown: { name: '갈색 머리', icon: '🤎', c: ['#7a4a2e', '#a8703f'] },
-  black: { name: '까만 머리', icon: '🖤', c: ['#2e2433', '#5a4663'] },
-  gold:  { name: '금발 머리', icon: '💛', c: ['#f0bb45', '#ffe08a'] },
-  pink:  { name: '분홍 머리', icon: '🌷', c: ['#ff94c4', '#ffd0e6'] },
-  red:   { name: '빨강 머리', icon: '🍎', c: ['#d0583a', '#f4905e'] },
-  blue:  { name: '파랑 머리', icon: '💙', c: ['#4a72d8', '#8ab0ff'] },
-  purple: { name: '보라 머리', icon: '💜', c: ['#8a5ad0', '#c4a2ff'] },
-  mint:  { name: '민트 머리', icon: '🌱', c: ['#3fb498', '#9aecd4'] },
+  brown: { name: I18n.t('data.brownHair'), icon: '🤎', c: ['#7a4a2e', '#a8703f'] },
+  black: { name: I18n.t('data.blackHair'), icon: '🖤', c: ['#2e2433', '#5a4663'] },
+  gold:  { name: I18n.t('data.blondeHair'), icon: '💛', c: ['#f0bb45', '#ffe08a'] },
+  pink:  { name: I18n.t('data.pinkHair'), icon: '🌷', c: ['#ff94c4', '#ffd0e6'] },
+  red:   { name: I18n.t('data.redHair'), icon: '🍎', c: ['#d0583a', '#f4905e'] },
+  blue:  { name: I18n.t('data.blueHair'), icon: '💙', c: ['#4a72d8', '#8ab0ff'] },
+  purple: { name: I18n.t('data.purpleHair'), icon: '💜', c: ['#8a5ad0', '#c4a2ff'] },
+  mint:  { name: I18n.t('data.mintHair'), icon: '🌱', c: ['#3fb498', '#9aecd4'] },
 };
 // Hairstyles: the shape of her hair, cut at the hair salon in town
 // (js/salon.js) for stars, then hers to wear like the rest. A girl's and a
 // boy's styles each suit that look only. Drawn by HAIR_STYLE_ART in
 // js/sprites.js.
 const HAIR_STYLES = {
-  long:     { name: '긴 생머리',   icon: '💁‍♀️', girl: true },
-  bob:      { name: '단발머리',    icon: '✂️', girl: true },
-  pigtails: { name: '양갈래 머리', icon: '🎀', girl: true },
-  ponytail: { name: '포니테일',    icon: '🎗️', girl: true },
-  bun:      { name: '똥머리',      icon: '🍡', girl: true },
-  braids:   { name: '땋은 머리',   icon: '🥨', girl: true },
-  curly:    { name: '곱슬머리',    icon: '🌀', girl: true },
-  short:    { name: '짧은 머리',   icon: '💇‍♂️', boy: true },
-  spiky:    { name: '뾰족 머리',   icon: '⚡', boy: true },
-  curls:    { name: '곱슬 앞머리', icon: '🌀', boy: true },
-  shaggy:   { name: '덥수룩 머리', icon: '🦁', boy: true },
+  long:     { name: I18n.t('data.longStraightHair'),   icon: '💁‍♀️', girl: true },
+  bob:      { name: I18n.t('data.bobHaircut'),    icon: '✂️', girl: true },
+  pigtails: { name: I18n.t('data.pigtails'), icon: '🎀', girl: true },
+  ponytail: { name: I18n.t('data.ponytail'),    icon: '🎗️', girl: true },
+  bun:      { name: I18n.t('data.bun'),      icon: '🍡', girl: true },
+  braids:   { name: I18n.t('data.braids'),   icon: '🥨', girl: true },
+  curly:    { name: I18n.t('data.curlyHair'),    icon: '🌀', girl: true },
+  short:    { name: I18n.t('data.shortHair'),   icon: '💇‍♂️', boy: true },
+  spiky:    { name: I18n.t('data.spikyHair'),   icon: '⚡', boy: true },
+  curls:    { name: I18n.t('data.curlyFringe'), icon: '🌀', boy: true },
+  shaggy:   { name: I18n.t('data.shaggyHair'), icon: '🦁', boy: true },
 };
 
 // Treasures are not worn: they stand on the treasure shelf, the wardrobe's
 // last tab. Each one is a present like the clothes.
 const TREASURES = {
-  shell:    { name: '조개껍데기', icon: '🐚' },
-  gem:      { name: '반짝 보석',  icon: '💎' },
-  orb:      { name: '수정 구슬',  icon: '🔮' },
-  yoyo:     { name: '요요',       icon: '🪀' },
-  kite:     { name: '방패연',     icon: '🪁' },
-  puzzle:   { name: '퍼즐',       icon: '🧩' },
-  doll:     { name: '나무 인형',  icon: '🪆' },
-  carousel: { name: '회전목마',   icon: '🎠' },
-  piano:    { name: '꼬마 피아노', icon: '🎹' },
-  violin:   { name: '바이올린',   icon: '🎻' },
-  trumpet:  { name: '트럼펫',     icon: '🎺' },
-  drum:     { name: '작은 북',    icon: '🥁' },
-  paints:   { name: '물감',       icon: '🎨' },
-  clover:   { name: '네잎클로버', icon: '🍀' },
-  key:      { name: '황금 열쇠',  icon: '🗝️' },
-  compass:  { name: '나침반',     icon: '🧭' },
-  bell:     { name: '은방울',     icon: '🔔' },
-  boat:     { name: '장난감 배',  icon: '⛵' },
-  mirror:   { name: '손거울',     icon: '🪞' },
-  cupcake:  { name: '컵케이크',   icon: '🧁' },
-  shroom:   { name: '반짝 버섯',  icon: '🍄', forest: true },
-  acorn:    { name: '도토리',     icon: '🌰', forest: true },
-  marble:   { name: '무지개 구슬', icon: '🌈', unicorn: true },
-  plush:    { name: '유니콘 인형', icon: '🦄', unicorn: true },
-  teapot:   { name: '요정 찻주전자', icon: '🫖', fairy: true },
-  tulip:    { name: '튤립 화분',  icon: '🌷', fairy: true },
+  shell:    { name: I18n.t('data.seashell'), icon: '🐚' },
+  gem:      { name: I18n.t('data.sparklingJewel'),  icon: '💎' },
+  orb:      { name: I18n.t('data.crystalBall'),  icon: '🔮' },
+  yoyo:     { name: I18n.t('data.yoYo'),       icon: '🪀' },
+  kite:     { name: I18n.t('data.traditionalKite'),     icon: '🪁' },
+  puzzle:   { name: I18n.t('data.puzzle'),       icon: '🧩' },
+  doll:     { name: I18n.t('data.woodenDoll'),  icon: '🪆' },
+  carousel: { name: I18n.t('data.carousel'),   icon: '🎠' },
+  piano:    { name: I18n.t('data.littlePiano'), icon: '🎹' },
+  violin:   { name: I18n.t('data.violin'),   icon: '🎻' },
+  trumpet:  { name: I18n.t('data.trumpet'),     icon: '🎺' },
+  drum:     { name: I18n.t('data.littleDrum'),    icon: '🥁' },
+  paints:   { name: I18n.t('data.paints'),       icon: '🎨' },
+  clover:   { name: I18n.t('data.fourLeafClover'), icon: '🍀' },
+  key:      { name: I18n.t('data.goldenKey'),  icon: '🗝️' },
+  compass:  { name: I18n.t('data.compass'),     icon: '🧭' },
+  bell:     { name: I18n.t('data.silverBell'),     icon: '🔔' },
+  boat:     { name: I18n.t('data.toyBoat'),  icon: '⛵' },
+  mirror:   { name: I18n.t('data.handMirror'),     icon: '🪞' },
+  cupcake:  { name: I18n.t('data.cupcake'),   icon: '🧁' },
+  shroom:   { name: I18n.t('data.glowingMushroom'),  icon: '🍄', forest: true },
+  acorn:    { name: I18n.t('data.acorn'),     icon: '🌰', forest: true },
+  marble:   { name: I18n.t('data.rainbowMarble'), icon: '🌈', unicorn: true },
+  plush:    { name: I18n.t('data.unicornToy'), icon: '🦄', unicorn: true },
+  teapot:   { name: I18n.t('data.fairyTeapot'), icon: '🫖', fairy: true },
+  tulip:    { name: I18n.t('data.tulipPot'),  icon: '🌷', fairy: true },
 };
 
 // Unicorns to ride. These only come from the Unicorn Village.
 //   body, shade, mane colours (top to bottom), horn
 const UNICORNS = {
-  none:     { name: '안 타요',       icon: '' },
-  snow:     { name: '구름 유니콘',   icon: '🤍', unicorn: true, body: '#ffffff', shade: '#d8d4f0', mane: ['#ff9ec4', '#b9a0ff', '#8fd3ff'], horn: '#ffd34d' },
-  pink:     { name: '솜사탕 유니콘', icon: '💗', unicorn: true, body: '#ffd0e6', shade: '#f0a0c8', mane: ['#ff6fa8', '#ffffff', '#ff6fa8'], horn: '#ffe08a' },
-  lavender: { name: '라벤더 유니콘', icon: '💜', unicorn: true, body: '#e4d8ff', shade: '#b9a0f0', mane: ['#8f70e0', '#ff9ec4', '#8f70e0'], horn: '#ffffff' },
-  sky:      { name: '하늘 유니콘',   icon: '🩵', unicorn: true, body: '#d4f0ff', shade: '#9ccce8', mane: ['#5aa6e0', '#ffffff', '#5aa6e0'], horn: '#ffd34d' },
-  mint:     { name: '민트 유니콘',   icon: '💚', unicorn: true, body: '#d8fff0', shade: '#98dcc0', mane: ['#4fbf90', '#ffe066', '#4fbf90'], horn: '#ff9ec4' },
-  gold:     { name: '황금 유니콘',   icon: '💛', unicorn: true, body: '#fff2b8', shade: '#e8c870', mane: ['#ff9a6b', '#ffffff', '#ff9a6b'], horn: '#ffffff' },
-  rainbow:  { name: '무지개 유니콘', icon: '🌈', unicorn: true, body: '#ffffff', shade: '#dcd8f4', mane: ['#ff6b7f', '#ffb347', '#ffe066', '#5fd08a', '#6fb7ff', '#b98cff'], horn: '#ffd34d' },
-  night:    { name: '달빛 유니콘',   icon: '🌙', unicorn: true, body: '#6a6ac8', shade: '#48489a', mane: ['#ffe066', '#ffffff', '#ffe066'], horn: '#ffe066' },
+  none:     { name: I18n.t('captain-car.noRide'),       icon: '' },
+  snow:     { name: I18n.t('data.cloudUnicorn'),   icon: '🤍', unicorn: true, body: '#ffffff', shade: '#d8d4f0', mane: ['#ff9ec4', '#b9a0ff', '#8fd3ff'], horn: '#ffd34d' },
+  pink:     { name: I18n.t('data.candyflossUnicorn'), icon: '💗', unicorn: true, body: '#ffd0e6', shade: '#f0a0c8', mane: ['#ff6fa8', '#ffffff', '#ff6fa8'], horn: '#ffe08a' },
+  lavender: { name: I18n.t('data.lavenderUnicorn'), icon: '💜', unicorn: true, body: '#e4d8ff', shade: '#b9a0f0', mane: ['#8f70e0', '#ff9ec4', '#8f70e0'], horn: '#ffffff' },
+  sky:      { name: I18n.t('data.skyUnicorn'),   icon: '🩵', unicorn: true, body: '#d4f0ff', shade: '#9ccce8', mane: ['#5aa6e0', '#ffffff', '#5aa6e0'], horn: '#ffd34d' },
+  mint:     { name: I18n.t('data.mintUnicorn'),   icon: '💚', unicorn: true, body: '#d8fff0', shade: '#98dcc0', mane: ['#4fbf90', '#ffe066', '#4fbf90'], horn: '#ff9ec4' },
+  gold:     { name: I18n.t('data.goldenUnicorn'),   icon: '💛', unicorn: true, body: '#fff2b8', shade: '#e8c870', mane: ['#ff9a6b', '#ffffff', '#ff9a6b'], horn: '#ffffff' },
+  rainbow:  { name: I18n.t('data.rainbowUnicorn'), icon: '🌈', unicorn: true, body: '#ffffff', shade: '#dcd8f4', mane: ['#ff6b7f', '#ffb347', '#ffe066', '#5fd08a', '#6fb7ff', '#b98cff'], horn: '#ffd34d' },
+  night:    { name: I18n.t('data.moonlightUnicorn'),   icon: '🌙', unicorn: true, body: '#6a6ac8', shade: '#48489a', mane: ['#ffe066', '#ffffff', '#ffe066'], horn: '#ffe066' },
 };
 
 const DEFAULT_OUTFIT = { dress: 'pink', shape: 'ballgown', head: 'tiara', hand: 'none', hair: 'brown', style: 'long', back: 'none', ride: 'none' };
@@ -279,14 +282,14 @@ const LOOKS = {
 
 // Outdoor villagers ask about any word.
 const TOWN_NPCS = [
-  { name: '성문 기사님', look: 'knight', c: 18, r: 11 },
-  { name: '꽃집 언니',   look: 'flower', c: 5,  r: 17 },
-  { name: '할머니',     look: 'granny', c: 16, r: 18 },
-  { name: '낚시 아저씨', look: 'fisher', c: 27, r: 28 },
-  { name: '빵집 아저씨', look: 'baker',  c: 12, r: 16 },
-  { name: '꼬마 친구',   look: 'kid',    c: 34, r: 19 },
-  { name: '음악가',     look: 'bard',   c: 26, r: 20 },
-  { name: '농부 아저씨', look: 'farmer', c: 9,  r: 31 },
+  { name: I18n.t('data.gateKnight'), look: 'knight', c: 18, r: 11 },
+  { name: I18n.t('data.florist'),   look: 'flower', c: 5,  r: 17 },
+  { name: I18n.t('data.grandma'),     look: 'granny', c: 16, r: 18 },
+  { name: I18n.t('data.fisherman'), look: 'fisher', c: 27, r: 28 },
+  { name: I18n.t('data.baker'), look: 'baker',  c: 12, r: 16 },
+  { name: I18n.t('data.littleFriend'),   look: 'kid',    c: 34, r: 19 },
+  { name: I18n.t('data.musician'),     look: 'bard',   c: 26, r: 20 },
+  { name: I18n.t('data.farmer'), look: 'farmer', c: 9,  r: 31 },
 ];
 
 // One house per letter. Each house has a resident who asks words for
@@ -294,18 +297,18 @@ const TOWN_NPCS = [
 // Houses just right of the main road would hide the castle gate, so the
 // first row leaves a gap there.
 const TOWN_HOUSES = [
-  { letter: 'A', c: 3,  r: 11, who: '사과 아줌마',   look: 'farmer' },
-  { letter: 'B', c: 9,  r: 11, who: '곰돌이 아저씨', look: 'baker' },
-  { letter: 'C', c: 13, r: 11, who: '고양이 언니',   look: 'flower' },
-  { letter: 'D', c: 25, r: 11, who: '강아지 오빠',   look: 'kid' },
-  { letter: 'F', c: 29, r: 11, who: '개구리 아저씨', look: 'fisher' },
-  { letter: 'G', c: 34, r: 11, who: '선물 할머니',   look: 'granny' },
-  { letter: 'H', c: 3,  r: 23, who: '모자 아저씨',   look: 'bard' },
-  { letter: 'M', c: 9,  r: 23, who: '달님 언니',     look: 'maid' },
-  { letter: 'N', c: 13, r: 23, who: '도토리 친구',   look: 'kid' },
-  { letter: 'P', c: 22, r: 23, who: '피자 요리사',   look: 'baker' },
-  { letter: 'S', c: 26, r: 23, who: '별님 언니',     look: 'flower' },
-  { letter: 'T', c: 33, r: 23, who: '호랑이 기사님', look: 'knight' },
+  { letter: 'A', c: 3,  r: 11, who: I18n.t('data.appleLady'),   look: 'farmer' },
+  { letter: 'B', c: 9,  r: 11, who: I18n.t('data.mrBear'), look: 'baker' },
+  { letter: 'C', c: 13, r: 11, who: I18n.t('data.bigSisterCat'),   look: 'flower' },
+  { letter: 'D', c: 25, r: 11, who: I18n.t('data.bigBrotherDog'),   look: 'kid' },
+  { letter: 'F', c: 29, r: 11, who: I18n.t('data.mrFrog'), look: 'fisher' },
+  { letter: 'G', c: 34, r: 11, who: I18n.t('data.giftGivingGrandma'),   look: 'granny' },
+  { letter: 'H', c: 3,  r: 23, who: I18n.t('data.hatMaker'),   look: 'bard' },
+  { letter: 'M', c: 9,  r: 23, who: I18n.t('data.moonLady'),     look: 'maid' },
+  { letter: 'N', c: 13, r: 23, who: I18n.t('data.acornFriend'),   look: 'kid' },
+  { letter: 'P', c: 22, r: 23, who: I18n.t('data.pizzaChef'),   look: 'baker' },
+  { letter: 'S', c: 26, r: 23, who: I18n.t('data.starLady'),     look: 'flower' },
+  { letter: 'T', c: 33, r: 23, who: I18n.t('data.tigerKnight'), look: 'knight' },
 ];
 
 // ---- Voices and lines ------------------------------------------------------
@@ -403,8 +406,8 @@ const PERSONA = {
 LOOKS.librarian = { hair: '#e8e4ee', shirt: '#4a6ab8', pants: '#2e3a6a', hat: 'none' };
 LOOKS.harpist = { hair: '#ffcf6a', shirt: '#ffb0d0', pants: '#ffe0ee', hat: 'flowerband', gown: true };
 const CASTLE_UP_NPCS = [
-  { name: '왕실 사서',       look: 'librarian', c: 2, r: 4 },
-  { name: '궁정 하프 연주가', look: 'harpist',   c: 6, r: 2 },
+  { name: I18n.t('data.royalLibrarian'),       look: 'librarian', c: 2, r: 4 },
+  { name: I18n.t('data.courtHarpist'), look: 'harpist',   c: 6, r: 2 },
 ];
 Object.assign(VOICES, {
   librarian: { gender: 'male', tts: 'bm_lewis', pitch: 0.8, rate: 0.88, voice: ['Daniel', 'Arthur', 'Google UK English Male', 'Microsoft Ryan'] },
@@ -455,12 +458,12 @@ const WEAK_PICTURES = new Set(['mom', 'man', 'kid', 'pin', 'rat', 'tub', 'tap', 
   'run', 'nap', 'sad', 'mad', 'yum', 'yawn', 'kiss', 'hug', 'sing', 'dish', 'bin', 'mail', 'shop', 'lake', 'ram', 'red']);
 
 const FOREST_NPCS = [
-  { name: '꽃요정',     look: 'fairy',  c: 12, r: 6 },
-  { name: '숲 엘프',     look: 'elf',    c: 20, r: 9 },
-  { name: '별빛 마법사', look: 'wizard', c: 14, r: 15 },
-  { name: '버섯 할아버지', look: 'gnome', c: 5, r: 14 },
-  { name: '숲지기',     look: 'ranger', c: 22, r: 19 },
-  { name: '작은 요정',   look: 'fairy',  c: 8,  r: 22 },
+  { name: I18n.t('data.flowerFairy'),     look: 'fairy',  c: 12, r: 6 },
+  { name: I18n.t('data.forestElf'),     look: 'elf',    c: 20, r: 9 },
+  { name: I18n.t('data.starlightWizard'), look: 'wizard', c: 14, r: 15 },
+  { name: I18n.t('data.grandpaMushroom'), look: 'gnome', c: 5, r: 14 },
+  { name: I18n.t('data.forestKeeper'),     look: 'ranger', c: 22, r: 19 },
+  { name: I18n.t('data.littleFairy'),   look: 'fairy',  c: 8,  r: 22 },
 ];
 
 Object.assign(VOICES, {
@@ -1091,12 +1094,12 @@ LOOKS.keeper = { hair: '#c04a4a', shirt: '#ff9ec4', pants: '#8fd3ff', hat: 'stra
 
 // Unicorns that talk have `unicorn` (their colour) instead of a villager look.
 const UNICORN_NPCS = [
-  { name: '무지개 유니콘', look: 'unicorn', unicorn: 'rainbow', c: 17, r: 7 },
-  { name: '목장 언니',     look: 'keeper', c: 9, r: 9 },
-  { name: '솜사탕 유니콘', look: 'unicorn', unicorn: 'pink', c: 23, r: 14 },
-  { name: '무지개 요정',   look: 'fairy', c: 8, r: 19 },
-  { name: '구름 유니콘',   look: 'unicorn', unicorn: 'snow', c: 23, r: 21 },
-  { name: '달빛 유니콘',   look: 'unicorn', unicorn: 'night', c: 12, r: 24 },
+  { name: I18n.t('data.rainbowUnicorn'), look: 'unicorn', unicorn: 'rainbow', c: 17, r: 7 },
+  { name: I18n.t('data.ranchHelper'),     look: 'keeper', c: 9, r: 9 },
+  { name: I18n.t('data.candyflossUnicorn'), look: 'unicorn', unicorn: 'pink', c: 23, r: 14 },
+  { name: I18n.t('data.rainbowFairy'),   look: 'fairy', c: 8, r: 19 },
+  { name: I18n.t('data.cloudUnicorn'),   look: 'unicorn', unicorn: 'snow', c: 23, r: 21 },
+  { name: I18n.t('data.moonlightUnicorn'),   look: 'unicorn', unicorn: 'night', c: 12, r: 24 },
 ];
 
 Object.assign(VOICES, {
@@ -1118,12 +1121,12 @@ const DUNGEON_STARS = 30;
 // right "catches" one: it goes poof and leaves 1 to `coins` coins behind.
 // Caught monsters come back after a while, or when she comes in again.
 const DUNGEON_NPCS = [
-  { name: '말랑 슬라임', look: 'slime',     c: 4,  r: 9,  coins: 2 },
-  { name: '꼬마 박쥐',   look: 'bat',       c: 10, r: 2,  coins: 2 },
-  { name: '부끄럼 유령', look: 'ghost',     c: 13, r: 7,  coins: 3 },
-  { name: '아기 드래곤', look: 'dragon',    c: 7,  r: 5,  coins: 3 },
-  { name: '버섯 꼬물이', look: 'shroom',    c: 3,  r: 3,  coins: 2 },
-  { name: '분홍 슬라임', look: 'slimepink', c: 12, r: 11, coins: 2 },
+  { name: I18n.t('data.squishySlime'), look: 'slime',     c: 4,  r: 9,  coins: 2 },
+  { name: I18n.t('data.littleBat'),   look: 'bat',       c: 10, r: 2,  coins: 2 },
+  { name: I18n.t('data.shyGhost'), look: 'ghost',     c: 13, r: 7,  coins: 3 },
+  { name: I18n.t('data.babyDragon'), look: 'dragon',    c: 7,  r: 5,  coins: 3 },
+  { name: I18n.t('data.wigglyMushroom'), look: 'shroom',    c: 3,  r: 3,  coins: 2 },
+  { name: I18n.t('data.pinkSlime'), look: 'slimepink', c: 12, r: 11, coins: 2 },
 ];
 const MONSTER_RESPAWN_MS = 60000;
 
@@ -1171,7 +1174,7 @@ LINES.soldOut = ['Wow, you have everything already!', 'You bought all my treasur
 // counts all the stars she has ever earned (starsEarned in js/game.js), so
 // nothing she opened closes again.
 const SALON_PRICE = { style: 5, hair: 3 };
-PLACES.salon = '💇 미용실';
+PLACES.salon = I18n.t('data.hairSalon');
 LOOKS.stylist = { hair: '#ff8fc0', shirt: '#ffffff', pants: '#b98cff', hat: 'none' };
 VOICES.stylist = { gender: 'female', tts: 'af_jessica', lift: 1.08, pitch: 1.3, rate: 1.0, voice: ['Samantha', 'Karen', 'Microsoft Aria'] };
 PERSONA.stylist = ['Welcome to the hair salon, {title} {name}!', 'Hello! Shall we try a new hairstyle today?', 'Come on in, {title} {name}! Time for a new look!'];
@@ -1183,16 +1186,16 @@ LINES.salonPoor = ['Oh, you need a few more stars. Answer some questions and com
 // Shop-only treasures, bought with coins. `price` is in coins; everything
 // else in the shop is priced by shopPrice() in js/game.js.
 Object.assign(DRESS_COLORS, {
-  crystal: { name: '크리스탈', icon: '💠', c: ['#a8f0f0', '#64c4d4', '#e4ffff', '#c8a0ff'], shop: true, price: 10 },
+  crystal: { name: I18n.t('data.crystal'), icon: '💠', c: ['#a8f0f0', '#64c4d4', '#e4ffff', '#c8a0ff'], shop: true, price: 10 },
 });
 Object.assign(HAIR_COLORS, {
-  silver: { name: '은빛 머리', icon: '🩶', c: ['#c4c4dc', '#f2f2ff'], shop: true, price: 8 },
+  silver: { name: I18n.t('data.silverHair'), icon: '🩶', c: ['#c4c4dc', '#f2f2ff'], shop: true, price: 8 },
 });
 Object.assign(HEADWEAR, {
-  gemband: { name: '보석 머리띠', icon: '💠', shop: true, price: 10 },
+  gemband: { name: I18n.t('data.jewelHeadband'), icon: '💠', shop: true, price: 10 },
 });
 Object.assign(HAND_ITEMS, {
-  lantern: { name: '반딧불 랜턴', icon: '🏮', shop: true, price: 8 },
+  lantern: { name: I18n.t('data.fireflyLantern'), icon: '🏮', shop: true, price: 8 },
 });
 
 // ---- Fairy Village (level 5) ------------------------------------------------
@@ -1203,13 +1206,13 @@ const FAIRY_STARS = 15;
 // Little fairies that fly along above the hero's head. These only come from
 // the Fairy Village (or the shop). `dress`, `wing`, `hair` and `glow` colour the sprite.
 const FAIRIES = {
-  none:     { name: '없음',       icon: '' },
-  pink:     { name: '꽃잎 요정',   icon: '🌸', fairy: true, price: 10, dress: '#ff8fc0', wing: '#ffd8ec', hair: '#ffe08a', glow: '#ffb0d8' },
-  lavender: { name: '라벤더 요정', icon: '💜', fairy: true, price: 10, dress: '#b9a0ff', wing: '#e8dcff', hair: '#7a4a2e', glow: '#d0b8ff' },
-  sky:      { name: '이슬 요정',   icon: '💧', fairy: true, price: 10, dress: '#8fd3ff', wing: '#e0f6ff', hair: '#ffffff', glow: '#a8e4ff' },
-  mint:     { name: '새싹 요정',   icon: '🌱', fairy: true, price: 10, dress: '#8fe8b0', wing: '#e0fff0', hair: '#a8703f', glow: '#b0ffd0' },
-  sun:      { name: '햇살 요정',   icon: '🌼', fairy: true, price: 10, dress: '#ffd66b', wing: '#fff6c8', hair: '#ff9a6b', glow: '#fff0a0' },
-  star:     { name: '별빛 요정',   icon: '⭐', fairy: true, price: 10, dress: '#6a6ac8', wing: '#d8d8ff', hair: '#ffe066', glow: '#fff6a8' },
+  none:     { name: I18n.t('captain-drone.none'),       icon: '' },
+  pink:     { name: I18n.t('data.petalFairy'),   icon: '🌸', fairy: true, price: 10, dress: '#ff8fc0', wing: '#ffd8ec', hair: '#ffe08a', glow: '#ffb0d8' },
+  lavender: { name: I18n.t('data.lavenderFairy'), icon: '💜', fairy: true, price: 10, dress: '#b9a0ff', wing: '#e8dcff', hair: '#7a4a2e', glow: '#d0b8ff' },
+  sky:      { name: I18n.t('data.dewFairy'),   icon: '💧', fairy: true, price: 10, dress: '#8fd3ff', wing: '#e0f6ff', hair: '#ffffff', glow: '#a8e4ff' },
+  mint:     { name: I18n.t('data.sproutFairy'),   icon: '🌱', fairy: true, price: 10, dress: '#8fe8b0', wing: '#e0fff0', hair: '#a8703f', glow: '#b0ffd0' },
+  sun:      { name: I18n.t('data.sunshineFairy'),   icon: '🌼', fairy: true, price: 10, dress: '#ffd66b', wing: '#fff6c8', hair: '#ff9a6b', glow: '#fff0a0' },
+  star:     { name: I18n.t('data.starlightFairy'),   icon: '⭐', fairy: true, price: 10, dress: '#6a6ac8', wing: '#d8d8ff', hair: '#ffe066', glow: '#fff6a8' },
 };
 DEFAULT_OUTFIT.fairy = 'none';
 DEFAULT_BOY_OUTFIT.fairy = 'none';
@@ -1226,11 +1229,11 @@ LOOKS.sprout     = { hair: '#a8703f', shirt: '#b0f0c8', pants: '#5fc48a', hat: '
 LOOKS.sunny      = { hair: '#ff9a6b', shirt: '#fff2b8', pants: '#ffd66b', hat: 'petalcap', gown: true, wings: '#fff6c8' };
 
 const FAIRY_NPCS = [
-  { name: '요정 여왕', look: 'fairyqueen', gives: 'star', c: 14, r: 3 },
-  { name: '꽃잎 요정', look: 'pixie',      gives: 'pink', c: 6,  r: 9 },
-  { name: '햇살 요정', look: 'sunny',      gives: 'sun',  c: 19, r: 9 },
-  { name: '이슬 요정', look: 'dewfairy',   gives: 'sky',  c: 15, r: 18 },
-  { name: '새싹 요정', look: 'sprout',     gives: 'mint', c: 6,  r: 18 },
+  { name: I18n.t('data.fairyQueen'), look: 'fairyqueen', gives: 'star', c: 14, r: 3 },
+  { name: I18n.t('data.petalFairy'), look: 'pixie',      gives: 'pink', c: 6,  r: 9 },
+  { name: I18n.t('data.sunshineFairy'), look: 'sunny',      gives: 'sun',  c: 19, r: 9 },
+  { name: I18n.t('data.dewFairy'), look: 'dewfairy',   gives: 'sky',  c: 15, r: 18 },
+  { name: I18n.t('data.sproutFairy'), look: 'sprout',     gives: 'mint', c: 6,  r: 18 },
 ];
 
 Object.assign(VOICES, {
@@ -1358,9 +1361,9 @@ LINES.questChest = isCaptain() ? ['Mission complete! Coins for you!'] : ['You fo
 // one of the monsters she drew herself (KID_MONSTERS in js/kid-monsters.js,
 // with their names, voices and hellos). Built in js/monster-village.js.
 const MONSTER_STARS = 40;
-PLACES.monster = '👾 몬스터 마을';
-PLACES.tower = '🗼 몬스터 탑';
-PLACES.tower2 = '🗼 몬스터 탑 2층';
+PLACES.monster = I18n.t('data.monsterVillage');
+PLACES.tower = I18n.t('data.monsterTower');
+PLACES.tower2 = I18n.t('data.monsterTowerUpstairs');
 // Each of her monsters lives in one place, with room round it: three on
 // each floor of the tower, the rest out in the village (the long ones,
 // the caterpillar and the snake, where there is room to stretch).
@@ -1400,21 +1403,21 @@ LINES.openMonster = ['The Monster Village is open!'];
 // The captain files swap in their own homes (captainHomes in js/captain-town.js).
 const HOME_LEVEL = { forest: 2, unicorn: 3, fairy: 5 };
 const VILLAGE_HOMES = [
-  { id: 'mush1', scene: 'forest',  c: 5,  r: 4,  w: 2, door: [[7, 5], [6, 6]],     theme: 'mushroom', color: '#ff6b7f', who: '버섯 아저씨',   look: 'gnome' },
-  { id: 'mush2', scene: 'forest',  c: 22, r: 3,  w: 2, door: [[24, 4], [23, 5]],   theme: 'mushroom', color: '#b98cff', who: '꼬마 엘프',     look: 'elf' },
-  { id: 'mush3', scene: 'forest',  c: 3,  r: 20, w: 2, door: [[5, 21], [4, 22]],   theme: 'mushroom', color: '#ff8fc0', who: '아기 요정',     look: 'fairy' },
-  { id: 'mush4', scene: 'forest',  c: 9,  r: 9,  w: 2, door: [[11, 10], [10, 11]], theme: 'mushroom', color: '#ffb347', who: '숲속 마법사',   look: 'wizard' },
-  { id: 'uni1',  scene: 'unicorn', c: 3,  r: 9,  w: 3, door: [[4, 12]],  theme: 'unicorn', color: '#ff9ec4', who: '라벤더 유니콘', look: 'unicorn', unicorn: 'lavender' },
-  { id: 'uni2',  scene: 'unicorn', c: 21, r: 7,  w: 3, door: [[22, 10]], theme: 'stable',  color: '#b9a0ff', who: '마구간 언니',   look: 'keeper' },
-  { id: 'uni3',  scene: 'unicorn', c: 8,  r: 11, w: 3, door: [[9, 14]],  theme: 'unicorn', color: '#8fd3ff', who: '하늘 유니콘',   look: 'unicorn', unicorn: 'sky' },
-  { id: 'uni4',  scene: 'unicorn', c: 20, r: 11, w: 3, door: [[21, 14]], theme: 'unicorn', color: '#ff9ec4', who: '민트 유니콘',   look: 'unicorn', unicorn: 'mint' },
-  { id: 'uni5',  scene: 'unicorn', c: 8,  r: 2,  w: 3, door: [[9, 5]],   theme: 'unicorn', color: '#b9a0ff', who: '황금 유니콘',   look: 'unicorn', unicorn: 'gold' },
-  { id: 'fae1',  scene: 'fairy',   c: 5,  r: 5,  w: 2, door: [[7, 6], [6, 7]],     theme: 'teacup', color: '#ff9ec4', who: '찻잔 요정',     look: 'pixie' },
-  { id: 'fae2',  scene: 'fairy',   c: 15, r: 1,  w: 2, door: [[17, 2], [16, 3]],   theme: 'tulip',  color: '#c8a8ff', who: '튤립 요정',     look: 'sunny', gives: 'lavender' },
-  { id: 'fae3',  scene: 'fairy',   c: 20, r: 7,  w: 2, door: [[22, 8], [21, 9]],   theme: 'teacup', color: '#8fc8ff', who: '물방울 요정',   look: 'dewfairy' },
-  { id: 'fae4',  scene: 'fairy',   c: 4,  r: 17, w: 2, door: [[5, 19]],            theme: 'tulip',  color: '#ff9ec4', who: '꽃봉오리 요정', look: 'sprout' },
-  { id: 'fae5',  scene: 'fairy',   c: 7,  r: 1,  w: 2, door: [[9, 2], [8, 3]],     theme: 'tulip',  color: '#ffd66b', who: '해바라기 요정', look: 'sunny' },
-  { id: 'fae6',  scene: 'fairy',   c: 18, r: 14, w: 2, door: [[20, 15], [19, 16]], theme: 'teacup', color: '#8fdcc0', who: '민트 요정',     look: 'pixie' },
+  { id: 'mush1', scene: 'forest',  c: 5,  r: 4,  w: 2, door: [[7, 5], [6, 6]],     theme: 'mushroom', color: '#ff6b7f', who: I18n.t('data.mrMushroom'),   look: 'gnome' },
+  { id: 'mush2', scene: 'forest',  c: 22, r: 3,  w: 2, door: [[24, 4], [23, 5]],   theme: 'mushroom', color: '#b98cff', who: I18n.t('data.littleElf'),     look: 'elf' },
+  { id: 'mush3', scene: 'forest',  c: 3,  r: 20, w: 2, door: [[5, 21], [4, 22]],   theme: 'mushroom', color: '#ff8fc0', who: I18n.t('data.babyFairy'),     look: 'fairy' },
+  { id: 'mush4', scene: 'forest',  c: 9,  r: 9,  w: 2, door: [[11, 10], [10, 11]], theme: 'mushroom', color: '#ffb347', who: I18n.t('data.forestWizard'),   look: 'wizard' },
+  { id: 'uni1',  scene: 'unicorn', c: 3,  r: 9,  w: 3, door: [[4, 12]],  theme: 'unicorn', color: '#ff9ec4', who: I18n.t('data.lavenderUnicorn'), look: 'unicorn', unicorn: 'lavender' },
+  { id: 'uni2',  scene: 'unicorn', c: 21, r: 7,  w: 3, door: [[22, 10]], theme: 'stable',  color: '#b9a0ff', who: I18n.t('data.stableHelper'),   look: 'keeper' },
+  { id: 'uni3',  scene: 'unicorn', c: 8,  r: 11, w: 3, door: [[9, 14]],  theme: 'unicorn', color: '#8fd3ff', who: I18n.t('data.skyUnicorn'),   look: 'unicorn', unicorn: 'sky' },
+  { id: 'uni4',  scene: 'unicorn', c: 20, r: 11, w: 3, door: [[21, 14]], theme: 'unicorn', color: '#ff9ec4', who: I18n.t('data.mintUnicorn'),   look: 'unicorn', unicorn: 'mint' },
+  { id: 'uni5',  scene: 'unicorn', c: 8,  r: 2,  w: 3, door: [[9, 5]],   theme: 'unicorn', color: '#b9a0ff', who: I18n.t('data.goldenUnicorn'),   look: 'unicorn', unicorn: 'gold' },
+  { id: 'fae1',  scene: 'fairy',   c: 5,  r: 5,  w: 2, door: [[7, 6], [6, 7]],     theme: 'teacup', color: '#ff9ec4', who: I18n.t('data.teacupFairy'),     look: 'pixie' },
+  { id: 'fae2',  scene: 'fairy',   c: 15, r: 1,  w: 2, door: [[17, 2], [16, 3]],   theme: 'tulip',  color: '#c8a8ff', who: I18n.t('data.tulipFairy'),     look: 'sunny', gives: 'lavender' },
+  { id: 'fae3',  scene: 'fairy',   c: 20, r: 7,  w: 2, door: [[22, 8], [21, 9]],   theme: 'teacup', color: '#8fc8ff', who: I18n.t('data.raindropFairy'),   look: 'dewfairy' },
+  { id: 'fae4',  scene: 'fairy',   c: 4,  r: 17, w: 2, door: [[5, 19]],            theme: 'tulip',  color: '#ff9ec4', who: I18n.t('data.flowerBudFairy'), look: 'sprout' },
+  { id: 'fae5',  scene: 'fairy',   c: 7,  r: 1,  w: 2, door: [[9, 2], [8, 3]],     theme: 'tulip',  color: '#ffd66b', who: I18n.t('data.sunflowerFairy'), look: 'sunny' },
+  { id: 'fae6',  scene: 'fairy',   c: 18, r: 14, w: 2, door: [[20, 15], [19, 16]], theme: 'teacup', color: '#8fdcc0', who: I18n.t('data.mintFairy'),     look: 'pixie' },
 ];
 
 // What a home's resident says when she comes in, by theme.

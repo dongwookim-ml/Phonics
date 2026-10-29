@@ -13,25 +13,25 @@
 // means they come from the Drone Village, like FAIRIES. `body`, `trim`, `eye`
 // and `glow` colour the sprite; `glow` also tints the light and the sparks.
 const CAPTAIN_BUDDIES = {
-  none:   { name: '없음',       icon: '' },
-  quad:   { name: '쿼드 드론',   icon: '🚁', fairy: true, price: 10, body: '#4fa8ff', trim: '#ffd34d', eye: '#7ff0ff', glow: '#9fdcff' },
-  ufo:    { name: '꼬마 UFO',    icon: '🛸', fairy: true, price: 10, body: '#b4bed2', trim: '#7fff9f', eye: '#3a3550', glow: '#b8ffcc' },
-  dog:    { name: '로봇 강아지', icon: '🐶', fairy: true, price: 10, body: '#eef2f8', trim: '#ff9a3c', eye: '#3a3550', glow: '#ffd0a0' },
-  bee:    { name: '꿀벌 드론',   icon: '🐝', fairy: true, price: 10, body: '#ffd34d', trim: '#ff6f8a', eye: '#7ff0ff', glow: '#fff0a0' },
-  rocket: { name: '꼬마 로켓',   icon: '🚀', fairy: true, price: 10, body: '#f4f6fa', trim: '#ff5a5a', eye: '#3a3550', glow: '#ffb070' },
-  owl:    { name: '부엉이 로봇', icon: '🦉', fairy: true, price: 10, body: '#9a84e8', trim: '#ffd34d', eye: '#7ff0ff', glow: '#d0c0ff' },
+  none:   { name: I18n.t('captain-drone.none'),       icon: '' },
+  quad:   { name: I18n.t('captain-drone.quadcopter'),   icon: '🚁', fairy: true, price: 10, body: '#4fa8ff', trim: '#ffd34d', eye: '#7ff0ff', glow: '#9fdcff' },
+  ufo:    { name: I18n.t('captain-drone.littleUfo'),    icon: '🛸', fairy: true, price: 10, body: '#b4bed2', trim: '#7fff9f', eye: '#3a3550', glow: '#b8ffcc' },
+  dog:    { name: I18n.t('captain-drone.robotPuppy'), icon: '🐶', fairy: true, price: 10, body: '#eef2f8', trim: '#ff9a3c', eye: '#3a3550', glow: '#ffd0a0' },
+  bee:    { name: I18n.t('captain-drone.beeDrone'),   icon: '🐝', fairy: true, price: 10, body: '#ffd34d', trim: '#ff6f8a', eye: '#7ff0ff', glow: '#fff0a0' },
+  rocket: { name: I18n.t('captain-drone.littleRocket'),   icon: '🚀', fairy: true, price: 10, body: '#f4f6fa', trim: '#ff5a5a', eye: '#3a3550', glow: '#ffb070' },
+  owl:    { name: I18n.t('captain-drone.robotOwl'), icon: '🦉', fairy: true, price: 10, body: '#9a84e8', trim: '#ffd34d', eye: '#7ff0ff', glow: '#d0c0ff' },
 };
 
 // The hangars and labs are homes (see VILLAGE_HOMES in js/data.js), with
 // the door tile in front of each roll-up or sliding door. The little rocket
 // buddy is given by nobody outside, so a hangar drone gives it.
 const DRONE_HOMES = [
-  { id: 'hangar1', scene: 'fairy', c: 5,  r: 5,  w: 2, door: [[6, 7]],   theme: 'hangar', color: '#4fa8ff', who: '꼬마 쿼드',      look: 'droneQuad' },
-  { id: 'lab1',    scene: 'fairy', c: 15, r: 1,  w: 2, door: [[16, 3]],  theme: 'lab',    color: '#9a7af0', who: '발명가 박사님',  look: 'droneDoc' },
-  { id: 'hangar2', scene: 'fairy', c: 20, r: 7,  w: 2, door: [[21, 9]],  theme: 'hangar', color: '#ff9a3c', who: '꿀벌 드론 윙윙', look: 'droneBee' },
-  { id: 'lab2',    scene: 'fairy', c: 4,  r: 17, w: 2, door: [[5, 19]],  theme: 'lab',    color: '#5fd08a', who: '부엉이 박사',    look: 'droneOwl' },
-  { id: 'hangar3', scene: 'fairy', c: 7,  r: 1,  w: 2, door: [[8, 3]],   theme: 'hangar', color: '#ff6f8a', who: '정비사 너트',    look: 'droneMech' },
-  { id: 'hangar4', scene: 'fairy', c: 18, r: 14, w: 2, door: [[19, 16]], theme: 'hangar', color: '#5fd08a', who: '쿼드 드론 씽씽', look: 'droneQuad', gives: 'rocket' },
+  { id: 'hangar1', scene: 'fairy', c: 5,  r: 5,  w: 2, door: [[6, 7]],   theme: 'hangar', color: '#4fa8ff', who: I18n.t('captain-drone.littleQuad'),      look: 'droneQuad' },
+  { id: 'lab1',    scene: 'fairy', c: 15, r: 1,  w: 2, door: [[16, 3]],  theme: 'lab',    color: '#9a7af0', who: I18n.t('captain-drone.inventor'),  look: 'droneDoc' },
+  { id: 'hangar2', scene: 'fairy', c: 20, r: 7,  w: 2, door: [[21, 9]],  theme: 'hangar', color: '#ff9a3c', who: I18n.t('captain-drone.buzzTheBeeDrone'), look: 'droneBee' },
+  { id: 'lab2',    scene: 'fairy', c: 4,  r: 17, w: 2, door: [[5, 19]],  theme: 'lab',    color: '#5fd08a', who: I18n.t('captain-drone.professorOwl'),    look: 'droneOwl' },
+  { id: 'hangar3', scene: 'fairy', c: 7,  r: 1,  w: 2, door: [[8, 3]],   theme: 'hangar', color: '#ff6f8a', who: I18n.t('captain-drone.nutTheMechanic'),    look: 'droneMech' },
+  { id: 'hangar4', scene: 'fairy', c: 18, r: 14, w: 2, door: [[19, 16]], theme: 'hangar', color: '#5fd08a', who: I18n.t('captain-drone.zipTheQuadcopter'), look: 'droneQuad', gives: 'rocket' },
 ];
 
 if (isCaptain()) {
@@ -51,11 +51,11 @@ if (isCaptain()) {
   });
   // `gives` is the buddy each villager offers first.
   FAIRY_NPCS.splice(0, FAIRY_NPCS.length,
-    { name: '드론 박사',   look: 'droneDoc',  gives: 'ufo',  c: 14, r: 3 },
-    { name: '쿼디',        look: 'droneQuad', gives: 'quad', c: 6,  r: 9 },
-    { name: '붕붕 드론',   look: 'droneBee',  gives: 'bee',  c: 19, r: 9 },
-    { name: '부엉이 로봇', look: 'droneOwl',  gives: 'owl',  c: 15, r: 18 },
-    { name: '정비사 볼트', look: 'droneMech', gives: 'dog',  c: 6,  r: 18 },
+    { name: I18n.t('captain-drone.droneScientist'),   look: 'droneDoc',  gives: 'ufo',  c: 14, r: 3 },
+    { name: I18n.t('captain-drone.quaddy'),        look: 'droneQuad', gives: 'quad', c: 6,  r: 9 },
+    { name: I18n.t('captain-drone.buzzDrone'),   look: 'droneBee',  gives: 'bee',  c: 19, r: 9 },
+    { name: I18n.t('captain-drone.robotOwl'), look: 'droneOwl',  gives: 'owl',  c: 15, r: 18 },
+    { name: I18n.t('captain-drone.boltTheMechanic'), look: 'droneMech', gives: 'dog',  c: 6,  r: 18 },
   );
   Object.assign(VOICES, {
     droneDoc:  { gender: 'male',   tts: 'bm_george', pitch: 0.95, rate: 0.95, voice: ['Daniel', 'Google UK English Male', 'Microsoft George'] },
@@ -89,7 +89,7 @@ function droneBatteryLabel() {
   if (typeof document === 'undefined') return;
   const el = document.getElementById('dust');
   if (!el) return;
-  el.title = '배터리';
+  el.title = I18n.t('captain-drone.battery');
   el.firstElementChild.textContent = '⚡';
 }
 

@@ -86,14 +86,14 @@ const albumUi = (() => {
   const button = document.createElement('button');
   button.id = 'album-btn';
   button.className = 'btn album-btn';
-  button.title = '스티커 앨범';
+  button.title = I18n.t('album.stickerAlbum');
   button.innerHTML = '📒<span class="badge hidden"></span>';
   document.querySelector('.hud .buttons').prepend(button);
   // The gift meter, after the stars.
   const gift = document.createElement('div');
   gift.id = 'gift-meter';
   gift.className = 'stars gift-meter';
-  gift.title = '선물까지';
+  gift.title = I18n.t('album.untilYourNextGift');
   gift.innerHTML = '<span class="ic">🎁</span><span class="pips"><i></i><i></i><i></i></span>';
   stars.after(gift);
   // The next gate, inside the star counter: ⭐ 7/10 🌲 over a bar.
@@ -104,11 +104,7 @@ const albumUi = (() => {
   const box = document.createElement('section');
   box.id = 'album';
   box.className = 'wardrobe album hidden';
-  box.innerHTML = `
-    <div class="wd-head"><div class="wd-name al-name"></div><div class="wd-count al-count"></div></div>
-    <div class="al-tabs"></div>
-    <div class="al-page"></div>
-    <button class="wd-done al-done">다 봤어요 ✨</button>`;
+  box.innerHTML = I18n.t('album.allDone');
   document.body.append(box);
   return {
     button, badge: button.querySelector('.badge'), gift, pips: [...gift.querySelectorAll('.pips i')],
@@ -223,7 +219,7 @@ function stickerPack() {
   questAdd('sticker', three.length); // new ones for today's adventures (js/quest.js)
   Sound.tune('chime');
   stickerFly(three, null);
-  showPlace(isCaptain() ? `💾 단어 칩 ${three.length}개!` : `📒 스티커 ${three.length}장!`);
+  showPlace(isCaptain() ? I18n.t('album.wordChips', three.length) : I18n.t('album.stickers', three.length));
   save();
 }
 
@@ -285,7 +281,7 @@ function renderGateMeter() {
   albumUi.gateNeed.textContent = earned === state.stars ? `/${next.stars}` : `· ${earned}/${next.stars}`;
   albumUi.gateIcon.textContent = albumIcon(next.key);
   albumUi.gateBar.style.width = `${Math.round((100 * (earned - from)) / (next.stars - from))}%`;
-  ui.stars.title = `${placeName(next.key)}까지 별 ${next.stars - earned}개`;
+  ui.stars.title = I18n.t('album.starsTo', placeName(next.key), next.stars - earned);
 }
 
 // After a star: a gate whose stars were just reached opens with a party,
@@ -306,7 +302,7 @@ function gateCheck(before) {
 }
 
 function gateFanfare(g) {
-  const show = fanfareBanner(`${albumIcon(g.key)}🔓`, placeName(g.key), '문이 열렸어요!', 2500);
+  const show = fanfareBanner(`${albumIcon(g.key)}🔓`, placeName(g.key), I18n.t('album.theGateIsOpen'), 2500);
   fanfareFireworks(show, 5);
   Sound.party();
   Sound.say([{ pause: 400 }, { text: line(GATE_LINES[g.key]), narrator: true }]);
@@ -435,7 +431,7 @@ const medalName = m => (m.letter ? `${m.letter}${m.letter.toLowerCase()}` : plac
 
 function medalFanfare(list) {
   const first = list[0];
-  const show = fanfareBanner(`${medalIcon()}${list.length > 1 ? medalIcon() : ''}`, list.map(medalName).join(' · '), '메달을 받았어요!', 2000);
+  const show = fanfareBanner(`${medalIcon()}${list.length > 1 ? medalIcon() : ''}`, list.map(medalName).join(' · '), I18n.t('album.youEarnedAMedal'), 2000);
   fanfareFireworks(show, 3);
   Sound.party();
   const said = first.letter ? line('medalHouse', { letter: first.letter }) : line('medalVillage');
@@ -613,7 +609,7 @@ function renderAlbum() {
   const robot = isCaptain();
   const all = albumAll();
   const have = all.filter(x => state.stickers[x.w]).length;
-  albumUi.name.textContent = robot ? '💾 단어 칩 북' : '📒 단어 스티커';
+  albumUi.name.textContent = robot ? I18n.t('album.wordChipBook') : I18n.t('album.wordStickers');
   albumUi.box.classList.toggle('medals', albumTab === 'medals');
   // Tabs: one big letter per page, with how full it is, then the medals.
   const letters = [...new Set(all.map(x => x.L))].sort();
@@ -642,7 +638,7 @@ function renderAlbum() {
     albumUi.tabs.append(b);
   }
   if (albumTab === 'medals') { renderMedalPage(); return; }
-  albumUi.count.textContent = `${robot ? '모은 칩' : '모은 스티커'} ${have} / ${all.length}`;
+  albumUi.count.textContent = `${robot ? I18n.t('album.chipsCollected') : I18n.t('album.stickersCollected')} ${have} / ${all.length}`;
   albumUi.page.innerHTML = '';
   for (const x of all.filter(y => y.L === albumTab)) {
     const st = state.stickers[x.w];
@@ -673,7 +669,7 @@ function stickerTap(b, x, got) {
 function renderMedalPage() {
   const medals = medalList();
   const earned = medals.filter(m => state.medals[m.id]).length;
-  albumUi.count.textContent = `메달 ${earned} / ${medals.length}`;
+  albumUi.count.textContent = I18n.t('album.medals', earned, medals.length);
   albumUi.page.innerHTML = '';
   const group = (title, list) => {
     const h = document.createElement('div');
@@ -702,8 +698,8 @@ function renderMedalPage() {
     }
     albumUi.page.append(h, row);
   };
-  group(isCaptain() ? '🔧 글자 공방' : '🏠 글자 집', medals.filter(m => m.letter));
-  group('🗺️ 마을', medals.filter(m => !m.letter));
+  group(isCaptain() ? I18n.t('album.letterWorkshops') : I18n.t('album.letterHouses'), medals.filter(m => m.letter));
+  group(I18n.t('album.villages'), medals.filter(m => !m.letter));
 }
 
 albumUi.button.addEventListener('click', () => { Sound.unlock(); openAlbum(); });

@@ -21,7 +21,7 @@ const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
   'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', ...MONSTER_TABLES];
 function loadData(edition) {
-  const files = ['js/data.js'];
+  const files = ['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/data.js'];
   if (edition === 'captain') {
     files.push(...fs.readdirSync(path.join(root, 'js')).filter(f => /^captain-.*\.js$/.test(f)).sort().map(f => `js/${f}`));
   }
@@ -33,7 +33,7 @@ function loadData(edition) {
 ({ ${NAMES.map(n => `${n}: typeof ${n} === 'undefined' ? undefined : ${n}`).join(', ')} })`, ctx);
 }
 
-const B = vm.runInNewContext(`${fs.readFileSync(path.join(root, 'js/books.js'), 'utf8')}
+const B = vm.runInNewContext(`${['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/books.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n')}
 ({ BOOKS, BOOK_LINES, bookSpoken, bookSentences, DECODABLE_BOOKS, decodeTokens })`);
 
 const out = new Map();

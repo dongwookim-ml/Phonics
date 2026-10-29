@@ -22,12 +22,12 @@ if (isCaptain()) {
   // Who lives in the cave. `coins` is the smallest prize for beating one;
   // `throws` is the silly thing it throws when she gets one wrong.
   DUNGEON_NPCS.splice(0, DUNGEON_NPCS.length,
-    { name: '대장 로봇',   look: 'bossbot',   c: 8,  r: 3,  coins: 5, throws: 'pie' },
-    { name: '고철 로봇',   look: 'scrapbot',  c: 2,  r: 4,  coins: 3, throws: 'sock' },
-    { name: '해적 로봇',   look: 'piratebot', c: 4,  r: 10, coins: 4, throws: 'duck' },
-    { name: '박사 로봇',   look: 'madbot',    c: 12, r: 4,  coins: 4, throws: 'goo' },
-    { name: '깡통 졸개',   look: 'canbot',    c: 5,  r: 6,  coins: 3, throws: 'banana' },
-    { name: '닌자 로봇',   look: 'ninjabot',  c: 13, r: 11, coins: 4, throws: 'marshmallow' });
+    { name: I18n.t('captain-cave.bossRobot'),   look: 'bossbot',   c: 8,  r: 3,  coins: 5, throws: 'pie' },
+    { name: I18n.t('captain-cave.scrapRobot'),   look: 'scrapbot',  c: 2,  r: 4,  coins: 3, throws: 'sock' },
+    { name: I18n.t('captain-cave.pirateRobot'),   look: 'piratebot', c: 4,  r: 10, coins: 4, throws: 'duck' },
+    { name: I18n.t('captain-cave.doctorRobot'),   look: 'madbot',    c: 12, r: 4,  coins: 4, throws: 'goo' },
+    { name: I18n.t('captain-cave.tinMinion'),   look: 'canbot',    c: 5,  r: 6,  coins: 3, throws: 'banana' },
+    { name: I18n.t('captain-cave.ninjaRobot'),   look: 'ninjabot',  c: 13, r: 11, coins: 4, throws: 'marshmallow' });
   // Villains are drawn by monsterSprite() from the art added in villainArt().
   for (const v of DUNGEON_NPCS) LOOKS[v.look] = { monster: v.look };
 
@@ -793,7 +793,7 @@ function villainGiveUp(npc) {
     save();
     renderCoins(true);
     Sound.coin();
-    showPlace(`🪙 코인 ${coins}개!`);
+    showPlace(I18n.t('captain-cave.coins', coins));
   });
   caveSayThen([{ text: line('caught') }], voiceOf(npc), () => {
     // Off it runs, away from the robot, and out of sight.

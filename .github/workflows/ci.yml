@@ -36,12 +36,17 @@ jobs:
       - name: Build stamp (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: node tools/check-build.js
+      - run: node tools/check-i18n.js
+      - run: node tools/check-i18n-browser.js
       - run: node tools/smoke.js
+      - run: UI_LANGUAGE=en node tools/smoke.js
       - run: node tools/check-merge.js
       - run: node tools/quiz-test.js
         env:
           ROUNDS: '30'
       - run: node tools/check-tts.js
+      - name: Audit English UI with saved Korean profiles
+        run: AUDIT_LANGUAGE=en TTS_STRICT=0 node tools/check-tts.js
       - run: node tools/check-reach.js
       - run: node tools/check-flows.js
       - run: node tools/check-sync.js

@@ -20,6 +20,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { launch } = require('./browser');
+const { installLanguageAudit } = require('./language-audit');
+const AUDIT_LANGUAGE = process.env.AUDIT_LANGUAGE === 'en';
 
 const root = path.join(__dirname, '..');
 const STRICT = process.env.TTS_STRICT === '1';
@@ -66,12 +68,20 @@ function staticCheck() {
 // Plays through everything in one edition, noting each line said that has no
 // recording. Game timers (later) run when flush() says, in order, so a present
 // always comes from the villager who asked and nothing waits on the clock.
-async function play(browser, edition) {
+async function play(browser, edition, halloween = 1) {
   const page = await browser.newPage();
+  if (AUDIT_LANGUAGE) {
+    await installLanguageAudit(page);
+    await page.addInitScript(edition => {
+      localStorage.setItem('pixeltown-v2', JSON.stringify({ edition,
+        player: { shown: '윤아', spoken: 'Yoona', title: edition === 'captain' ? 'captain' : 'princess', look: edition === 'captain' ? 'robot' : 'girl' },
+      }));
+    }, edition);
+  }
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/^https?:/, r => r.abort());
-  await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=1`);
+  await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=${halloween}${AUDIT_LANGUAGE ? '&language=en' : ''}`);
   await page.click('#login-guest');
   const r = await page.evaluate(async () => {
     const norm = t => String(t).trim().replace(/\s+/g, ' ');
@@ -121,10 +131,10 @@ async function play(browser, edition) {
       seen.add(n);
       const sc = sceneFor(n);
       for (const x of (sc.links || []).concat(sc.doors || [])) if (x.target) todo.push(x.target);
-      if (sc.npcs.some(p => p.level === 6) && !names.includes(n)) names.push(n);
+      if ((window.languageAudit || sc.npcs.some(p => p.level === 6)) && !names.includes(n)) names.push(n);
     }
     for (const n of names) {
-      step(`go to ${n}`, () => changeScene(n));
+      step(`go to ${n}`, () => { changeScene(n); if (window.languageAudit) { drawScene(performance.now()); drawOverlay(performance.now()); } });
       const sc = state.scene;
       for (const npc of sc.npcs.slice()) {
         if (npc.mount) continue;
@@ -208,17 +218,72 @@ async function play(browser, edition) {
     step('halloween', () => {
       Sound.say([{ text: line('start'), pitch: 1.3 }]);
       for (const n of ['town', 'monster']) for (const o of sceneFor(n).objects.filter(x => x.halloween && x.react)) touchReact({}, o.react, o, o);
-      for (const g of sceneFor('town').hwGhosts) touchReact({}, { word: 'ghost', fx: 'boo' }, g, g);
+      for (const g of sceneFor('town').hwGhosts || []) touchReact({}, { word: 'ghost', fx: 'boo' }, g, g);
     });
+    if (window.languageAudit) {
+      step('all wardrobe tabs', () => {
+        for (const tab of wardrobeTabs()) { wdTab = tab.slot; renderWardrobe(); }
+      });
+      step('album and medals', () => {
+        state.busy = false;
+        openAlbum();
+        for (const tab of [...new Set(albumAll().map(x => x.L)), 'medals']) { albumTab = tab; renderAlbum(); }
+        closeAlbum();
+      });
+      step('daily quests', () => { state.busy = false; openQuests(); closeQuests(); });
+      step('all read-aloud stories and summaries', () => {
+        for (const book of BOOKS) {
+          openBook(book); bookHush();
+          for (let page = 0; page < book.pages.length; page++) { library.page = page; renderBookPage(); }
+          bookFinish(); bookHush();
+          for (let i = 0; i < book.quiz.length; i++) { bookQuestion(i); bookHush(); }
+          bookSummary(); bookHush();
+          closeLibrary();
+        }
+      });
+      step('all helper feeding states', () => {
+        for (const key of Object.keys(FAIRIES).filter(key => key !== 'none')) {
+          state.outfit.fairy = key;
+          for (const fed of [0, ...FRIEND_STAGES]) {
+            state.friends[key] = fed;
+            state.dust = fed ? 10 : 0;
+            openFeed(); closeFeed();
+          }
+        }
+      });
+      if (!isCaptain()) step('salon tabs, prices and purchase', () => {
+        openSalon(sceneFor('town').npcs.find(n => n.salon));
+        for (const tab of SALON_TABS) {
+          salon.tab = tab; renderSalon();
+          for (const item of salonItems(tab)) {
+            salonChoose(item); renderSalon();
+            state.stars = 0; salonBuy();
+            state.stars = 999; salonBuy();
+          }
+        }
+        closeSalon();
+      });
+      step('parent password, progress and all settings', () => {
+        parentOpen(); parentStats(); parentClose();
+      });
+      step('sleep and password screen', () => {
+        guideSleep(); guide.key.click(); guideWake(true);
+      });
+    }
     await new Promise(res => setTimeout(res, 300)); // the words come a moment after the tap
     Sound.say = say;
-    return { spoken, missing: Object.entries(missing).sort((a, b) => b[1] - a[1]), steps };
+    return { spoken, sceneCount: names.length, gameCount: Object.keys(MINI_GAMES).length, missing: Object.entries(missing).sort((a, b) => b[1] - a[1]), steps };
   });
   console.log(`${edition}: ${r.spoken} lines said, ${r.missing.length} without a recording`);
   for (const [line, times] of r.missing.slice(0, 30)) notYet(`${edition}: said without a recording (${times}x): ${line}`);
   if (r.missing.length > 30) notYet(`${edition}: ... ${r.missing.length - 30} more`);
   for (const s of r.steps) fail(`${edition}: ${s}`);
   for (const e of errors) fail(`${edition}: page error: ${e}`);
+  if (AUDIT_LANGUAGE) {
+    const audit = await page.evaluate(() => languageAudit.snapshot());
+    console.log(`${edition} (Halloween=${halloween}): ${r.sceneCount} scenes, ${r.gameCount} minigames, ${audit.writes} DOM/canvas text writes audited for Korean`);
+    for (const hit of audit.hits) fail(`${edition}: ${hit.source}: ${hit.text}`);
+  }
   await page.close();
 }
 
@@ -226,7 +291,9 @@ async function play(browser, edition) {
   staticCheck();
   const browser = await launch();
   try {
-    for (const edition of ['princess', 'captain']) await play(browser, edition);
+    for (const halloween of AUDIT_LANGUAGE ? [0, 1] : [1]) {
+      for (const edition of ['princess', 'captain']) await play(browser, edition, halloween);
+    }
   } finally {
     await browser.close();
   }

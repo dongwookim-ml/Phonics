@@ -504,8 +504,8 @@ const miniAgain = (r, it) => [{ text: it.w, narrator: true, show: `${it.w}…` }
 MINI_GAMES.fish = {
   scene: 'town',
   host: miniFisher,
-  label: () => (isCaptain() ? '🧲 크레인 놀이' : '🎣 낚시 놀이'),
-  title: () => (isCaptain() ? '🧲 자석 크레인' : '🎣 낚시 놀이'),
+  label: () => (isCaptain() ? I18n.t('minigame.craneGame') : I18n.t('minigame.fishingGame')),
+  title: () => (isCaptain() ? I18n.t('minigame.magnetCrane') : I18n.t('minigame.fishingGame')),
   pip: () => (isCaptain() ? '📦' : '🐟'),
   bag: () => (isCaptain() ? '🚚' : '🪣'),
   rounds: miniRounds,

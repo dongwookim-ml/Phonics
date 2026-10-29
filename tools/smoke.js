@@ -33,7 +33,7 @@ for (const s of scripts) {
     const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&halloween=${halloween}`);
+    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&halloween=${halloween}&language=${process.env.UI_LANGUAGE || 'ko'}`);
     await page.waitForTimeout(300);
     // Play without an account, so the login screen doesn't block the test.
     await page.click('#login-guest');

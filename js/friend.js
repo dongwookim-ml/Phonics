@@ -240,8 +240,8 @@ function friendRender() {
   friendUi.jar.classList.toggle('empty', !state.dust || grown);
   const icons = isCaptain() ? ['💡', '📡', '🎵'] : ['✨', '👑', '🎵'];
   friendUi.pips.innerHTML = icons.map((ic, i) => `<span class="pip${i < stage ? ' on' : ''}">${ic}</span>`).join('');
-  const where = isCaptain() ? '드론 마을에서 ⚡ 배터리를 모아요' : '요정 마을에서 ✨ 요정의 가루를 모아요';
-  friendUi.note.textContent = grown ? '다 컸어요! 💖' : state.dust ? `눌러서 ${isCaptain() ? '배터리를' : '가루를'} 주세요` : where;
+  const where = isCaptain() ? I18n.t('friend.collectBatteriesInDroneVillage') : I18n.t('friend.collectFairyDustInFairyVillage');
+  friendUi.note.textContent = grown ? I18n.t('friend.allGrownUp') : state.dust ? I18n.t('friend.tapToGive', isCaptain() ? I18n.t('friend.batteries') : I18n.t('friend.fairyDust')) : where;
 }
 
 // A celebration on the card ends at a tap: on the friend, or outside the
