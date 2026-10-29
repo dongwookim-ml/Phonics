@@ -38,6 +38,7 @@ jobs:
         run: node tools/check-build.js
       - run: node tools/check-i18n.js
       - run: node tools/check-i18n-browser.js
+      - run: node tools/check-book-art.js
       - run: node tools/smoke.js
       - run: UI_LANGUAGE=en node tools/smoke.js
       - run: node tools/check-merge.js

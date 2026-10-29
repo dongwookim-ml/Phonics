@@ -715,5 +715,13 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "game.heroHeading": "{0} {1}의",
   "game.captainHeading": "{1} {0}의",
   "ui.english": "English",
-  "halloween.screenGreeting": "🎃 해피 할로윈! 👻"
+  "halloween.screenGreeting": "🎃 해피 할로윈! 👻",
+  "books.lionMouseArt1": "작은 생쥐가 잠자는 사자의 코 위를 달려가요.",
+  "books.lionMouseArt2": "깜짝 놀란 사자가 앞발로 생쥐를 잡아요.",
+  "books.lionMouseArt3": "생쥐가 사자에게 놓아 달라고 부탁하며 도와주겠다고 약속해요.",
+  "books.lionMouseArt4": "웃는 사자가 앞발을 들어 생쥐를 놓아줘요.",
+  "books.lionMouseArt5": "사자가 밧줄 그물에 걸려 도움을 청해요.",
+  "books.lionMouseArt6": "생쥐가 사자의 소리를 듣고 달려가요.",
+  "books.lionMouseArt7": "생쥐가 작은 이빨로 그물의 밧줄을 갉아 끊어요.",
+  "books.lionMouseArt8": "자유로워진 사자가 작은 생쥐 친구에게 고마워하며 미소 지어요."
 };

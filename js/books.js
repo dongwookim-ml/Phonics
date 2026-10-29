@@ -1,6 +1,6 @@
 // Story books for the royal library on the castle's second floor: short
 // public-domain fairy tales and fables, retold in very simple English.
-// Each page is one or two sentences with a little emoji picture, and each
+// Each page has one or two sentences and optional illustration (emoji fallback), and each
 // book ends with three questions. Option text starts with its emoji; the
 // voice reads the words after it (bookSpoken).
 // tools/tts-phrases.js reads this file too, so keep it free of page code.
@@ -25,16 +25,16 @@ const BOOKS = [
     ],
   },
   {
-    id: 'lion-mouse', title: 'The Lion and the Mouse', label: I18n.t('books.theLionAndTheMouse'), cover: '🦁', color: '#ffd34d',
+    id: 'lion-mouse', title: 'The Lion and the Mouse', label: I18n.t('books.theLionAndTheMouse'), cover: '🦁', coverImage: 'img/books/lion-mouse/page-08.webp', color: '#ffd34d',
     pages: [
-      { text: 'A big lion was sleeping. A little mouse ran over his nose.', pic: '🦁💤🐭' },
-      { text: 'The lion woke up and caught the mouse!', pic: '🦁🐭' },
-      { text: '"Please let me go," said the mouse. "One day I will help you."', pic: '🐭🙏' },
-      { text: 'The lion laughed and let the mouse go.', pic: '🦁😄' },
-      { text: 'One day, the lion was caught in a net. He roared and roared.', pic: '🦁🕸️' },
-      { text: 'The little mouse heard him. She ran to help.', pic: '🐭👂' },
-      { text: 'She chewed the ropes with her tiny teeth. Snip, snip, snip!', pic: '🐭🦷' },
-      { text: 'The lion was free! "Thank you, little friend," he said.', pic: '🦁❤️🐭' },
+      { text: 'A big lion was sleeping. A little mouse ran over his nose.', pic: '🦁💤🐭', image: 'img/books/lion-mouse/page-01.webp', imageAlt: I18n.t('books.lionMouseArt1') },
+      { text: 'The lion woke up and caught the mouse!', pic: '🦁🐭', image: 'img/books/lion-mouse/page-02.webp', imageAlt: I18n.t('books.lionMouseArt2') },
+      { text: '"Please let me go," said the mouse. "One day I will help you."', pic: '🐭🙏', image: 'img/books/lion-mouse/page-03.webp', imageAlt: I18n.t('books.lionMouseArt3') },
+      { text: 'The lion laughed and let the mouse go.', pic: '🦁😄', image: 'img/books/lion-mouse/page-04.webp', imageAlt: I18n.t('books.lionMouseArt4') },
+      { text: 'One day, the lion was caught in a net. He roared and roared.', pic: '🦁🕸️', image: 'img/books/lion-mouse/page-05.webp', imageAlt: I18n.t('books.lionMouseArt5') },
+      { text: 'The little mouse heard him. She ran to help.', pic: '🐭👂', image: 'img/books/lion-mouse/page-06.webp', imageAlt: I18n.t('books.lionMouseArt6') },
+      { text: 'She chewed the ropes with her tiny teeth. Snip, snip, snip!', pic: '🐭🦷', image: 'img/books/lion-mouse/page-07.webp', imageAlt: I18n.t('books.lionMouseArt7') },
+      { text: 'The lion was free! "Thank you, little friend," he said.', pic: '🦁❤️🐭', image: 'img/books/lion-mouse/page-08.webp', imageAlt: I18n.t('books.lionMouseArt8') },
     ],
     quiz: [
       { q: 'What caught the lion?', options: ['🧺 A basket', '🕸️ A net', '🐘 An elephant'], answer: 1 },

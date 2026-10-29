@@ -715,5 +715,13 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "game.heroHeading": "{1} {0}'s",
   "game.captainHeading": "{1} {0}'s",
   "ui.english": "English",
-  "halloween.screenGreeting": "🎃 Happy Halloween! 👻"
+  "halloween.screenGreeting": "🎃 Happy Halloween! 👻",
+  "books.lionMouseArt1": "A tiny mouse runs across a sleeping lion’s nose.",
+  "books.lionMouseArt2": "The surprised lion gently catches the mouse under his paw.",
+  "books.lionMouseArt3": "The mouse asks the lion to let her go and promises to help.",
+  "books.lionMouseArt4": "The smiling lion lifts his paw and lets the mouse run free.",
+  "books.lionMouseArt5": "The lion is caught in a rope net and calls for help.",
+  "books.lionMouseArt6": "The mouse hears the lion and runs toward him.",
+  "books.lionMouseArt7": "The mouse chews through the net’s ropes with her tiny teeth.",
+  "books.lionMouseArt8": "The freed lion smiles gratefully at his tiny mouse friend."
 };
