@@ -192,9 +192,9 @@ const BOOKS = [
 // Little books she reads herself (their own shelf in the library, above the
 // stories): one short sentence per page with a big picture, every word one
 // she can sound out at the book's level or one of the few SIGHT_WORDS.
-// Tapping a word says it whole ("cat!"). A book opens once her tier in
-// reading words (the `read` questions) reaches its level; level 1 always
-// is. tools/check-books.js checks every word against decodeLevel below.
+// Tapping a word says it whole ("cat!"). All books are open from the start;
+// levels describe phonics difficulty. tools/check-books.js checks every
+// word against decodeLevel below.
 //   level 1  short a: cat, had      level 3  sh ch th ck ll ss ng: fish, duck
 //   level 2  any short vowel: pig   level 4  blends: frog, jump, splash
 

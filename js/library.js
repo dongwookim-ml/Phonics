@@ -406,14 +406,6 @@ const selfText = () => (isCaptain()
   ? { shelf: I18n.t('library.booksICanRead'), stories: I18n.t('library.readAloudBooks'), done: I18n.t('library.missionCompleteIReadItAll'), again: I18n.t('library.missionCompleteIReadItAgain'), icon: '🚀' }
   : { shelf: I18n.t('library.booksICanRead2'), stories: I18n.t('library.readAloudBooks'), done: I18n.t('library.iReadItAllMyself'), again: I18n.t('library.iReadItAgain'), icon: '👑' });
 
-// Her tier in reading a word and picking its picture (the `read` questions,
-// js/quiz.js): the highest she has reached, or the one a parent set. Books
-// up to that level are open; the first level always is.
-function selfLevel() {
-  const k = (state.skill || {}).read || {};
-  return Math.max(1, k.t | 0, k.best | 0);
-}
-
 // Logged with the stories (state.books) as `self:<id>`: { read, last }.
 // Tablets join it like the stories (js/progress.js), so a book finished on
 // either one has its ✓ on both.
@@ -421,7 +413,7 @@ const selfKey = book => `self:${book.id}`;
 const selfDone = book => (((state.books || {})[selfKey(book)] || {}).read | 0) > 0;
 // Whether a book is open: its cover here and its chip in the parent panel
 // (js/parent.js) both ask this.
-const selfOpen = book => book.level <= selfLevel() || selfDone(book);
+const selfOpen = () => true; // All reading levels are available from the start.
 function selfLog(book) {
   if (!state.books) state.books = {};
   return state.books[selfKey(book)] || (state.books[selfKey(book)] = { read: 0, last: 0 });

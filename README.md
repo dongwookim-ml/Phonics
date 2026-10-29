@@ -584,11 +584,7 @@ Custom names in this audit use live speech fallback rather than requiring record
   on it, or after 8 seconds, so she tries first; ➡ turns the page. The end
   is a short party (a tap ends it), ⭐ 1 star the first time she reads that
   book to the end (never again for it), and a ✓ on its cover; every time
-  counts for today's 📖 quest, and the star for the ⭐ one. A book opens
-  once her tier in reading words (the forest's and fairies' `read`
-  questions: read a word with no voice, pick its picture, the very skill
-  these books use) reaches the book's level, or a parent sets it there;
-  level 1 is always open, and a 🔒 cover says "읽기 3단계". The robot
+  counts for today's 📖 quest, and the star for the ⭐ one. All reading levels are open from the start. The robot
   edition's HQ library calls it a reading mission (🚀). The parent panel
   lists which ones she has read. Books live in `DECODABLE_BOOKS` in
   `js/books.js`, with the rule for what each level can sound out

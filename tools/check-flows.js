@@ -25,9 +25,8 @@
 //  - a book she reads herself: tapping a word says it whole (no letter
 //    sounds), ▶ comes after every word is tapped or a while, reading to the
 //    end pays a star once and puts a ✓ on its cover, each time counts for
-//    the 📖 quest and the star for the ⭐ one, a locked book stays locked,
-//    and a parent's + on 읽기 opens it in the panel and in the library
-//    under it;
+//    the 📖 quest and the star for the ⭐ one, all levels are open from
+//    the start in both the shelf and parent panel;
 //  - a tap outside a card (js/game.js), in both editions at the iPad sizes
 //    and on a phone held sideways, with a finger and the mouse: it closes
 //    the cards she only looks at and never a question, a present, a book
@@ -801,11 +800,13 @@ async function selfRead(browser) {
     out.firstOpen = !cover(DECODABLE_BOOKS[0].id).classList.contains('locked');
     const hard = DECODABLE_BOOKS.find(b => b.level === 3);
     out.hardLocked = cover(hard.id).classList.contains('locked');
-    // A locked book says so and doesn't open.
+    // Higher-level books also open immediately.
     said.length = 0;
     cover(hard.id).click();
     out.lockedSays = said.some(p => BOOK_LINES.selfLocked.includes(p.text));
-    out.lockedStaysShut = !shown('#reader');
+    out.higherOpened = shown('#reader') && library.book.id === hard.id;
+    closeLibrary();
+    openLibrary();
     // The first book: every word tapped, then ▶.
     const book = DECODABLE_BOOKS[0];
     cover(book.id).click();
@@ -853,9 +854,7 @@ async function selfRead(browser) {
     await sleep(2300);
     out.buttonsAfterWait = document.querySelectorAll('#rd-options button').length;
     document.querySelector('#rd-options .rd-wide.yes').click();
-    // Still locked at reading tier 1. A parent's + + on 읽기 (tier 3) opens
-    // it: the panel says so, and the library under it once the panel
-    // closes, still scrolled where it was.
+    // Changing reading tier keeps all books open and preserves shelf scroll.
     out.stillLocked = cover(hard.id).classList.contains('locked');
     const top = DECODABLE_BOOKS.find(b => b.level === 4);
     const list = $('#lib-books');
@@ -867,7 +866,7 @@ async function selfRead(browser) {
     const chip = b => [...document.querySelectorAll('.parent-panel .l-chip')].find(c => c.textContent.includes(b.title)).textContent;
     out.panel = { tier: Quiz.skill('read').t, hard: chip(hard), top: chip(top) };
     $('.parent-close').click();
-    out.unlocked = { hard: !cover(hard.id).classList.contains('locked'), top: cover(top.id).classList.contains('locked'), scroll: [scrolled, list.scrollTop] };
+    out.unlocked = { hard: !cover(hard.id).classList.contains('locked'), top: !cover(top.id).classList.contains('locked'), scroll: [scrolled, list.scrollTop] };
     closeLibrary();
     out.closed = !shown('#reader') && !shown('#library') && !state.busy;
     Sound.say = say;
@@ -875,7 +874,7 @@ async function selfRead(browser) {
     return out;
   });
   check('reading: 8 books on her shelf, the first open', r.covers === 8 && r.firstOpen, r);
-  check('reading: a level 3 book is locked, says so and stays shut', r.hardLocked && r.lockedSays && r.lockedStaysShut, r);
+  check('reading: higher-level books open immediately without a lock message', !r.hardLocked && !r.lockedSays && r.higherOpened, r);
   check('reading: the first book opens with a tile for every word', r.opened && r.tiles[0] === r.tiles[1] && r.tiles[0] > 1, r.tiles);
   check('reading: ▶ waits until she has tapped every word', r.playHidden && r.playHiddenBeforeLast && r.playAfterTaps, r);
   const w = r.words;
@@ -889,8 +888,8 @@ async function selfRead(browser) {
   check('reading: reading it again pays nothing more', r.starAgain === 1 && r.readAgain === 2 && r.buttonsAfterWait === 2, r);
   const [q0, q1, q2] = r.quest;
   check('reading: each time to the end counts for the 📖 quest, the star once for the ⭐ quest', q1.book - q0.book === 1 && q2.book - q0.book === 2 && q1.stars - q0.stars === 1 && q2.stars - q0.stars === 1, r.quest);
-  check('reading: a locked book stays locked until her reading tier reaches its level', r.stillLocked && r.panel.tier === 3 && r.unlocked.hard && r.unlocked.top, r);
-  check('reading: a parent\'s + on 읽기 opens a book in the panel and in the library under it, which keeps its scroll', r.panel.hard.includes('열림') && r.panel.top.includes('🔒') && r.unlocked.scroll[0] === r.unlocked.scroll[1], r.panel);
+  check('reading: every level stays open when reading tier changes', !r.stillLocked && r.panel.tier === 3 && r.unlocked.hard && r.unlocked.top, r);
+  check('reading: parent panel shows all levels open and library keeps its scroll', r.panel.hard.includes('열림') && r.panel.top.includes('열림') && r.unlocked.scroll[0] === r.unlocked.scroll[1], r.panel);
   check('reading: closing the library frees the game', r.closed, r);
   // Everything the narrator said is listed for recording.
   const listed = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'tts-phrases.json'), 'utf8')).filter(p => p.voice === 'af_heart').map(p => p.text));
