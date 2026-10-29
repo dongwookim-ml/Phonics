@@ -22,13 +22,17 @@ with bold outlines, vivid colours and expressive characters, plus its own cover.
 black lines and partial colouring that leaves roughly half of each form white.
 **The Ugly Duckling** has eight tactile cut-paper collage scenes, with gentle
 seasonal colours and a white-swan ending used for the cover.
+**The Gingerbread Man** has eight textured crayon and oil-pastel scenes, with
+the oven escape used for its cover.
+**Goldilocks and the Three Bears** has eight warm gouache scenes with distinct
+large, medium and small objects. **The Boy Who Cried Wolf** has eight coloured-pencil
+and woodcut-style scenes that distinguish the false alarms from the real wolf.
 The other books keep their existing artwork. Story
 sentences, recorded narration, page order and comprehension questions are unchanged.
 The reader places art beside the sentences on wide screens and above them on
 portrait screens, and keeps emoji as a fallback if an image fails to load.
 
-Assets are local WebP files in `img/books/lion-mouse/`, `img/books/red-hen/` and
-`img/books/three-pigs/` and `img/books/ugly-duckling/`, so
+Assets are local WebP files in `img/books/`, with one folder per illustrated book, so
 reading does not depend on an external image service. `artwork.json` in each
 folder records the built-in imagegen prompts and the shared character references.
 The existing texts are simple retellings of traditional tales. No
