@@ -3,34 +3,34 @@
 // how she is doing in each kind of question, from state.history.
 
 // Where the long vowels are asked: the Monster Village (PLACES.monster).
-const parentMonster = PLACES.monster ? placeName('monster') : '몬스터 마을';
+const parentMonster = PLACES.monster ? placeName('monster') : I18n.t('parent.monsterVillage');
 const PARENT_KINDS = [
-  ['word', '단어 듣기', '마을'],
-  ['start', '첫소리', '마을'],
-  ['findStart', '첫소리 그림 찾기', '글자 집'],
-  ['rhyme', '라임', `마을 · ${placeName('forest')}`],
-  ['family', '단어 가족', placeName('forest')],
-  ['vowel', '가운데 소리', placeName('forest')],
-  ['ending', '끝소리', placeName('forest')],
-  ['read', '읽기', `${placeName('forest')} · ${placeName('fairy')}`],
-  ['blend', '소리 합치기', `${placeName('forest')} · ${placeName('fairy')} · ${placeName('unicorn')} 놀이`],
+  ['word', I18n.t('parent.listenToWords'), I18n.t('parent.town')],
+  ['start', I18n.t('parent.firstSound'), I18n.t('parent.town')],
+  ['findStart', I18n.t('parent.findTheFirstSoundPicture'), I18n.t('parent.letterHouses')],
+  ['rhyme', I18n.t('parent.rhymes'), I18n.t('parent.town2', placeName('forest'))],
+  ['family', I18n.t('parent.wordFamilies'), placeName('forest')],
+  ['vowel', I18n.t('parent.middleSound'), placeName('forest')],
+  ['ending', I18n.t('parent.lastSound'), placeName('forest')],
+  ['read', I18n.t('parent.reading'), `${placeName('forest')} · ${placeName('fairy')}`],
+  ['blend', I18n.t('parent.soundBlending'), I18n.t('parent.games', placeName('forest'), placeName('fairy'), placeName('unicorn'))],
   // Its first steps (1단계 and 2단계 of 소리 합치기), counted on their own.
-  ['oneSound', '소리 합치기 1단계 · 한 소리', '글자 24개'],
-  ['twoSounds', '소리 합치기 2단계 · 두 소리', ''],
-  ['sentence', '문장 듣기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
-  ['meaning', '뜻 맞추기', `${placeName('unicorn')} · ${placeName('dungeon')}`],
-  ['spell', '스펠링', placeName('fairy')],
-  ['longBlend', '긴 모음 소리 합치기', parentMonster],
-  ['longRead', '긴 모음 읽기', parentMonster],
-  ['longWord', '긴 모음 단어 듣기 (매직 e)', parentMonster],
-  ['longRhyme', '긴 모음 라임', parentMonster],
+  ['oneSound', I18n.t('parent.blendingStep1OneSound'), I18n.t('parent.24Letters')],
+  ['twoSounds', I18n.t('parent.blendingStep2TwoSounds'), ''],
+  ['sentence', I18n.t('parent.listenToSentences'), `${placeName('unicorn')} · ${placeName('dungeon')}`],
+  ['meaning', I18n.t('parent.matchTheMeaning'), `${placeName('unicorn')} · ${placeName('dungeon')}`],
+  ['spell', I18n.t('parent.spelling'), placeName('fairy')],
+  ['longBlend', I18n.t('parent.blendLongVowels'), parentMonster],
+  ['longRead', I18n.t('parent.readLongVowels'), parentMonster],
+  ['longWord', I18n.t('parent.hearLongVowelsMagicE'), parentMonster],
+  ['longRhyme', I18n.t('parent.longVowelRhymes'), parentMonster],
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 
 const PARENT_ERRORS = {
-  wrong: '비밀번호가 맞지 않아요.',
-  offline: '인터넷에 연결되지 않았어요.',
-  busy: '잠시 후 다시 해 보세요.',
+  wrong: I18n.t('guide.incorrectPassword'),
+  offline: I18n.t('parent.noInternetConnection'),
+  busy: I18n.t('parent.pleaseTryAgainShortly'),
 };
 
 const parentUi = {
@@ -61,14 +61,7 @@ function parentOpen() {
   Sound.say([]);
   const el = document.createElement('section');
   el.className = 'parent-panel';
-  el.innerHTML = `
-    <div class="parent-box">
-      <div class="parent-head">
-        <div class="parent-title">⚙️ 부모 패널</div>
-        <button class="parent-close" type="button">닫기</button>
-      </div>
-      <div class="parent-body"></div>
-    </div>`;
+  el.innerHTML = I18n.t('parent.parentPanelClose');
   el.querySelector('.parent-close').addEventListener('click', parentClose);
   el.addEventListener('click', parentClick);
   // Keys typed here never reach the game (1–4 would answer a question).
@@ -93,21 +86,15 @@ function parentClose() {
 function parentLock() {
   const body = parentUi.panel.querySelector('.parent-body');
   const hint = parentHasAccount()
-    ? `로그인할 때 쓴 비밀번호(<b>${parentEsc(Account.user)}</b> 계정)를 입력하세요.`
-    : '계정 없이 하고 있어요. 비밀번호는 <b>0000</b>이에요. 로그인하면 로그인 비밀번호를 쓰세요.';
-  body.innerHTML = `
-    <form class="parent-lock">
-      <p>아이의 학습 기록을 보려면 비밀번호가 필요해요.<br>${hint}</p>
-      <input type="password" class="parent-pw" autocomplete="current-password" placeholder="비밀번호">
-      <button type="submit" class="parent-go">확인</button>
-      <p class="parent-err"></p>
-    </form>`;
+    ? I18n.t('parent.enterThePasswordYouUseTo', parentEsc(Account.user))
+    : I18n.t('parent.youArePlayingAsAGuest');
+  body.innerHTML = I18n.t('parent.enterYourPasswordToViewYour', hint);
   const form = body.querySelector('form');
   const input = body.querySelector('.parent-pw');
   const err = body.querySelector('.parent-err');
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    err.textContent = '확인하는 중…';
+    err.textContent = I18n.t('guide.checking');
     // { ok, reason }: a wrong password, no connection, or the server busy.
     let r = { ok: false, reason: 'busy' };
     try {
@@ -170,21 +157,15 @@ function parentTier(kind) {
   if (kind === 'oneSound') {
     const letters = Quiz.letters();
     const chips = letters.map(x => `<span class="l-chip${x.known ? ' good' : ''}">${x.l}</span>`).join('');
-    return `<div class="k-tier"><span class="tier-n">아는 글자 <b>${letters.filter(x => x.known).length}</b> / ${letters.length}</span>
-      <span class="tier-more">두 번 한 번에 맞히고, 마지막에도 맞혀야 알아요</span></div><div class="parent-letters k-letters">${chips}</div>`;
+    return I18n.t('parent.lettersKnownKnownAfterTwoFirst', letters.filter(x => x.known).length, letters.length, chips);
   }
   if (!Quiz.tierMax(kind)) return '';
   const k = Quiz.skill(kind);
   const max = Quiz.tierMax(kind);
   const t = Math.min(k.t, max);
   const last = k.last || [];
-  const recent = last.length ? ` · 최근 ${last.filter(Boolean).length}/${last.length}` : '';
-  return `<div class="k-tier">
-    <button type="button" class="tier-btn" data-kind="${kind}" data-step="-1" ${t <= 1 ? 'disabled' : ''} title="쉽게">−</button>
-    <span class="tier-n">단계 <b>${t}</b> / ${max}</span>
-    <button type="button" class="tier-btn" data-kind="${kind}" data-step="1" ${t >= max ? 'disabled' : ''} title="어렵게">+</button>
-    <span class="tier-more">최고 ${Math.min(k.best || 1, max)}${recent}</span>
-  </div>`;
+  const recent = last.length ? I18n.t('parent.recent', last.filter(Boolean).length, last.length) : '';
+  return I18n.t('parent.levelBest', kind, t <= 1 ? 'disabled' : '', t, max, kind, t >= max ? 'disabled' : '', Math.min(k.best || 1, max), recent);
 }
 
 // First-try accuracy per first letter, from the letter questions (word,
@@ -203,7 +184,7 @@ function parentLetters() {
     const r = p.right / p.tries;
     return `<span class="l-chip ${r >= 0.8 ? 'good' : r >= 0.5 ? 'mid' : 'low'}" title="${p.right}/${p.tries}">${L} <b>${Math.round(100 * r)}%</b></span>`;
   }).join('');
-  return chips || '<p class="parent-empty">아직 글자 문제를 푼 적이 없어요.</p>';
+  return chips || I18n.t('parent.noLetterQuestionsTriedYet');
 }
 
 // Everything the panel puts in as HTML is a number or goes through parentEsc.
@@ -211,8 +192,7 @@ const parentEsc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 
 function parentBar(s) {
   const seg = (n, cls, label) => (n ? `<span class="seg ${cls}" style="flex:${n}" title="${label} ${n}"></span>` : '');
-  return `<div class="parent-bar" role="img" aria-label="맞힘 ${s.right}, 틀림 ${s.wrong}, 안 해봄 ${s.untried}">
-    ${seg(s.right, 'right', '맞힘')}${seg(s.wrong, 'wrong', '틀림')}${seg(s.untried, 'untried', '안 해봄')}</div>`;
+  return I18n.t('parent.label', s.right, s.wrong, s.untried, seg(s.right, 'right', I18n.t('parent.correct')), seg(s.wrong, 'wrong', I18n.t('parent.incorrect')), seg(s.untried, 'untried', I18n.t('parent.notTried')));
 }
 
 // Questions last answered on each of the past 7 days, as a sparkline.
@@ -226,7 +206,7 @@ function parentSpark() {
     const i = Math.floor((h.last - start) / day);
     if (i >= 0 && i < 7) counts[i]++;
   }
-  const names = ['일', '월', '화', '수', '목', '금', '토'];
+  const names = [I18n.t('parent.sun'), I18n.t('parent.mon'), I18n.t('parent.tue'), I18n.t('parent.wed'), I18n.t('parent.thu'), I18n.t('parent.fri'), I18n.t('parent.sat')];
   const W = 300, H = 90, top = 18, base = 66;
   const max = Math.max(1, ...counts);
   const x = i => 16 + i * ((W - 32) / 6);
@@ -236,13 +216,9 @@ function parentSpark() {
   const dots = counts.map((n, i) => {
     const d = new Date(start + i * day);
     const label = i === 6 || (i === peak && n) ? `<text x="${x(i)}" y="${y(n) - 8}" class="v">${n}</text>` : '';
-    return `<g><title>${d.getMonth() + 1}/${d.getDate()} · ${n}문제</title>
-      <circle cx="${x(i)}" cy="${y(n)}" r="10" class="hit"/><circle cx="${x(i)}" cy="${y(n)}" r="4" class="dot"/>${label}
-      <text x="${x(i)}" y="${H - 6}" class="d">${i === 6 ? '오늘' : names[d.getDay()]}</text></g>`;
+    return I18n.t('parent.questions', d.getMonth() + 1, d.getDate(), n, x(i), y(n), x(i), y(n), label, x(i), H - 6, i === 6 ? I18n.t('parent.today') : names[d.getDay()]);
   }).join('');
-  return `<svg class="parent-spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 7일: ${counts.join(', ')}">
-    <line x1="8" x2="${W - 8}" y1="${base}" y2="${base}" class="axis"/>
-    <polyline points="${pts}" class="line"/>${dots}</svg>`;
+  return I18n.t('parent.label2', W, H, counts.join(', '), W - 8, base, base, pts, dots);
 }
 
 function parentStats() {
@@ -254,38 +230,15 @@ function parentStats() {
   const rows = PARENT_KINDS.map(([kind, ko, where]) => {
     const s = parentKindStats(kind);
     const acc = s.tries ? `${Math.round((100 * s.firstRight) / s.tries)}%` : '—';
-    const review = s.pool && !s.untried && !s.wrong ? '<span class="review-tag">복습 중</span>' : '';
-    return `<div class="parent-kind">
-      <div class="k-name">${ko}${review}<small>${where}</small></div>
-      <div class="k-acc" title="한 번에 맞힌 답 / 전체 답">${acc}</div>
-      ${parentTier(kind)}
-      ${parentBar(s)}
-      <div class="k-nums">맞힘 ${s.right} · 틀림 ${s.wrong} · 안 해봄 ${s.untried} <span>/ 전체 ${s.pool}</span></div>
-    </div>`;
+    const review = s.pool && !s.untried && !s.wrong ? I18n.t('parent.reviewing') : '';
+    return I18n.t('parent.correctIncorrectNotTriedTotal', ko, review, where, acc, parentTier(kind), parentBar(s), s.right, s.wrong, s.untried, s.pool);
   }).join('');
   const kindName = k => (PARENT_KINDS.find(x => x[0] === k) || [k, k])[1];
   const missed = entries.filter(([, h]) => h.wrong > 0)
     .sort((a, b) => b[1].wrong - a[1].wrong || b[1].last - a[1].last).slice(0, 6)
-    .map(([id, h]) => `<li><span class="m-kind">${parentEsc(kindName(h.kind))}</span><span class="m-what">${parentEsc(parentLabel(id))}</span><span class="m-n">${h.wrong | 0}번 틀림${h.right ? ' · 지금은 맞힘' : ''}</span></li>`)
+    .map(([id, h]) => I18n.t('parent.misses', parentEsc(kindName(h.kind)), parentEsc(parentLabel(id)), h.wrong | 0, h.right ? I18n.t('parent.nowCorrect') : ''))
     .join('');
-  parentUi.panel.querySelector('.parent-body').innerHTML = `
-    <div class="parent-tiles">
-      ${tile('⭐', starsEarned() > state.stars ? `별 (모은 별 ${starsEarned()})` : '별', state.stars)}${tile('🪙', '코인', state.coins | 0)}${isCaptain() ? tile('⚡', '배터리', state.dust | 0) : tile('✨', '요정의 가루', state.dust | 0)}
-      ${tile('📝', '답한 횟수', answers)}${tile('✅', '맞힌 문제', solvedCount)}
-    </div>
-    <p class="parent-note parent-quests">${parentEsc(questParentLine())}</p>
-    <h3>문제 유형별 진행도</h3>
-    <p class="parent-note">단계: 쉬운 문제부터 시작해서, 잘 맞히면 올라가고 연달아 틀리면 내려가요. − / + 로 직접 바꿀 수 있어요.</p>
-    <div class="parent-legend"><span class="sw right"></span>맞힘<span class="sw wrong"></span>틀림 (아직 못 맞힘)<span class="sw untried"></span>안 해봄<span class="note">정답률 = 한 번에 맞힌 비율</span></div>
-    <div class="parent-kinds">${rows}</div>
-    <div class="parent-two">
-      <div><h3>자주 틀린 문제</h3>${missed ? `<ol class="parent-missed">${missed}</ol>` : '<p class="parent-empty">아직 틀린 문제가 없어요.</p>'}</div>
-      <div><h3>최근 7일 활동</h3>${parentSpark()}<p class="parent-empty">그날 마지막으로 푼 문제 수예요.</p></div>
-    </div>
-    <h3>글자별 정답률 (한 번에 맞힌 비율)</h3>
-    <div class="parent-letters">${parentLetters()}</div>
-    <p class="parent-note">게임이 들려주는 글자 소리(/m/, /s/ …)와 그 소리를 잘라 낸 낱말을 직접 들어 보고 확인할 수 있어요:
-      <a href="tools/letter-sounds.html" target="_blank" rel="noopener">글자 소리 확인 페이지 ↗</a></p>`;
+  parentUi.panel.querySelector('.parent-body').innerHTML = I18n.t('parent.progressByQuestionTypeLevelsStart', tile('⭐', starsEarned() > state.stars ? I18n.t('parent.starsEarned', starsEarned()) : I18n.t('parent.stars'), state.stars), tile('🪙', I18n.t('parent.coins'), state.coins | 0), isCaptain() ? tile('⚡', I18n.t('captain-drone.battery'), state.dust | 0) : tile('✨', I18n.t('parent.fairyDust'), state.dust | 0), tile('📝', I18n.t('parent.answersGiven'), answers), tile('✅', I18n.t('parent.questionsSolved'), solvedCount), parentEsc(questParentLine()), rows, missed ? `<ol class="parent-missed">${missed}</ol>` : I18n.t('parent.noIncorrectAnswersYet'), parentSpark(), parentLetters());
   parentSelfBooks(parentUi.panel.querySelector('.parent-body'));
   parentSettings(parentUi.panel.querySelector('.parent-body'));
 }
@@ -296,12 +249,10 @@ function parentSelfBooks(body) {
   const box = document.createElement('section');
   const chips = DECODABLE_BOOKS.map(b => {
     const n = ((state.books || {})[selfKey(b)] || {}).read | 0;
-    const what = n ? `✓ ${n}번` : selfOpen(b) ? '열림' : `🔒 읽기 ${b.level}단계`;
+    const what = n ? I18n.t('parent.times', n) : selfOpen(b) ? I18n.t('parent.open') : I18n.t('parent.readingLevel', b.level);
     return `<span class="l-chip${n ? ' good' : ''}">${b.cover} ${parentEsc(b.title)} <b>${what}</b></span>`;
   }).join('');
-  box.innerHTML = `<h3>혼자 읽는 책 (도서관)</h3>
-    <p class="parent-note">아는 소리로만 된 작은 책이에요. 읽기 단계가 오르면 다음 책이 열리고, 처음 끝까지 읽으면 별을 하나 받아요.</p>
-    <div class="parent-letters">${chips}</div>`;
+  box.innerHTML = I18n.t('parent.independentReadingLibraryShortBooksUsing', chips);
   body.append(box);
 }
 
@@ -327,27 +278,7 @@ function parentSettings(body) {
   body.append(box);
   const chips = (name, options) => options.map(([v, label]) =>
     `<button type="button" class="chip" data-set="${name}" data-v="${v}">${label}</button>`).join('');
-  box.innerHTML = `<h3>설정</h3>
-    <div class="ps-row">
-      <div class="ps-name">놀이 시간<small>시간이 되면 대화가 끝난 뒤 마을이 잠들고, 비밀번호로만 다시 놀 수 있어요. 오늘 <span class="ps-played"></span>분 놀았어요.</small></div>
-      <div class="ps-chips">${chips('limit', [[0, '끄기'], [15, '15분'], [20, '20분'], [30, '30분']])}</div>
-    </div>
-    <div class="ps-row">
-      <div class="ps-name">그림 힌트<small>단어 카드에 그림을 함께 보여줘요. 끄면 첫 글자를 읽어야 해요.</small></div>
-      <div class="ps-chips">${chips('pictures', [[1, '켜기'], [0, '끄기']])}</div>
-    </div>
-    <div class="ps-row">
-      <div class="ps-name">🔊 소리 버튼<small>아이 화면 위쪽의 소리 끄기 버튼이에요.</small></div>
-      <div class="ps-chips">${chips('mute', [[0, '보이기'], [1, '숨기기']])}</div>
-    </div>
-    <div class="ps-row">
-      <div class="ps-name">배경 음악<small>장소마다 조용한 음악이 흘러요. 말소리가 나오거나 문제를 풀 때는 아주 작아져요.</small></div>
-      <div class="ps-chips">${chips('music', [[1, '켜기'], [0, '끄기']])}</div>
-    </div>
-    <div class="ps-row">
-      <div class="ps-name">두 음절 철자<small>스펠링 마지막 단계에 rab·bit, rock·et 같은 두 음절 단어도 내요.</small></div>
-      <div class="ps-chips">${chips('two', [[0, '끄기'], [1, '켜기']])}</div>
-    </div>`;
+  box.innerHTML = I18n.t('parent.settingsPlayTimeWhenTimeIs', chips('limit', [[0, I18n.t('parent.off')], [15, I18n.t('parent.15Min')], [20, I18n.t('parent.20Min')], [30, I18n.t('parent.30Min')]]), chips('pictures', [[1, I18n.t('parent.on')], [0, I18n.t('parent.off')]]), chips('mute', [[0, I18n.t('parent.show')], [1, I18n.t('parent.hide')]]), chips('music', [[1, I18n.t('parent.on')], [0, I18n.t('parent.off')]]), chips('two', [[0, I18n.t('parent.off')], [1, I18n.t('parent.on')]]));
   // The chip that is on, from the live settings: after a tap, and after a
   // sync put the other tablet's in (parentRefresh). The chips stay in place,
   // so a tap already under way still lands.

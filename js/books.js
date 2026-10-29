@@ -7,7 +7,7 @@
 
 const BOOKS = [
   {
-    id: 'tortoise-hare', title: 'The Tortoise and the Hare', ko: '토끼와 거북이', cover: '🐢', color: '#8fd896',
+    id: 'tortoise-hare', title: 'The Tortoise and the Hare', label: I18n.t('books.theTortoiseAndTheHare'), cover: '🐢', color: '#8fd896',
     pages: [
       { text: 'Hare was very fast. Tortoise was very slow.', pic: '🐇🐢' },
       { text: '"Let\'s have a race!" said Hare.', pic: '🐇🏁' },
@@ -25,7 +25,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'lion-mouse', title: 'The Lion and the Mouse', ko: '사자와 생쥐', cover: '🦁', color: '#ffd34d',
+    id: 'lion-mouse', title: 'The Lion and the Mouse', label: I18n.t('books.theLionAndTheMouse'), cover: '🦁', color: '#ffd34d',
     pages: [
       { text: 'A big lion was sleeping. A little mouse ran over his nose.', pic: '🦁💤🐭' },
       { text: 'The lion woke up and caught the mouse!', pic: '🦁🐭' },
@@ -43,7 +43,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'three-pigs', title: 'The Three Little Pigs', ko: '아기 돼지 삼형제', cover: '🐷', color: '#ffb3cf',
+    id: 'three-pigs', title: 'The Three Little Pigs', label: I18n.t('books.theThreeLittlePigs'), cover: '🐷', color: '#ffb3cf',
     pages: [
       { text: 'Three little pigs each built a house.', pic: '🐷🐷🐷' },
       { text: 'The first pig built a house of straw. The second pig built a house of sticks.', pic: '🌾🪵' },
@@ -61,7 +61,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'goldilocks', title: 'Goldilocks and the Three Bears', ko: '골디락스와 곰 세 마리', cover: '🐻', color: '#f0b070',
+    id: 'goldilocks', title: 'Goldilocks and the Three Bears', label: I18n.t('books.goldilocksAndTheThreeBears'), cover: '🐻', color: '#f0b070',
     pages: [
       { text: 'Three bears lived in a house in the woods.', pic: '🐻🏠🌲' },
       { text: 'One day, a girl named Goldilocks walked in.', pic: '👧🚪' },
@@ -79,7 +79,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'red-hen', title: 'The Little Red Hen', ko: '빨간 암탉', cover: '🐔', color: '#ff9a8a',
+    id: 'red-hen', title: 'The Little Red Hen', label: I18n.t('books.theLittleRedHen'), cover: '🐔', color: '#ff9a8a',
     pages: [
       { text: 'The Little Red Hen found some wheat seeds.', pic: '🐔🌾' },
       { text: '"Who will help me plant the seeds?" she asked. "Not I," said the cat, the dog and the duck.', pic: '🐱🐶🦆' },
@@ -97,7 +97,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'ugly-duckling', title: 'The Ugly Duckling', ko: '미운 아기 오리', cover: '🦢', color: '#a8d8ff',
+    id: 'ugly-duckling', title: 'The Ugly Duckling', label: I18n.t('books.theUglyDuckling'), cover: '🦢', color: '#a8d8ff',
     pages: [
       { text: 'A mother duck had some eggs. One egg was big and gray.', pic: '🦆🥚' },
       { text: 'Out came a big gray duckling. He did not look like the others.', pic: '🐣🦆' },
@@ -115,7 +115,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'cried-wolf', title: 'The Boy Who Cried Wolf', ko: '양치기 소년', cover: '🐑', color: '#c8f0a0',
+    id: 'cried-wolf', title: 'The Boy Who Cried Wolf', label: I18n.t('books.theBoyWhoCriedWolf'), cover: '🐑', color: '#c8f0a0',
     pages: [
       { text: 'A boy looked after the sheep on a hill.', pic: '🧒🐑⛰️' },
       { text: 'He was bored. So he shouted, "Wolf! Wolf!"', pic: '🧒📢' },
@@ -133,7 +133,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'ant-grasshopper', title: 'The Ant and the Grasshopper', ko: '개미와 베짱이', cover: '🐜', color: '#ffe27a',
+    id: 'ant-grasshopper', title: 'The Ant and the Grasshopper', label: I18n.t('books.theAntAndTheGrasshopper'), cover: '🐜', color: '#ffe27a',
     pages: [
       { text: 'It was a hot summer day.', pic: '☀️🌻' },
       { text: 'The ant worked hard. She carried food to her home.', pic: '🐜🌽' },
@@ -151,7 +151,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'gingerbread', title: 'The Gingerbread Man', ko: '진저브레드맨', cover: '🍪', color: '#e8b07a',
+    id: 'gingerbread', title: 'The Gingerbread Man', label: I18n.t('books.theGingerbreadMan'), cover: '🍪', color: '#e8b07a',
     pages: [
       { text: 'An old woman baked a gingerbread man.', pic: '👵🍪' },
       { text: 'She opened the oven, and he jumped out! "Run, run, as fast as you can!" he sang.', pic: '🍪💨' },
@@ -169,7 +169,7 @@ const BOOKS = [
     ],
   },
   {
-    id: 'town-country-mouse', title: 'The Town Mouse and the Country Mouse', ko: '시골 쥐와 도시 쥐', cover: '🐭', color: '#d8c4f0',
+    id: 'town-country-mouse', title: 'The Town Mouse and the Country Mouse', label: I18n.t('books.theTownMouseAndTheCountry'), cover: '🐭', color: '#d8c4f0',
     pages: [
       { text: 'Country Mouse lived in a quiet field.', pic: '🐭🌾' },
       { text: 'One day, Town Mouse came to visit. They ate corn and seeds.', pic: '🐭🌽🐭' },
@@ -203,7 +203,7 @@ const SIGHT_WORDS = ['the', 'a', 'I', 'is', 'to', 'see', 'go', 'no', 'my', 'we',
 
 const DECODABLE_BOOKS = [
   {
-    id: 'cat-hat', level: 1, title: 'The Cat', ko: '고양이', cover: '🐱', color: '#ffd9a0',
+    id: 'cat-hat', level: 1, title: 'The Cat', label: I18n.t('books.theCat'), cover: '🐱', color: '#ffd9a0',
     pages: [
       { text: 'A cat sat.', pic: '🐱' },
       { text: 'The cat had a hat.', pic: '🐱🎩' },
@@ -213,7 +213,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'i-can', level: 1, title: 'I Can!', ko: '할 수 있어!', cover: '🙌', color: '#b8eab0',
+    id: 'i-can', level: 1, title: 'I Can!', label: I18n.t('books.iCan'), cover: '🙌', color: '#b8eab0',
     pages: [
       { text: 'I can tap.', pic: '👆🥁' },
       { text: 'I can tag Dad.', pic: '🏃👨' },
@@ -222,7 +222,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'big-pig', level: 2, title: 'The Big Pig', ko: '커다란 돼지', cover: '🐷', color: '#ffc4dc',
+    id: 'big-pig', level: 2, title: 'The Big Pig', label: I18n.t('books.theBigPig'), cover: '🐷', color: '#ffc4dc',
     pages: [
       { text: 'A big pig sat in the mud.', pic: '🐷🟫' },
       { text: 'The pig had a nap in the sun.', pic: '☀️🐷💤' },
@@ -232,7 +232,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'bug-cup', level: 2, title: 'The Bug in the Cup', ko: '컵 속의 벌레', cover: '🐛', color: '#bfe2ff',
+    id: 'bug-cup', level: 2, title: 'The Bug in the Cup', label: I18n.t('books.theBugInTheCup'), cover: '🐛', color: '#bfe2ff',
     pages: [
       { text: 'A dog sat on a log.', pic: '🐶🪵' },
       { text: 'A bug sat on the dog.', pic: '🐛🐶' },
@@ -243,7 +243,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'fish-wish', level: 3, title: 'The Fish Wish', ko: '물고기의 소원', cover: '🐟', color: '#a8dcff',
+    id: 'fish-wish', level: 3, title: 'The Fish Wish', label: I18n.t('books.theFishSWish'), cover: '🐟', color: '#a8dcff',
     pages: [
       { text: 'Beth got a fish.', pic: '👧🐟' },
       { text: 'The fish is in a dish.', pic: '🐟🥣' },
@@ -253,7 +253,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'chuck-duck', level: 3, title: 'Chuck the Duck', ko: '오리 척', cover: '🦆', color: '#ffe98a',
+    id: 'chuck-duck', level: 3, title: 'Chuck the Duck', label: I18n.t('books.chuckTheDuck'), cover: '🦆', color: '#ffe98a',
     pages: [
       { text: 'Chuck is a duck.', pic: '🦆' },
       { text: 'Chuck fell in the mud.', pic: '🦆🟫' },
@@ -263,7 +263,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'frog-jump', level: 4, title: 'Jump, Frog, Jump!', ko: '뛰어라 개구리', cover: '🐸', color: '#a8eb98',
+    id: 'frog-jump', level: 4, title: 'Jump, Frog, Jump!', label: I18n.t('books.hopFrog'), cover: '🐸', color: '#a8eb98',
     pages: [
       { text: 'A frog sat on a big rock.', pic: '🐸🪨' },
       { text: 'The frog had a plan.', pic: '🐸💭' },
@@ -274,7 +274,7 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
-    id: 'best-gift', level: 4, title: 'The Best Gift', ko: '최고의 선물', cover: '🎁', color: '#ffbcb0',
+    id: 'best-gift', level: 4, title: 'The Best Gift', label: I18n.t('books.theBestGift'), cover: '🎁', color: '#ffbcb0',
     pages: [
       { text: 'Brad got a gift.', pic: '👦🎁' },
       { text: 'The gift is in a big red box.', pic: '🎁📦' },

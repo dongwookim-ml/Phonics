@@ -16,51 +16,51 @@
 // reward mark the game uses for the level 3 village's own treasures.
 //   kind: the body shape; body, shade: paint; trim: stripes and details
 const CAPTAIN_CARS = {
-  none:    { name: '안 타요',       icon: '' },
-  police:  { name: '경찰차',        icon: '🚓', unicorn: true, kind: 'sedan', body: '#ffffff', shade: '#c8d0e8', trim: '#3a6fd8', top: 'siren' },
-  taxi:    { name: '택시',          icon: '🚕', unicorn: true, kind: 'sedan', body: '#ffd23d', shade: '#e0a820', trim: '#2e2a4a', top: 'taxi' },
-  race:    { name: '경주용 자동차', icon: '🏎️', unicorn: true, kind: 'race', body: '#ff4a4a', shade: '#c8303a', trim: '#ffffff' },
-  fire:    { name: '소방차',        icon: '🚒', unicorn: true, kind: 'fire', body: '#ec4a3c', shade: '#b82e2e', trim: '#ffffff' },
-  ambulance: { name: '구급차',      icon: '🚑', unicorn: true, kind: 'van', body: '#ffffff', shade: '#d0d6e6', trim: '#ff4a5a' },
-  dump:    { name: '덤프트럭',      icon: '🚚', unicorn: true, kind: 'dump', body: '#ffc83a', shade: '#e09a20', trim: '#2e2a4a' },
-  monster: { name: '몬스터 트럭',   icon: '🛻', unicorn: true, kind: 'monster', body: '#4fcf5f', shade: '#2f9f45', trim: '#ff8a3a' },
-  rocket:  { name: '로켓 자동차',   icon: '🚀', unicorn: true, kind: 'rocket', body: '#8a5cff', shade: '#5a38c8', trim: '#ffd34d' },
+  none:    { name: I18n.t('captain-car.noRide'),       icon: '' },
+  police:  { name: I18n.t('captain-car.policeCar'),        icon: '🚓', unicorn: true, kind: 'sedan', body: '#ffffff', shade: '#c8d0e8', trim: '#3a6fd8', top: 'siren' },
+  taxi:    { name: I18n.t('captain-car.taxi'),          icon: '🚕', unicorn: true, kind: 'sedan', body: '#ffd23d', shade: '#e0a820', trim: '#2e2a4a', top: 'taxi' },
+  race:    { name: I18n.t('captain-car.raceCar'), icon: '🏎️', unicorn: true, kind: 'race', body: '#ff4a4a', shade: '#c8303a', trim: '#ffffff' },
+  fire:    { name: I18n.t('captain-car.fireEngine'),        icon: '🚒', unicorn: true, kind: 'fire', body: '#ec4a3c', shade: '#b82e2e', trim: '#ffffff' },
+  ambulance: { name: I18n.t('captain-car.ambulance'),      icon: '🚑', unicorn: true, kind: 'van', body: '#ffffff', shade: '#d0d6e6', trim: '#ff4a5a' },
+  dump:    { name: I18n.t('captain-car.dumpTruck'),      icon: '🚚', unicorn: true, kind: 'dump', body: '#ffc83a', shade: '#e09a20', trim: '#2e2a4a' },
+  monster: { name: I18n.t('captain-car.monsterTruck'),   icon: '🛻', unicorn: true, kind: 'monster', body: '#4fcf5f', shade: '#2f9f45', trim: '#ff8a3a' },
+  rocket:  { name: I18n.t('captain-car.rocketCar'),   icon: '🚀', unicorn: true, kind: 'rocket', body: '#8a5cff', shade: '#5a38c8', trim: '#ffd34d' },
 };
 
 // Words for riding a car instead of a unicorn (game.js shows these in captain).
 const CAPTAIN_RIDE_TEXT = {
   button: '🚗',
-  buttonTitle: '자동차 타기/내리기',
-  wait: '🚗 자동차는 밖에 세워 둘게요',
-  find: '🚗 자동차 마을에서 자동차를 만나요',
-  indoors: '🏠 집 안에서는 자동차를 탈 수 없어요',
-  parked: '자동차',
+  buttonTitle: I18n.t('captain-car.getInOutOfYourCar'),
+  wait: I18n.t('captain-car.yourCarWillWaitOutside'),
+  find: I18n.t('captain-car.meetACarInCarVillage'),
+  indoors: I18n.t('captain-car.youCanTDriveIndoors'),
+  parked: I18n.t('captain-car.car'),
   // For the reward card when the present is a car.
-  yes: '지금 탈래요 🚗',
-  no: '차고에 둘래요 🅿️',
+  yes: I18n.t('captain-car.rideNow'),
+  no: I18n.t('captain-car.parkInTheGarage'),
 };
 
 // Talking cars have `unicorn` (which car they are) instead of a villager look.
 const CAR_NPCS = [
-  { name: '경찰차 삐뽀',     look: 'policecar',    unicorn: 'police',  c: 10, r: 13 },
-  { name: '정비사 아저씨',   look: 'mechanic',     c: 9, r: 11 },
-  { name: '경주차 쌩쌩이',   look: 'racecar',      unicorn: 'race',    c: 21, r: 13 },
-  { name: '주유소 누나',     look: 'attendant',    c: 20, r: 10 },
-  { name: '소방차 영차',     look: 'firetruck',    unicorn: 'fire',    c: 7, r: 21 },
-  { name: '몬스터 트럭 쿵쾅', look: 'monstertruck', unicorn: 'monster', c: 20, r: 23 },
+  { name: I18n.t('captain-car.beepThePoliceCar'),     look: 'policecar',    unicorn: 'police',  c: 10, r: 13 },
+  { name: I18n.t('captain-car.mechanic'),   look: 'mechanic',     c: 9, r: 11 },
+  { name: I18n.t('captain-car.zoomTheRaceCar'),   look: 'racecar',      unicorn: 'race',    c: 21, r: 13 },
+  { name: I18n.t('captain-car.fuelStationHelper'),     look: 'attendant',    c: 20, r: 10 },
+  { name: I18n.t('captain-car.heaveHoTheFireEngine'),     look: 'firetruck',    unicorn: 'fire',    c: 7, r: 21 },
+  { name: I18n.t('captain-car.boomTheMonsterTruck'), look: 'monstertruck', unicorn: 'monster', c: 20, r: 23 },
 ];
 
 // Homes in Car Village (see VILLAGE_HOMES in js/data.js): the four signed
 // buildings and three car family homes. The door tiles are in front of the
 // painted doors. Talking cars use the looks (voices) of the cars outside.
 const CAR_HOMES = [
-  { id: 'garage',   scene: 'unicorn', c: 6,  r: 7,  w: 4, door: [[7, 10], [8, 10]], theme: 'garage',  color: '#3a6fd8', who: '정비소 사장님',    look: 'mechanic' },
-  { id: 'firehall', scene: 'unicorn', c: 6,  r: 17, w: 3, door: [[7, 20]],  theme: 'fire',    color: '#ec4a3c', who: '소방차 빵빵',      look: 'firetruck', unicorn: 'fire' },
-  { id: 'carwash',  scene: 'unicorn', c: 10, r: 17, w: 3, door: [[11, 20]], theme: 'wash',    color: '#4a9ad8', who: '택시 씽씽',        look: 'racecar', unicorn: 'taxi' },
-  { id: 'gasshop',  scene: 'unicorn', c: 21, r: 4,  w: 3, door: [[22, 7]],  theme: 'gas',     color: '#ec4a3c', who: '주유소 언니',      look: 'attendant' },
-  { id: 'carhome1', scene: 'unicorn', c: 2,  r: 2,  w: 3, door: [[4, 5]],   theme: 'carhome', color: '#5a8fe0', who: '로켓 자동차 슝슝', look: 'racecar', unicorn: 'rocket' },
-  { id: 'carhome2', scene: 'unicorn', c: 8,  r: 1,  w: 3, door: [[10, 4]],  theme: 'carhome', color: '#ff8a5a', who: '덤프트럭 뚝딱',    look: 'monstertruck', unicorn: 'dump' },
-  { id: 'carhome3', scene: 'unicorn', c: 25, r: 8,  w: 3, door: [[27, 11]], theme: 'carhome', color: '#4fbf70', who: '경찰차 순찰이',    look: 'policecar', unicorn: 'police' },
+  { id: 'garage',   scene: 'unicorn', c: 6,  r: 7,  w: 4, door: [[7, 10], [8, 10]], theme: 'garage',  color: '#3a6fd8', who: I18n.t('captain-car.garageOwner'),    look: 'mechanic' },
+  { id: 'firehall', scene: 'unicorn', c: 6,  r: 17, w: 3, door: [[7, 20]],  theme: 'fire',    color: '#ec4a3c', who: I18n.t('captain-car.honkTheFireEngine'),      look: 'firetruck', unicorn: 'fire' },
+  { id: 'carwash',  scene: 'unicorn', c: 10, r: 17, w: 3, door: [[11, 20]], theme: 'wash',    color: '#4a9ad8', who: I18n.t('captain-car.zipTheTaxi'),        look: 'racecar', unicorn: 'taxi' },
+  { id: 'gasshop',  scene: 'unicorn', c: 21, r: 4,  w: 3, door: [[22, 7]],  theme: 'gas',     color: '#ec4a3c', who: I18n.t('captain-car.fuelStationAttendant'),      look: 'attendant' },
+  { id: 'carhome1', scene: 'unicorn', c: 2,  r: 2,  w: 3, door: [[4, 5]],   theme: 'carhome', color: '#5a8fe0', who: I18n.t('captain-car.whooshTheRocketCar'), look: 'racecar', unicorn: 'rocket' },
+  { id: 'carhome2', scene: 'unicorn', c: 8,  r: 1,  w: 3, door: [[10, 4]],  theme: 'carhome', color: '#ff8a5a', who: I18n.t('captain-car.tinkerTheDumpTruck'),    look: 'monstertruck', unicorn: 'dump' },
+  { id: 'carhome3', scene: 'unicorn', c: 25, r: 8,  w: 3, door: [[27, 11]], theme: 'carhome', color: '#4fbf70', who: I18n.t('captain-car.patrolThePoliceCar'),    look: 'policecar', unicorn: 'police' },
 ];
 
 if (isCaptain()) {
@@ -1019,10 +1019,10 @@ function buildCarVillage() {
     }
     return { obj, k };
   };
-  building(6, 7, 4, 3, 70, drawWorkshop, { v: 50, text: '🔧 정비소', color: '#3a6fd8' });
-  const fs = building(6, 17, 3, 3, 70, drawFireStation, { v: 52, text: '🚒 소방서', color: '#e0503a' });
-  building(10, 17, 3, 3, 70, drawCarWash, { v: 30, text: '🫧 세차장', color: '#4a9ad8' });
-  building(21, 4, 3, 3, 60, drawGasShop, { v: 40, text: '⛽ 주유소', color: '#e0503a' });
+  building(6, 7, 4, 3, 70, drawWorkshop, { v: 50, text: I18n.t('captain-car.garage'), color: '#3a6fd8' });
+  const fs = building(6, 17, 3, 3, 70, drawFireStation, { v: 52, text: I18n.t('captain-car.fireStation'), color: '#e0503a' });
+  building(10, 17, 3, 3, 70, drawCarWash, { v: 30, text: I18n.t('captain-car.carWash'), color: '#4a9ad8' });
+  building(21, 4, 3, 3, 60, drawGasShop, { v: 40, text: I18n.t('captain-car.fuelStation'), color: '#e0503a' });
   building(2, 2, 3, 3, 80, (ctx, k) => drawCarHome(ctx, k, { roof: '#5a8fe0' }), { v: 22, text: '🚗', color: '#5a8fe0', plain: true });
   building(8, 1, 3, 3, 80, (ctx, k) => drawCarHome(ctx, k, { roof: '#ff8a5a' }), { v: 22, text: '🚙', color: '#ff8a5a', plain: true });
   building(25, 8, 3, 3, 80, (ctx, k) => drawCarHome(ctx, k, { roof: '#4fbf70', wall: '#f4f8ff' }), { v: 22, text: '🚐', color: '#4fbf70', plain: true });
@@ -1091,7 +1091,7 @@ function buildCarVillage() {
       { react: { word: car, fx: 'honk' } });
   }
   const lotSign = tileCenter(sc, 20, 17);
-  sc.signs.push({ x: lotSign.x, y: lotSign.y - 20, text: '🅿️ 주차장', color: '#3a6fd8' });
+  sc.signs.push({ x: lotSign.x, y: lotSign.y - 20, text: I18n.t('captain-car.carPark'), color: '#3a6fd8' });
 
   for (const n of UNICORN_NPCS) reserve(n.c, n.r);
 

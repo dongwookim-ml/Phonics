@@ -448,7 +448,7 @@ if (M1 && M23) {
   const both = [B.merge(b, a, 'mine'), B.merge(b, a, 'theirs'), A.merge(a, b, 'mine'), A.merge(a, b, 'theirs')];
   check('new kinds: their answers and tiers are joined like any other kind\'s', both.every(m => has(m, LONG_IDS.concat('word:dog')) && tiers(m) && kind(m, 'word').n === 7), both[0]);
   // load() keeps only answers of kinds the game knows (Quiz.kinds, js/quiz.js).
-  const quiz = vm.runInNewContext(`${['js/data.js', 'js/quiz.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n')}\nQuiz`,
+  const quiz = vm.runInNewContext(`${['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/data.js', 'js/quiz.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n')}\nQuiz`,
     { location: { search: '' }, localStorage: { getItem: () => null, setItem() {} } });
   const P = vm.runInNewContext(`${fs.readFileSync(path.join(root, 'js/progress.js'), 'utf8')}\nProgress`,
     { EDITION: 'princess', crypto: require('crypto').webcrypto, Quiz: quiz, localStorage: { getItem: () => null, setItem() {} } });
@@ -474,7 +474,7 @@ if (M1 && M23) {
 // letter by letter. `reader` reads a save as a version of the game does:
 // her blending tier (Quiz.skill('blend')) and the letters she knows.
 function reader(ref) {
-  const files = ['js/data.js', 'js/progress.js', 'js/quiz.js'];
+  const files = [...(ref ? [] : ['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js']), 'js/data.js', 'js/progress.js', 'js/quiz.js'];
   const read = f => {
     if (!ref) return fs.readFileSync(path.join(root, f), 'utf8');
     const r = spawnSync('git', ['-C', root, 'show', `${ref}:${f}`], { maxBuffer: 1 << 26 });

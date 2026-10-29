@@ -238,7 +238,7 @@ function drawMonsterTower(ctx, k) {
 // questions), with its own name and a 🖍️ over it.
 function kidVillager(n) {
   const art = typeof KID_MONSTERS !== 'undefined' && KID_MONSTERS[n.look];
-  const npc = makeNpc(Object.assign({ name: art ? art.name : '몬스터 친구' }, n), null);
+  const npc = makeNpc(Object.assign({ name: art ? art.name : I18n.t('monster-village.monsterFriend') }, n), null);
   return Object.assign(npc, { level: 6, badge: '🖍️' });
 }
 
@@ -303,7 +303,7 @@ function buildMonsterTower() {
   addStairs(sc, 10, 0, 2, 3, ctx => drawCastleStairs(ctx, sc, 10, 0, 2, 3, 6, STAIRS_TOWER),
     [10, 11].map(c => ({ c, r: 3, target: 'tower2', at: { c: 9, r: 4 }, icon: '⬆️' })));
   const up = tileCenter(sc, 10.5, 1);
-  sc.signs.push({ x: up.x, y: up.y - 74, text: '⬆️ 2층', color: '#8f5ad8', links: sc.links.filter(l => l.target === 'tower2') });
+  sc.signs.push({ x: up.x, y: up.y - 74, text: I18n.t('captain-town.upstairs'), color: '#8f5ad8', links: sc.links.filter(l => l.target === 'tower2') });
 
   for (const n of TOWER_NPCS) sc.npcs.push(kidVillager(n));
   const exit = { c: 5, r: sc.D - 1 };

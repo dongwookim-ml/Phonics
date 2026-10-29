@@ -270,7 +270,7 @@ function vgHeroAt(now) {
 }
 
 const VG_FOREST = {
-  name: '버섯 점프 놀이',
+  name: I18n.t('village-games.mushroomJump'),
   pip: '🍄',
   bag: '🍄',
   color: '#3f8f6a',
@@ -384,7 +384,7 @@ function vgNest(g, x) {
 }
 
 const VG_DINO = {
-  name: '공룡알 놀이',
+  name: I18n.t('village-games.dinosaurEggs'),
   pip: '🐣',
   bag: '🦖',
   color: '#e0802a',
@@ -464,7 +464,7 @@ const VG_DINO = {
 // ---- Unicorn Village: hear the sounds, tap the unicorn ---------------------------
 
 const VG_UNICORN = {
-  name: '유니콘 달리기',
+  name: I18n.t('village-games.unicornRun'),
   pip: '🦄',
   bag: '🌈',
   color: '#9a6ad8',
@@ -601,7 +601,7 @@ function vgLettersEnd() {
 // ---- Car Village: hear the sounds, tap the car --------------------------------
 
 const VG_CARS = {
-  name: '자동차 경주',
+  name: I18n.t('village-games.carRace'),
   pip: '🏁',
   bag: '🏆',
   color: '#d84a4a',
@@ -699,7 +699,7 @@ function vgChest(color, grey, part) {
 }
 
 const VG_CHESTS = {
-  name: '보물 상자 놀이',
+  name: I18n.t('village-games.treasureBoxGame'),
   pip: '💎',
   bag: '💎',
   color: '#7a52c8',
@@ -771,7 +771,7 @@ const VG_CHESTS = {
 // ---- Villain Cave: read the word, free its crystal --------------------------------
 
 const VG_CRYSTALS = {
-  name: '크리스탈 놀이',
+  name: I18n.t('village-games.crystalGame'),
   pip: '💠',
   bag: '💎',
   color: '#2a8a9a',
@@ -1016,7 +1016,7 @@ function vgBubble(g, x, y, col) {
 }
 
 const VG_FAIRY_SKIN = {
-  name: '글자 요정 놀이',
+  name: I18n.t('village-games.letterFairyGame'),
   pip: '✨',
   badge: '🧚', // the fairy village's villagers already have ✨ over them
   bag: '✨',
@@ -1065,7 +1065,7 @@ const VG_FAIRY_SKIN = {
 };
 
 const VG_DRONE_SKIN = {
-  name: '드론 배달 놀이',
+  name: I18n.t('village-games.droneDelivery'),
   pip: '📦',
   bag: '🛸',
   color: '#2f7ad8',

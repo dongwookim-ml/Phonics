@@ -269,7 +269,7 @@ const Account = {
       }
       if (carry) {
         const n = Progress.stars(local);
-        accountToast(n ? `이 기기의 별 ${n}개를 계정에 합쳤어요` : '이 기기의 기록을 계정에 합쳤어요');
+        accountToast(n ? I18n.t('account.mergedStarsFromThisDeviceInto', n) : I18n.t('account.mergedThisDeviceSProgressInto'));
       }
     }
     accountSet('join', null);
@@ -332,7 +332,7 @@ function accountPickEdition(edition, tapped) {
   }
   document.querySelectorAll('#login .edition').forEach(b => b.classList.toggle('on', b.dataset.edition === edition));
   document.getElementById('login-icon').textContent = edition === 'captain' ? '🤖' : '🏰';
-  document.getElementById('login-game').textContent = edition === 'captain' ? '로봇 마을' : '소리 마을';
+  document.getElementById('login-game').textContent = edition === 'captain' ? I18n.t('account.robotTown') : I18n.t('account.phonicsTown');
 }
 document.querySelectorAll('#login .edition').forEach(b => b.addEventListener('click', () => {
   if (typeof Sound !== 'undefined') Sound.tap();
@@ -343,13 +343,13 @@ accountPickEdition(EDITION);
 let accountTab = 'login';
 const ACCOUNT_ID_RE = /^[a-z0-9_]{3,20}$/;
 const ACCOUNT_ERRORS = {
-  badId: '아이디는 영어 소문자, 숫자, _ 로 3~20자예요',
-  badPw: '비밀번호는 6자 이상이에요', // new accounts; older ones may have 4
-  taken: '이미 있는 아이디예요. 다른 아이디를 써 주세요',
-  wrong: '아이디나 비밀번호가 틀렸어요',
-  many: '너무 많이 틀렸어요. 10분 뒤에 다시 해 보세요',
-  offline: '서버에 연결할 수 없어요. 인터넷을 확인해 주세요',
-  other: '잠깐 문제가 생겼어요. 다시 해 보세요',
+  badId: I18n.t('account.use320LowercaseLettersNumbers'),
+  badPw: I18n.t('account.useAtLeast6CharactersFor'), // new accounts; older ones may have 4
+  taken: I18n.t('account.thatUsernameIsTakenPleaseChoose'),
+  wrong: I18n.t('account.incorrectUsernameOrPassword'),
+  many: I18n.t('account.tooManyAttemptsPleaseTryAgain'),
+  offline: I18n.t('account.cannotConnectToTheServerPlease'),
+  other: I18n.t('account.somethingWentWrongPleaseTryAgain'),
 };
 
 function accountSay(text, good) {
@@ -360,9 +360,9 @@ function accountSay(text, good) {
 function accountSetTab(tab) {
   accountTab = tab;
   accountUi.tabs.forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-  accountUi.go.textContent = tab === 'login' ? '로그인 🔑' : '가입하기 ✨';
+  accountUi.go.textContent = tab === 'login' ? I18n.t('account.logIn') : I18n.t('account.signUp');
   accountUi.pw.autocomplete = tab === 'login' ? 'current-password' : 'new-password';
-  accountSay(tab === 'signup' ? '아이디와 비밀번호만 정하면 돼요' : '');
+  accountSay(tab === 'signup' ? I18n.t('account.justChooseAUsernameAndPassword') : '');
 }
 
 function accountShowLogin() {
@@ -379,7 +379,7 @@ async function accountSubmit() {
   if (!ACCOUNT_ID_RE.test(id)) return accountSay(ACCOUNT_ERRORS.badId);
   if (pw.length < (accountTab === 'signup' ? 6 : 4)) return accountSay(accountTab === 'signup' ? ACCOUNT_ERRORS.badPw : ACCOUNT_ERRORS.wrong);
   accountUi.go.disabled = true;
-  accountSay('잠깐만요…', true);
+  accountSay(I18n.t('account.pleaseWait'), true);
   const r = await accountFetch('POST', accountTab === 'login' ? '/auth/login' : '/auth/signup', { id, pw });
   if (r.status === 200 && r.data && r.data.token) {
     accountSet('token', r.data.token);
@@ -388,7 +388,7 @@ async function accountSubmit() {
     accountSet('join', '1'); // until the first sync, even if it waits for the next visit
     Account.user = r.data.id;
     await accountRemember(r.data.id, pw);
-    accountSay('불러오는 중…', true);
+    accountSay(I18n.t('account.loading'), true);
     await Account._sync();
     accountUi.go.disabled = false;
     Account._done();
@@ -414,10 +414,10 @@ function accountRenderBar() {
     who.className = 'who';
     who.textContent = `👤 ${Account.user}`;
     bar.append(who);
-    b.textContent = '로그아웃';
+    b.textContent = I18n.t('account.logOut');
     b.addEventListener('click', () => { if (typeof Sound !== 'undefined') Sound.tap(); Account.logout(); });
   } else {
-    b.textContent = '🔑 로그인';
+    b.textContent = I18n.t('account.logIn2');
     b.addEventListener('click', () => {
       if (typeof Sound !== 'undefined') Sound.tap();
       accountSet('guest', null);

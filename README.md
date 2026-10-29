@@ -13,6 +13,37 @@ It works best on a tablet in landscape. To serve it on a local network:
 npx http-server -p 8080 .
 ```
 
+## Interface languages
+
+Choose **한국어** or **English** on the login screen. The choice is saved on
+this device, independently of accounts and learning progress. Changing it
+reloads the login screen so scene labels and interface text use the same
+language. `?language=en` or `?language=ko` overrides the saved choice.
+
+- `js/locales/ko.js` and `js/locales/en.js` contain the UI messages, with
+  matching keys. They are ordinary scripts so opening `index.html` directly
+  still works without a server or build step.
+- `js/i18n.js` loads the preference and provides `I18n.t(key, ...values)`.
+  Numbered placeholders such as `{0}` let translations reorder names and
+  numbers. HTML templates keep their markup in the locale files too.
+- Static HTML uses `data-i18n`, `data-i18n-title`,
+  `data-i18n-placeholder`, or `data-i18n-aria-label` with a message key.
+- Put new display text in both locale files instead of adding Korean text
+  to JavaScript or HTML. English phonics words, stories and spoken lesson
+  lines remain learning content in their existing data tables; player-entered
+  names are preserved.
+
+Run `node tools/check-i18n.js` to check keys, placeholders and source coverage.
+Run `node tools/check-i18n-browser.js` to verify language selection and gameplay.
+Run `UI_LANGUAGE=en node tools/smoke.js` to exercise the English scenes, and
+`UI_LANGUAGE=en node tools/check-visual.js` to check their layout.
+`AUDIT_LANGUAGE=en TTS_STRICT=0 node tools/check-tts.js` traverses both editions,
+with and without Halloween, using saved Korean profiles. It checks transient
+DOM text, accessible labels and canvas text across every connected scene,
+dialogs, rewards, books, mini-games and secondary panels for leftover Korean.
+The language picker's native Korean option and editable user input are preserved.
+Custom names in this audit use live speech fallback rather than requiring recordings.
+
 ## How it works
 
 - **Start screen**: type the hero's name and pick a title (공주 princess,

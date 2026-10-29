@@ -136,19 +136,13 @@ const questUi = (() => {
   const button = document.createElement('button');
   button.id = 'quest-btn';
   button.className = 'btn quest-btn';
-  button.title = isCaptain() ? '오늘의 임무' : '오늘의 모험';
+  button.title = isCaptain() ? I18n.t('quest.todaySMissions') : I18n.t('quest.todaySAdventures');
   button.innerHTML = '<canvas width="20" height="16"></canvas><span class="pips"><i></i><i></i><i></i></span>';
   document.querySelector('.hud .buttons').prepend(button);
   const box = document.createElement('section');
   box.id = 'quests';
   box.className = 'quests hidden';
-  box.innerHTML = `
-    <div class="qs-head"><div class="qs-title"></div><button class="qs-done" title="다 봤어요">👋</button></div>
-    <div class="qs-row">
-      <div class="qs-list"></div>
-      <div class="qs-arrow">➜</div>
-      <button class="qs-chest" title="보물상자"><canvas width="20" height="16"></canvas><span class="prize"></span></button>
-    </div>`;
+  box.innerHTML = I18n.t('quest.label');
   document.body.append(box);
   return {
     button, chip: button.querySelector('canvas'), pips: [...button.querySelectorAll('.pips i')], chipOpen: null,
@@ -236,7 +230,7 @@ function questBump() {
 
 function renderQuests() {
   const q = questsToday();
-  questUi.title.textContent = isCaptain() ? '🗺️ 오늘의 임무' : '🗺️ 오늘의 모험';
+  questUi.title.textContent = isCaptain() ? I18n.t('quest.todaySMissions2') : I18n.t('quest.todaySAdventures2');
   questUi.list.innerHTML = '';
   questUi.list.dataset.day = q.day; // the day the card shows (questChestTap)
   for (const kind of q.picks) {
@@ -420,8 +414,8 @@ function questTick(kind) {
 function questParentLine() {
   const q = questsToday();
   const each = q.picks.map(k => `${QUESTS[k].place ? albumIcon(k) : QUESTS[k].icon} ${Math.min(questCount(k), QUESTS[k].n)}/${QUESTS[k].n}`);
-  const chest = q.chest ? '열었어요' : questAllDone() ? '열 수 있어요' : '아직 닫혀 있어요';
-  return `오늘의 ${isCaptain() ? '임무' : '모험'}: ${each.join(' · ')} · 보물상자 ${chest}`;
+  const chest = q.chest ? I18n.t('quest.opened') : questAllDone() ? I18n.t('quest.readyToOpen') : I18n.t('quest.stillLocked');
+  return I18n.t('quest.todaySTreasureChest', isCaptain() ? I18n.t('quest.missions') : I18n.t('quest.adventures'), each.join(' · '), chest);
 }
 
 questUi.button.addEventListener('click', () => { Sound.unlock(); openQuests(); });

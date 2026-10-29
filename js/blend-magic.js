@@ -45,18 +45,7 @@ const blendMagic = (() => {
   const el = document.createElement('section');
   el.id = 'magic';
   el.className = 'magic hidden';
-  el.innerHTML = `
-    <button class="round small mg-close" type="button" title="건너뛰기">✖</button>
-    <div class="mg-stage">
-      <div class="mg-row"></div>
-      <div class="mg-runner"></div>
-      <div class="mg-pop"><span class="mg-pic"></span><span class="mg-word"></span></div>
-    </div>
-    <div class="mg-steps">
-      <button class="mg-step" data-step="slow" type="button" title="천천히">🐢</button>
-      <button class="mg-step" data-step="fast" type="button" title="빠르게">${isCaptain() ? '🚀' : '🐇'}</button>
-      <button class="mg-step" data-step="pop" type="button" title="펑!">${isCaptain() ? '💥' : '✨'}</button>
-    </div>`;
+  el.innerHTML = I18n.t('blend-magic.label', isCaptain() ? '🚀' : '🐇', isCaptain() ? '💥' : '✨');
   document.body.append(el);
   const q = s => el.querySelector(s);
   return {

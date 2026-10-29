@@ -31,9 +31,9 @@ const KID_MONSTERS = {
   // A grumpy little one with a tall pointy hat leaning to one side, angry
   // brows, a straight mouth and a narrow dress.
   kidmon1: {
-    name: '뾰족모자 몬스터',
+    name: I18n.t('kid-monsters.pointyHatMonster'),
     drawing: 'img/monsters/kidmon1.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     pal: { b: '#c9b4ff', B: '#e6dcff', d: '#a68ee8', h: '#a98cf2', H: '#cdb8ff' },
     rows: [
       '.............h......',
@@ -86,9 +86,9 @@ const KID_MONSTERS = {
   // A happy one with two big pointy ears, raised brows, a smile and a round
   // balloon of a body.
   kidmon2: {
-    name: '방긋 여우귀 몬스터',
+    name: I18n.t('kid-monsters.smilingFoxEarMonster'),
     drawing: 'img/monsters/kidmon2.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     pal: { b: '#ffc79e', B: '#ffe2cc', d: '#f0a070', e: '#ff9ec4' },
     rows: [
       '.b..................b.',
@@ -140,9 +140,9 @@ const KID_MONSTERS = {
   // A grumpy cat with frowning brows and an X for a mouth, in a striped
   // jacket, arms straight out.
   kidmon3: {
-    name: '줄무늬 고양이 몬스터',
+    name: I18n.t('kid-monsters.stripedCatMonster'),
     drawing: 'img/monsters/kidmon3.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     pal: { b: '#a8d8ff', B: '#d4ecff', d: '#7fb4e8', s: '#4f86c0' },
     rows: [
       '....b.........b......',
@@ -192,9 +192,9 @@ const KID_MONSTERS = {
   // triangle body with a wing each side (the left one has a little hole in
   // it, like the paper) and long thin legs. Its wave is a flap.
   kidmon4: {
-    name: '뾰족탑 날개 몬스터',
+    name: I18n.t('kid-monsters.towerWingMonster'),
     drawing: 'img/monsters/kidmon4.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     pal: { b: '#ffe680', B: '#fff4c0', d: '#f0c850', h: '#ffd36a', H: '#fff0b0', v: '#e4d4ff' },
     rows: [
       '...........h...........',
@@ -248,9 +248,9 @@ const KID_MONSTERS = {
   // A frowning bunny with three tall ears and a leaf of an ear at the side,
   // holding a magic loop.
   kidmon5: {
-    name: '요술고리 토끼 몬스터',
+    name: I18n.t('kid-monsters.magicRingBunnyMonster'),
     drawing: 'img/monsters/kidmon5.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     pal: { b: '#ffb6d6', B: '#ffdcec', d: '#f08cba', e: '#ff8cc0', c: '#fff6c8' },
     rows: [
       '.bb.....b......bb.....',
@@ -299,9 +299,9 @@ const KID_MONSTERS = {
   // second face on its tummy: one more eye and a big mouth with fangs and a
   // tongue. Four little legs. Her pencil was brown (`ink`).
   kidmon6: {
-    name: '배에 입 달린 몬스터',
+    name: I18n.t('kid-monsters.tummyMouthMonster'),
     drawing: 'img/monsters/kidmon6.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#8a4e2e',
     pal: { b: '#ffe1c2', B: '#fff1e2', d: '#f2c69c', h: '#e0407a', H: '#ff86b0', m: '#7a2a3a', t: '#ff8aa8' },
     rows: [
@@ -351,9 +351,9 @@ const KID_MONSTERS = {
   // swirl on its round tummy and four arms with mitten hands. Its eye
   // shuts as a line (`shut`).
   kidmon7: {
-    name: '외눈 초록뿔 몬스터',
+    name: I18n.t('kid-monsters.oneEyedGreenHornMonster'),
     drawing: 'img/monsters/kidmon7.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#2c2c3a',
     pal: { b: '#d6e6ff', B: '#eef5ff', d: '#aec8f0', g: '#5cb84a', G: '#9be07a', f: '#e0508a', s: '#c0703a' },
     rows: [
@@ -414,9 +414,9 @@ const KID_MONSTERS = {
   // spike on its tail, which flicks up when it waves. Its ♪ goes over its
   // head (`head`).
   kidmon8: {
-    name: '이빨 애벌레 몬스터',
+    name: I18n.t('kid-monsters.toothyCaterpillarMonster'),
     drawing: 'img/monsters/kidmon8.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#2c2c3a',
     pal: { b: '#c4ecaa', B: '#e2fbd2', d: '#98d07e', m: '#6a2a3a', f: '#b07ae0', k: '#c8283c' },
     head: 7,
@@ -454,9 +454,9 @@ const KID_MONSTERS = {
   // bow, a grey dress with a purple stripe, arms straight out with claws,
   // and long thin legs with bird feet.
   kidmon9: {
-    name: '파란 날개 고양이 몬스터',
+    name: I18n.t('kid-monsters.blueWingCatMonster'),
     drawing: 'img/monsters/kidmon9.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#2c2c3a',
     pal: { b: '#ece6f8', B: '#faf7ff', d: '#d2c6ec', g: '#a9b6be', G: '#c9d3d9', s: '#c0409a', v: '#6e9cf0', V: '#a4c4ff' },
     rows: [
@@ -513,9 +513,9 @@ const KID_MONSTERS = {
   // Spiky hair like a crown, cross orange eyes, a triangle dress, an arm
   // down its side and crossed legs, all in her red crayon (`ink`).
   kidmon10: {
-    name: '삐죽머리 빨강 몬스터',
+    name: I18n.t('kid-monsters.spikyRedMonster'),
     drawing: 'img/monsters/kidmon10.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#d23a24',
     pal: { b: '#ffe6d8', B: '#fff3ec', d: '#f6c9b2', h: '#ff6a3c', H: '#ff9a70', e: '#ffb070', r: '#ffb4a4', R: '#ffd2c8', k: '#2a1a1a' },
     rows: [
@@ -577,9 +577,9 @@ const KID_MONSTERS = {
   // tongues out, four on its tummy and two on each arm, which all shut at
   // once when it waves.
   kidmon11: {
-    name: '입이 많이 달린 몬스터',
+    name: I18n.t('kid-monsters.manyMouthMonster'),
     drawing: 'img/monsters/kidmon11.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#2c2c3a',
     pal: { b: '#e9e9f2', B: '#f6f6fb', d: '#cfcfe0', h: '#ffd8ea', H: '#ffeaf3', x: '#3a3a4a', e: '#ff7ab0', t: '#ff7aa8' },
     rows: [
@@ -638,9 +638,9 @@ const KID_MONSTERS = {
   // little legs under it and two long front legs. Its tail flicks when it
   // waves; it stands on its front legs (`head`: where its ♪ goes).
   kidmon12: {
-    name: '몸통이 긴 뱀 몬스터',
+    name: I18n.t('kid-monsters.longSnakeMonster'),
     drawing: 'img/monsters/kidmon12.jpg',
-    by: '직접 그린 몬스터',
+    by: I18n.t('kid-monsters.handDrawnMonster'),
     ink: '#8a2a6a',
     pal: { b: '#f6e8f6', B: '#fff4fb', d: '#e4cce4', h: '#c8408e', y: '#f0d84a', e: '#f2d63a', k: '#1a1a1a', G: '#dedee8', s: '#c8408e', f: '#ffd0e8' },
     head: 6,

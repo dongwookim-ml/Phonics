@@ -24,93 +24,93 @@
 
 // Paint: [main, shade, light, trim].
 const ROBOT_PAINT = {
-  blue:   { name: '파란',   icon: '🔵', c: ['#5aa6f0', '#3a74c4', '#b0dcff', '#ffd34d'] },
-  red:    { name: '빨간',   icon: '🔴', c: ['#ff6b6b', '#cf4050', '#ffb8b0', '#ffd34d'] },
-  yellow: { name: '노란',   icon: '🟡', c: ['#ffd34d', '#e0a02a', '#fff2b0', '#ff6b6b'] },
-  green:  { name: '초록',   icon: '🟢', c: ['#5fd08a', '#36a066', '#c0f4d4', '#ffd34d'] },
-  orange: { name: '주황',   icon: '🟠', c: ['#ffa04a', '#e0702a', '#ffd4a8', '#5aa6f0'] },
-  pink:   { name: '분홍',   icon: '🌸', c: ['#ff8fc0', '#e0609a', '#ffd0e6', '#ffd34d'] },
-  mint:   { name: '민트',   icon: '🍃', c: ['#6fe0c0', '#36aa8c', '#c8fff0', '#ff8a5a'] },
-  sky:    { name: '하늘',   icon: '☁️', c: ['#8fd3ff', '#5aa6e0', '#e0f6ff', '#ffd34d'] },
-  purple: { name: '보라',   icon: '🟣', c: ['#a88cff', '#7a5ad8', '#dcd0ff', '#ffd34d'], forest: true },
-  white:  { name: '하얀',   icon: '⚪', c: ['#f4f6fc', '#c4cce0', '#ffffff', '#ff6b6b'], forest: true },
-  black:  { name: '까만',   icon: '⚫', c: ['#4a4e6e', '#33364f', '#7a80a4', '#6ff0ff'], forest: true },
+  blue:   { name: I18n.t('captain-hero.blue'),   icon: '🔵', c: ['#5aa6f0', '#3a74c4', '#b0dcff', '#ffd34d'] },
+  red:    { name: I18n.t('captain-hero.red'),   icon: '🔴', c: ['#ff6b6b', '#cf4050', '#ffb8b0', '#ffd34d'] },
+  yellow: { name: I18n.t('captain-hero.yellow'),   icon: '🟡', c: ['#ffd34d', '#e0a02a', '#fff2b0', '#ff6b6b'] },
+  green:  { name: I18n.t('captain-hero.green'),   icon: '🟢', c: ['#5fd08a', '#36a066', '#c0f4d4', '#ffd34d'] },
+  orange: { name: I18n.t('captain-hero.orange'),   icon: '🟠', c: ['#ffa04a', '#e0702a', '#ffd4a8', '#5aa6f0'] },
+  pink:   { name: I18n.t('captain-hero.pink'),   icon: '🌸', c: ['#ff8fc0', '#e0609a', '#ffd0e6', '#ffd34d'] },
+  mint:   { name: I18n.t('captain-hero.mint'),   icon: '🍃', c: ['#6fe0c0', '#36aa8c', '#c8fff0', '#ff8a5a'] },
+  sky:    { name: I18n.t('captain-hero.skyBlue'),   icon: '☁️', c: ['#8fd3ff', '#5aa6e0', '#e0f6ff', '#ffd34d'] },
+  purple: { name: I18n.t('captain-hero.purple'),   icon: '🟣', c: ['#a88cff', '#7a5ad8', '#dcd0ff', '#ffd34d'], forest: true },
+  white:  { name: I18n.t('captain-hero.white'),   icon: '⚪', c: ['#f4f6fc', '#c4cce0', '#ffffff', '#ff6b6b'], forest: true },
+  black:  { name: I18n.t('captain-hero.black'),   icon: '⚫', c: ['#4a4e6e', '#33364f', '#7a80a4', '#6ff0ff'], forest: true },
   // Gold and chrome are shiny: a glint runs over them (drawRobotGlint).
-  gold:   { name: '황금',   icon: '🌟', c: ['#f2b51f', '#a8740e', '#fff1a0', '#7a3fc8'], shop: true, price: 12, metal: true },
-  chrome: { name: '반짝 은빛', icon: '💿', c: ['#dfe6f4', '#9aa6c8', '#ffffff', '#6ff0ff'], shop: true, price: 10, metal: true },
+  gold:   { name: I18n.t('captain-hero.gold'),   icon: '🌟', c: ['#f2b51f', '#a8740e', '#fff1a0', '#7a3fc8'], shop: true, price: 12, metal: true },
+  chrome: { name: I18n.t('captain-hero.shinySilver'), icon: '💿', c: ['#dfe6f4', '#9aa6c8', '#ffffff', '#6ff0ff'], shop: true, price: 10, metal: true },
 };
 const ROBOT_BODIES = {
-  basic:  { name: '하트 몸통',     icon: '❤️' },
-  tank:   { name: '캡틴 몸통',     icon: '⭐', forest: true },
-  core:   { name: '번개 몸통',     icon: '⚡', forest: true },
-  stego:  { name: '스테고 등판',   icon: '🦕', forest: true },
-  ankylo: { name: '안킬로 갑옷',   icon: '🛡️', forest: true },
-  rex:    { name: '티라노 꼬리',   icon: '🦖', forest: true },
+  basic:  { name: I18n.t('captain-hero.heartBody'),     icon: '❤️' },
+  tank:   { name: I18n.t('captain-hero.captainBody'),     icon: '⭐', forest: true },
+  core:   { name: I18n.t('captain-hero.lightningBody'),     icon: '⚡', forest: true },
+  stego:  { name: I18n.t('captain-hero.stegosaurusPlates'),   icon: '🦕', forest: true },
+  ankylo: { name: I18n.t('captain-hero.ankylosaurusArmour'),   icon: '🛡️', forest: true },
+  rex:    { name: I18n.t('captain-hero.tRexTail'),   icon: '🦖', forest: true },
 };
 const ROBOT_HEADS = {
-  dome:    { name: '동글 머리',     icon: '🤖' },
-  box:     { name: '네모 머리',     icon: '📺', forest: true },
-  captain: { name: '캡틴 헬멧',     icon: '⭐', forest: true },
-  trex:    { name: '티라노 헬멧',   icon: '🦖', forest: true },
-  tricera: { name: '트리케라 헬멧', icon: '🦕', forest: true },
-  astro:   { name: '우주 헬멧',     icon: '🪐', shop: true, price: 12 },
-  cat:     { name: '고양이 머리',   icon: '🐱' },
-  shark:   { name: '상어 헬멧',     icon: '🦈' },
+  dome:    { name: I18n.t('captain-hero.roundHead'),     icon: '🤖' },
+  box:     { name: I18n.t('captain-hero.squareHead'),     icon: '📺', forest: true },
+  captain: { name: I18n.t('captain-hero.captainHelmet'),     icon: '⭐', forest: true },
+  trex:    { name: I18n.t('captain-hero.tRexHelmet'),   icon: '🦖', forest: true },
+  tricera: { name: I18n.t('captain-hero.triceratopsHelmet'), icon: '🦕', forest: true },
+  astro:   { name: I18n.t('captain-hero.spaceHelmet'),     icon: '🪐', shop: true, price: 12 },
+  cat:     { name: I18n.t('captain-hero.catHead'),   icon: '🐱' },
+  shark:   { name: I18n.t('captain-hero.sharkHelmet'),     icon: '🦈' },
 };
 const ROBOT_ARMS = {
-  basic:  { name: '기본 팔',   icon: '🦾' },
-  claw:   { name: '집게 팔',   icon: '🦀' },
-  drill:  { name: '드릴 팔',   icon: '🔩' },
-  magnet: { name: '자석 팔',   icon: '🧲' },
-  hammer: { name: '망치 팔',   icon: '🔨' },
-  scoop:  { name: '포크레인 팔', icon: '🚧' },
-  rocket: { name: '로켓 주먹', icon: '🥊', shop: true, price: 10 },
+  basic:  { name: I18n.t('captain-hero.basicArms'),   icon: '🦾' },
+  claw:   { name: I18n.t('captain-hero.clawArms'),   icon: '🦀' },
+  drill:  { name: I18n.t('captain-hero.drillArms'),   icon: '🔩' },
+  magnet: { name: I18n.t('captain-hero.magnetArms'),   icon: '🧲' },
+  hammer: { name: I18n.t('captain-hero.hammerArms'),   icon: '🔨' },
+  scoop:  { name: I18n.t('captain-hero.diggerArms'), icon: '🚧' },
+  rocket: { name: I18n.t('captain-hero.rocketFists'), icon: '🥊', shop: true, price: 10 },
 };
 const ROBOT_LEGS = {
-  basic:  { name: '기본 다리',   icon: '🦿' },
-  wheel:  { name: '외바퀴',      icon: '🛞' },
-  treads: { name: '탱크 바퀴',   icon: '🚜' },
-  spring: { name: '용수철 다리', icon: '🌀' },
-  skates: { name: '롤러스케이트', icon: '🛼' },
-  dino:   { name: '공룡 발',     icon: '🦖', forest: true },
-  hover:  { name: '부스터 다리', icon: '🔥', shop: true, price: 12 },
+  basic:  { name: I18n.t('captain-hero.basicLegs'),   icon: '🦿' },
+  wheel:  { name: I18n.t('captain-hero.singleWheel'),      icon: '🛞' },
+  treads: { name: I18n.t('captain-hero.tankTracks'),   icon: '🚜' },
+  spring: { name: I18n.t('captain-hero.springLegs'), icon: '🌀' },
+  skates: { name: I18n.t('captain-hero.rollerSkates'), icon: '🛼' },
+  dino:   { name: I18n.t('captain-hero.dinosaurFeet'),     icon: '🦖', forest: true },
+  hover:  { name: I18n.t('captain-hero.boosterLegs'), icon: '🔥', shop: true, price: 12 },
 };
 const ROBOT_BACKS = {
-  none:    { name: '없음',   icon: '' },
-  wings:   { name: '로봇 날개', icon: '🪽' },
-  propeller: { name: '프로펠러', icon: '🚁' },
-  jetpack: { name: '제트팩', icon: '🚀', shop: true, price: 15 },
+  none:    { name: I18n.t('captain-drone.none'),   icon: '' },
+  wings:   { name: I18n.t('captain-hero.robotWings'), icon: '🪽' },
+  propeller: { name: I18n.t('captain-hero.propeller'), icon: '🚁' },
+  jetpack: { name: I18n.t('captain-hero.jetpack'), icon: '🚀', shop: true, price: 15 },
 };
 // The workbench's treasure shelf (TREASURES in the princess edition).
 const ROBOT_TREASURES = {
-  gear:      { name: '톱니바퀴',   icon: '⚙️' },
-  bolt:      { name: '볼트',       icon: '🔩' },
-  wrench:    { name: '스패너',     icon: '🔧' },
-  toolbox:   { name: '공구 상자',  icon: '🧰' },
-  bulb:      { name: '전구',       icon: '💡' },
-  torch:     { name: '손전등',     icon: '🔦' },
-  antenna:   { name: '안테나',     icon: '📡' },
-  satellite: { name: '인공위성',   icon: '🛰️' },
-  telescope: { name: '망원경',     icon: '🔭' },
-  microscope: { name: '현미경',    icon: '🔬' },
-  flask:     { name: '실험관',     icon: '🧪' },
-  magnet:    { name: '말굽자석',   icon: '🧲' },
-  gamepad:   { name: '게임기',     icon: '🎮' },
-  joystick:  { name: '조이스틱',   icon: '🕹️' },
-  radio:     { name: '라디오',     icon: '📻' },
-  clock:     { name: '자명종',     icon: '⏰' },
-  trophy:    { name: '트로피',     icon: '🏆' },
-  medal:     { name: '금메달',     icon: '🥇' },
-  planet:    { name: '작은 행성',  icon: '🪐' },
-  comet:     { name: '별똥별',     icon: '🌠' },
-  rocket:    { name: '장난감 로켓', icon: '🚀' },
-  lights:    { name: '신호등',     icon: '🚦' },
-  bone:      { name: '공룡 뼈',    icon: '🦴', forest: true },
-  egg:       { name: '공룡 알',    icon: '🥚', forest: true },
-  chequer:   { name: '체크 깃발',  icon: '🏁', unicorn: true },
-  tyre:      { name: '타이어',     icon: '🛞', unicorn: true },
-  plane:     { name: '꼬마 비행기', icon: '🛩️', fairy: true },
-  parachute: { name: '낙하산',     icon: '🪂', fairy: true },
+  gear:      { name: I18n.t('captain-hero.gear'),   icon: '⚙️' },
+  bolt:      { name: I18n.t('captain-hero.bolt'),       icon: '🔩' },
+  wrench:    { name: I18n.t('captain-hero.spanner'),     icon: '🔧' },
+  toolbox:   { name: I18n.t('captain-hero.toolbox'),  icon: '🧰' },
+  bulb:      { name: I18n.t('captain-hero.lightBulb'),       icon: '💡' },
+  torch:     { name: I18n.t('captain-hero.torch'),     icon: '🔦' },
+  antenna:   { name: I18n.t('captain-hero.antenna'),     icon: '📡' },
+  satellite: { name: I18n.t('captain-hero.satellite'),   icon: '🛰️' },
+  telescope: { name: I18n.t('captain-hero.telescope'),     icon: '🔭' },
+  microscope: { name: I18n.t('captain-hero.microscope'),    icon: '🔬' },
+  flask:     { name: I18n.t('captain-hero.testTube'),     icon: '🧪' },
+  magnet:    { name: I18n.t('captain-hero.horseshoeMagnet'),   icon: '🧲' },
+  gamepad:   { name: I18n.t('captain-hero.gameConsole'),     icon: '🎮' },
+  joystick:  { name: I18n.t('captain-hero.joystick'),   icon: '🕹️' },
+  radio:     { name: I18n.t('captain-hero.radio'),     icon: '📻' },
+  clock:     { name: I18n.t('captain-hero.alarmClock'),     icon: '⏰' },
+  trophy:    { name: I18n.t('captain-hero.trophy'),     icon: '🏆' },
+  medal:     { name: I18n.t('captain-hero.goldMedal'),     icon: '🥇' },
+  planet:    { name: I18n.t('captain-hero.littlePlanet'),  icon: '🪐' },
+  comet:     { name: I18n.t('captain-hero.shootingStar'),     icon: '🌠' },
+  rocket:    { name: I18n.t('captain-hero.toyRocket'), icon: '🚀' },
+  lights:    { name: I18n.t('captain-hero.trafficLight'),     icon: '🚦' },
+  bone:      { name: I18n.t('captain-hero.dinosaurBone'),    icon: '🦴', forest: true },
+  egg:       { name: I18n.t('captain-hero.dinosaurEgg'),    icon: '🥚', forest: true },
+  chequer:   { name: I18n.t('captain-hero.chequeredFlag'),  icon: '🏁', unicorn: true },
+  tyre:      { name: I18n.t('captain-hero.tyre'),     icon: '🛞', unicorn: true },
+  plane:     { name: I18n.t('captain-hero.littlePlane'), icon: '🛩️', fairy: true },
+  parachute: { name: I18n.t('captain-hero.parachute'),     icon: '🪂', fairy: true },
 };
 // A complete basic robot.
 const ROBOT_OUTFIT = { dress: 'blue', shape: 'basic', head: 'dome', hand: 'basic', hair: 'basic', back: 'none', ride: 'none', fairy: 'none' };
@@ -177,8 +177,8 @@ function captainWardrobe(wardrobe) {
   // Each tab's title and picture; the head, body, arm and leg tabs show
   // the robot's own part (`part`, see renderTabs in game.js).
   const rows = {
-    head: ['머리', '🤖'], shape: ['몸통', '🔋'], hand: ['팔', '🦾'], hair: ['다리', '🦿'], dress: ['페인트 색', '🎨'],
-    back: ['등에 메는 것', '🚀'], ride: ['자동차 (자동차 마을)', '🚗'], fairy: ['도우미 (드론 마을)', '🛸'], treasure: ['보물 선반', '🧰'],
+    head: [I18n.t('captain-hero.head'), '🤖'], shape: [I18n.t('captain-hero.body'), '🔋'], hand: [I18n.t('captain-hero.arms'), '🦾'], hair: [I18n.t('captain-hero.legs'), '🦿'], dress: [I18n.t('captain-hero.paintColour'), '🎨'],
+    back: [I18n.t('captain-hero.backAccessories'), '🚀'], ride: [I18n.t('captain-hero.carsCarVillage'), '🚗'], fairy: [I18n.t('captain-hero.helpersDroneVillage'), '🛸'], treasure: [I18n.t('captain-hero.treasureShelf'), '🧰'],
   };
   const order = Object.keys(rows);
   for (const w of wardrobe) {
@@ -189,32 +189,32 @@ function captainWardrobe(wardrobe) {
     w.part = ['head', 'shape', 'hand', 'hair'].includes(w.slot);
   }
   wardrobe.sort((a, b) => order.indexOf(a.slot) - order.indexOf(b.slot));
-  document.querySelector('#wardrobe .wd-done').textContent = '정비 끝! 🔧';
+  document.querySelector('#wardrobe .wd-done').textContent = I18n.t('captain-hero.allFixed');
   document.querySelector('#shop .wd-name').textContent = place('shop');
 }
 
 // "🔵 파란 페인트": paint is named by colour.
 function captainItemLabel(slot, v) {
-  return slot === 'dress' ? `${v.icon} ${v.name} 페인트` : `${v.icon} ${v.name}`;
+  return slot === 'dress' ? I18n.t('captain-hero.paint', v.icon, v.name) : `${v.icon} ${v.name}`;
 }
 
 // The reward card's wording for a new part, car, buddy or treasure (also
 // after a buy).
 function captainRewardText(isNew, label, ride, buddy, shelf) {
-  ui.rewardName.textContent = !isNew ? label : ride ? `${label} · 새 자동차가 생겼어요!` : buddy ? `${label} · 새 친구가 생겼어요!` : shelf ? `${label} · 보물 선반에 쏙!` : `${label} · 정비대에 쏙!`;
+  ui.rewardName.textContent = !isNew ? label : ride ? I18n.t('captain-hero.youHaveANewCar', label) : buddy ? I18n.t('captain-hero.youHaveANewFriend', label) : shelf ? I18n.t('captain-hero.onTheTreasureShelf', label) : I18n.t('captain-hero.onTheWorkbench', label);
   // Car buttons are worded by js/captain-car.js.
-  const car = typeof CAPTAIN_RIDE_TEXT !== 'undefined' ? CAPTAIN_RIDE_TEXT : { yes: '지금 탈래요 🚗', no: '차고에 둘래요 🅿️' };
-  ui.rewardYes.textContent = ride ? car.yes : buddy ? '같이 다닐래요 🛸' : shelf ? '보물 선반에 둘래요 ⚙️' : '장착할래요 🔧';
-  ui.rewardNo.textContent = !isNew ? '그대로 할래요' : ride ? car.no : buddy ? '격납고에 둘래요 🛬' : '정비대에 둘래요 🧰';
+  const car = typeof CAPTAIN_RIDE_TEXT !== 'undefined' ? CAPTAIN_RIDE_TEXT : { yes: I18n.t('captain-car.rideNow'), no: I18n.t('captain-car.parkInTheGarage') };
+  ui.rewardYes.textContent = ride ? car.yes : buddy ? I18n.t('captain-hero.comeWithMe') : shelf ? I18n.t('captain-hero.putOnTheTreasureShelf') : I18n.t('captain-hero.equipIt');
+  ui.rewardNo.textContent = !isNew ? I18n.t('captain-hero.keepThisOne') : ride ? car.no : buddy ? I18n.t('captain-hero.leaveInTheHangar') : I18n.t('captain-hero.leaveOnTheWorkbench');
 }
 
 // Workbench, shop and start-screen wording that game.js sets as it goes.
 const CAPTAIN_TEXT = {
-  workbench: () => `🔧 ${TITLES[PLAYER.title].ko}의 정비대`,
-  collected: (have, total) => `모은 부품 ${have} / ${total}`,
-  shopOnly: '✨ 상점에만 있는 특별 부품이에요!',
-  poor: n => `코인이 ${n}개 더 필요해요. 악당 동굴에서 악당을 물리쳐 봐요! 😈`,
-  poorPond: n => `코인이 ${n}개 더 필요해요. 마을의 자석 크레인 놀이를 해 봐요! 🧲`,
+  workbench: () => I18n.t('captain-hero.sWorkbench', TITLES[PLAYER.title].label),
+  collected: (have, total) => I18n.t('captain-hero.partsCollected', have, total),
+  shopOnly: I18n.t('captain-hero.aSpecialPartOnlySoldHere'),
+  poor: n => I18n.t('captain-hero.youNeedMoreCoinsDefeatVillains', n),
+  poorPond: n => I18n.t('captain-hero.youNeedMoreCoinsTryThe', n),
 };
 
 // ---- The robot's sprite ------------------------------------------------------

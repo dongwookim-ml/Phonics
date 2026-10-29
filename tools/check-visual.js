@@ -191,7 +191,7 @@ function ask(kind, scene) {
       const page = await browser.newPage({ viewport: { width: w, height: h } });
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
-      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0&halloween=1`);
+      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0&halloween=1&language=${process.env.UI_LANGUAGE || 'ko'}`);
       await page.evaluate(() => document.fonts.ready);
       console.log(`${edition} ${w}x${h}`);
 
@@ -509,7 +509,7 @@ function ask(kind, scene) {
         closeLibrary();
         // A celebration with the longest place name fits across the screen.
         const longest = albumGates().map(g => placeName(g.key)).sort((a, b) => b.length - a.length)[0];
-        const show = fanfareBanner('🌲🔓', longest, '문이 열렸어요!', 2500);
+        const show = fanfareBanner('🌲🔓', longest, I18n.t('album.theGateIsOpen'), 2500);
         show.el.style.animation = 'none';
         const fb = show.el.getBoundingClientRect();
         if (fb.left < 0 || fb.right > innerWidth || fb.bottom > innerHeight) out.push('a celebration runs off the screen');
@@ -562,7 +562,7 @@ function ask(kind, scene) {
       const page = await browser.newPage({ viewport: { width: w, height: h } });
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
-      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0&halloween=1`);
+      await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&fx=0&halloween=1&language=${process.env.UI_LANGUAGE || 'ko'}`);
       await page.evaluate(() => document.fonts.ready);
       console.log(`${edition} ${w}x${h} (upright: her books)`);
       await page.click('#login-guest');

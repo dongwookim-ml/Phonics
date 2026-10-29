@@ -39,7 +39,7 @@ const TRICKY = { was: 0, want: 0, wash: 0, swan: 0, put: 0, push: 0, full: 0, of
 const NEW_EMOJI = /[\u{1F6DC}-\u{1F6DF}\u{1F7F0}\u{1F979}\u{1F9CC}\u{1FA75}-\u{1FA77}\u{1FA7B}-\u{1FA7F}\u{1FA87}-\u{1FA8F}\u{1FAA9}-\u{1FAAF}\u{1FAB7}-\u{1FABF}\u{1FAC3}-\u{1FACF}\u{1FAD7}-\u{1FAFF}]/u;
 
 function load() {
-  const src = ['js/data.js', 'js/books.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
+  const src = ['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/data.js', 'js/books.js'].map(f => fs.readFileSync(path.join(root, f), 'utf8')).join('\n');
   const ctx = { location: { search: '' }, localStorage: { getItem: () => null, setItem() {} } };
   return vm.runInNewContext(`${src}
 ({ DECODABLE_BOOKS, SIGHT_WORDS, DECODE, decodeLevel, decodeParts, decodeSounds, decodeTokens, bookSentences,
@@ -83,7 +83,7 @@ function check() {
     if (!Number.isInteger(b.level) || b.level < 1 || b.level > LEVELS) say(`${where}: level must be 1 to ${LEVELS}`);
     if (b.level < last) say(`${where}: comes after a level ${last} book`);
     last = b.level;
-    if (!b.title || !b.ko || !b.cover || !/^#[0-9a-f]{6}$/i.test(b.color || '')) say(`${where}: needs a title, ko, cover and color`);
+    if (!b.title || !b.label || !b.cover || !/^#[0-9a-f]{6}$/i.test(b.color || '')) say(`${where}: needs a title, label, cover and color`);
     if (NEW_EMOJI.test(b.cover || '')) say(`${where}: the cover ${b.cover} is newer than Unicode 13`);
     if (b.pages.length < 4 || b.pages.length > 6) say(`${where}: ${b.pages.length} pages, should be 4 to 6`);
     let top = 0;

@@ -51,7 +51,7 @@ function hwScreens() {
     const h1 = el && el.querySelector('h1');
     if (!h1) continue;
     el.classList.add('hw');
-    h1.insertAdjacentHTML('beforeend', '<br><span class="hw-hello" role="button">🎃 Happy Halloween! 👻</span>');
+    h1.insertAdjacentHTML('beforeend', `<br><span class="hw-hello" role="button">${I18n.t('halloween.screenGreeting')}</span>`);
     h1.querySelector('.hw-hello').addEventListener('click', () => {
       Sound.unlock();
       Sound.say([{ text: line('halloweenHi'), narrator: true }]);
@@ -1148,17 +1148,17 @@ function halloweenTap(wx, wy) {
 // bubbles, sweet-coloured chests, crystals and eggs, and names and pictures
 // to match. With Halloween off none of this is touched.
 const HW_GAMES = {
-  fish: { label: () => (isCaptain() ? '🧲 호박 크레인' : '🎣 유령 물고기 낚시'), title: () => (isCaptain() ? '🧲 호박 크레인' : '👻 유령 물고기 낚시'), pip: () => (isCaptain() ? '🎃' : '👻'), bag: () => '🎃' },
+  fish: { label: () => (isCaptain() ? I18n.t('halloween.pumpkinCrane') : I18n.t('halloween.ghostFishing')), title: () => (isCaptain() ? I18n.t('halloween.pumpkinCrane') : I18n.t('halloween.ghostFishing2')), pip: () => (isCaptain() ? '🎃' : '👻'), bag: () => '🎃' },
 };
 const HW_SKINS = () => ({
-  VG_FOREST: { name: '호박 점프 놀이', pip: '🎃', bag: '🍬', looks: ['#ff8a2a', '#b98cff', '#ffb347', '#f4ece0', '#8fd05a'], hop: hwHopPumpkin },
-  VG_DINO: { name: '할로윈 공룡알 놀이', bag: '🎃', looks: ['#ff8a2a', '#b98cff', '#8fd05a', '#ffd34d', '#f4ece0'] },
-  VG_UNICORN: { name: '할로윈 유니콘 달리기', bag: '🍬' },
-  VG_CARS: { name: '할로윈 자동차 경주', bag: '🎃' },
-  VG_CHESTS: { name: '사탕 상자 놀이', pip: '🍬', bag: '🎃', looks: ['#e8762a', '#7a4ab8', '#4a3a58', '#4a9a5a', '#c8502a'] },
-  VG_CRYSTALS: { name: '할로윈 크리스탈 놀이', bag: '🎃', looks: ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d', '#ff6fa8'] },
-  VG_FAIRY_SKIN: { name: '박쥐 글자 놀이', pip: '🦇', badge: '🦇', bag: '🍬', color: '#7a4ab8', sparkle: '#ff9a3a', ink: '#4a2a6a', carrier: hwBatCarrier, tile: hwTileBubble(), frame: hwPumpkinFrame },
-  VG_DRONE_SKIN: { name: '할로윈 드론 배달 놀이', bag: '🎃' },
+  VG_FOREST: { name: I18n.t('halloween.pumpkinJump'), pip: '🎃', bag: '🍬', looks: ['#ff8a2a', '#b98cff', '#ffb347', '#f4ece0', '#8fd05a'], hop: hwHopPumpkin },
+  VG_DINO: { name: I18n.t('halloween.halloweenDinosaurEggs'), bag: '🎃', looks: ['#ff8a2a', '#b98cff', '#8fd05a', '#ffd34d', '#f4ece0'] },
+  VG_UNICORN: { name: I18n.t('halloween.halloweenUnicornRun'), bag: '🍬' },
+  VG_CARS: { name: I18n.t('halloween.halloweenCarRace'), bag: '🎃' },
+  VG_CHESTS: { name: I18n.t('halloween.candyBoxGame'), pip: '🍬', bag: '🎃', looks: ['#e8762a', '#7a4ab8', '#4a3a58', '#4a9a5a', '#c8502a'] },
+  VG_CRYSTALS: { name: I18n.t('halloween.halloweenCrystalGame'), bag: '🎃', looks: ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d', '#ff6fa8'] },
+  VG_FAIRY_SKIN: { name: I18n.t('halloween.batLetterGame'), pip: '🦇', badge: '🦇', bag: '🍬', color: '#7a4ab8', sparkle: '#ff9a3a', ink: '#4a2a6a', carrier: hwBatCarrier, tile: hwTileBubble(), frame: hwPumpkinFrame },
+  VG_DRONE_SKIN: { name: I18n.t('halloween.halloweenDroneDelivery'), bag: '🎃' },
 });
 if (HALLOWEEN_ON) hwDressGames();
 

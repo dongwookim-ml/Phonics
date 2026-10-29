@@ -207,14 +207,14 @@ guide.key.addEventListener('click', () => {
 // The same check as the parent panel (Account.verify: { ok, reason }).
 guide.form.addEventListener('submit', async e => {
   e.preventDefault();
-  guide.err.textContent = '확인하는 중…';
+  guide.err.textContent = I18n.t('guide.checking');
   let r = { ok: false, reason: 'busy' };
   try {
     r = typeof Account !== 'undefined' ? await Account.verify(guide.pw.value) : { ok: guide.pw.value === '0000', reason: 'wrong' };
   } catch (x) { /* r stays 'busy' */ }
   if (r && r.ok === true) { guideWake(); return; }
   const errors = typeof PARENT_ERRORS !== 'undefined' ? PARENT_ERRORS : {};
-  guide.err.textContent = errors[r && r.reason] || '비밀번호가 맞지 않아요.';
+  guide.err.textContent = errors[r && r.reason] || I18n.t('guide.incorrectPassword');
   guide.pw.select();
 });
 // Keys typed for the password never reach the game.
