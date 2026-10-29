@@ -723,5 +723,13 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "books.lionMouseArt5": "사자가 밧줄 그물에 걸려 도움을 청해요.",
   "books.lionMouseArt6": "생쥐가 사자의 소리를 듣고 달려가요.",
   "books.lionMouseArt7": "생쥐가 작은 이빨로 그물의 밧줄을 갉아 끊어요.",
-  "books.lionMouseArt8": "자유로워진 사자가 작은 생쥐 친구에게 고마워하며 미소 지어요."
+  "books.lionMouseArt8": "자유로워진 사자가 작은 생쥐 친구에게 고마워하며 미소 지어요.",
+  "books.redHenArt1": "빨간 암탉이 농장 밭 옆에서 밀 씨앗을 발견해요.",
+  "books.redHenArt2": "암탉이 씨앗 심는 것을 도와달라고 하지만 고양이와 개와 오리는 거절해요.",
+  "books.redHenArt3": "암탉이 혼자 씨앗을 심고 뒤에는 황금빛 밀이 높이 자라 있어요.",
+  "books.redHenArt4": "암탉이 빵 만드는 것을 도와달라고 하지만 세 친구는 또 거절해요.",
+  "books.redHenArt5": "암탉이 혼자 구운 따끈한 빵을 식탁 위에 올려놓아요.",
+  "books.redHenArt6": "고양이와 개와 오리가 암탉의 빵을 먹겠다며 신나게 손을 들어요.",
+  "books.redHenArt7": "암탉이 일을 돕지 않은 세 친구에게 안 된다고 말해요.",
+  "books.redHenArt8": "암탉이 노란 병아리 세 마리와 행복하게 빵을 나누어 먹어요."
 };
