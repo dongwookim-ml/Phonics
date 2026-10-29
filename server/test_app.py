@@ -305,6 +305,9 @@ def test_every_game_voice_is_accepted():
     root = os.path.join(HERE, '..', 'js')
     voices = set()
     for name in os.listdir(root):
+        # Only the scripts themselves (js/locales/ is a folder of interface text).
+        if not name.endswith('.js'):
+            continue
         voices |= set(re.findall(r"tts: '([a-z_]+)'", open(os.path.join(root, name), encoding='utf8').read()))
     voices.add('af_heart')
     assert voices and voices <= set(app.POLLY_VOICES), voices - set(app.POLLY_VOICES)
