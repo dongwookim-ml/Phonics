@@ -723,5 +723,13 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "books.lionMouseArt5": "The lion is caught in a rope net and calls for help.",
   "books.lionMouseArt6": "The mouse hears the lion and runs toward him.",
   "books.lionMouseArt7": "The mouse chews through the net’s ropes with her tiny teeth.",
-  "books.lionMouseArt8": "The freed lion smiles gratefully at his tiny mouse friend."
+  "books.lionMouseArt8": "The freed lion smiles gratefully at his tiny mouse friend.",
+  "books.redHenArt1": "The red hen discovers wheat seeds beside the farm garden.",
+  "books.redHenArt2": "The hen asks for help planting seeds, but the cat, dog and duck refuse.",
+  "books.redHenArt3": "The hen plants seeds by herself, and tall golden wheat grows behind her.",
+  "books.redHenArt4": "The hen asks for help making bread, but her three friends refuse again.",
+  "books.redHenArt5": "The proud hen places her freshly baked, steaming bread on the kitchen table.",
+  "books.redHenArt6": "The cat, dog and duck eagerly volunteer to eat the hen’s bread.",
+  "books.redHenArt7": "The hen says no to the three friends who did not help her.",
+  "books.redHenArt8": "The hen happily shares the bread with her three little yellow chicks."
 };

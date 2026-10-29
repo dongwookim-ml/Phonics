@@ -21,16 +21,19 @@ const root = path.join(__dirname, '..');
         openLibrary();
       });
       const cover = page.locator('.lib-book .cover-art');
-      assert.equal(await cover.count(), 1);
-      await cover.scrollIntoViewIfNeeded();
-      await cover.evaluate(image => image.decode());
+      assert.equal(await cover.count(), 2);
+      for (const image of await cover.all()) {
+        await image.scrollIntoViewIfNeeded();
+        await image.evaluate(image => image.decode());
+      }
+      for (const bookId of ['lion-mouse', 'red-hen']) {
       for (const [width, height] of [[1024, 768], [768, 1024], [844, 390], [390, 844]]) {
         await page.setViewportSize({ width, height });
         for (let i = 0; i < 8; i++) {
-          await page.evaluate(i => {
-            if (!i) openBook(BOOKS.find(book => book.id === 'lion-mouse'));
+          await page.evaluate(({ i, bookId }) => {
+            if (!i) openBook(BOOKS.find(book => book.id === bookId));
             else bookTurn(1);
-          }, i);
+          }, { i, bookId });
           const image = page.locator('#rd-pic img');
           await image.evaluate(image => image.decode());
           const metrics = await page.evaluate(() => {
@@ -53,6 +56,7 @@ const root = path.join(__dirname, '..');
         await page.evaluate(() => { bookQuestion(0); bookSummary(); });
         await page.locator('.summary-art').evaluate(image => image.decode());
       }
+      }
       await page.evaluate(() => {
         openBook(BOOKS.find(book => book.id === 'tortoise-hare'));
       });
@@ -71,7 +75,7 @@ const root = path.join(__dirname, '..');
       await page.waitForFunction(() => !document.querySelector('#rd-pic img'));
       assert.ok((await page.locator('#rd-pic').innerText()).length);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${edition}/${language}: cover, 8 illustrated pages at 4 sizes, quiz/summary, other books, self-reader, failed-image fallback`);
+      console.log(`PASS ${edition}/${language}: 2 covers, 16 illustrated pages at 4 sizes, quiz/summary, other books, self-reader, failed-image fallback`);
       await page.close();
     }
   } finally { await browser.close(); }

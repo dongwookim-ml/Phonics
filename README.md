@@ -15,18 +15,20 @@ npx http-server -p 8080 .
 
 ## Illustrated book pilot
 
-**The Lion and the Mouse** now has eight original watercolor-style illustrations
-and an illustrated cover. The other books keep their existing artwork. Story
+**The Lion and the Mouse** has eight original watercolor-style illustrations
+and an illustrated cover. **The Little Red Hen** has eight comic-style scenes
+with bold outlines, vivid colours and expressive characters, plus its own cover.
+The other books keep their existing artwork. Story
 sentences, recorded narration, page order and comprehension questions are unchanged.
 The reader places art beside the sentences on wide screens and above them on
 portrait screens, and keeps emoji as a fallback if an image fails to load.
 
-Assets are local WebP files in `img/books/lion-mouse/` (about 3.4 MB total), so
-reading does not depend on an external image service. `artwork.json` in that
-folder records the built-in imagegen prompts and the shared character reference.
-The existing text is a simple retelling of Aesop's public-domain fable. No
+Assets are local WebP files in `img/books/lion-mouse/` and `img/books/red-hen/`, so
+reading does not depend on an external image service. `artwork.json` in each
+folder records the built-in imagegen prompts and the shared character references.
+The existing texts are simple retellings of traditional tales. No
 third-party modern book text or artwork was copied into this pilot. A public-domain
-edition for future reference is [The Aesop for Children (1919), Library of Congress](https://www.loc.gov/item/19014083/).
+Aesop edition for future reference is [The Aesop for Children (1919), Library of Congress](https://www.loc.gov/item/19014083/).
 
 Run `node tools/check-book-art.js` for image loading, page navigation, quizzes,
 responsive layout and the missing-image fallback in both editions and languages.
