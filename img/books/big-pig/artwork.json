@@ -1,0 +1,28 @@
+{
+  "id": "big-pig",
+  "method": "OpenAI built-in imagegen",
+  "style": "Hand-sculpted matte CLAY stop-motion miniature, visible finger marks, soft rounded clay shapes, pastel peach/moss/skyblue, no fur or felt",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Hand-sculpted matte CLAY stop-motion miniature, visible finger marks, soft rounded clay shapes, pastel peach/moss/skyblue, no fur or felt. Recurring identities: large round pink pig, dark pink snout, floppy ears; small red hen with cream beak and red comb when present. Scene: Big pink pig SITS contentedly in mud puddle under oak tree, split rail fence background right, sunny farm. No hen.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Hand-sculpted matte CLAY stop-motion miniature, visible finger marks, soft rounded clay shapes, pastel peach/moss/skyblue, no fur or felt. Identity guide (include ONLY people/objects required in scene): large round pink pig, dark pink snout, floppy ears; small red hen with cream beak and red comb when present. Scene: Same pig lies asleep in SUN beside same mud patch, eyes fully closed, relaxed face. No hen.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes:  No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Hand-sculpted matte CLAY stop-motion miniature, visible finger marks, soft rounded clay shapes, pastel peach/moss/skyblue, no fur or felt. Identity guide (ONLY include objects/characters needed): large round pink pig, dark pink snout, floppy ears; small red hen with cream beak and red comb when present. Scene: Small red hen climbs ON TOP of sleeping pig back, focused balancing expression. Pig eyes closed lying by same mud patch tree fence..  Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Hand-sculpted matte CLAY stop-motion miniature, visible finger marks, soft rounded clay shapes, pastel peach/moss/skyblue, no fur or felt. Character identities (ONLY include needed): large round pink pig, dark pink snout, floppy ears; small red hen with cream beak and red comb when present. Scene: Hen standing on pig back, pig still asleep and does NOT get up, relaxed closed eyes; same farm set..  No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Hand-sculpted matte CLAY stop-motion miniature, visible finger marks, soft rounded clay shapes, pastel peach/moss/skyblue, no fur or felt. Identity guide (only needed characters/objects): large round pink pig, dark pink snout, floppy ears; small red hen with cream beak and red comb when present. Scene: Hen now curled ASLEEP on sleeping pig back, both eyes fully closed, peaceful warm same farm set.. BOTH pig AND hen eyes fully CLOSED asleep, hen curled on pig BACK. No text, captions, lettering, symbols, panels or watermark."
+    }
+  ]
+}

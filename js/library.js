@@ -134,8 +134,7 @@ function libraryShelf(name, count) {
 // the words as tiles).
 function readerMode(self) {
   libraryEl('reader').classList.toggle('self', self);
-  if (self) libraryEl('rd-pic').classList.remove('has-art');
-  libraryEl('reader').classList.toggle('illustrated', !self && library.book.pages.some(page => !!page.image));
+  libraryEl('reader').classList.toggle('illustrated', library.book.pages.some(page => !!page.image));
   libraryEl('rd-prev').textContent = self ? '⬅' : '◀';
   libraryEl('rd-next').textContent = self ? '➡' : '▶';
   libraryEl('rd-play').classList.remove('wait');
@@ -154,6 +153,27 @@ function openBook(book) {
 
 const bookPageSentences = () => bookSentences(library.book.pages[library.page].text);
 
+function renderPageArt(book, page) {
+  const illustration = libraryEl('rd-pic');
+  const content = book.pages[page];
+  illustration.replaceChildren();
+  illustration.classList.toggle('has-art', !!content.image);
+  if (content.image) {
+    const image = document.createElement('img');
+    image.alt = content.imageAlt || '';
+    image.decoding = 'async';
+    image.src = content.image;
+    image.addEventListener('error', () => {
+      if (image.parentNode !== illustration) return; // an old page's failed request
+      illustration.classList.remove('has-art');
+      illustration.textContent = content.pic; // usable offline even if an asset is missing
+    });
+    illustration.append(image);
+    const next = book.pages[page + 1];
+    if (next && next.image) { const preload = new Image(); preload.src = next.image; }
+  } else illustration.textContent = content.pic;
+}
+
 function renderBookPage() {
   const { book, page } = library;
   const reading = library.mode === 'read';
@@ -164,24 +184,7 @@ function renderBookPage() {
   libraryEl('rd-pageno').textContent = reading ? `${page + 1} / ${book.pages.length}` : '';
   if (reading) {
     libraryEl('rd-paper').style.setProperty('--cover', book.color);
-    const illustration = libraryEl('rd-pic');
-    const content = book.pages[page];
-    illustration.replaceChildren();
-    illustration.classList.toggle('has-art', !!content.image);
-    if (content.image) {
-      const image = document.createElement('img');
-      image.alt = content.imageAlt || '';
-      image.decoding = 'async';
-      image.src = content.image;
-      image.addEventListener('error', () => {
-        if (image.parentNode !== illustration) return; // an old page's failed request
-        illustration.classList.remove('has-art');
-        illustration.textContent = content.pic; // usable offline even if an asset is missing
-      });
-      illustration.append(image);
-      const next = book.pages[page + 1];
-      if (next && next.image) { const preload = new Image(); preload.src = next.image; }
-    } else illustration.textContent = content.pic;
+    renderPageArt(book, page);
     const text = libraryEl('rd-text');
     text.innerHTML = '';
     bookPageSentences().forEach((s, i) => {
@@ -424,13 +427,14 @@ function selfCover(book) {
   const done = selfDone(book);
   const b = document.createElement('button');
   b.className = 'lib-book self';
+  b.classList.toggle('illustrated', !!book.coverImage);
   b.classList.toggle('read', done);
   b.classList.toggle('locked', !open);
   b.dataset.id = book.id;
   b.style.setProperty('--cover', book.color);
   // The star she gets the first time, or the level a locked one needs.
   const note = !open ? I18n.t('library.readingLevel', book.level) : done ? '⭐' : '<i>☆</i>';
-  b.innerHTML = `<span class="cv">${book.cover}</span>${open ? '' : '<span class="lock">🔒</span>'}` +
+  b.innerHTML = (book.coverImage ? `<img class="cover-art" src="${book.coverImage}" alt="" loading="lazy" decoding="async">` : `<span class="cv">${book.cover}</span>`) + `${open ? '' : '<span class="lock">🔒</span>'}` +
     `<span class="en">${book.title}</span>` + (I18n.language === 'ko' ? `<span class="ko">${book.label}</span>` : '') + `<span class="coins">${note}</span>` +
     (done ? '<span class="tick">✓</span>' : '');
   b.addEventListener('click', () => {
@@ -472,7 +476,7 @@ function renderSelfPage() {
   libraryEl('rd-pageno').textContent = reading ? `${page + 1} / ${book.pages.length}` : '';
   if (!reading) return;
   libraryEl('rd-paper').style.setProperty('--cover', book.color);
-  libraryEl('rd-pic').textContent = book.pages[page].pic;
+  renderPageArt(book, page);
   const text = libraryEl('rd-text');
   text.classList.remove('now');
   text.innerHTML = '';

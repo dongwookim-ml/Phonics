@@ -37,3 +37,9 @@ assert.equal(vm.runInContext("I18n.t('account.mergedStarsFromThisDeviceInto', 7)
 assert.equal(vm.runInContext("I18n.t('game.heroHeading', '{1}', 'Princess')", englishContext), "Princess {1}'s");
 assert.equal(vm.runInContext("I18n.t('game.heroHeading', '윤아', '공주')", context), '윤아 공주의');
 console.log(`i18n OK: ${keys.length} messages per language; keys, placeholders and source coverage checked`);
+
+for (const [pathname, search, saved, want] of [['/Phonics/en/', '?language=ko', 'ko', 'en'], ['/Phonics/ko/', '?language=en', 'en', 'ko'], ['/en/index.html', '', 'ko', 'en'], ['/Phonics/', '', 'en', 'en']]) {
+  const c = vm.createContext({ location: { pathname, search }, localStorage: { getItem: () => saved } });
+  vm.runInContext(source, c);
+  assert.equal(vm.runInContext('I18n.language', c), want, pathname);
+}

@@ -795,5 +795,6 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "books.mouseArt5": "큰 고양이가 달려들자 겁에 질린 두 쥐가 달아나 숨어요.",
   "books.mouseArt6": "두 쥐가 식탁 아래 구석에 웅크려 숨고, 시골쥐가 도시가 너무 무섭다고 말해요.",
   "books.mouseArt7": "시골쥐가 익숙하고 조용한 집으로 돌아와요.",
-  "books.mouseArt8": "시골쥐가 안전한 작은 집에서 편안하게 쉬어요."
+  "books.mouseArt8": "시골쥐가 안전한 작은 집에서 편안하게 쉬어요.",
+  "books.readingPageArt": "{0}쪽 삽화: {1}"
 };

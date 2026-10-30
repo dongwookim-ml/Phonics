@@ -50,7 +50,18 @@ Aesop edition for future reference is [The Aesop for Children (1919), Library of
 Run `node tools/check-book-art.js` for image loading, page navigation, quizzes,
 responsive layout and the missing-image fallback in both editions and languages.
 
+The eight **Books I can read** titles also have 42 original illustrated pages,
+with lithograph, graphic, clay, watercolor/ink, tissue-paper, crayon, woodblock
+and digital-painting styles. Word tiles, narration and completion rewards are
+unchanged. Each title’s local asset folder includes its imagegen prompts.
+
 ## Interface languages
+
+Use `/Phonics/en/` or `/Phonics/ko/` for an explicit language URL (or `/en/`
+and `/ko/` when hosted at the domain root). The path overrides saved and query
+preferences; switching language on these pages navigates to the other locale.
+`node tools/stamp.js` regenerates both static locale entrypoints.
+
 
 Choose **한국어** or **English** on the login screen. The choice is saved on
 this device, independently of accounts and learning progress. Changing it

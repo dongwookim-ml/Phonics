@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <base href="../">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="build" content="202610300255">
+  <title>PixelTown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Jua&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=202610300255">
+</head>
+<body>
+  <!-- The HD-2D finish (tilt-shift, bloom, vignette) is drawn in the canvas,
+       under the signs and bubbles (drawFinish in js/game.js). -->
+  <canvas id="game"></canvas>
+
+  <header class="hud">
+    <div class="counters">
+      <div id="stars" class="stars"><span>⭐</span><span class="count">0</span></div>
+      <div id="coins" class="stars coins hidden" title="" data-i18n-title="parent.coins"><span>🪙</span><span class="count">0</span></div>
+      <div id="dust" class="stars dust hidden" title="" data-i18n-title="parent.fairyDust"><span>✨</span><span class="count">0</span></div>
+    </div>
+    <nav class="buttons">
+      <button id="ride" class="btn hidden" title="" data-i18n-title="ui.rideLeaveYourUnicorn">🦄</button>
+      <button id="mute" class="btn" title="" data-i18n-title="ui.soundOnOff">🔊</button>
+      <button id="parent" class="btn" title="" data-i18n-title="ui.parentPanel">⚙️</button>
+    </nav>
+  </header>
+
+  <div id="place" class="place"></div>
+  <div id="fade" class="fade"></div>
+
+  <section id="dialog" class="dialog hidden">
+    <div class="portrait"><canvas id="dlg-portrait"></canvas></div>
+    <!-- A monster she drew herself shows her drawing here instead (js/kid-monsters.js). -->
+    <button id="dlg-drawing" class="drawing hidden" type="button" title="" data-i18n-title="ui.enlarge">
+      <span class="photo"><img id="dlg-drawing-img" alt=""><span id="dlg-drawing-by" class="by"></span></span>
+    </button>
+    <div class="body">
+      <div id="dlg-name" class="name"></div>
+      <div id="dlg-text" class="text"></div>
+      <div id="dlg-clue" class="clue hidden"></div>
+      <div id="dlg-choices" class="choices"></div>
+      <button id="dlg-books" class="dlg-books hidden" data-i18n="ui.readMeABook"></button>
+      <button id="dlg-mini" class="dlg-books hidden" data-i18n="minigame.fishingGame"></button>
+    </div>
+    <div class="side">
+      <button id="dlg-replay" class="round" title="" data-i18n-title="library.listenAgain">🔊</button>
+      <button id="dlg-close" class="round small" title="" data-i18n-title="ui.close">✖</button>
+    </div>
+  </section>
+
+  <!-- Her drawing, big, until any tap (js/kid-monsters.js). -->
+  <div id="drawing-big" class="drawing-big hidden">
+    <figure><img id="drawing-big-img" alt=""><figcaption id="drawing-big-by"></figcaption></figure>
+  </div>
+
+  <section id="reward" class="reward hidden">
+    <div id="rw-title" class="title"></div>
+    <div id="rw-name" class="gift"></div>
+    <div class="previews">
+      <figure><canvas id="pv-now"></canvas><figcaption data-i18n="ui.now"></figcaption></figure>
+      <div class="arrow">➜</div>
+      <figure class="new"><canvas id="pv-new"></canvas><figcaption data-i18n="game.after"></figcaption></figure>
+      <!-- The robot edition magnifies the part that changes (js/captain-hero.js). -->
+      <figure class="zoom hidden"><canvas id="pv-zoom"></canvas><figcaption>🔍</figcaption></figure>
+    </div>
+    <div class="answer">
+      <button id="rw-yes" class="yes" data-i18n="ui.wearIt"></button>
+      <button id="rw-no" class="no" data-i18n="captain-hero.keepThisOne"></button>
+    </div>
+  </section>
+
+  <section id="wardrobe" class="wardrobe hidden">
+    <div class="wd-head">
+      <div id="wd-title" class="wd-name" data-i18n="ui.princessWardrobe"></div>
+      <div id="wd-count" class="wd-count"></div>
+    </div>
+    <!-- A picture tab for each kind of thing (js/game.js renderWardrobe). -->
+    <div id="wd-tabs" class="wd-tabs"></div>
+    <div class="wd-main">
+      <div class="wd-mirror"><canvas id="wd-preview"></canvas></div>
+      <div id="wd-slots" class="wd-slots"></div>
+    </div>
+    <button id="wd-done" class="wd-done" data-i18n="ui.allDressed"></button>
+  </section>
+
+  <section id="shop" class="wardrobe shop hidden">
+    <div class="wd-head">
+      <div class="wd-name" data-i18n="ui.starlightShop"></div>
+      <div id="shop-coins" class="wd-count"></div>
+    </div>
+    <div id="shop-msg" class="shop-msg"></div>
+    <div id="shop-tabs" class="wd-tabs"></div>
+    <div class="wd-main">
+      <div class="wd-mirror"><canvas id="shop-preview"></canvas></div>
+      <div id="shop-items" class="shop-items"></div>
+    </div>
+    <div class="answer">
+      <button id="shop-buy" class="yes" data-i18n="ui.buy"></button>
+      <button id="shop-done" class="no" data-i18n="library.leave"></button>
+    </div>
+  </section>
+
+  <!-- The hair salon in town: a new hairstyle or hair colour for stars (js/salon.js). -->
+  <section id="salon" class="wardrobe shop salon hidden">
+    <div class="wd-head">
+      <div class="wd-name" data-i18n="data.hairSalon"></div>
+      <div id="salon-stars" class="wd-count"></div>
+    </div>
+    <div id="salon-msg" class="shop-msg"></div>
+    <div id="salon-tabs" class="wd-tabs"></div>
+    <div class="wd-main">
+      <div class="wd-mirror"><canvas id="salon-preview"></canvas></div>
+      <div id="salon-items" class="shop-items"></div>
+    </div>
+    <div class="answer">
+      <button id="salon-buy" class="yes" data-i18n="ui.change"></button>
+      <button id="salon-done" class="no" data-i18n="library.leave"></button>
+    </div>
+  </section>
+
+  <section id="library" class="wardrobe library hidden">
+    <div class="wd-head">
+      <div class="wd-name" data-i18n="data.royalLibrary"></div>
+      <div id="lib-count" class="wd-count"></div>
+    </div>
+    <div id="lib-books" class="lib-books"></div>
+    <button id="lib-done" class="wd-done" data-i18n="library.leave"></button>
+  </section>
+
+  <section id="reader" class="reader hidden">
+    <div class="rd-head">
+      <div id="rd-title" class="rd-title"></div>
+      <div id="rd-pageno" class="rd-pageno"></div>
+      <button id="rd-close" class="round small" title="" data-i18n-title="ui.close">✖</button>
+    </div>
+    <div id="rd-paper" class="rd-paper">
+      <div id="rd-page" class="rd-page">
+        <div id="rd-pic" class="rd-pic"></div>
+        <div id="rd-text" class="rd-text" lang="en"></div>
+      </div>
+      <div id="rd-quiz" class="rd-quiz hidden" lang="en">
+        <div id="rd-q" class="rd-q"></div>
+        <div id="rd-options" class="rd-options"></div>
+      </div>
+    </div>
+    <div id="rd-nav" class="rd-nav">
+      <button id="rd-prev" class="rd-btn" title="" data-i18n-title="ui.previousPage">◀</button>
+      <button id="rd-play" class="rd-btn play" title="" data-i18n-title="library.pause">⏸</button>
+      <button id="rd-next" class="rd-btn" title="" data-i18n-title="ui.nextPage">▶</button>
+    </div>
+  </section>
+
+  <!-- Feeding her fairy friend (js/friend.js). -->
+  <section id="feed" class="reward feed hidden">
+    <div id="fd-title" class="title"></div>
+    <canvas id="fd-friend"></canvas>
+    <div id="fd-pips" class="fd-pips"></div>
+    <div id="fd-note" class="fd-note"></div>
+    <div class="answer">
+      <button id="fd-jar" class="yes" title="" data-i18n-title="ui.give"></button>
+      <button id="fd-done" class="no" title="" data-i18n-title="ui.allDone">👋</button>
+    </div>
+  </section>
+
+  <!-- The little games: fishing at the pond, one in each village (js/minigame.js, js/village-games.js). -->
+  <section id="mini" class="mini hidden">
+    <div class="mini-head">
+      <div id="mini-title" class="mini-title"></div>
+      <button id="mini-letter" class="mini-letter" title="" data-i18n-title="library.listenAgain"></button>
+      <div id="mini-pips" class="mini-pips"></div>
+      <button id="mini-replay" class="round" title="" data-i18n-title="library.listenAgain">🔊</button>
+      <button id="mini-close" class="round small" title="" data-i18n-title="ui.close">✖</button>
+    </div>
+    <canvas id="mini-canvas"></canvas>
+    <div id="mini-end" class="mini-end hidden">
+      <div id="mini-catch" class="mini-catch"></div>
+      <!-- The letters she knows, after the Unicorn Village's game at the one-sound step (js/village-games.js). -->
+      <div id="mini-letters" class="mini-letters hidden"></div>
+      <div id="mini-two" class="ml-two hidden"></div>
+      <div id="mini-coins" class="mini-coins"></div>
+      <div class="answer">
+        <button id="mini-again" class="yes">🔁</button>
+        <button id="mini-bye" class="no">👋</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- The play-time limit: the town sleeps until a parent wakes it (js/guide.js). -->
+  <div id="sleep" class="sleep hidden">
+    <div class="moon">🌙</div>
+    <div class="zz">💤</div>
+    <div class="msg" data-i18n="ui.theTownIsAsleepSeeYou"></div>
+    <button id="sleep-key" class="sleep-key" type="button" data-i18n="ui.parents"></button>
+    <form id="sleep-form" class="sleep-form hidden">
+      <input id="sleep-pw" type="password" class="sleep-pw" autocomplete="current-password" placeholder="" data-i18n-placeholder="ui.password">
+      <button type="submit" class="sleep-go" data-i18n="ui.keepPlaying"></button>
+      <p id="sleep-err" class="sleep-err"></p>
+    </form>
+  </div>
+
+  <div id="start" class="start">
+    <div id="account-bar" class="account-bar"></div>
+    <canvas id="start-preview" class="preview"></canvas>
+    <h1><span id="start-title" data-i18n="ui.princessYunaS"></span><br><span id="start-game" class="gold" data-i18n="account.phonicsTown"></span></h1>
+    <div class="profile">
+      <label class="field">
+        <span data-i18n="ui.name"></span>
+        <input id="name-input" maxlength="10" autocomplete="off" placeholder="" data-i18n-placeholder="data.yuna">
+      </label>
+      <label class="field">
+        <span data-i18n="ui.nameInEnglish"></span>
+        <input id="spoken-input" maxlength="20" autocomplete="off" placeholder="Yuna" lang="en">
+        <button id="hear-name" class="round small" type="button" title="" data-i18n-title="ui.listen">🔊</button>
+      </label>
+      <div id="title-chips" class="title-chips"></div>
+      <div id="look-chips" class="title-chips"></div>
+    </div>
+    <button id="start-btn" class="start-btn">▶</button>
+    <p class="tip" data-i18n="ui.tapAVillagerToHearA"></p>
+  </div>
+
+  <!-- A newer build is out (js/update.js). -->
+  <div id="update" class="update hidden" role="alert">
+    <span class="ic">✨</span><span class="msg" data-i18n="ui.aNewVersionIsAvailable"></span>
+    <button type="button" data-i18n="ui.refresh"></button>
+  </div>
+
+  <!-- Login / sign-up, shown before the start screen (js/account.js). -->
+  <div id="login" class="start login hidden">
+    <h1><span id="login-icon">🏰</span><br><span id="login-game" class="gold" data-i18n="account.phonicsTown"></span></h1>
+    <div class="login-edition">
+      <button class="edition" data-edition="princess" type="button"><span class="ic">👸</span><span data-i18n="data.princess"></span></button>
+      <button class="edition" data-edition="captain" type="button"><span class="ic">🤖</span><span data-i18n="data.captain"></span></button>
+    </div>
+    <div class="profile">
+      <label class="language-picker">🌐 <span data-i18n="ui.language"></span>
+        <select id="language-select" aria-label="" data-i18n-aria-label="ui.language"><option value="ko" data-i18n="ui.korean"></option><option value="en" data-i18n="ui.english"></option></select>
+      </label>
+      <div class="login-tabs">
+        <button class="chip on" data-tab="login" type="button" data-i18n="ui.logIn"></button>
+        <button class="chip" data-tab="signup" type="button" data-i18n="ui.signUp"></button>
+      </div>
+      <label class="field">
+        <span data-i18n="ui.username"></span>
+        <input id="login-id" maxlength="20" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" lang="en" inputmode="email">
+      </label>
+      <label class="field">
+        <span data-i18n="ui.password"></span>
+        <input id="login-pw" type="password" maxlength="200" autocomplete="current-password">
+      </label>
+      <div id="login-msg" class="login-msg"></div>
+      <button id="login-go" class="login-go" type="button" data-i18n="account.logIn"></button>
+    </div>
+    <button id="login-guest" class="login-guest" type="button" data-i18n="ui.playAsAGuest"></button>
+  </div>
+
+  <script src="js/locales/ko.js?v=202610300255"></script>
+  <script src="js/locales/en.js?v=202610300255"></script>
+  <script src="js/i18n.js?v=202610300255"></script>
+  <script src="js/data.js?v=202610300255"></script>
+  <script src="js/progress.js?v=202610300255"></script>
+  <script src="js/account.js?v=202610300255"></script>
+  <script src="audio/tts/index.js?v=202610300255"></script>
+  <script src="js/audio.js?v=202610300255"></script>
+  <script src="js/music.js?v=202610300255"></script>
+  <script src="js/sprites.js?v=202610300255"></script>
+  <script src="js/world.js?v=202610300255"></script>
+  <script src="js/monster-village.js?v=202610300255"></script>
+  <script src="js/touch.js?v=202610300255"></script>
+  <script src="js/quiz.js?v=202610300255"></script>
+  <script src="js/books.js?v=202610300255"></script>
+  <script src="js/library.js?v=202610300255"></script>
+  <script src="js/album.js?v=202610300255"></script>
+  <script src="js/captain-hero.js?v=202610300255"></script>
+  <script src="js/captain-town.js?v=202610300255"></script>
+  <script src="js/captain-dino.js?v=202610300255"></script>
+  <script src="js/captain-drone.js?v=202610300255"></script>
+  <script src="js/captain-car.js?v=202610300255"></script>
+  <script src="js/captain-cave.js?v=202610300255"></script>
+  <script src="js/cave-magic.js?v=202610300255"></script>
+  <script src="js/kid-monsters.js?v=202610300255"></script>
+  <script src="js/friend.js?v=202610300255"></script>
+  <script src="js/minigame.js?v=202610300255"></script>
+  <script src="js/village-games.js?v=202610300255"></script>
+  <script src="js/blend-magic.js?v=202610300255"></script>
+  <script src="js/salon.js?v=202610300255"></script>
+  <script src="js/halloween.js?v=202610300255"></script>
+  <script src="js/guide.js?v=202610300255"></script>
+  <script src="js/quest.js?v=202610300255"></script>
+  <script src="js/game.js?v=202610300255"></script>
+  <script src="js/parent.js?v=202610300255"></script>
+  <script src="js/update.js?v=202610300255"></script>
+</body>
+</html>

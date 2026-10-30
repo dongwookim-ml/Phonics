@@ -1,0 +1,33 @@
+{
+  "id": "fish-wish",
+  "method": "OpenAI built-in imagegen",
+  "style": "Translucent colored tissue-paper collage, layered luminous aqua/tangerine/lilac shapes, visible torn edges and handmade paper fibers, flat mixed media",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: precise-object-edit. Edit attached illustration ONLY remove the big turquoise tub at bottom right completely, filling its silhouette with same room floor and background. Keep Beth holding small blue WATER-filled dish and orange fish exactly unchanged. This is first page and removed object must remain unseen until later reveal. Preserve all other characters, expression, pose, background, furniture, light, framing and original style exactly. No text or watermark.",
+      "originalPrompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Translucent colored tissue-paper collage, layered luminous aqua/tangerine/lilac shapes, visible torn edges and handmade paper fibers, flat mixed media. Recurring identities: Beth small girl brown skin, two dark braids, lavender dress; friendly small orange goldfish with fan tail; shallow blue water dish and large turquoise tub. Scene: Beth proudly receives small orange fish in shallow blue WATER-FILLED dish, gentle delighted expression, cozy sunny room with square window left, lavender shelf right.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Translucent colored tissue-paper collage, layered luminous aqua/tangerine/lilac shapes, visible torn edges and handmade paper fibers, flat mixed media. Identity guide (include ONLY people/objects required in scene): Beth small girl brown skin, two dark braids, lavender dress; friendly small orange goldfish with fan tail; shallow blue water dish and large turquoise tub. Scene: Orange fish swims in SAME small shallow blue WATER-FILLED dish, confined and wistful eyes, same room. No dry fish.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes: NO tub visible, only small dish. No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Translucent colored tissue-paper collage, layered luminous aqua/tangerine/lilac shapes, visible torn edges and handmade paper fibers, flat mixed media. Identity guide (ONLY include objects/characters needed): Beth small girl brown skin, two dark braids, lavender dress; friendly small orange goldfish with fan tail; shallow blue water dish and large turquoise tub. Scene: Fish gazes wistfully from same small water dish toward EMPTY larger space nearby, longing hopeful eyes, no symbols or thought bubbles.. NO tub visible yet, fish in small WATER-filled dish, thoughtful longing face, do not add Beth unless needed. Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Translucent colored tissue-paper collage, layered luminous aqua/tangerine/lilac shapes, visible torn edges and handmade paper fibers, flat mixed media. Character identities (ONLY include needed): Beth small girl brown skin, two dark braids, lavender dress; friendly small orange goldfish with fan tail; shallow blue water dish and large turquoise tub. Scene: Beth brings big TURQUOISE tub filled with water beside same small fish dish, caring focused expression, same window/shelf room..  No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: precise-object-edit. Edit attached preschool book illustration. Change ONLY orange fish facial expression and Beth’s facial expression. Text says 'The fish got its wish!' Fish swimming in big tub must look unmistakably delighted and relieved: bright happy eyes, relaxed lifted curved eyebrow, broad cheerful OPEN smile, not sad or worried. Beth looks warmly delighted watching fish, gentle happy eyes and slightly broader smile. Keep exactly ONE fish swimming inside turquoise tub and small blue dish empty. Keep exact character identities, all body poses, sizes, locations, props, water, background and framing unchanged. Preserve original translucent torn tissue-paper collage art style and palette. No text, captions, symbols, panels or watermark.",
+      "previousPrompts": [
+        "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Translucent colored tissue-paper collage, layered luminous aqua/tangerine/lilac shapes, visible torn edges and handmade paper fibers, flat mixed media. Identity guide (only needed characters/objects): Beth small girl brown skin, two dark braids, lavender dress; friendly small orange goldfish with fan tail; shallow blue water dish and large turquoise tub. Scene: Fish happily swims in BIG turquoise WATER-FILLED tub, joyful eyes and flowing fins; Beth smiles watching, empty small dish beside tub.. Only ONE fish, now IN large water tub, no fish in small empty dish. No text, captions, lettering, symbols, panels or watermark."
+      ],
+      "reviewRevision": "Strengthen joy and relief when the fish gets its wish."
+    }
+  ]
+}

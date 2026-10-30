@@ -15,5 +15,11 @@ html = html.replace(/<meta name="build" content="[^"]*">/, `<meta name="build" c
 // Local files only (not the Google Fonts link).
 html = html.replace(/((?:src|href)="(?!https?:)[^"?]+\.(?:js|css))(?:\?v=[^"]*)?"/g, `$1?v=${build}"`);
 fs.writeFileSync(file, html);
+// Static locale entrypoints work on GitHub Pages, including project subpaths.
+for (const locale of ['en', 'ko']) {
+  fs.mkdirSync(path.join(root, locale), { recursive: true });
+  const localized = html.replace('<head>', '<head>\n  <base href="../">').replace(/<html lang="[^"]*">/, `<html lang="${locale}">`);
+  fs.writeFileSync(path.join(root, locale, 'index.html'), localized);
+}
 fs.writeFileSync(path.join(root, 'version.json'), JSON.stringify({ build, at: new Date().toISOString() }) + '\n');
 console.log('build', build);

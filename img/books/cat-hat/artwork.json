@@ -1,0 +1,28 @@
+{
+  "id": "cat-hat",
+  "method": "OpenAI built-in imagegen",
+  "style": "Vintage lithograph picture-book, dusty coral/navy/cream, fine stipple and soft printed shading",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Vintage lithograph picture-book, dusty coral/navy/cream, fine stipple and soft printed shading. Recurring identities: orange tabby cat with white muzzle and blue collar; red round brimmed hat when present; small gray rat when present. Scene: Orange tabby cat SITTING calmly, relaxed gentle face, cozy room with cream rug, round window left, blue cushion right. No hat yet.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Vintage lithograph picture-book, dusty coral/navy/cream, fine stipple and soft printed shading. Identity guide (include ONLY people/objects required in scene): orange tabby cat with white muzzle and blue collar; red round brimmed hat when present; small gray rat when present. Scene: Same cat wearing red brimmed hat, looking pleased sitting same cream rug.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes:  No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Vintage lithograph picture-book, dusty coral/navy/cream, fine stipple and soft printed shading. Identity guide (ONLY include objects/characters needed): orange tabby cat with white muzzle and blue collar; red round brimmed hat when present; small gray rat when present. Scene: Same cat curled asleep on same cream rug, eyes fully closed, red hat resting beside cat.. Red hat is OFF cat beside sleeping cat, eyes fully CLOSED. Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Vintage lithograph picture-book, dusty coral/navy/cream, fine stipple and soft printed shading. Character identities (ONLY include needed): orange tabby cat with white muzzle and blue collar; red round brimmed hat when present; small gray rat when present. Scene: Small gray rat RUNS TOWARD sleeping cat, curious mischievous face; same red hat beside cat, same room.. Cat still asleep, gray rat running at cat, red hat beside cat. No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Vintage lithograph picture-book, dusty coral/navy/cream, fine stipple and soft printed shading. Identity guide (only needed characters/objects): orange tabby cat with white muzzle and blue collar; red round brimmed hat when present; small gray rat when present. Scene: Gray rat now wearing same red hat triumphantly; cat awake surprised wide eyes looking at rat, same room..  No text, captions, lettering, symbols, panels or watermark."
+    }
+  ]
+}

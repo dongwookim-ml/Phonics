@@ -795,5 +795,6 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "books.mouseArt5": "A big cat leaps toward the terrified mice as they flee and hide.",
   "books.mouseArt6": "The frightened mice huddle in a corner under the dining table as Country Mouse says the town is too scary.",
   "books.mouseArt7": "Country Mouse returns to his familiar quiet home.",
-  "books.mouseArt8": "Country Mouse rests contentedly at his safe little home."
+  "books.mouseArt8": "Country Mouse rests contentedly at his safe little home.",
+  "books.readingPageArt": "Page {0} illustration: {1}"
 };

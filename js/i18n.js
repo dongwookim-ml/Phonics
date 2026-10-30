@@ -3,6 +3,7 @@
 const I18n = (() => {
   const storageKey = 'pixeltown-language';
   const catalogs = globalThis.PIXELTOWN_LOCALES;
+  const pathLocale = typeof location !== 'undefined' && /\/(en|ko)(?:\/|\/index\.html)?$/.exec(location.pathname || '');
   let language = 'ko';
   try { if (localStorage.getItem(storageKey) === 'en') language = 'en'; } catch (e) { /* private mode */ }
 
@@ -26,25 +27,19 @@ const I18n = (() => {
   function set(next) {
     if ((next !== 'en' && next !== 'ko') || next === language) return;
     language = next;
-    try { localStorage.setItem(storageKey, next); } catch (e) {
-      // A URL fallback keeps language selection usable when storage is unavailable.
-      const url = new URL(location.href);
-      url.searchParams.set('language', next);
-      location.replace(url.href);
-      return;
-    }
-    // Scene names and item labels are built on boot. Reload from the login screen
-    // so canvas text, data tables and DOM all use the same language.
+    try { localStorage.setItem(storageKey, next); } catch (e) { /* URL also preserves selection */ }
     const url = new URL(location.href);
-    if (url.searchParams.has('language')) {
-      url.searchParams.set('language', next);
-      location.replace(url.href);
-    } else location.reload();
+    if (pathLocale) {
+      url.pathname = url.pathname.replace(/\/(en|ko)(?:\/|\/index\.html)?$/, `/${next}/`);
+      url.searchParams.delete('language');
+    } else url.searchParams.set('language', next);
+    location.replace(url.href);
   }
 
   if (typeof location !== 'undefined') {
     const requested = /[?&]language=(en|ko)\b/.exec(location.search);
     if (requested) language = requested[1];
+    if (pathLocale) language = pathLocale[1]; // Path takes priority over saved/query preference.
   }
   if (typeof document !== 'undefined') {
     apply();

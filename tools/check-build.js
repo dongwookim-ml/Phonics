@@ -21,6 +21,10 @@ if (version && build && version.build !== build) problems.push(`version.json say
 for (const m of html.matchAll(/(?:src|href)="(?!https?:)([^"]+\.(?:js|css))(\?v=[^"]*)?"/g)) {
   if (m[2] !== `?v=${build}`) problems.push(`${m[1]} has ${m[2] || 'no ?v='} instead of ?v=${build}`);
 }
+for (const locale of ['en', 'ko']) {
+  const expected = html.replace('<head>', '<head>\n  <base href="../">').replace(/<html lang="[^"]*">/, `<html lang="${locale}">`);
+  if (!fs.existsSync(path.join(root, locale, 'index.html')) || fs.readFileSync(path.join(root, locale, 'index.html'), 'utf8') !== expected) problems.push(`${locale}/index.html is stale: run node tools/stamp.js`);
+}
 for (const p of problems) console.log(`FAIL ${p}`);
 console.log(problems.length ? `${problems.length} problem(s)` : `build ${build} OK`);
 process.exit(problems.length ? 1 : 0);

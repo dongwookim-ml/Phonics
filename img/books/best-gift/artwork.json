@@ -1,0 +1,33 @@
+{
+  "id": "best-gift",
+  "method": "OpenAI built-in imagegen",
+  "style": "Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: precise-object-edit. Edit attached illustration ONLY remove the blue drum and drumsticks on floor at right completely, filling their silhouette with same rug. Keep Brad and CLOSED red gift box exactly unchanged. This is first page and removed object must remain unseen until later reveal. Preserve all other characters, expression, pose, background, furniture, light, framing and original style exactly. No text or watermark.",
+      "originalPrompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D. Recurring identities: Brad small boy curly brown hair, blue T-shirt mustard shorts; Mom curly brown hair rose sweater; Dad dark short hair green sweater; BIG RED gift box with cream ribbon; small blue drum red rims. Scene: Brad receives big RED closed gift box, delighted surprised wide eyes, cozy room cream sofa back, square window left, round rug center, parents not needed.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D. Identity guide (include ONLY people/objects required in scene): Brad small boy curly brown hair, blue T-shirt mustard shorts; Mom curly brown hair rose sweater; Dad dark short hair green sweater; BIG RED gift box with cream ribbon; small blue drum red rims. Scene: Focus same BIG RED CLOSED gift box cream ribbon on round rug, Brad kneels beside looking excitedly at box, same sofa/window room.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes: NO drum visible, it is hidden inside closed red box. No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D. Identity guide (ONLY include objects/characters needed): Brad small boy curly brown hair, blue T-shirt mustard shorts; Mom curly brown hair rose sweater; Dad dark short hair green sweater; BIG RED gift box with cream ribbon; small blue drum red rims. Scene: Brad lifts LID of same big red box, eager wide eyes and open delighted mouth, contents mostly hidden, same room.. Do NOT show a drum outside box yet. Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D. Character identities (ONLY include needed): Brad small boy curly brown hair, blue T-shirt mustard shorts; Mom curly brown hair rose sweater; Dad dark short hair green sweater; BIG RED gift box with cream ribbon; small blue drum red rims. Scene: Open big red box reveals small BLUE DRUM with red rims and two drumsticks, Brad delighted, same room.. The drum now INSIDE open box, not outside. No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D. Identity guide (only needed characters/objects): Brad small boy curly brown hair, blue T-shirt mustard shorts; Mom curly brown hair rose sweater; Dad dark short hair green sweater; BIG RED gift box with cream ribbon; small blue drum red rims. Scene: Brad plays SAME blue red-rimmed drum enthusiastically with two sticks, joyful face, red opened box nearby, same rug/sofa/window..  No text, captions, lettering, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 final page of preschool book. Reference for exact recurring characters, props, art style and SAME fixed room/garden. Style Soft cinematic DIGITAL STORYBOOK painting, luminous warm light, gentle smooth brush texture, expressive rounded characters, apricot/soft blue/raspberry palette, not 3D. Identity guide: Brad small boy curly brown hair, blue T-shirt mustard shorts; Mom curly brown hair rose sweater; Dad dark short hair green sweater; BIG RED gift box with cream ribbon; small blue drum red rims. Scene: Mom and Dad CLAP happily watching Brad play same drum, warm proud faces and hands visibly clapping, same room set, open red box nearby.. Mom and Dad hands separated in clapping gesture, delighted proud smiles, SAME parents as reference, child playing SAME blue drum red rims, not new instruments. No writing, captions, symbols, music notes, panels or watermark."
+    }
+  ]
+}

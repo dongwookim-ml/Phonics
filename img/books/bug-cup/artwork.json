@@ -1,0 +1,32 @@
+{
+  "id": "bug-cup",
+  "method": "OpenAI built-in imagegen",
+  "style": "Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space. Recurring identities: small tan floppy-eared dog with blue collar; tiny lime-green round bug with two antennae; white cup with red polka dots. Scene: Dog sits ON a horizontal log beside garden path, contented expression, red spotted cup on grass right, no bug visible yet.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space. Identity guide (include ONLY people/objects required in scene): small tan floppy-eared dog with blue collar; tiny lime-green round bug with two antennae; white cup with red polka dots. Scene: Green bug sits ON dog head; dog still on same log with curious upward glance, red-spotted cup grass right.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes:  No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space. Identity guide (ONLY include objects/characters needed): small tan floppy-eared dog with blue collar; tiny lime-green round bug with two antennae; white cup with red polka dots. Scene: Dog does BIG HOP above log, legs airborne surprised wide eyes; green bug in air nearby, red-spotted cup right..  Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space. Character identities (ONLY include needed): small tan floppy-eared dog with blue collar; tiny lime-green round bug with two antennae; white cup with red polka dots. Scene: Green bug hides INSIDE red-spotted cup on grass beside same log, peeking just below rim, amused secretive eyes. Dog off frame..  No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space. Identity guide (only needed characters/objects): small tan floppy-eared dog with blue collar; tiny lime-green round bug with two antennae; white cup with red polka dots. Scene: Dog searches beside same log looking away from cup, puzzled eyebrows; bug fully hidden INSIDE red-spotted cup, not visible to dog.. Bug must be fully hidden BELOW cup rim and NOT visible; dog puzzled searching away from cup. No text, captions, lettering, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 final page of preschool book. Reference for exact recurring characters, props, art style and SAME fixed room/garden. Style Loose translucent watercolor washes with playful fine ink contours, mint and sky blue with yellow accents, generous cream paper space. Identity guide: small tan floppy-eared dog with blue collar; tiny lime-green round bug with two antennae; white cup with red polka dots. Scene: Close view happy green bug laughing INSIDE same red-spotted cup, visible to reader, log and dog distant blurred behind..  No writing, captions, symbols, music notes, panels or watermark."
+    }
+  ]
+}

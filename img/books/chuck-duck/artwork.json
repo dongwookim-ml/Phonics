@@ -1,0 +1,28 @@
+{
+  "id": "chuck-duck",
+  "method": "OpenAI built-in imagegen",
+  "style": "Bold preschool wax CRAYON drawing, thick irregular dark outlines, chunky playful strokes, bright yellow/cobalt/orange, simple sparse textured backgrounds",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Bold preschool wax CRAYON drawing, thick irregular dark outlines, chunky playful strokes, bright yellow/cobalt/orange, simple sparse textured backgrounds. Recurring identities: Chuck friendly yellow duck orange bill/feet, tiny blue neckerchief; round blue wash tub when present. Scene: Chuck yellow duck stands proudly beside little garden pond, cheerful eyes, willow left wooden fence right.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Bold preschool wax CRAYON drawing, thick irregular dark outlines, chunky playful strokes, bright yellow/cobalt/orange, simple sparse textured backgrounds. Identity guide (include ONLY people/objects required in scene): Chuck friendly yellow duck orange bill/feet, tiny blue neckerchief; round blue wash tub when present. Scene: Chuck slips and FALLS into muddy puddle, splashed brown mud over yellow feathers, startled open beak and wide eyes, same garden.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes:  No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Bold preschool wax CRAYON drawing, thick irregular dark outlines, chunky playful strokes, bright yellow/cobalt/orange, simple sparse textured backgrounds. Identity guide (ONLY include objects/characters needed): Chuck friendly yellow duck orange bill/feet, tiny blue neckerchief; round blue wash tub when present. Scene: Chuck muddy duck sits in round BLUE tub filled with soapy water beside same pond/fence, relieved expression, sponge nearby..  Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Bold preschool wax CRAYON drawing, thick irregular dark outlines, chunky playful strokes, bright yellow/cobalt/orange, simple sparse textured backgrounds. Character identities (ONLY include needed): Chuck friendly yellow duck orange bill/feet, tiny blue neckerchief; round blue wash tub when present. Scene: Chuck uses sponge to SCRUB mud from own wing while in SAME blue soapy tub, concentrated eyes, bubbles. No words..  No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Bold preschool wax CRAYON drawing, thick irregular dark outlines, chunky playful strokes, bright yellow/cobalt/orange, simple sparse textured backgrounds. Identity guide (only needed characters/objects): Chuck friendly yellow duck orange bill/feet, tiny blue neckerchief; round blue wash tub when present. Scene: Chuck clean again sits in SUN beside same pond, blue tub nearby, relaxed proud happy face, eyes gently content..  No text, captions, lettering, symbols, panels or watermark."
+    }
+  ]
+}

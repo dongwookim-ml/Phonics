@@ -1,0 +1,24 @@
+{
+  "id": "i-can",
+  "method": "OpenAI built-in imagegen",
+  "style": "Modern flat graphic preschool picture-book, simple rounded shapes, clean muted mint/coral/cream/navy blocks, subtle screenprint paper grain",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Modern flat graphic preschool picture-book, simple rounded shapes, clean muted mint/coral/cream/navy blocks, subtle screenprint paper grain. Recurring identities: same small child short black bob hair, yellow T-shirt and teal dungarees; Dad short black hair, coral shirt navy trousers; pet white cat with ginger ears. Scene: Child taps a small red DRUM with fingertips, focused happy face, mint-walled playroom with low white shelf left and cream rug.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Modern flat graphic preschool picture-book, simple rounded shapes, clean muted mint/coral/cream/navy blocks, subtle screenprint paper grain. Identity guide (include ONLY people/objects required in scene): same small child short black bob hair, yellow T-shirt and teal dungarees; Dad short black hair, coral shirt navy trousers; pet white cat with ginger ears. Scene: Child playing tag reaches and touches Dad on arm as Dad jogs playfully on garden grass, both laughing, same house exterior.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes:  No writing, captions, symbols, panels, watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Modern flat graphic preschool picture-book, simple rounded shapes, clean muted mint/coral/cream/navy blocks, subtle screenprint paper grain. Identity guide (ONLY include objects/characters needed): same small child short black bob hair, yellow T-shirt and teal dungarees; Dad short black hair, coral shirt navy trousers; pet white cat with ginger ears. Scene: Child gently pats white cat with ginger ears, warm caring smile, same mint playroom cream rug low shelf left..  Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Modern flat graphic preschool picture-book, simple rounded shapes, clean muted mint/coral/cream/navy blocks, subtle screenprint paper grain. Character identities (ONLY include needed): same small child short black bob hair, yellow T-shirt and teal dungarees; Dad short black hair, coral shirt navy trousers; pet white cat with ginger ears. Scene: Child curled sleeping peacefully on low blue daybed, eyes fully closed, same mint playroom and shelf.. ONLY child asleep, no Dad, no drum. No text, lettering, captions, symbols, panels or watermark."
+    }
+  ]
+}

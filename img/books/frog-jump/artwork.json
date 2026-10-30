@@ -1,0 +1,40 @@
+{
+  "id": "frog-jump",
+  "method": "OpenAI built-in imagegen",
+  "style": "Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering",
+  "reference": "Earlier page images establish recurring characters, props and fixed room/garden layout; final first pages remove prematurely revealed props.",
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool decodable reading book page1. Style: Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering. Recurring identities: round bright green frog cream belly, large expressive dark eyes, no clothing; large smooth gray rock at left of lily pond, reeds right. Scene: Frog SITS atop large gray rock LEFT beside lily pond reeds right, calm thoughtful face.. Clear single action, visible facial emotion, uncluttered composition. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: precise-object-edit. Edit attached preschool book illustration. Change ONLY frog facial expression. Text says 'The frog had a plan.' Current inward sharply slanted eyebrows look angry. Remove angry brow V and frown. Show thoughtful curious anticipation: relaxed rounded eyelids, one eyebrow gently raised, gaze toward pond, small hopeful smile, inquisitive, NOT angry, NOT mischievous sinister. Keep exact character identities, all body poses, sizes, locations, props, water, background and framing unchanged. Preserve original muted Japanese woodblock ink/washi art style and palette. No text, captions, symbols, panels or watermark.",
+      "previousPrompts": [
+        "Use case: illustration-story. New landscape3:2 preschool book page 2. Reference: exact recurring character identities, art style and same background layout only. Style Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering. Identity guide (include ONLY people/objects required in scene): round bright green frog cream belly, large expressive dark eyes, no clothing; large smooth gray rock at left of lily pond, reeds right. Scene: Same frog atop same rock leans forward considering jump toward pond, focused thoughtful narrowed eyebrows, no thought bubble.. Clear action and expressive face. KEEP SAME furniture/location when same scene. Do NOT show props for future scenes:  No writing, captions, symbols, panels, watermark."
+      ],
+      "reviewRevision": "Replace angry brow shape with curious anticipation / joyful leap."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: precise-object-edit. Edit attached preschool book illustration. Change ONLY frog facial expression. Text says 'Jump, frog, jump!' Current sharply slanting brows look angry. Show joyful excited courage while jumping: wide bright eyes, relaxed lifted curved brows with no angry V, small open delighted smile. NOT aggression. Preserve exact airborne frog body pose. Keep exact character identities, all body poses, sizes, locations, props, water, background and framing unchanged. Preserve original muted Japanese woodblock ink/washi art style and palette. No text, captions, symbols, panels or watermark.",
+      "previousPrompts": [
+        "Use case: illustration-story. New landscape3:2 preschool page3. Reference: EXACT same characters, props, art style and fixed setting. Style Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering. Identity guide (ONLY include objects/characters needed): round bright green frog cream belly, large expressive dark eyes, no clothing; large smooth gray rock at left of lily pond, reeds right. Scene: Frog JUMPS from same left rock toward pond right, stretched body and airborne legs, excited determined face..  Same room furniture/pond/log/tree location, change action only. No text, captions, symbols, panels or watermark."
+      ],
+      "reviewRevision": "Replace angry brow shape with curious anticipation / joyful leap."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 preschool page4. Reference: EXACT recurring characters, same prop design, style and room/garden layout. Style Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering. Character identities (ONLY include needed): round bright green frog cream belly, large expressive dark eyes, no clothing; large smooth gray rock at left of lily pond, reeds right. Scene: Frog lands in pond with big SPLASH, wide surprised eyes water droplets, same rock left reeds right..  No text, lettering, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. New landscape3:2 preschool page5. Reference: EXACT same characters, prop design and fixed scene background. Style Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering. Identity guide (only needed characters/objects): round bright green frog cream belly, large expressive dark eyes, no clothing; large smooth gray rock at left of lily pond, reeds right. Scene: Frog SWIMS FAST through pond, hindlegs kicking and water wake behind, joyful focused eyes, same rock distant left..  No text, captions, lettering, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape3:2 final page of preschool book. Reference for exact recurring characters, props, art style and SAME fixed room/garden. Style Gentle Japanese-style water-based WOODBLOCK print, simple carved shapes, subtle washi grain and ink gradients, jade/indigo/pale peach, no lettering. Identity guide: round bright green frog cream belly, large expressive dark eyes, no clothing; large smooth gray rock at left of lily pond, reeds right. Scene: Frog floats contentedly at pond edge near same rock, broad GLAD smile, relaxed posture, lily pads and reeds..  No writing, captions, symbols, music notes, panels or watermark."
+    }
+  ]
+}
