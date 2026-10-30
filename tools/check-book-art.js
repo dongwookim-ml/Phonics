@@ -21,12 +21,12 @@ const root = path.join(__dirname, '..');
         openLibrary();
       });
       const cover = page.locator('.lib-book .cover-art');
-      assert.equal(await cover.count(), 7);
+      assert.equal(await cover.count(), 10);
       for (const image of await cover.all()) {
         await image.scrollIntoViewIfNeeded();
         await image.evaluate(image => image.decode());
       }
-      for (const bookId of ['lion-mouse', 'red-hen', 'three-pigs', 'ugly-duckling', 'gingerbread', 'goldilocks', 'cried-wolf']) {
+      for (const bookId of ['lion-mouse', 'red-hen', 'three-pigs', 'ugly-duckling', 'gingerbread', 'goldilocks', 'cried-wolf', 'tortoise-hare', 'ant-grasshopper', 'town-country-mouse']) {
       for (const [width, height] of [[1024, 768], [768, 1024], [844, 390], [390, 844]]) {
         await page.setViewportSize({ width, height });
         for (let i = 0; i < 8; i++) {
@@ -58,11 +58,6 @@ const root = path.join(__dirname, '..');
       }
       }
       await page.evaluate(() => {
-        openBook(BOOKS.find(book => book.id === 'tortoise-hare'));
-      });
-      assert.equal(await page.locator('#rd-pic img').count(), 0);
-      assert.equal(await page.locator('#reader').evaluate(el => el.classList.contains('illustrated')), false);
-      await page.evaluate(() => {
         state.skill.read = { t: 4 };
         openSelfBook(DECODABLE_BOOKS[0]);
       });
@@ -75,7 +70,7 @@ const root = path.join(__dirname, '..');
       await page.waitForFunction(() => !document.querySelector('#rd-pic img'));
       assert.ok((await page.locator('#rd-pic').innerText()).length);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${edition}/${language}: 7 covers, 56 illustrated pages at 4 sizes, quiz/summary, other books, self-reader, failed-image fallback`);
+      console.log(`PASS ${edition}/${language}: 10 covers, 80 illustrated pages at 4 sizes, quiz/summary, self-reader, failed-image fallback`);
       await page.close();
     }
   } finally { await browser.close(); }

@@ -27,7 +27,15 @@ the oven escape used for its cover.
 **Goldilocks and the Three Bears** has eight warm gouache scenes with distinct
 large, medium and small objects. **The Boy Who Cried Wolf** has eight coloured-pencil
 and woodcut-style scenes that distinguish the false alarms from the real wolf.
-The other books keep their existing artwork. Story
+**The Tortoise and the Hare** has eight risograph-style scenes with coral, teal
+and yellow ink textures, contrasting Hare’s overconfidence and panic with
+Tortoise’s steady determination and joy.
+**The Ant and the Grasshopper** has eight needle-felted wool diorama scenes,
+contrasting summer play and winter hunger with warm expressions of kindness.
+**The Town Mouse and the Country Mouse** has eight soft pastel-pencil scenes,
+with consistent country-cottage and town dining-room settings and expressive
+contrasts between excitement, fear and relief. All ten story books now have
+illustrations. Story
 sentences, recorded narration, page order and comprehension questions are unchanged.
 The reader places art beside the sentences on wide screens and above them on
 portrait screens, and keeps emoji as a fallback if an image fails to load.
