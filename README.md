@@ -114,6 +114,29 @@ Custom names in this audit use live speech fallback rather than requiring record
   offer things that suit the hero (`girl` / `boy` on an item in
   `js/data.js`); colours, crowns, capes, hair colours, treasures, unicorns
   and fairies suit both. Each look remembers its own outfit.
+- **Every title its own character** (the princess edition): each title has
+  its own body, starting look and things to wear, so a queen, a knight and a
+  fairy are told apart at a glance. The princess is as she was (ball gown,
+  tiara, long hair) with heart, rose and rainbow gowns, a cone hat with a
+  veil and a glass slipper; the prince a doublet with puffed breeches, a
+  red sash and a short royal cape; the queen an ermine capelet, swept-up
+  hair, a gown with a train and a tall crown; the king a jolly beard, an
+  ermine collar, a round tummy and a coronation robe; the knight round steel
+  pauldrons, a tabard with a gold cross and a plumed helmet; the fairy a
+  pixie cut, pointed ears, little wings and petal dresses; the wizard a
+  starry robe with bell sleeves (a witch's hat and broom, or a white beard,
+  star hat and staff); the explorer a khaki shirt with pockets, shorts,
+  boots, freckles and a backpack; the captain a navy coat with epaulettes,
+  a sailor collar and a captain's cap. Each has at least 5 outfits, 5 head
+  things, 4 hand things, 3 back things and 3 hairstyles of its own, some
+  given in the Forest, the Unicorn Village and the Fairy Village; the old
+  boy's robe, armour, wizard and explorer clothes and the sailor suit went
+  to the king, the knight, the wizard, the explorer and the captain. A
+  save from before plays on in the title's new starting clothes (the
+  princess's are unchanged), with everything collected kept. Code in
+  `js/heroes.js` (how a kit is made, in its header) and
+  `js/heroes/<title>.js`; the names are `heroes.<title>.<thing>` in
+  `js/locales`.
 
 - The town is 40 x 40 tiles and the camera follows the princess. Tap the
   ground to walk there.
@@ -665,7 +688,7 @@ Custom names in this audit use live speech fallback rather than requiring record
 - 🖼️ picture hints on the answer cards (easier) are a parent setting now
   (above); they start on for a new player.
 
-The name, title and look (girl or boy), stars, coins, fairy dust, the outfit (and the one last worn as a girl and as a boy, `looks`), the presents she has (`owned`: a list per wardrobe slot, the treasure shelf's in `treasure`; an older version keeps names it doesn't know in its lists, drops a slot it doesn't know, and the next save from this one puts it back, since two saves' lists are joined), recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting (`pictures`, with `stamps: { pictures: { v, at } }` once a parent changed it), the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at, stamps }`, `music: false` when a parent turned the background music off, `stamps: { [setting]: { v, at } }` the value a parent set and when, `at` the newest of those, for older versions), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
+The name, title and look (girl or boy), stars, coins, fairy dust, the outfit (and the one last worn as each title and look, `looks`: `girl` the princess's, `boy` the prince's, else `queen`, `king`, `fairy` or `knight-girl` and so on; `kits: 1` once the save is from a version with a character per title), the presents she has (`owned`: a list per wardrobe slot, the treasure shelf's in `treasure`; an older version keeps names it doesn't know in its lists, drops a slot it doesn't know, and the next save from this one puts it back, since two saves' lists are joined), recent words, the question history, her level per kind of question (`skill`), the reading log (`books`: `{ [bookId]: { read, quizRight, got } }`, where `got` lists the questions already paid, and `{ ['self:' + id]: { read, last } }` for the books she reads herself), the hint setting (`pictures`, with `stamps: { pictures: { v, at } }` once a parent changed it), the sticker album (`stickers`: `{ [word]: { e, n, at, new } }`), the medals (`medals`: `{ 'house:C' or 'village:forest': when }`), the gift meter's pips (`gifts`), the dust fed to each fairy friend (`friends`), the parent settings (`settings`: `{ playLimit, hideMute, twoSyllables, music, at, stamps }`, `music: false` when a parent turned the background music off, `stamps: { [setting]: { v, at } }` the value a parent set and when, `at` the newest of those, for older versions), the first-steps pointer (`guide`), today's play time (`playtime`) and today's quests (`quests`: `{ day, picks, got: { [device]: { [quest]: n } }, chest }`; two tablets' saves take the later day, and on the same day add up their counts and keep the chest open if either opened it) are saved in the browser.
 
 - **Accounts**: before the start screen, 로그인 / 회원가입 asks only for an id
   (3–20 lowercase letters, digits or _) and a password (6 or more
@@ -796,7 +819,13 @@ builds without errors, for both a girl and a boy hero and the robot, and
 that every door can be reached and leads back out where it was; and that
 everything in the wardrobe that suits the hero draws walking, riding, in a
 portrait and as its wardrobe picture, and shows on the hero (a thing that
-looked the same as the next one in its slot would fail).
+looked the same as the next one in its slot would fail), for every title.
+`node tools/check-heroes.js` checks each title's character: its kit, its
+starting clothes, enough things of its own in each slot (some given in each
+village), each changing how it looks, drawing on a unicorn and named in
+both languages, and its body and starting look at least 12% unlike every
+other title's (`TITLE=queen` for one; `node tools/hero-gallery.js queen
+out.png` draws all of hers on one sheet).
 `python tools/check-recordings.py` checks the recordings (see above).
 
 `node tools/check-visual.js` checks both editions at iPad sizes
@@ -986,6 +1015,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/minigame.js`: the little games' rounds, hints, coins and card, and the fishing (magnet crane) game at the pond
 - `js/village-games.js`: the game in each village (rhyme, spell, blend, read) in both editions, and the letters on the Unicorn game's end card
 - `js/blend-magic.js`: the sound magic, a little show of blending (bubbles, 🐢 slow, 🐇 fast, ✨ pop)
+- `js/heroes.js`: every title its own character (princess edition): how a hero kit is made and drawn; `js/heroes/<title>.js` each title's body and things to wear
 - `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
 - `js/halloween.js`: Halloween, laid over every village and room from 1 October to 7 November (`?halloween=0/1`)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
