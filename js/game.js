@@ -160,11 +160,13 @@ function load(raw) {
     if (s.player) setPlayer(s.player);
     // A save from before every title was its own character (js/heroes.js,
     // `kits`): she puts on her title's new starting clothes once (the
-    // princess's are as they were) and keeps everything she has collected.
+    // princess's are as they were) in her own colours, and keeps everything
+    // she has collected.
     // The outfit kept for a boy then was any boy's, so it goes too.
     let looks = s.looks || {};
     if (!s.kits && !isCaptain() && s.outfit) {
-      if (PLAYER.title !== 'princess') outfit = Object.assign({}, defaultOutfit(), { ride: outfit.ride, fairy: outfit.fairy });
+      // Her dress and hair colours (hair bought at the salon) stay.
+      if (PLAYER.title !== 'princess') outfit = Object.assign({}, defaultOutfit(), { ride: outfit.ride, fairy: outfit.fairy, dress: outfit.dress, hair: outfit.hair });
       looks = Object.assign({}, looks);
       delete looks.boy;
     }
@@ -1335,7 +1337,9 @@ function pictureSource(slot, value) {
     return [back, trimBox(back)];
   }
   // Her head, with room for pigtails, a ponytail or a bun.
-  if (slot === 'head' || slot === 'hair' || slot === 'style') return [cv, [0, 0, 22, 20]];
+  // Hair and hairstyles without her hat or helmet over them.
+  if (slot === 'hair' || slot === 'style') return [heroSprite(Object.assign({}, o, { head: 'none' }), 0).canvas, [0, 0, 22, 20]];
+  if (slot === 'head') return [cv, [0, 0, 22, 20]];
   // Something in her hand: just the thing, without her.
   if (slot === 'hand') {
     // A hero kit's thing is drawn on its own (js/heroes.js), so none of it

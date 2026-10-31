@@ -669,5 +669,18 @@ var state = {};`, ctx);
   check('garbage numbers count as 0', bad.stars === 0 && bad.history.b.tries === 0 && !bad.history.a, bad);
 }
 
+// ---- Every title its own character (js/heroes.js): `kits` goes with the outfit ----
+{
+  const now = { edition: 'princess', kits: 1, outfit: { shape: 'queen-coronation' }, looks: { girl: { shape: 'ballgown' }, queen: { shape: 'queen-coronation' } } };
+  const old = { edition: 'princess', outfit: { shape: 'party' }, looks: { girl: { shape: 'tutu' }, boy: { shape: 'armour' } } };
+  const theirs = A.merge(now, old, 'theirs');
+  check('kits: an older outfit that wins comes without kits (put right on load)', theirs.outfit.shape === 'party' && !theirs.kits, theirs);
+  check("kits: the older copy's boy outfit (any boy's) isn't joined", !('boy' in theirs.looks) && theirs.looks.queen.shape === 'queen-coronation', theirs.looks);
+  const mine = A.merge(now, old, 'mine');
+  check('kits: the outfit from after keeps kits', mine.outfit.shape === 'queen-coronation' && mine.kits === 1 && !('boy' in mine.looks), mine);
+  const both = A.merge(now, Object.assign({}, now, { looks: { boy: { shape: 'prince-doublet' } } }), 'theirs');
+  check("kits: a prince's outfit from after is kept", both.kits === 1 && both.looks.boy.shape === 'prince-doublet', both.looks);
+}
+
 console.log(failed ? `${failed} problem(s)` : 'merge OK');
 process.exit(failed ? 1 : 0);

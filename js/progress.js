@@ -391,16 +391,30 @@ const Progress = (() => {
   // it counts as one.
   const STAMPED = ['pictures'];
 
+  // A copy from before every title was its own character (no `kits`,
+  // js/heroes.js): the outfit it kept for a boy was any boy's, not the
+  // prince's, so it isn't joined in.
+  function preKits(x) {
+    if (x.kits || !isObj(x.looks) || !('boy' in x.looks)) return x;
+    const looks = Object.assign({}, x.looks);
+    delete looks.boy;
+    return Object.assign({}, x, { looks });
+  }
   // One edition from two copies; `mineFirst` says whose outfit and name win.
   function joinEdition(l, s, mineFirst, foreign) {
     if (foreign && isObj(l.friends)) l = Object.assign({}, l, { friends: guestFriends(l.friends) });
-    const [a, b] = mineFirst ? [l, s] : [s, l];
+    const [a, b] = [mineFirst ? l : s, mineFirst ? s : l].map(preKits);
     const out = {};
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
       if (COUNTED.includes(k) || STAMPED.includes(k) || k === 'other' || k === 'stamps') continue;
       if (WHOLE.includes(k)) out[k] = a[k] !== undefined ? a[k] : b[k];
       else out[k] = (JOIN[k] || join)(a[k], b[k]);
     }
+    // `kits` goes with the outfit: one from before (load() in js/game.js
+    // then puts her title's new starting clothes on) or after.
+    const kits = (a.outfit !== undefined ? a : b).kits;
+    if (kits) out.kits = kits;
+    else delete out.kits;
     const hints = joinStamped(a, b, STAMPED, () => 0);
     const st = Object.assign({}, join(stamps(a), stamps(b)), hints.stamps);
     delete hints.stamps;
