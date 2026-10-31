@@ -23,8 +23,8 @@
     '..ohhsskssskssho..',
     '..ohhspssssspsho..',
     '...ohssssmssssho..',
-    '....wosssssso.w...',
-    '......oossoo......',
+    '....wosssssssow...',
+    '......oossooo.....',
     '..owwxwwyywwxwwo..',
     '.owxwwwweewwwwxwo.',
     '.owwwxwnjddwxwwwo.',
@@ -348,44 +348,46 @@
       'oyeyByeyBye',
       'ooooooooooo',
     ]) } },
-    // A sheer cape of ice, with snowflakes.
-    'queen-snowcape': { name: I18n.t('heroes.queen.snowcape'), icon: '❄️', art: { x: -2, y: 12, pal: Object.assign({}, CAPE, { C: 'rgba(200,246,255,0.75)', F: 'rgba(255,255,255,0.95)' }), rows: mirror([
-      '...CCCCCCCC',
-      '..CCCCCCCCC',
-      '..CCFCCCCCC',
-      '.CCFFFCCCCC',
-      '.CCCFCCCCCC',
-      '.CCCCCCCCCC',
-      'CCCCCCCCCCC',
-      'CCFCCCCCCCC',
-      'CFFFCCCCCCC',
-      'CCFCCCCCCCC',
-      'CCCCCCCCCCC',
-      'CCCCFCCCCCC',
-      'CCCFFFCCCCC',
-      'CCCCFCCCCCC',
-      'CCCCCCCCCCC',
-      'CFCFCFCFCFC',
+    // A cape of ice blue with big white snowflakes and an icicle hem.
+    'queen-snowcape': { name: I18n.t('heroes.queen.snowcape'), icon: '❄️', art: { x: -2, y: 12, pal: CAPE, rows: mirror([
+      '....ooooooo',
+      '...occccccc',
+      '..ocBcccccc',
+      '..owcBccccc',
+      '.owwwcBcccc',
+      '.ocwcBccccc',
+      'ocBcccccccc',
+      'ocwcwcwcccc',
+      'occwwwccccc',
+      'ocwwBwwcccc',
+      'occwwwccccc',
+      'ocwcwcwcccc',
+      'ocBcccccccc',
+      'ocBccwccccc',
+      'oBcBwwwcBcB',
+      'oNBNBwBNBNB',
+      'oNoNoNoNoNo',
     ]) } },
   };
 
   const style = {
-    // Swept up into a round bun behind her head (the starting style).
+    // Swept up into a tall round bun on top, a band of gold and pearls
+    // round its foot (the starting style).
     'queen-updo': { name: I18n.t('heroes.queen.updo'), icon: '👸', girl: true, art: {
       short: true,
-      back: [[4, -3, ['...oooo...', '.oohhHHoo.', 'ohhHhhhhho', 'ohhhhhhhho']]],
+      front: [[4, -5, ['...oooo...', '..ohHHho..', '.ohHhhhho.', '.ohhhhhho.', 'oywyywyywo']]],
     } },
-    // A braid over the top of her head like a crown.
+    // A thick braid with pearls wound round the top of her head like a
+    // crown, tucked in at her temples.
     'queen-crownbraid': { name: I18n.t('heroes.queen.crownbraid'), icon: '🥨', girl: true, art: {
       short: true,
       rows: {
-        2: '...oooooooooooo...',
-        3: '..oHHhHHhHHhHHho..',
-        4: '..ohHHhHHhHHhHHo..',
-        5: '..oHhsshhhhsshHo..',
-        6: '..ohHsssssssssho..',
-        7: '..oHhsskssskssHo..',
-        8: '..ohHsskssskssho..',
+        0: '....ooooooooooo...',
+        1: '..ooHwHHhHhHHwHoo.',
+        2: '.oHHhHHhHHhHHhHHho',
+        3: '.ohHoHHhhhhHHhoHho',
+        4: '.oHwohhhhhhhhHowHo',
+        5: '..ooosshhhhsshooo.',
       },
     } },
     // Long and wavy, over her shoulders and down to her waist.
@@ -406,7 +408,7 @@
         4: '..ohHhhhhhhhHHho..',
         5: '..ohhsshhhhhhhho..',
         10: '...ohssssmsssshho.',
-        11: '....wossssssohho..',
+        11: '....wosssssssohho.',
       },
       front: [[12, 10, ['.ohho', 'ohHho', 'oHhho', '.ohHo', 'ohHho', 'oHhho', '.ohHo', 'ohhho', '.ohHo', '.oZZo', '..oo.']]],
     } },
