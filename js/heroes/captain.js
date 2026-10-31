@@ -300,19 +300,19 @@
         ] } },
       },
       hand: {
-        // A brass spyglass, pulled out long, a lens that glints.
-        'captain-spyglass': { name: name('spyglass'), icon: '🔭', art: { x: 12, y: 8, rows: [
-          '.....ooo',
-          '....oczo',
-          '...oyYYo',
-          '...oYYo.',
-          '..oyYo..',
-          '..oJJo..',
+        // A brass spyglass held in her fist, pointing out to sea: black
+        // leather bands, a lens that glints.
+        'captain-spyglass': { name: name('spyglass'), icon: '🔭', art: { x: 12, y: 11, rows: [
+          '.......o',
+          '......oo',
+          '.....oco',
+          '....oyzo',
+          '...oyYo.',
+          '..oxXo..',
+          '.ossso..',
           '.oyYo...',
-          '.oJJo...',
-          'oJJo....',
-          'oJo.....',
-          '.o......',
+          '.oxo....',
+          '..o.....',
         ] } },
         // A little ship's wheel: a wooden rim and handles, a gold hub.
         'captain-wheel': { name: name('wheel'), icon: '☸️', art: { x: 11, y: 12, rows: [
@@ -363,34 +363,42 @@
           'oSIIIISo',
           '.oooooo.',
         ] } },
-        // A rainbow pennant on a pole (the Unicorn Village's).
-        'captain-pennant': { name: name('pennant'), icon: '🏳️‍🌈', unicorn: true, art: { x: 13, y: -1, rows: [
-          '.y.....',
-          'oJooooo',
-          'oJeeeeo',
-          'oJOOOo.',
-          'oJyyyo.',
-          'oJqqo..',
-          'oJBo...',
-          'oJuo...',
-          'oJo....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
-          'oJ.....',
+        // A rainbow streamer on a gold pole held up beside her (the
+        // Unicorn Village's).
+        'captain-pennant': { name: name('pennant'), icon: '🏳️‍🌈', unicorn: true, art: { x: 15, y: -5, rows: [
+          '.oyo.',
+          '..Yoo',
+          '..Yee',
+          '..Yee',
+          '..YOO',
+          '..YOO',
+          '..Yyy',
+          '..Yyy',
+          '..Yqq',
+          '..Yqq',
+          '..YBB',
+          '..YBB',
+          '..Yuu',
+          '..Yuo',
+          '..Yo.',
+          '..Y..',
+          '..Y..',
+          '..Y..',
+          '..Y..',
+          '..Y..',
+          '..Y..',
+          '.oY..',
+          'osso.',
+          '.oY..',
+          '..Y..',
         ] } },
       },
       back: {
-        // A cape like the night sea, with stars on it (the forest's).
+        // A cape like the sea under the stars: sea green, white foam at
+        // its hem, gold stars on it (the forest's).
         'captain-seacape': { name: name('seacape'), icon: '🌊', forest: true, art: { cape: {
-          cloth: y => (y < 17 ? '#3a64c0' : y < 22 ? '#2e50a0' : '#243e84'),
-          edge: '#e8f6ff',
+          cloth: y => (y < 17 ? '#5fd8cc' : y < 22 ? '#36bcb4' : y < 26 ? '#22a0a0' : '#c8f6ff'),
+          edge: '#1f7a84',
           stars: true,
         } } },
         // A red and white life ring on her back.
@@ -452,20 +460,21 @@
         ] } },
       },
       style: {
-        // A low braid over her shoulder, tied with a red ribbon.
+        // A low braid over her shoulder and down her front (inside her
+        // arm), tied with a red bow.
         'captain-sidebraid': { name: name('sidebraid'), icon: '🎀', girl: true, art: {
-          front: [[1, 10, [
-            'ohhho..',
-            'ohHho..',
+          front: [[2, 11, [
+            'ohho...',
             '.ohHo..',
-            '.oHhho.',
-            '..ohHo.',
             '..oHho.',
             '..ohHo.',
             '..oHho.',
             '..ohHo.',
-            '.eeEee.',
-            '..e.e..',
+            '..oHho.',
+            '..ohHo.',
+            '..oHho.',
+            '.eeEEee',
+            '..e..e.',
             '..ohho.',
             '..oHho.',
             '...oo..',
@@ -486,18 +495,34 @@
             [13, 8, ['..ooo.', '.oHhho', 'ohhhho', 'ohhHho', 'eohhho.', 'eEooo..', '.e.....'].map(r => r.padStart(6, '.').padEnd(7, '.'))],
           ],
         } },
-        // Swept by the sea wind, a big swoop over his forehead.
+        // Swept by the sea wind: his fringe blown across, locks flying out
+        // at the side.
         'captain-windswept': { name: name('windswept'), icon: '💨', boy: true, art: {
           rows: {
             5: '..ohhhhhhhhhhhho..',
             6: '...ohHhhhhssssho..',
           },
+          front: [[14, 4, [
+            'hho...',
+            'hHhoo.',
+            'hhHhho',
+            'ohhoo.',
+            'hhHho.',
+            'oooo..',
+          ]]],
         } },
-        // Neat and parted at the side, like a smart officer's.
+        // Neat and parted at the side, like a smart officer's: combed
+        // flat, tidy at the ears.
         'captain-sidepart': { name: name('sidepart'), icon: '💇', boy: true, art: {
           rows: {
-            5: '..ohhhhhhhHhhhho..',
+            1: '....oohhhhhhoo....',
+            2: '...ohhhhhoHhhho...',
+            3: '..ohhhhhoHHhhhho..',
+            4: '..ohhhhhoHhhhhho..',
+            5: '..ohhhhhhHHhhhho..',
             6: '...ohssssshhhhho..',
+            7: '...osskssskssho...',
+            8: '...osskssskssho...',
           },
         } },
         // Fluffy curls all round, like sea foam.
