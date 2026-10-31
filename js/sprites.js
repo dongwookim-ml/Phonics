@@ -2596,7 +2596,7 @@ const BOY_HEAD_ITEMS = {
   crown:     HEAD_ITEMS.crown,
   horn:      HEAD_ITEMS.horn,
   circlet:   { x: 5, y: -2, rows: ['y..yy..y', 'Yyybbyyy'] },
-  kingcrown: { x: 4, y: -6, rows: ['....yy....', '.y..yy..y.', '.yyvvvvyy.', 'yyvvvvvvyy', 'ybyyryybyy', 'YYYYYYYYYY'] },
+  kingcrown: { x: 4, y: -5, rows: ['....yy....', '.y..yy..y.', '.yyvvvvyy.', 'yyvvvvvvyy', 'ybyyryybyy', 'YYYYYYYYYY'] },
   feather:   { x: 3, y: -4, rows: ['..........ww', '.oooooooowWo', 'oDDDDDDDDDwo', 'oDDDDDDDDDDo', 'oyyyyyyyyyyo'] },
   // A steel helmet with cheek guards and a red plume.
   helmet: { x: 2, y: -5, rows: [
