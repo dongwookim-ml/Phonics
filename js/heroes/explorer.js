@@ -409,7 +409,7 @@
   };
 
   // Each thing's name: heroes.explorer.<its key without 'explorer-'>
-  // (js/heroes/locales/explorer.js).
+  // (js/locales).
   const named = table => Object.fromEntries(Object.entries(table).map(([key, item]) => [key, Object.assign({ name: I18n.t(`heroes.explorer.${key.slice(9)}`) }, item)]));
 
   addHeroKit('explorer', {
