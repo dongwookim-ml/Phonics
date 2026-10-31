@@ -1,5 +1,31 @@
 // Names for the prince's own things (js/heroes/prince.js), until they move into js/locales/ko.js and en.js.
 Object.assign(PIXELTOWN_LOCALES.ko, {
+  'heroes.prince.doublet': '호박바지 왕자 옷',
+  'heroes.prince.jacket': '무도회 예복',
+  'heroes.prince.capecoat': '어깨망토 코트',
+  'heroes.prince.crown': '왕자님 왕관',
+  'heroes.prince.beret': '깃털 베레모',
+  'heroes.prince.leafcrown': '숲속 잎사귀 관',
+  'heroes.prince.rapier': '왕자님 검',
+  'heroes.prince.letter': '무도회 초대장',
+  'heroes.prince.harp': '요정 하프',
+  'heroes.prince.shortcape': '왕자님 짧은 망토',
+  'heroes.prince.unicorncape': '유니콘 왕자 망토',
+  'heroes.prince.sidepart': '가르마 앞머리',
+  'heroes.prince.quiff': '올린 앞머리',
 });
 Object.assign(PIXELTOWN_LOCALES.en, {
+  'heroes.prince.doublet': 'Royal doublet',
+  'heroes.prince.jacket': 'Royal ball jacket',
+  'heroes.prince.capecoat': 'Cape coat',
+  'heroes.prince.crown': "Prince's crown",
+  'heroes.prince.beret': 'Feathered beret',
+  'heroes.prince.leafcrown': 'Forest leaf crown',
+  'heroes.prince.rapier': "Prince's rapier",
+  'heroes.prince.letter': 'Ball invitation',
+  'heroes.prince.harp': 'Fairy harp',
+  'heroes.prince.shortcape': 'Short royal cape',
+  'heroes.prince.unicorncape': "Unicorn prince's cape",
+  'heroes.prince.sidepart': 'Side-parted fringe',
+  'heroes.prince.quiff': 'Swept-up quiff',
 });
