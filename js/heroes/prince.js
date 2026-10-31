@@ -166,17 +166,20 @@
           'oiiiiiio',
           'oooooooo',
         ] } },
-        // A little golden harp that sings in the Fairy Village.
-        'prince-harp': { name: t('harp'), icon: '🎶', boy: true, fairy: true, art: { x: 13, y: 8, rows: [
-          '.oo.....',
-          'oyyoo...',
-          'oy.yyoo.',
-          'oyw.w.yo',
-          'oyw.w.yo',
-          'oyw.wyo.',
-          'oyw.yo..',
-          'oyyyo...',
-          '.ooo....',
+        // A little golden harp that sings in the Fairy Village: white
+        // strings over a purple glow, inside the canvas (grid x up to 19).
+        'prince-harp': { name: t('harp'), icon: '🎶', boy: true, fairy: true, art: { x: 13, y: 7, rows: [
+          '.oo....',
+          'oyyooo.',
+          'oyYyyyo',
+          'oywUwyo',
+          'oywUwyo',
+          'oywUwyo',
+          'oywUwyo',
+          'oywUyo.',
+          'oywyo..',
+          'oyyyo..',
+          '.ooo...',
         ] } },
       },
       back: {
@@ -231,15 +234,26 @@
           5: '..ohsssshhhhhhho..',
           6: '...ohsssssshhhho..',
         } } },
-        // Brushed up into a wave over his forehead.
+        // Brushed up off his forehead into a tall wave that curls up on one
+        // side, so it shows beside a crown or a hat too (unlike his short
+        // hair's fringe).
         'prince-quiff': { name: t('quiff'), icon: '🌊', boy: true, art: {
           rows: {
-            0: '.....ohhhhhho.....',
-            1: '....ohhhHHhhhoo...',
-            2: '...ohhhHHhhhhhho..',
-            5: '..ohhsssssssshho..',
+            0: '....ohhhhhhhho....',
+            1: '...ohhhhhhhhhho...',
+            2: '..ohhHHhhhhhhhho..',
+            3: '..ohHhhhhhhhhhho..',
+            4: '..ohhoooooooohho..',
+            5: '..ohssssssssssho..',
           },
-          front: [[4, -4, ['......ooo.', '....oohHHo', '...ohhHhoo', '..ohhHhho.', '.ohhhhhho.']]],
+          front: [[1, -5, [
+            '..ooo...........',
+            '.ohHHoo.........',
+            '.ohhhHHoooooo...',
+            'ohHhhhhhhhhhhoo.',
+            'ohhhhhhhhhhhhhho',
+            'ohhhhhhhhhhhhhho',
+          ]]],
         } },
       },
     },
