@@ -1304,17 +1304,24 @@ function pictureSource(slot, value) {
     return [s.canvas, trimBox(s.canvas)];
   }
   const o = Object.assign({}, state.outfit, { [slot]: value });
-  const cv = heroSprite(o, 0).canvas;
+  const hero = heroSprite(o, 0);
+  const cv = hero.canvas;
   // Paint: the robot's head and body.
   if (isCaptain()) return [cv, [3, 1, 22, 28]];
   // Wings and capes on their own (a dress hides most of a cape): a pair of
   // wings side by side.
   if (slot === 'back') {
+    // Something worn over her (a hero kit's sash or quiver strap): just it.
+    const art = BACK_ITEMS[value] && BACK_ITEMS[value].art;
+    if (art && art.front) {
+      const thing = changedPixels(cv, heroSprite(Object.assign({}, o, { back: 'none' }), 0).canvas);
+      return [thing, trimBox(thing)];
+    }
     const wings = HERO_WINGS[value];
     const w = wings ? wings[0][0].length * 2 + 2 : cv.width;
     const back = makeCanvas(w, cv.height);
     if (wings) drawWingPair(back.getContext('2d'), value, 0, w, 0);
-    else drawHeroBack(back.getContext('2d'), value, 2, 5, w);
+    else drawHeroBack(back.getContext('2d'), value, 2, 5, w, hero.pal);
     return [back, trimBox(back)];
   }
   // Her head, with room for pigtails, a ponytail or a bun.
