@@ -222,10 +222,9 @@
     // jewels.
     'king-velvet': {
       name: name('velvet'), icon: '🟣', boy: true,
-      art: { x: 3, y: -6, rows: [
+      art: { x: 3, y: -5, rows: [
         '......y......',
         '.....yYy.....',
-        '......y......',
         '...ooozooo...',
         '..oyuuyuuyo..',
         '.oyuuuyuuUyo.',
@@ -368,9 +367,9 @@
     'king-mantle': {
       name: name('mantle'), icon: '🤍', boy: true,
       art: { x: -2, y: 11, pal: ERMINE, rows: [
-        '..oooo.........oooo...',
-        '.owwwwo.......owwwwo..',
-        'owwxwwwo.....owwwxwwo.',
+        '..oooo...........oooo.',
+        '.owwwwo.........owwwwo',
+        '.owwxwwo.......owwxwwo',
         'owwwwwwwoooooowwwwwwwo',
         'owxwwwwwwwwwwwwwwwxwwo',
         'owwwwwwwwwwwwwwwwwwwwo',
@@ -387,37 +386,36 @@
         'oWWWWWWWWWWWWWWWWWWWWo',
       ] },
     },
-    // A long purple velvet cloak with an ermine edge, its train on the
-    // ground round his feet.
+    // A long purple velvet cloak, over his shoulders and down both sides to
+    // the floor, edged in gold (drawn over him, his beard and hands free).
     'king-cloak': {
       name: name('cloak'), icon: '🟣', boy: true,
-      art: { x: -2, y: 11, pal: Object.assign({}, ERMINE, { u: '#b98cff', U: '#8a5ad8' }), rows: [
-        '..oooo.........oooo...',
-        '.owuuuo.......ouuuwo..',
-        'owuuuuuo.....ouuuuUwo.',
-        'oxuuuuuuoooooouuuuUxo.',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'oxuuuuuuuuuuuuuuuuUUxo',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'oxuuuuuuuuuuuuuuuuUUxo',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'oxuuuuuuuuuuuuuuuuUUxo',
-        'owuuuuuuuuuuuuuuuuUUwo',
-        'owuuuuuuuuuuuuuuuuuUwo',
-        'owwxwwwxwwwxwwwxwwwxwo',
-        'oooooooooooooooooooooo',
+      art: { x: -1, y: 12, front: true, pal: Object.assign({}, ERMINE, { u: '#b98cff', U: '#8a5ad8' }), rows: [
+        '.oo...............oo.',
+        'ouuy.............yuuo',
+        'ouuUy...........yUuuo',
+        'ouuUy...........yUuuo',
+        'ouo...............ouo',
+        'ouuy.............yuuo',
+        'ouuy.............yuuo',
+        'ouuUy...........yUuuo',
+        'ouuUy...........yUuuo',
+        'ouuUy...........yUuuo',
+        'ouuuUy.........yUuuuo',
+        'ouuuUy.........yUuuuo',
+        'ouuuUy.........yUuuuo',
+        'ouuuUy.........yUuuuo',
+        'oyyyyy.........yyyyyo',
+        'oooooo.........oooooo',
       ] },
     },
     // A midnight-blue cloak full of stars, from the Starlight Forest.
     'king-starcloak': {
       name: name('starcloak'), icon: '🌟', boy: true, forest: true,
       art: { x: -2, y: 11, pal: Object.assign({}, ERMINE, { n: '#3a3a86', N: '#5a5ab8' }), rows: [
-        '..oooo.........oooo...',
-        '.oyNNNo.......oNNNyo..',
-        'oyNnynno.....onnynNyo.',
+        '..oooo...........oooo.',
+        '.oyNNNo.........oNNNyo',
+        '.onnynno.......onnynno',
         'oNnnnnnnoooooonnnnnnyo',
         'oNnnnnnnnnnnnnnnnnnnno',
         'oNynnnnnnnnnnnnnnnnyno',
@@ -438,34 +436,40 @@
 
   // His hairstyles (the beard stays with every one).
   const style = {
-    // Big round curls puffed out at both sides.
+    // Royal curls: big round curls puffed out at both sides, a curly top and
+    // a fringe of little ringlets.
     'king-curls': {
       name: name('curls'), icon: '🌀', boy: true,
-      art: { back: [
-        [-1, 3, ['..oo', '.ohh', 'ohHh', 'ohhh', '.ohh', 'ohHh', 'ohhh', '.ohh', 'ohHh', 'ohhh', '.ooh', '..oo']],
-        [16, 3, ['oo..', 'hho.', 'hHho', 'hhho', 'hho.', 'hHho', 'hhho', 'hho.', 'hHho', 'hhho', 'hoo.', 'oo..']],
-      ] },
+      art: {
+        rows: { 5: '..ohHshsHhHshsHho.' },
+        front: [[3, -1, ['..oo.ooo.oo..', '.ohhohHhohho.', 'ohHhhhhhhhHho']]],
+        back: [
+          [-1, 3, ['..ooo', '.ohHh', 'ohHhh', 'ohhhh', '.oohh', '.ohHh', 'ohHhh', 'ohhhh', '.oohh', '.ohHh', 'ohHhh', 'ohhhh', '.ooo.']],
+          [15, 3, ['ooo..', 'hHho.', 'hhHho', 'hhhho', 'hhoo.', 'hHho.', 'hhHho', 'hhhho', 'hhoo.', 'hHho.', 'hhHho', 'hhhho', '.ooo.']],
+        ],
+      },
     },
-    // Long wavy hair down past his shoulders, locks falling over them.
+    // Long royal hair: parted in the middle, straight down his back, and
+    // long locks falling over his shoulders (his hands free).
     'king-long': {
       name: name('long'), icon: '🦁', boy: true,
-      art: { front: [
-        [0, 11, ['ohho', 'ohHo', 'oHho', 'ohho', 'ohHo', '.oo.']],
-        [15, 11, ['ohho', 'oHho', 'ohHo', 'ohho', 'oHho', '.oo.']],
-      ], back: [
-        [-1, 3, ['..oo', '.ohh', 'ohhh', 'ohHh', '.ohh', 'ohhh', 'ohHh', '.ohh', 'ohhh', 'ohHh', '.ohh', 'ohhh', 'ohHh', '.ohh', '..oo']],
-        [16, 3, ['oo..', 'hho.', 'hhho', 'hHho', 'hho.', 'hhho', 'hHho', 'hho.', 'hhho', 'hHho', 'hho.', 'hhho', 'hHho', 'hho.', 'oo..']],
-      ] },
+      art: {
+        rows: { 1: '....oohhhohhhoo...', 2: '...ohhHhhohhHhho..', 3: '..ohHhhhhhhhhhHho.', 4: '..oHhhhhhhhhhhhHo.', 5: '..ohhhssssssshhho.' },
+        front: [
+          [-1, 11, ['.ohho', 'ohhHo', 'ohHho', 'ohhHo', 'ohHo.', 'oho..', 'oHo..', '.o...']],
+          [15, 11, ['ohho.', 'oHhho', 'ohHho', 'oHhho', '.oHho', '..oho', '..oHo', '...o.']],
+        ],
+        back: [
+          [-1, 3, ['..oo', '.ohh', 'ohhh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohHh', 'ohhh', '.ohh', '..oo']],
+          [16, 3, ['oo..', 'hho.', 'hhho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hHho', 'hhho', 'hho.', 'oo..']],
+        ],
+      },
     },
-    // Neatly combed to one side, shining.
+    // Neatly combed: a side parting with a shine, the sides cut short so his
+    // ears show.
     'king-neat': {
       name: name('neat'), icon: '✨', boy: true,
-      art: { rows: {
-        2: '...ohhhhhhHHhhho..',
-        3: '..ohhhhhhHHhhhhho.',
-        4: '..ohhhhhHHhhhhhho.',
-        5: '..ohhhhhhhhssshho.',
-      } },
+      art: { rows: { 1: '....oohohhhhhoo...', 2: '...ohhoHHhhhhhho..', 3: '..ohhoHHhhhhhhhho.', 4: '..ohHHhhhhhhhhhho.', 5: '..ohhhhhhhhssshho.', 6: '..ohsssssssssssho.', 7: '.oshssskssskssshso', 8: '.oshssskssskssshso', 9: '..ohsppsssssppsho.' } },
     },
   };
 
