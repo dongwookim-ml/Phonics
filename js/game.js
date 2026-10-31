@@ -158,6 +158,16 @@ function load(raw) {
     let outfit = Object.assign({}, DEFAULT_OUTFIT, s.outfit);
     Quiz.recent = s.recent;
     if (s.player) setPlayer(s.player);
+    // A save from before every title was its own character (js/heroes.js,
+    // `kits`): she puts on her title's new starting clothes once (the
+    // princess's are as they were) and keeps everything she has collected.
+    // The outfit kept for a boy then was any boy's, so it goes too.
+    let looks = s.looks || {};
+    if (!s.kits && !isCaptain() && s.outfit) {
+      if (PLAYER.title !== 'princess') outfit = Object.assign({}, defaultOutfit(), { ride: outfit.ride, fairy: outfit.fairy });
+      looks = Object.assign({}, looks);
+      delete looks.boy;
+    }
     outfit = fitOutfit(outfit);
     // Picture hints start on for a new player (a pre-reader needs them);
     // the parent's change is stamped (`stamps`, js/progress.js).
@@ -174,7 +184,7 @@ function load(raw) {
     // The first-steps pointer (js/guide.js) is for new players only.
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
     // Stars, coins and dust are also counted per device (js/progress.js).
-    return { outfit, owned: ownedFrom(s.owned, outfit, s.shelf), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks: s.looks || {}, history: Progress.history(s.history), books: s.books || {},
+    return { outfit, owned: ownedFrom(s.owned, outfit, s.shelf), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks, history: Progress.history(s.history), books: s.books || {},
       skill, settings, friends: s.friends || {}, guide: firstSteps, playtime,
       stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
   } catch (e) {
@@ -217,7 +227,7 @@ function save() {
   // Fields this version doesn't know are kept (savedRest). `ver`: the server
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
-  const data = Object.assign({}, savedRest, { fmt: Progress.FMT, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, stamps: state.stamps, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
+  const data = Object.assign({}, savedRest, { fmt: Progress.FMT, kits: 1, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, stamps: state.stamps, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
     friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests, shelf: state.owned.treasure || [] }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
