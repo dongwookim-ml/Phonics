@@ -328,30 +328,37 @@
       '..oKKoKKKKKKKKKoKJJo..',
       '...oooooooooooooooo...',
     ] } },
-    // A rolled-up blanket strapped behind her, across her back.
-    'explorer-bedroll': { icon: '🏕️', art: { x: -2, y: 16, pal: INK, rows: [
-      '..oooooooooooooooooo..',
-      '.oeeeJeeeeeeeeeeJeeeo.',
-      'oeiiiJiiiiiiiiiiJiiieo',
-      'oeeeeJeeeeeeeeeeJeeeeo',
-      'oevvvJvvvvvvvvvvJvvveo',
-      '.oeeeJeeeeeeeeeeJeeeo.',
-      '..oooooooooooooooooo..',
+    // A rolled-up sleeping bag slung over her shoulder and across her back,
+    // tied up with straps.
+    'explorer-bedroll': { icon: '🏕️', art: { x: -2, y: 11, front: true, pal: INK, rows: [
+      '..o',
+      '.ocoo',
+      '.oBcJoo',
+      '.oNBJccoo',
+      '..oNJBBccoo',
+      '...ooNNBBcJoo',
+      '.....ooNNBJccoo',
+      '.......ooNJBBccoo',
+      '.........ooNNBBJco',
+      '...........ooNNJBco',
+      '.............ooJNBo',
+      '...............ooNo',
+      '.................o',
     ] } },
-    // A canteen on a strap at her side and a coil of rope at the other.
-    'explorer-canteen': { icon: '💧', art: { x: -2, y: 11, pal: INK, rows: [
-      '...oJo................',
-      '...oJo................',
-      '...oJo................',
-      '...oJo................',
-      '..oaao................',
-      '.oAAAAo...........oo..',
-      'oAaaaaAo.........oKKo.',
-      'oAaWaaAo........oKooKo',
-      'oAaaaaAo........oKooKo',
-      'oAAAAAAo.........oKKo.',
-      '.oAAAAo...........oo..',
-      '..oooo................',
+    // A canteen hanging on a rope across her, from her shoulder to her hip.
+    'explorer-canteen': { icon: '💧', art: { x: -2, y: 12, front: true, pal: INK, rows: [
+      '...............JK',
+      '.............JKoo',
+      '..........KJKoo',
+      '..oo....KJooo',
+      '.oyyo.KJoo',
+      '.oaaoJoo',
+      'oaaaAo',
+      'oaWaAo',
+      'oaaaAo',
+      'oAaAAo',
+      '.oAAo',
+      '..oo',
     ] } },
   };
 
@@ -362,14 +369,14 @@
       '.ohhhHo.',
       'ohhhhhHo',
       'oddohhHo',
-      'oddo.ohHo',
-      '.oo..ohho',
-      '.....oHho',
-      '.....ohho',
-      '......oho',
-      '......oho',
-      '......oHo',
-      '.......o.',
+      'oddoohHo',
+      '.oo.ohho',
+      '....oHho',
+      '....ohho',
+      '.....oho',
+      '.....oho',
+      '.....oHo',
+      '......o.',
     ]]] } },
     // One braid over her shoulder.
     'explorer-braid': { icon: '🌾', girl: true, art: { front: [[1, 9, [
@@ -389,22 +396,30 @@
       [-1, 2, ['.oo.', 'ohho', 'oHhho', 'ohhho', '.odo', '..o']],
       [15, 2, ['.oo.', 'ohho', 'ohhHo', 'ohhho', 'odo.', 'o..']],
     ] } },
-    // A boy's messy hair, tufts sticking out everywhere.
-    'explorer-messy': { icon: '🌪️', boy: true, art: { front: [
-      [3, -2, ['.o...o...o..', 'oho.oho.oho.', '.hho.hhohhh.']],
-      [0, 3, ['.o.', 'ohh', '.oh', 'ohh', '.o.']],
-      [15, 3, ['.o.', 'hho', 'ho.', 'hho', '.o.']],
-    ] } },
-    // A boy's quiff: his fringe brushed up in one big wave.
+    // A boy's messy hair: tufts sticking out everywhere, spikes over his
+    // forehead.
+    'explorer-messy': { icon: '🌪️', boy: true, art: {
+      rows: { 6: '...ohhsshssshsho..' },
+      front: [
+        [3, -2, ['.o...o...o..', 'oho.oho.oho.', '.hho.hhohhh.']],
+        [-1, 3, ['o...', 'oho.', '.ohh', 'ohhh', 'oohh', '..oh', '.ohh', 'o.o.']],
+        [15, 3, ['...o', '.oho', 'hho.', 'hhho', 'hhoo', 'ho..', 'hho.', '.o.o']],
+      ],
+    } },
+    // A boy's quiff: his fringe brushed up in one big wave, short at the
+    // sides so his ears show.
     'explorer-quiff': { icon: '🌊', boy: true, art: {
-      rows: { 5: '..ohhssssssshhho..', 6: '...ohsssssssssho..' },
+      rows: { 5: '..ohhssssssshhho..', 6: '...ohsssssssssho..', 7: '..ososskssskssoso.', 8: '..ososskssskssoso.', 9: '...oospsFsFspsoo..' },
       front: [[6, -3, ['..oo..', '.ohho.', 'ohHhho', '.oohho']]],
     } },
-    // A boy's curly mop down to his ears.
+    // A boy's curly mop, thick over his forehead and down past his ears.
     'explorer-mop': { icon: '🐑', boy: true, art: {
       rows: { 5: '..ohhhhhhhhhhhho..' },
-      back: [[0, 3, ['.oo', 'ohh', 'ohh', '.oh', 'ohh', 'ohh', '.oh', 'ohh', '.oo']], [15, 3, ['oo.', 'hho', 'hho', 'ho.', 'hho', 'hho', 'ho.', 'hho', 'oo.']]],
-      front: [[3, 4, ['.oo.oo.oo.oo', 'ohhohhohhohh']]],
+      back: [
+        [-1, 3, ['..oo', '.ohh', 'ohhh', 'oHhh', '.ohh', 'ohhh', 'oHhh', '.ohh', 'ohhh', '.ooh', '..oo']],
+        [15, 3, ['oo..', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hoo.', 'oo..']],
+      ],
+      front: [[3, 5, ['.oo.oo.oo.oo', 'ohhohhohhohh']]],
     } },
   };
 

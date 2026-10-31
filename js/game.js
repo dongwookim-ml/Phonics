@@ -1323,11 +1323,13 @@ function pictureSource(slot, value) {
   // Wings and capes on their own (a dress hides most of a cape): a pair of
   // wings side by side.
   if (slot === 'back') {
-    // Something worn over her (a hero kit's sash or quiver strap): just it.
+    // Something worn over her (a hero kit's cloak over her shoulders, a
+    // sash, sparkles): just it, drawn on its own.
     const art = BACK_ITEMS[value] && BACK_ITEMS[value].art;
     if (art && art.front) {
-      const thing = changedPixels(cv, heroSprite(Object.assign({}, o, { back: 'none' }), 0).canvas);
-      return [thing, trimBox(thing)];
+      const c = makeCanvas(cv.width, cv.height);
+      drawBitmap(c.getContext('2d'), art.rows, Object.assign({}, HERO_EXTRA, hero.pal, art.pal), 2 + art.x, 5 + art.y);
+      return [c, trimBox(c)];
     }
     const wings = HERO_WINGS[value];
     const w = wings ? wings[0][0].length * 2 + 2 : cv.width;
