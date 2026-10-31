@@ -333,18 +333,19 @@
         '.oooo.',
       ] },
     },
-    // A broom to fly on, held by its handle, its bristles down.
+    // A broom to fly on, held up by its handle with its bristles at the
+    // top (so they show on a unicorn too).
     'wizard-broom': {
       name: I18n.t('heroes.wizard.broom'), icon: '🧹',
-      art: { x: 13, y: 2, rows: shaft(17, 'J', 'K').concat([
-        '..yyy..',
-        '.oIIIo.',
-        '.oISIo.',
-        'oIISIIo',
-        'oISISIo',
-        'oISIISo',
+      art: { x: 13, y: -1, rows: [
         '.o.o.o.',
-      ]) },
+        'oISIISo',
+        'oISISIo',
+        'oIISIIo',
+        '.oISIo.',
+        '.oIIIo.',
+        '..yyy..',
+      ].concat(shaft(17, 'J', 'K')) },
     },
     // An owl friend with big round eyes, sitting on her hand (the Forest's).
     'wizard-owl': {
@@ -378,123 +379,101 @@
     },
   };
 
-  // Back things carry their own colours (the wardrobe draws them alone).
+  // Back things carry their own colours. The moon cloak and the books are
+  // worn over her, with outlines of their own so their wardrobe pictures
+  // stay whole where they cross hers.
   const INK = { o: '#4a2c4f', y: '#ffd34d', Y: '#e0a52a', z: '#fff6c0' };
   const back = {
-    // A midnight-blue cloak with a hood behind her head, gold stars.
+    // A violet cloak edged in gold, its collar up beside her head, stars.
     'wizard-starcloak': {
       name: I18n.t('heroes.wizard.starcloak'), icon: '🌌',
-      art: { x: -2, y: 1, pal: Object.assign({ C: '#3a3a86', c: '#5a5ab8' }, INK), rows: [
-        '......oooooooooo......',
-        '....ooCCCCCCCCCCoo....',
-        '...oCCCCCCCCCCCCCCo...',
-        '..oCCCCCCCCCCCCCCCCo..',
-        '..oCCCCCCCCCCCCCCCCo..',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCyCCCCCCCCCCCCCCyCo.',
+      art: { x: -2, y: 9, pal: Object.assign({ C: '#4b2f86', c: '#8a70d0' }, INK), rows: [
+        '..oyo............oyo..',
+        '..oCyo..........oyCo..',
+        '..oCCyooooooooooyCCo..',
+        '..ocCCCCCCCCCCCCCCco..',
+        '..ocCCCCCCCCCCCCCCco..',
+        '.ocCzCCCCCCCCCCCCCCco.',
+        '.ocCCCCCCCCCCCCCCyCco.',
         '.ocCCCCCCCCCCCCCCCCco.',
-        'ocyccCCCCCCCCCCCCccyco',
-        'occcCCCCCCCCCCCCCCccco',
-        'occcCCCCCCCCCCCCCCcyco',
-        'ocyccCCCCCCCCCCCCcccco',
-        'occccCCCCCCCCCCCCcczco',
-        'oczccCCCCCCCCCCCCcccco',
-        'occccCCCCCCCCCCCCcycco',
-        'occycCCCCCCCCCCCCcccco',
-        'occccCCCCCCCCCCCCccyco',
-        'oyccccCCCCCCCCCCcccczo',
-        'occzccCCCCCCCCCCccccco',
+        'ocCyCCCCCCCCCCCCCCCCco',
+        'ocCCCCCCCCCCCCCCCCzCco',
+        'ocCCCCCCCCCCCCCCCCCCco',
+        'ocCzCCCCCCCCCCCCCCCCco',
+        'ocCCCCCCCCCCCCCCCCyCco',
+        'ocyCCCCCCCCCCCCCCCCCco',
+        'ocCCCCCCCCCCCCCCCCCzco',
+        'oczCCCCCCCCCCCCCCCCCco',
+        'oyyyyyyyyyyyyyyyyyyyyo',
         '.oooooooooooooooooooo.',
       ] },
     },
-    // A purple cloak with a tall collar fanned out behind her head, and a
-    // silver moon.
+    // A purple cloak worn over her shoulders (drawn over her, so it shows
+    // past long hair): its silver-edged sides hang down, tied at the throat
+    // with a silver cord and a crescent-moon clasp.
     'wizard-mooncloak': {
       name: I18n.t('heroes.wizard.mooncloak'), icon: '🌜',
-      art: { x: -2, y: 4, pal: Object.assign({ C: '#8a5ad8', c: '#b98cff', M: '#f4f8ff', W: '#c8d2e4' }, INK), rows: [
-        '..o................o..',
-        '..oMo............oMo..',
-        '..oCMo..........oMCo..',
-        '..oCCMo........oMCCo..',
-        '..oCCCMo......oMCCCo..',
-        '..oCCCCMo....oMCCCCo..',
-        '..oCCCCCMo..oMCCCCCo..',
-        '..oCCCCCCMooMCCCCCCo..',
-        '..oCCCCCCCCCCCCCCCCo..',
-        '..oCCCCCCCCCCCCCCCCo..',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        '.oCCCCCCCCCCCCCCCCCCo.',
-        'oCCCCCCCCCCCCCCCCCCCCo',
-        'oMMCCCCCCCCCCCCCCCcCco',
-        'oCMMCCCCCCCCCCCCCCcCCo',
-        'oCCMCCCCCCCCCCCCCCCCCo',
-        'oCMMCCCCCCCCCCCCCCCcco',
-        'oMMCCCCCCCCCCCCCCCCcco',
-        'oCCCCCCCCCCCCCCCCCcCco',
-        'oWWWWWWWWWWWWWWWWWWWWo',
-        '.oooooooooooooooooooo.',
+      art: { x: -2, y: 12, front: true, pal: Object.assign({}, INK, { o: '#3e2a72', C: '#8a5ad8', c: '#b98cff', M: '#f4f8ff', W: '#c8d2e4' }), rows: [
+        '..ooo......MM....ooo..',
+        '.oCCMWWWW.M..WWWoMCCo.',
+        '.oCCMo.....MM...oMCCo.',
+        'oCCCMo..........oMCCCo',
+        'oCCMo............oMCCo',
+        'oCCMo............oMCCo',
+        'oCMo..............oMCo',
+        'oCCWo............oWzCo',
+        'oCcWo............oWCCo',
+        'oCMWo............oWCzo',
+        'oMCWo............oWcCo',
+        'oCMWo............oWCCo',
+        'oCcWo............oWzco',
+        'oCCWo............oWCCo',
+        'oWWWo............oWWWo',
+        '.ooo..............ooo.',
       ] },
     },
-    // Spellbooks floating round her, with sparkles.
+    // Two spellbooks floating beside her, clear of her hat and her staff.
     'wizard-books': {
       name: I18n.t('heroes.wizard.books'), icon: '📚',
-      art: { x: -2, y: -5, pal: Object.assign({ R: '#e8485a', r: '#ff9aa8', B: '#3f74c8', b: '#6fb7ff', i: '#fff4dc' }, INK), rows: [
-        '.......z..............',
-        '.ooooo..........ooooo.',
-        'oRrRRo.........obbBBo.',
-        'oRyRRo.....z...obybBo.',
-        'oRrRRo.........obbBBo.',
-        'oiiiio.........oiiiio.',
-        '.oooo...........oooo..',
-        '..z...............z...',
+      art: { x: -2, y: 5, front: true, pal: Object.assign({ R: '#e8485a', r: '#ff9aa8', B: '#3f74c8', b: '#6fb7ff', i: '#fff4dc', Q: '#8a2038', q: '#22407e' }, INK), rows: [
+        'QQQQQ',
+        'QRrRQ',
+        'QRyRQ',
+        'QRrRQ',
+        'QiiiQ',
+        '.QQQ.',
+        '..z..',
+        'qqqqq',
+        'qbbBq',
+        'qbyBq',
+        'qbbBq',
+        'qiiiq',
+        '.qqq.',
       ] },
     },
-    // Sparkles and little stars all round her (the Fairy Village's).
+    // Twinkle dust: big and little stars sparkling all over her (the Fairy
+    // Village's).
     'wizard-sparkles': {
       name: I18n.t('heroes.wizard.sparkles'), icon: '✨', fairy: true,
-      art: { x: -2, y: -5, pal: Object.assign({ P: '#ff7fb6', c: '#9fe8ff', u: '#b98cff' }, INK), rows: [
-        '..........z...........',
-        '..y......zyz......c...',
-        '.yzy......z......czc..',
-        '..y...............c...',
+      art: { x: -2, y: 10, front: true, pal: Object.assign({ P: '#ff7fb6', c: '#9fe8ff', u: '#b98cff', w: '#ffffff' }, INK), rows: [
         '......................',
-        'P...................u.',
+        '...................c..',
+        '..y...............czc.',
+        '.yzy.....z.........c..',
+        'yzwzy...........P.....',
+        '.yzy...........PzP...u',
+        '..y.z......w....P.....',
         '......................',
-        '.....................z',
-        '..c...................',
-        '.czc..................',
-        '..c..................y',
-        '....................yz',
-        '.....................y',
-        '......................',
-        'z.....................',
-        '......................',
-        '......................',
-        '.....................P',
-        '..u...................',
-        '......................',
-        '......................',
-        '....................c.',
-        'y..................czc',
-        '....................c.',
-        '......................',
-        '..P...................',
-        '.PzP..................',
-        '..P...................',
-        '......................',
-        '...................u..',
-        '......................',
-        '..z...................',
+        'P......u..............',
+        '......uzu......c...P..',
+        '.......u..........PzP.',
+        '..c..............PzwzP',
+        '.czc.........u....PzP.',
+        'czwzc.......uzu....P..',
+        '.czc.......uzwzu......',
+        '..c....P....uzu...y...',
+        '......PzP....u...yzy..',
+        '....y..P..........y..c',
       ] },
     },
   };
@@ -550,27 +529,39 @@
         front: [[-2, 11, TAIL], [16, 11, TAIL.map(r => [...r].reverse().join(''))]],
       },
     },
-    // Short and windswept, tufts out at the sides and a curl on top (his
-    // starting style).
+    // Short and windswept, tufts sticking out at both sides and a curl on
+    // top (his starting style).
     'wizard-tousled': {
       name: I18n.t('heroes.wizard.tousled'), icon: '🌀', boy: true,
       art: {
-        rows: { 5: '.ohhhsshhhhsshhho.', 6: '..ohhssssssssshho.' },
+        rows: { 5: '.ohhhsshhhhsshhho.', 6: 'ohhhhssssssssshhho', 7: '..ohhsskssskssHho.', 8: 'ohhhhsskssskssHhho', 9: '..ohospssssspsoho.' },
         front: [[4, -2, ['.....o....', '....oho...', '.o..ohoo.o', 'oho.ohhoho']]],
       },
     },
-    // Grown long and tied in a little tail, over his shoulder.
+    // Grown long and tied in a little tail, over his left shoulder.
     'wizard-tail': {
       name: I18n.t('heroes.wizard.tail'), icon: '🎗️', boy: true,
       art: {
         rows: { 9: '...ohspssssspsho..', 10: '...ohssssmsssso...' },
-        front: [[13, 9, ['.oo.', 'ohho', 'ouuo', 'ohho', 'oHho', '.oho', '.oo.']]],
+        front: [[0, 8, ['..oh', '.ohh', 'ouUo', 'ohho', 'ohHo', 'oHho', 'ohho', '.oHo', '.oho', '..o.']]],
       },
     },
-    // A long fringe swept to one side, over his forehead.
+    // A long fringe swept over to one side, down past his ear to his chin.
     'wizard-swoop': {
       name: I18n.t('heroes.wizard.swoop'), icon: '💨', boy: true,
-      art: { rows: { 5: '..ohhhhhhhhhhsho..', 6: '...ohhhhssssssho..' }, front: [[12, 3, ['.ooo.', 'ohhho', 'ohHho', '.oho.']]] },
+      art: {
+        rows: {
+          5: '..ohhhhhhhhhhsho..',
+          6: '...ohhhhssssssHho.',
+          7: '...ohsskssskssHho.',
+          8: '...ohsskssskssHhho',
+          9: '....ospssssspsHhho',
+          10: '....ossssmssssHho.',
+          11: '.....osssssssoHho.',
+          12: '.....oLLyyLLohho..',
+        },
+        front: [[12, 3, ['.ooo.', 'ohhho', 'ohHho', '.oho.']]],
+      },
     },
   };
 
