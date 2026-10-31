@@ -55,9 +55,8 @@
         // Twinkles round her.
         back: [
           [-1, 1, ['.z.', 'zwz', '.z.']],
-          [17, 3, ['y']],
-          [18, 20, ['.z.', 'zwz', '.z.']],
-          [-2, 23, ['y']],
+          [16, 0, ['.y.', 'yzy', '.y.']],
+          [17, 20, ['.z.', 'zwz', '.z.']],
         ],
         // Pointed ears and her wings, over any hairstyle.
         front: [
@@ -72,7 +71,7 @@
       const back = BACK_ITEMS[outfit.back];
       const art = back && back.art;
       const covered = HERO_WINGS[outfit.back] || CAPES[outfit.back] || (art && (art.wings || art.cape));
-      return Object.assign({}, pal, covered ? {} : { 1: '#e6f8ff', 2: '#7fc8e8', 3: '#ffffff' });
+      return Object.assign({}, pal, covered ? {} : { 1: '#e2f6ff', 2: '#4f98d0', 3: '#ffffff' });
     },
     items: {
       shape: {
@@ -268,17 +267,18 @@
         // A dandelion clock, a seed or two blowing away.
         'fairy-dandelion': {
           name: I18n.t('heroes.fairy.dandelion'), icon: '🌬️', girl: true, fairy: true,
-          art: { x: 14, y: 8, rows: [
-            '....w.',
-            '.....w',
-            '..WWW.',
-            '.WwWwW',
-            '.wwIww',
-            '.WwWwW',
-            '..WWW.',
-            '..q...',
-            '.q....',
-            '.q....',
+          art: { x: 13, y: 7, rows: [
+            '.....W.',
+            '..ooo.W',
+            '.owWwo.',
+            'owWwWwo',
+            'owwIwwo',
+            'owWwWwo',
+            '.owwwo.',
+            '..oqo..',
+            '...q...',
+            '..q....',
+            '..q....',
           ] },
         },
         // A jar of fireflies, one out flying.
@@ -379,40 +379,26 @@
             '..oo...',
           ], { o: '#c0507a', E: '#ffd0e6', P: '#ff9ac8' }, 8] },
         },
-        // Fairy dust swirling round her.
+        // Fairy dust swirling round her: a star leading a glittering trail
+        // across the front of her skirt.
         'fairy-sparkles': {
           name: I18n.t('heroes.fairy.sparkles'), icon: '✨', girl: true,
-          art: { x: -2, y: -3, rows: [
-            '.......y..............',
-            '......yzy.........w...',
-            '.......y.........wzw..',
-            '..................w...',
-            '.z....................',
-            'zwz...................',
-            '.z....................',
-            '......................',
-            '......................',
-            '....................y.',
-            '...................yzy',
-            '....................y.',
-            '......................',
-            '......................',
-            '......................',
-            '......................',
-            '......................',
-            '......................',
-            '......................',
-            '......................',
-            '......................',
-            '.y....................',
-            'yzy...................',
-            '.y..................z.',
-            '...................zwz',
-            '..z.................z.',
-            '.zwz..................',
-            '..z.....y.....y.......',
-            '.......yzy...yzy......',
-            '........y.....y.......',
+          art: { x: -2, y: 11, front: true, rows: [
+            '...................Y..',
+            '..................YyY.',
+            '.................YywyY',
+            '..................YyY.',
+            '..................Y.Y.',
+            '.y................y...',
+            '..w..z...........zy...',
+            '....zwz....z.....yy...',
+            '..y..z....zwz...zz....',
+            '...z.......z...yyy....',
+            'z...yz........wyz.....',
+            'wz...yy......yzy......',
+            'z.....zw....zyy.......',
+            '.......zyPzwyz........',
+            '........zyyzy.........',
           ] },
         },
       },
@@ -448,7 +434,7 @@
     },
     uses: {
       shape: ['petal'],
-      back: ['wings', 'butterfly'],
+      back: ['butterfly'],
     },
     defaults: { girl: { shape: 'fairy-petals', head: 'fairy-wreath', hand: 'none', back: 'none', style: 'fairy-pixie', dress: 'mint', hair: 'gold' } },
   });
