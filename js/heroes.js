@@ -28,7 +28,7 @@
 //                shape  art: { bottom: 10 rows, top: { 13..17: row } (or
 //                       [rows 13..17]), walk: { row: pixels } | 'legs' |
 //                       'feet', ride: 'skirt' | { flap, cloth, hem, leg,
-//                       sock, boot } (palette letters, see drawRideLeg) }
+//                       sock, boot, shine } (palette letters, see drawRideLeg) }
 //                head   art: { x, y, rows } on the grid (y may be -5)
 //                hand   art: { x, y, rows }
 //                back   art: { wings: [rows, palette, y] } (a mirrored pair)

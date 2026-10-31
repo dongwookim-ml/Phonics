@@ -1338,6 +1338,14 @@ function pictureSource(slot, value) {
   if (slot === 'head' || slot === 'hair' || slot === 'style') return [cv, [0, 0, 22, 20]];
   // Something in her hand: just the thing, without her.
   if (slot === 'hand') {
+    // A hero kit's thing is drawn on its own (js/heroes.js), so none of it
+    // is lost where it matches her behind it.
+    const art = HAND_ITEMS[value] && HAND_ITEMS[value].art;
+    if (art) {
+      const c = makeCanvas(cv.width, cv.height);
+      drawBitmap(c.getContext('2d'), art.rows, Object.assign({}, hero.pal, art.pal), 2 + art.x, 5 + art.y);
+      return [c, trimBox(c)];
+    }
     const thing = changedPixels(cv, heroSprite(Object.assign({}, o, { hand: 'none' }), 0).canvas);
     return [thing, trimBox(thing)];
   }

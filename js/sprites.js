@@ -3105,7 +3105,10 @@ function drawBoyLeg(ctx, sx, sy, outfit, palette, ride) {
     px(ctx, x0 + w, sy + y, 1, 1, '#4a2c4f');
   }
   px(ctx, sx - 1, sy + flap, 12, 1, '#4a2c4f');
-  px(ctx, sx + 2, sy + 1, 2, 1, r.cloth === 'aA' ? pal.M : pal.L);
+  // A shine on the cloth: the dress's light colour on dress cloth, armour's
+  // on armour, else the ride's own (`shine`) or none (a yellow raincoat).
+  const shine = r.shine || (r.cloth === 'aA' ? 'M' : /[dDL]/.test(r.cloth) ? 'L' : r.cloth[0]);
+  px(ctx, sx + 2, sy + 1, 2, 1, pal[shine]);
   // His leg down to a boot.
   for (let y = sy + flap + 1; y < sy + 9; y++) {
     const c = y >= sy + 6 ? r.boot : r.sock && y === sy + 5 ? r.sock : r.leg;
