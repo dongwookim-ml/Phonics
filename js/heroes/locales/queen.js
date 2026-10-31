@@ -1,0 +1,5 @@
+// Names for the queen's own things (js/heroes/queen.js), until they move into js/locales/ko.js and en.js.
+Object.assign(PIXELTOWN_LOCALES.ko, {
+});
+Object.assign(PIXELTOWN_LOCALES.en, {
+});

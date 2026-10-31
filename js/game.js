@@ -55,6 +55,8 @@ const ui = {
   shopDone: document.getElementById('shop-done'),
 };
 
+finishHeroKits(); // each title's own things (js/heroes.js)
+
 // Everything she collects, by slot, in wardrobe order: one tab each, with a
 // picture for the tab (`icon`, and `boyIcon` / `boyTitle` for a boy). The
 // treasure shelf comes last: treasures are kept, not worn (`shelf`).
@@ -89,9 +91,15 @@ function setPlayer(p) {
   if (TITLES[PLAYER.title].look) PLAYER.look = TITLES[PLAYER.title].look;
 }
 const isBoy = () => PLAYER.look === 'boy';
-// Whether a wardrobe item suits the hero's look.
-const suits = item => !!item && !(isBoy() ? item.girl : item.boy);
-const defaultOutfit = () => (isBoy() ? DEFAULT_BOY_OUTFIT : DEFAULT_OUTFIT);
+// Whether a wardrobe item suits the hero: her look, and in the princess
+// edition her title's own things (an item's `kits`, js/heroes.js; one
+// without is everyone's, like the colours, fairies and unicorns).
+const suits = item => !!item && !(isBoy() ? item.girl : item.boy) && (!item.kits || isCaptain() || item.kits.includes(heroKit().id));
+const defaultOutfit = () => {
+  const kit = !isCaptain() && heroKit();
+  const own = kit && kit.defaults && kit.defaults[PLAYER.look];
+  return own ? Object.assign({}, isBoy() ? DEFAULT_BOY_OUTFIT : DEFAULT_OUTFIT, own) : isBoy() ? DEFAULT_BOY_OUTFIT : DEFAULT_OUTFIT;
+};
 // Swaps anything that doesn't suit the hero's look for the starting item.
 function fitOutfit(outfit) {
   const fit = Object.assign({}, outfit);
@@ -105,7 +113,7 @@ const starsEarned = () => Progress.earned(state, 'stars');
 // The hero's standing sprite: a princess or a boy, by look.
 function heroSprite(outfit, frame) {
   if (isCaptain()) return robotSprite(outfit, frame);
-  return isBoy() ? boySprite(outfit, frame) : princessSprite(outfit, frame);
+  return kitSprite(heroKit(), PLAYER.look, outfit, frame); // her title's own look (js/heroes.js)
 }
 // "윤아님" style title on screen, such as 공주님.
 const titleLabel = () => TITLES[PLAYER.title].label;
@@ -224,7 +232,7 @@ function applyProgress(s) {
   Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures, stamps: p.stamps,
     skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests });
   const ride = state.outfit.ride;
-  state.worn = PLAYER.look;
+  state.worn = isCaptain() ? PLAYER.look : heroKey();
   state.outfit = p.outfit;
   if (state.outfit.ride !== ride) {
     if (state.outfit.ride === 'none') state.mounted = false;
@@ -250,7 +258,7 @@ const state = {
   answered: 0, // questions finished this visit, right or wrong
   outfit: saved.outfit,
   looks: saved.looks, // the outfit last worn as a girl and as a boy
-  worn: PLAYER.look, // which of those state.outfit is
+  worn: isCaptain() ? PLAYER.look : heroKey(), // which of those state.outfit is (js/heroes.js)
   owned: saved.owned,
   stars: saved.stars,
   coins: saved.coins,
@@ -2786,13 +2794,15 @@ addEventListener('keydown', e => {
 });
 // The start screen: pick a name and a title, then press play.
 let spokenEdited = false;
-// Switching between a girl and a boy puts on what that look wore last time.
+// Switching to another title (or between a girl and a boy) puts on what
+// that hero wore last time (heroKey, js/heroes.js), or its starting clothes.
 function wearLook() {
-  if (state.worn !== PLAYER.look) {
+  const now = isCaptain() ? PLAYER.look : heroKey();
+  if (state.worn !== now) {
     state.looks[state.worn] = state.outfit;
     const { ride, fairy } = state.outfit;
-    state.outfit = Object.assign({}, state.looks[PLAYER.look] || defaultOutfit(), { ride, fairy });
-    state.worn = PLAYER.look;
+    state.outfit = Object.assign({}, state.looks[now] || defaultOutfit(), { ride, fairy });
+    state.worn = now;
   }
   state.outfit = fitOutfit(state.outfit);
   // The starting clothes of a look she just switched to are hers.

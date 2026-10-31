@@ -2242,13 +2242,27 @@ function drawWingPair(ctx, back, left, right, y) {
 }
 
 // What she wears on her back, behind everything else: wings or a cape.
-// Shared by the girl and the boy (the same canvas and grid).
-function drawHeroBack(ctx, back, OXp, OYp, W) {
+// Shared by every hero (the same canvas and grid); a hero kit's own (its
+// item's `art`, js/heroes.js) is wings, a cape or a bitmap (drawn over her
+// when `front`) in her palette `pal`.
+function drawHeroBack(ctx, back, OXp, OYp, W, pal) {
+  const art = typeof BACK_ITEMS !== 'undefined' && BACK_ITEMS[back] && BACK_ITEMS[back].art;
+  if (art && art.wings) {
+    const [rows, colours, y] = art.wings;
+    const p = Object.assign({}, HERO_EXTRA, pal, colours);
+    drawBitmap(ctx, rows, p, 0, OYp + y);
+    drawBitmap(ctx, rows, p, W - rows[0].length, OYp + y, true);
+    return;
+  }
+  if (art && art.rows) {
+    if (!art.front) drawBitmap(ctx, art.rows, Object.assign({}, HERO_EXTRA, pal, art.pal), OXp + art.x, OYp + art.y);
+    return;
+  }
   if (HERO_WINGS[back]) {
     drawWingPair(ctx, back, 0, W, OYp + HERO_WINGS[back][2]);
     return;
   }
-  const cape = CAPES[back];
+  const cape = (art && art.cape) || CAPES[back];
   if (!cape) return;
   for (let y = 12; y < 28; y++) {
     const spread = Math.min(3, Math.floor((y - 12) / 4));
@@ -3014,6 +3028,8 @@ function unicornSprite(key, frame) {
 const riderCache = new Map();
 function riderSprite(outfit, frame, boy) {
   if (isCaptain() && typeof captainRiderSprite === 'function') return captainRiderSprite(outfit, frame);
+  // A hero kit's hero (js/heroes.js): her top half, and what she wears below over its side.
+  if (typeof heroKit === 'function' && heroKit()) return kitRiderSprite(outfit, frame);
   const key = `${Object.values(outfit).join('|')}|${frame}|${!!boy}`;
   if (riderCache.has(key)) return riderCache.get(key);
   const uni = unicornSprite(outfit.ride, frame);
@@ -3075,10 +3091,11 @@ const BOY_RIDE = {
   leaf: { flap: 3, hem: 'D', leg: 'Q', boot: 'J' },
 };
 
-// A boy's clothes over the unicorn's side, with his leg and boot below.
-function drawBoyLeg(ctx, sx, sy, outfit) {
-  const pal = boyPalette(outfit);
-  const r = Object.assign({ cloth: 'dD', hem: 't', leg: 'n', boot: 'f' }, BOY_RIDE[outfit.shape] || BOY_RIDE.tunic);
+// A boy's clothes over the unicorn's side, with his leg and boot below
+// (a hero kit passes its palette and its shape's `ride`, js/heroes.js).
+function drawBoyLeg(ctx, sx, sy, outfit, palette, ride) {
+  const pal = palette || boyPalette(outfit);
+  const r = Object.assign({ cloth: 'dD', hem: 't', leg: 'n', boot: 'f', flap: 3 }, ride || BOY_RIDE[outfit.shape] || BOY_RIDE.tunic);
   const flap = r.flap;
   for (let y = 0; y < flap; y++) {
     const w = 10 + Math.min(y, 1) * 2;
