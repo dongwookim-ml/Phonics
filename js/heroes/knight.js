@@ -315,57 +315,53 @@
     ] }),
     // A tall lance striped in her colour, with a pennant.
     'knight-lance': thing('lance', '🎏', { x: 13, y: -5, rows: [
-      '..o.....',
-      '.oMo....',
-      '.oao....',
-      '.oaooo..',
-      'oLdLddo.',
-      'oddLdddo',
-      'oddLdo..',
-      'oddLddo.',
-      'oddLo...',
-      'owdo....',
-      'odwo....',
-      'owdo....',
-      'odwo....',
-      'owdo....',
-      'odwo....',
-      'owdo....',
-      'odwo....',
-      'oawo....',
-      'oaaAo...',
-      'oMaaAo..',
-      'oosssoo.',
-      '.oJJo...',
+      '..o....',
+      '.oMo...',
+      '.oao...',
+      '.oaooo.',
+      'oLdLddo',
+      'oddLddo',
+      'oddLdo.',
+      'oddLddo',
+      'oddLo..',
+      'owdo...',
+      'odwo...',
+      'owdo...',
+      'odwo...',
+      'owdo...',
+      'odwo...',
+      'owdo...',
+      'odwo...',
+      'oawo...',
+      'oaaAo..',
+      'oMaaAo.',
+      'oosssoo',
+      '.oJJo..',
     ] }),
-    // A round shield in her colour, a steel rim and a gold boss.
-    'knight-round': thing('round', '🛡️', { x: -3, y: 11, rows: [
-      '...oooooo...',
-      '.ooaaaaaaoo.',
-      '.oaLLdddDAo.',
-      'oaLddddddDAo',
-      'oaLddoodddAo',
-      'oaddoyyoddAo',
-      'oaddoyYoDDAo',
-      'oadddoodDDAo',
-      '.oadddDDDAo.',
-      '.ooAAAAAAoo.',
-      '...oooooo...',
+    // A round shield in her colour, a steel rim and a big gold boss, held
+    // up on her arm (above where her legs hang when she rides).
+    'knight-round': thing('round', '🛡️', { x: -2, y: 9, rows: [
+      '..oooo..',
+      '.ooaaAoo',
+      'oaLddDAo',
+      'oLdyydDo',
+      'odyYYyDo',
+      'odyYYyDo',
+      'oddyyDDo',
+      'oAdDDDAo',
+      '.ooAAoo.',
     ] }),
     // A white shield with a red heart, from the Fairy Village.
-    'knight-heart': thing('heart', '💖', { x: -3, y: 11, rows: [
-      '.ooooooo.',
-      'oMaaaaaAo',
-      'oaweewwAo',
-      'oaeeeeeAo',
-      'oaeeEeeAo',
-      'oaweeewAo',
-      'oawwewwAo',
-      '.oawwwAo.',
-      '.oaAwAAo.',
-      '..oaAAo..',
-      '...oAo...',
-      '....o....',
+    'knight-heart': thing('heart', '💖', { x: -2, y: 9, rows: [
+      'ooooooo',
+      'owwwwWo',
+      'oweweWo',
+      'oeeEeeo',
+      'oeeeeeo',
+      'oweeeWo',
+      '.owewo.',
+      '..oWo..',
+      '...o...',
     ] }, { fairy: true }),
     // A banner in her colour with a gold crown, high on its pole.
     'knight-banner': thing('banner', '🚩', { x: 9, y: -5, rows: [
@@ -434,8 +430,21 @@
   ];
   const INK = '#4a2c4f';
   const BACKS = {
-    // A royal blue cape pinned at her shoulders with gold.
-    'knight-cape': thing('cape', '🦸', { cape: { cloth: '#3f5fb8', edge: '#24357a', clasp: true } }),
+    // A royal blue cape over her shoulders, pinned with gold by her collar,
+    // falling to her heels behind her arms (drawn over her: the mantle on
+    // her shoulders, the sides beside her).
+    'knight-cape': thing('cape', '🦸', {
+      x: -2, y: 12, front: true, pal: { o: INK, C: '#3f5fb8', V: '#24357a', F: '#6a8ad8', y: '#ffd34d', Y: '#e0a52a' },
+      rows: [
+        '...ooooo......ooooo...',
+        '..oFCCCCyo..oyCCCCFo..',
+        '.oFCCCCVYo..oYVCCCCFo.',
+        'oCCVVVVo......oVVVVCCo',
+        ...Array(10).fill('oCVo..............oVCo'),
+        'oVVo..............oVVo',
+        'oooo..............oooo',
+      ],
+    }),
     // A big sword in its scabbard on her back, the hilt over her shoulder.
     'knight-sheath': thing('sheath', '⚔️', { x: 15, y: -1, pal: { o: INK, y: '#ffd34d', Y: '#e0a52a' }, rows: [
       '.ooo.',
@@ -460,37 +469,43 @@
   const STYLES = {
     // One thick braid over her shoulder, tied with a red ribbon.
     'knight-braid': thing('braid', '🥨', {
-      front: [[-1, 9, ['.oho.', 'ohHho', 'oHhHo', 'ohHo.', 'ohHho', 'oHhHo', 'ohHo.', 'ohHho', '.oeo.', 'oeEeo', '.ooo.']]],
+      front: [[-2, 9, ['..oo', '.ohH', 'ohHo', 'oHho', '.oo.', 'ohHo', 'oHho', '.oo.', 'ohHo', 'oHho', '.oo.', 'oeEo', 'oeeo', '.oo.']]],
     }, { girl: true }),
-    // A braid wrapped round her head like a crown.
+    // A braid wrapped round her head like a crown, down over her ears.
     'knight-crownbraid': thing('crownbraid', '👑', {
-      rows: { 9: '..ohhspssssspsho..', 10: '..ohhssssmssssho..' },
-      front: [[1, 1, ['..oooooooooooo..', '.ohHohHohHohHoo.', 'ohHohHohHohHohHo', '.oooooooooooooo.']]],
+      front: [
+        [1, 1, ['..oooooooooooo..', '.ohHohHohHohHoo.', 'ohHohHohHohHohHo', '.oooooooooooooo.']],
+        [0, 4, ['.oo.', 'ohHo', 'oHho', '.oo.', 'ohHo', 'oHho', '.oo.', 'ohHo', '.oo.']],
+        [14, 4, ['.oo.', 'oHho', 'ohHo', '.oo.', 'oHho', 'ohHo', '.oo.', 'oHho', '.oo.']],
+      ],
     }, { girl: true }),
     // A high ponytail tied with gold, swinging out like a plume.
     'knight-ponytail': thing('ponytail', '🎗️', {
-      rows: { 9: '..ohhspssssspsho..', 10: '..ohhssssmssssho..' },
-      back: [[11, -4, ['..ooo..', '.ohhHo.', 'ohHhhho', 'ohhhHho', '.oyyYo.', '..ohHho', '..ohhHo', '...ohho', '...ohHo', '...ohho', '....oho', '....oho', '.....o.']]],
+      back: [[11, -4, ['..ooo...', '.ohhHo..', 'ohHhhho.', 'ohhhHho.', '.oyyYo..', '..ohHho.', '..ohhHo.', '...ohHo.', '...ohhHo', '...oHhho', '....ohHo', '....ohho', '....oHho', '....ohho', '.....oho', '.....oho', '......o.']]],
     }, { girl: true }),
     // Short, the fringe swept to one side (his starting hair).
     'knight-crop': thing('crop', '💇‍♂️', {}, { boy: true }),
-    // A pageboy's round bowl cut, straight across.
+    // A pageboy's round bowl cut, straight across his brow and down over
+    // his ears.
     'knight-pageboy': thing('pageboy', '🥣', {
       rows: {
-        3: '..ohhHHhhhhhhhho..',
         4: '.ohHhhhhhhhhhhhho.',
         5: '.ohhhhhhhhhhhhhho.',
-        6: '.ohhhssssssssshho.',
-        7: '.ohhsskssskssshho.',
-        8: '.ohhsskssskssshho.',
-        9: '.ohhspssssspsshho.',
-        10: '..ooossssmssooo...',
+        6: '.ohhhhhhhhhhhhhho.',
+        7: '.ohhhssksssksshho.',
+        8: '.ohhhssksssksshho.',
+        9: '.ohhhspssssspshho.',
+        10: '..ohhssssmssssho..',
+        11: '...ooosssssssoo...',
       },
     }, { boy: true }),
-    // Windswept, tufts blowing over to one side.
+    // Windswept: tufts on top and a lock over his brow blowing to one side.
     'knight-swept': thing('swept', '🌬️', {
-      rows: { 5: '..ohhhhhhhssssho..' },
-      front: [[1, -3, ['..........oo....', '.......ooohho...', '..ooooohhhHHho..', '.ohhhhhhHHhhhhho', 'ohhHHhhhhhhhhhho']]],
+      rows: { 5: '..ohhhhhhhhhhhho..', 6: '...ohhhhhsssssho..' },
+      front: [
+        [1, -3, ['..........oo....', '.......ooohho...', '..ooooohhhHHho..', '.ohhhhhhHHhhhhho', 'ohhHHhhhhhhhhhho']],
+        [14, 5, ['.ooo.', 'ohhHo', '.ohho', '..oo.']],
+      ],
     }, { boy: true }),
   };
 
@@ -501,7 +516,7 @@
       boy: { top: BOY_HEAD.concat(BODY) },
     },
     palette,
-    // The knight's armour, helmet and shield the boy hero always had.
+    // The knight's helmet and shield the boy hero always had.
     uses: { head: ['helmet'], hand: ['shield'] },
     items: { shape: SHAPES, head: HEADS, hand: HANDS, back: BACKS, style: STYLES },
     defaults: {
