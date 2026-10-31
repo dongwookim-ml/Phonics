@@ -3,7 +3,8 @@
 // girl and a boy hero and for the robot hero of the captain edition. Every
 // door must be reachable and lead back out where it was. Every wardrobe
 // thing that suits the hero draws (walking, riding, in a portrait and as its
-// wardrobe picture) and shows on the hero. Also with Halloween on.
+// wardrobe picture) and shows on the hero, and so does every other title's
+// own (js/heroes.js). Also with Halloween on.
 // Run: node tools/smoke.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -104,6 +105,54 @@ for (const s of scripts) {
     });
     if (!items.n) items.bad.push('no wardrobe items');
     for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}${halloween ? ' (Halloween)' : ''}: ${e}`); failed++; }
+    await page.close();
+  }
+  // Every title of the princess edition is its own character (js/heroes.js):
+  // each, as every look it can be, draws everything it can wear the same way,
+  // and its own art is drawn on the 18-pixel grid.
+  {
+    const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto('file://' + path.join(root, 'index.html') + `?edition=princess&halloween=0&language=${process.env.UI_LANGUAGE || 'ko'}`);
+    await page.click('#login-guest');
+    const bad = await page.evaluate(() => {
+      const bad = [];
+      const ride = Object.keys(UNICORNS).find(k => k !== 'none');
+      for (const title of Object.keys(TITLES)) {
+        const kit = HERO_KITS[title];
+        if (!kit) { bad.push(`${title}: no hero kit`); continue; }
+        for (const look of kit.looks) {
+          setPlayer({ title, look });
+          state.worn = '';
+          wearLook();
+          for (const w of WARDROBE) {
+            for (const [v, item] of Object.entries(w.items)) {
+              if (!suits(item)) continue;
+              const o = Object.assign({}, defaultOutfit(), w.shelf ? {} : { [w.slot]: v });
+              try {
+                heroSprite(o, 0);
+                heroSprite(o, 1);
+                riderSprite(Object.assign({}, o, { ride: w.slot === 'ride' && v !== 'none' ? v : ride }), 1, isBoy());
+                drawPortrait(document.createElement('canvas'), heroPortrait(o, w.slot === 'ride', true));
+                if (!itemPicture(w.slot, v)) bad.push(`${title} ${look} ${w.slot} ${v}: no picture`);
+              } catch (e) {
+                bad.push(`${title} ${look} ${w.slot} ${v}: ${e.message}`);
+              }
+            }
+          }
+        }
+        const width = (name, rows, w) => (rows || []).forEach((r, i) => { if (r && r.length !== w) bad.push(`${title} ${name} row ${i} is ${r.length} wide, not ${w}`); });
+        for (const look of kit.looks) if (kit.base && kit.base[look] && kit.base[look].top) width(`${look} body`, kit.base[look].top, 18);
+        for (const [k, it] of Object.entries((kit.items || {}).shape || {})) {
+          width(`${k} bottom`, it.art.bottom, 18);
+          if (it.art.bottom.length !== 10) bad.push(`${title} ${k}: ${it.art.bottom.length} bottom rows, not 10`);
+          width(`${k} top`, Array.isArray(it.art.top) ? it.art.top : Object.values(it.art.top || {}), 18);
+        }
+      }
+      return bad;
+    });
+    for (const e of bad.concat(errors)) { console.log(`heroes: ${e}`); failed++; }
     await page.close();
   }
   await browser.close();

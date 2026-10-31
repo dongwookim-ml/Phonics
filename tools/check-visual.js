@@ -286,8 +286,10 @@ function ask(kind, scene) {
           if (m.width < 40 || m.height < 40 || !inBox(document.getElementById(mirror), p.getBoundingClientRect())) out.push(`${what}: the mirror is ${Math.round(m.width)}x${Math.round(m.height)} or outside the box`);
           for (const b of buttons) if (!onScreen(document.querySelector(b))) out.push(`${what}: ${b} is off the screen`);
         };
-        for (const look of isCaptain() ? ['robot'] : ['girl', 'boy']) {
-          if (look !== 'robot') { setPlayer({ title: look === 'boy' ? 'prince' : 'princess', look }); wearLook(); }
+        // Every title of the princess edition, as each look it can be (js/heroes.js).
+        const heroes = isCaptain() ? [['robot', 'captain']] : Object.keys(TITLES).flatMap(t => (HERO_KITS[t] ? HERO_KITS[t].looks : []).map(l => [l, t]));
+        for (const [look, title] of heroes) {
+          if (look !== 'robot') { setPlayer({ title, look }); state.worn = ''; wearLook(); }
           // Half of everything hers, so there are pictures and ❓ shapes.
           let n = 0;
           for (const w of WARDROBE) for (const v of Object.keys(w.items)) if (n++ % 2 && !state.owned[w.slot].includes(v)) state.owned[w.slot].push(v);
@@ -297,7 +299,7 @@ function ask(kind, scene) {
           for (const w of wardrobeTabs()) {
             wdTab = w.slot;
             renderWardrobe();
-            fits(`wardrobe ${look} ${w.slot}`, 'wardrobe', '#wd-tabs .wd-tab', '#wd-slots .wd-grid', 'wd-preview', ['#wd-done']);
+            fits(`wardrobe ${title} ${look} ${w.slot}`, 'wardrobe', '#wd-tabs .wd-tab', '#wd-slots .wd-grid', 'wd-preview', ['#wd-done']);
           }
           closeWardrobe();
           state.coins = 5;
@@ -306,7 +308,7 @@ function ask(kind, scene) {
             state.shopTab = slot;
             state.shopPick = shopItems().find(it => it.slot === slot);
             renderShop();
-            fits(`shop ${look} ${slot}`, 'shop', '#shop-tabs .wd-tab', '#shop-items', 'shop-preview', ['#shop-buy', '#shop-done']);
+            fits(`shop ${title} ${look} ${slot}`, 'shop', '#shop-tabs .wd-tab', '#shop-items', 'shop-preview', ['#shop-buy', '#shop-done']);
           }
           closeShop();
           // The hair salon (js/salon.js), one picked on each tab.
@@ -317,7 +319,7 @@ function ask(kind, scene) {
               salon.tab = slot;
               salonChoose(salonItems(slot).find(it => !it.mine));
               renderSalon();
-              fits(`salon ${look} ${slot}`, 'salon', '#salon-tabs .wd-tab', '#salon-items', 'salon-preview', ['#salon-buy', '#salon-done']);
+              fits(`salon ${title} ${look} ${slot}`, 'salon', '#salon-tabs .wd-tab', '#salon-items', 'salon-preview', ['#salon-buy', '#salon-done']);
             }
             closeSalon();
           }

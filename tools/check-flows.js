@@ -1242,18 +1242,19 @@ async function littleGames(browser, edition) {
   await ctx.close();
 }
 
-// Presents (offerReward in js/game.js) for a girl, a boy and the robot:
+// Presents (offerReward in js/game.js) for a girl, a boy and the robot, and
+// (presentsTitles) every other title of the princess edition, each its own:
 // every villager in turn gives until nobody has anything new left. Each
 // present is new (never a repeat), also from villagers whose own unicorn or
 // fairy is hers already; it suits the hero; a village's own treasures come
 // only from that village; and at the end the wardrobe's count is full.
 // Nothing that doesn't suit her is in the shop or the wardrobe either.
-async function presents(browser, edition, look) {
+async function presents(browser, edition, look, title = look === 'boy' ? 'prince' : 'princess') {
   const { page, ctx, errors } = await game(browser, { edition, seed: { edition, stars: 99 } });
-  const r = await page.evaluate(look => {
+  const r = await page.evaluate(([look, title]) => {
     if (!Sound.muted) Sound.toggleMute();
     if (look !== 'robot') {
-      setPlayer({ title: look === 'boy' ? 'prince' : 'princess', look });
+      setPlayer({ title, look });
       wearLook();
     }
     const out = { repeats: [], notNew: [], wrongLook: [], wrongVillage: [], ownAgain: [], gifts: 0, shelf: 0 };
@@ -1304,8 +1305,8 @@ async function presents(browser, edition, look) {
     }
     closeWardrobe();
     return out;
-  }, look);
-  const tag = `presents (${edition} ${look})`;
+  }, [look, title]);
+  const tag = `presents (${edition} ${look === 'robot' ? look : `${title} ${look}`})`;
   check(`${tag}: every present is new, none twice (${r.gifts} presents, ${r.shelf} treasures)`, !r.repeats.length && !r.notNew.length && r.gifts > 30, { repeats: r.repeats, notNew: r.notNew, gifts: r.gifts });
   check(`${tag}: a villager whose own unicorn or fairy is hers gives something else new (${r.fromOwners} presents)`, !r.ownAgain.length && r.fromOwners > 0, r.ownAgain);
   check(`${tag}: nothing that doesn't suit the hero`, !r.wrongLook.length, r.wrongLook);
@@ -2797,6 +2798,11 @@ async function lateGate(browser) {
     cards: b => cards(b, 'princess'), cardsCaptain: b => cards(b, 'captain'), selfRead,
     games: b => littleGames(b, 'princess'), gamesCaptain: b => littleGames(b, 'captain'),
     presentsGirl: b => presents(b, 'princess', 'girl'), presentsBoy: b => presents(b, 'princess', 'boy'), presentsRobot: b => presents(b, 'captain', 'robot'),
+    // Every other title its own presents (js/heroes.js).
+    presentsTitles: async b => {
+      for (const [title, look] of [['queen', 'girl'], ['king', 'boy'], ['fairy', 'girl'], ['knight', 'girl'], ['knight', 'boy'], ['wizard', 'girl'], ['wizard', 'boy'],
+        ['explorer', 'girl'], ['explorer', 'boy'], ['captain', 'girl'], ['captain', 'boy']]) await presents(b, 'princess', look, title);
+    },
     outside: b => outsideTaps(b, 'princess'), outsideCaptain: b => outsideTaps(b, 'captain'),
     music: b => musicFlows(b, 'princess'), musicCaptain: b => musicFlows(b, 'captain'),
     shop: b => shopTabs(b, 'princess'), shopCaptain: b => shopTabs(b, 'captain'),
