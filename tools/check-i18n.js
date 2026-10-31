@@ -19,7 +19,9 @@ for (const key of keys) {
   // The language picker deliberately shows Korean's native name in both languages.
   if (!['ui.language', 'ui.korean'].includes(key)) assert.ok(!/[가-힣]/.test(catalogs.en[key]), `Untranslated English: ${key}`);
 }
-const runtimeFiles = fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js'));
+// The game's scripts, and each title's hero kit (js/heroes/<title>.js).
+const runtimeFiles = fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js'))
+  .concat(fs.readdirSync(path.join(root, 'js/heroes')).filter(f => f.endsWith('.js')).map(f => `heroes/${f}`));
 for (const file of runtimeFiles) {
   const text = fs.readFileSync(path.join(root, 'js', file), 'utf8');
   for (const match of text.matchAll(/I18n\.t\('([^']+)'/g)) assert.ok(keys.includes(match[1]), `Unknown key in ${file}: ${match[1]}`);

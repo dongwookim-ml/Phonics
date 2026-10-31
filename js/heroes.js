@@ -21,7 +21,7 @@
 //   palette    (outfit, look, base) => letters to colours: `base` is the
 //              usual one for the look (heroPalette); add to it or change it
 //   items      { shape, head, hand, back, style }: { key: item } with
-//              name: I18n.t('heroes.<title>.<key>'), icon, the usual flags
+//              name: the message heroes.<title>.<key> (js/locales), icon, the usual flags
 //              (girl / boy for one look only; forest / unicorn / fairy:
 //              given in that village only; shop: sold in the shop only;
 //              price) and its art:
