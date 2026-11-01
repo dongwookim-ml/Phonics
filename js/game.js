@@ -1339,8 +1339,20 @@ function pictureSource(slot, value) {
     return [back, trimBox(back)];
   }
   // Her head, with room for pigtails, a ponytail or a bun.
-  // Hair and hairstyles without her hat or helmet over them.
-  if (slot === 'hair' || slot === 'style') return [heroSprite(Object.assign({}, o, { head: 'none' }), 0).canvas, [0, 0, 22, 20]];
+  // Hair and hairstyles without her hat or helmet over them: her head,
+  // down to where a long hairstyle (a braid to the floor) ends.
+  if (slot === 'hair' || slot === 'style') {
+    const bare = heroSprite(Object.assign({}, o, { head: 'none' }), 0).canvas;
+    let h = 20;
+    if (slot === 'style') {
+      const plain = heroSprite(Object.assign({}, o, { head: 'none', style: defaultOutfit().style }), 0).canvas;
+      const px = changedPixels(bare, plain).getContext('2d').getImageData(0, 0, bare.width, bare.height).data;
+      for (let i = px.length - 1; i > 0; i -= 4) if (px[i]) { h = Math.max(h, Math.floor((i - 3) / 4 / bare.width) + 1); break; }
+    }
+    // Two sizes, so the hairstyles in a row are drawn alike: her head, or
+    // all of her for hair that hangs well below her shoulders.
+    return [bare, [0, 0, 22, h > 26 ? bare.height : 20]];
+  }
   if (slot === 'head') return [cv, [0, 0, 22, 20]];
   // Something in her hand: just the thing, without her.
   if (slot === 'hand') {
