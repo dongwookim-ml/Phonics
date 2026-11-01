@@ -134,6 +134,84 @@
       },
       ride: 'skirt',
     } },
+    // The snow queen's gown: slim, with a sheer skirt of ice over it that
+    // ends in icicles.
+    'queen-snow': { name: I18n.t('heroes.queen.snow'), icon: '❄️', girl: true, shop: true, price: 10, art: {
+      bottom: [
+        '......oddddo......',
+        '......odLdDo......',
+        '.....oddLdDDo.....',
+        '.....ocdLdDco.....',
+        '....ocwdLdDcco....',
+        '....occdLdDDco....',
+        '...occwddLdDcco...',
+        '..occcdddLDDDcco..',
+        '.ocZcZcZcZcZcZcZo.',
+        '..c.c.ff..ff.c.c..',
+      ],
+      walk: { 9: '..c.cff....ffc.c..' },
+      ride: 'skirt',
+    } },
+    // A riding habit: a fitted jacket with gold buttons, a white jabot and
+    // a flared peplum, over a long narrow skirt.
+    'queen-riding': { name: I18n.t('heroes.queen.riding'), icon: '🏇', girl: true, unicorn: true, art: {
+      top: {
+        13: '..oyyDdowwodDyyo..',
+        14: '.oyyDdddwwdddDyyo.',
+        15: '.oddoDdywwydDoddo.',
+        16: '.oddoddyddyddoddo.',
+        17: '.owwoddyddyddowwo.',
+      },
+      bottom: [
+        '..osoddddddddoso..',
+        '...oddddddddddo...',
+        '...ooooDDDDoooo...',
+        '.....oDdDDDDo.....',
+        '.....oDdDDDDo.....',
+        '....oDDdDDDDDo....',
+        '....oDDdDDDDDo....',
+        '...oDDDdDDDDDDo...',
+        '...oooooooooooo...',
+        '......ff..ff......',
+      ],
+      walk: { 9: FEET_B },
+      ride: { flap: 3, cloth: 'dD', hem: 'o', leg: 'D', boot: 'x', shine: 'L' },
+    } },
+    // The fairy queen's gown, roses climbing it and a hem of big roses.
+    'queen-rose': { name: I18n.t('heroes.queen.rose'), icon: '🌹', girl: true, fairy: true, art: {
+      bottom: [
+        '.....oddddddo.....',
+        '....oddLdddeEo....',
+        '...oddLdddqeeDo...',
+        '...odLddddddqDo...',
+        '..oeEdLdddddDDDo..',
+        '..oeeqdddddeEDDo..',
+        '.oddqLdddddeeqDDo.',
+        'oeEqeEqeEqeEqeEqeo',
+        'oeeoeeoeeoeeoeeoeo',
+        '.oo.ooff..ff.oo.o.',
+      ],
+      walk: { 9: '.oo.off....ffoo.o.' },
+      ride: 'skirt',
+    } },
+    // A bustle gown: the skirt caught back like curtains over a frilled
+    // underskirt, with a big bow at the hip.
+    'queen-bustle': { name: I18n.t('heroes.queen.bustle'), icon: '🎀', girl: true, art: {
+      bottom: [
+        '.....oddddddoRRo..',
+        '....oddddddddRrRo.',
+        '...oddddLLdddDoRo.',
+        '..oddddLwwLdDDDoRo',
+        '..odddLLLLLLdDDo..',
+        '.oddddwwwwwwdDDDo.',
+        '.odddLLLLLLLLdDDo.',
+        'oddddwwwwwwwwdDDDo',
+        'oLwLwLwLwLwLwLwLwo',
+        '......ff..ff......',
+      ],
+      walk: { 9: FEET_B },
+      ride: 'skirt',
+    } },
   };
 
   const head = {
@@ -198,6 +276,35 @@
       '.PpP.qPpPq.PpP',
       'qPyPqPPyPPqPyP',
       'GqPqGqPqqGqPqG',
+    ] } },
+    // A wide hat in her colour, tilted, with a white plume and a gold band.
+    'queen-hat': { name: I18n.t('heroes.queen.hat'), icon: '👒', shop: true, price: 9, art: { x: 0, y: -5, rows: [
+      '...........ooo....',
+      '.....oooooowWWo...',
+      '....odddddwWwwo...',
+      '....oDdddddwWo....',
+      '...oyyyyyyyyyo....',
+      '.oodddddddddddoo..',
+      'oddDDDDDDDDDDDddo.',
+      '.ooooooooooooooo..',
+    ] } },
+    // A crown of ice: sharp clear crystals of different heights.
+    'queen-icecrown': { name: I18n.t('heroes.queen.icecrown'), icon: '🧊', forest: true, art: { x: 3, y: -5, rows: [
+      '.....oo.....',
+      '.o..oZco..o.',
+      'oZo.oZco.oZo',
+      'oZcocZZcocZo',
+      'oZcZcwwcZcZo',
+      '.oBBBBBBBBo.',
+    ] } },
+    // A little crown of red hearts on a gold band.
+    'queen-heartcrown': { name: I18n.t('heroes.queen.heartcrown'), icon: '❤️', art: { x: 2, y: -5, rows: [
+      '....ee..ee....',
+      'e.e.eEeeee.e.e',
+      'eEe..eeee..eEe',
+      '.e....ee....e.',
+      '.yyyyyyyyyyyy.',
+      '..YyYyYYyYyY..',
     ] } },
   };
 
@@ -278,6 +385,40 @@
       '.sws.',
       '..c..',
       '..w..',
+    ] } },
+    // A teacup on its saucer, steaming.
+    'queen-teacup': { name: I18n.t('heroes.queen.teacup'), icon: '🍵', shop: true, price: 8, art: { x: 13, y: 12, rows: [
+      '..W.W..',
+      '...W...',
+      '.oyyyo.',
+      '.owPwoo',
+      '.owwwoo',
+      'oyyyyyo',
+      '.sssss.',
+    ] } },
+    // A royal letter: a scroll hanging from its gold rod, sealed in red.
+    'queen-scroll': { name: I18n.t('heroes.queen.scroll'), icon: '📜', art: { x: 12, y: 15, rows: [
+      '..ss...',
+      'oyssyyo',
+      '.oiiio.',
+      '.oIIio.',
+      '.oiiio.',
+      '.oIiIo.',
+      '.oieio.',
+      '.oeEeo.',
+      'oyyyyyo',
+    ] } },
+    // A corgi puppy in her arm.
+    'queen-puppy': { name: I18n.t('heroes.queen.puppy'), icon: '🐶', forest: true, art: { x: 12, y: 11, rows: [
+      'o.....o',
+      'OoOOOoO',
+      'OOOOOOO',
+      'OxOwOxO',
+      'OwwxwwO',
+      '.owPwo.',
+      'oOwwwOo',
+      'sOOOOOs',
+      '.O...O.',
     ] } },
   };
 
@@ -368,6 +509,71 @@
       'oNBNBwBNBNB',
       'oNoNoNoNoNo',
     ]) } },
+    // The fairy queen's wings: tall and clear, edged in gold.
+    'queen-wings': { name: I18n.t('heroes.queen.wings'), icon: '🪽', fairy: true, art: { wings: [[
+      'yy......',
+      'yzy.....',
+      'yzzy....',
+      '.yzzy...',
+      '.yzZzy..',
+      '.yzZZzy.',
+      '..yzZZzy',
+      '..yzzZzy',
+      '...yzzzy',
+      '....yyyy',
+      '...yzzy.',
+      '..yzZzy.',
+      '.yzZzy..',
+      '.yzzy...',
+      '..yy....',
+    ], { z: 'rgba(255,240,250,0.85)', Z: 'rgba(200,180,255,0.85)' }, 1] } },
+    // A peacock's tail spread like a fan behind her, eyes round its rim.
+    'queen-peacock': { name: I18n.t('heroes.queen.peacock'), icon: '🦚', unicorn: true, art: { x: -2, y: 3, rows: [
+      '........oooooo........',
+      '.......oQqqqqQo.......',
+      '.....ooqQqqqqQqoo.....',
+      '....oqqqQqqqqQqqqo....',
+      '....oqqqQqqqqQqqqo....',
+      '...oQqqqqqqqqqqqqQo...',
+      '..oqqqqqqqqqqqqqqqqo..',
+      '..oyqQqqqQqqQqqqQqyo..',
+      '.oyBqqqqqQqqQqqqqqByo.',
+      '.oBNBqQqqQqqQqqQqBNBo.',
+      '.oyByqqqqqqqqqqqqyByo.',
+      '.oqyQqqqqqqqqqqqqQyqo.',
+      'oqqqqQqqQqqqqQqqQqqqqo',
+      'oqyBBqqqqqqqqqqqqBByqo',
+      'oyBNByqqqQQQQqqqyBNByo',
+      'oqyBBqqqqqqqqqqqqBByqo',
+      'oqqyqqqqqqqqqqqqqqyqqo',
+      'oqqyBByqqqqqqqqyBByqqo',
+      'oqqyBNByqqqqqqyBNByqqo',
+      'oqqyBByqqQQQQqqyBByqqo',
+      'oqyyyyqqqqqqqqqqyyyyqo',
+      'oyBByQqqQqqqqQqqQyBByo',
+      '.oBNByqqqqqqqqqqyBNBo.',
+      '.oyBByqqqqqqqqqqyBByo.',
+      '.oqqqqQqqQqqQqqQqqqqo.',
+      '..oooooooooooooooooo..',
+    ] } },
+    // A huge bow tied at her back, its tails down to the floor.
+    'queen-bigbow': { name: I18n.t('heroes.queen.bigbow'), icon: '🎀', art: { x: -2, y: 14, rows: mirror([
+      'oo.........',
+      'oRoo.......',
+      'orrRoo.....',
+      'orrrrRooooo',
+      'orrrrRoRRRR',
+      'orrrRRoRrrR',
+      'oRRRooorrro',
+      '.ooo.orRro.',
+      '.....orRo..',
+      '....orRro..',
+      '....orRo...',
+      '...orRro...',
+      '...orRo....',
+      '..orrRo....',
+      '..oRoRo....',
+    ]) } },
   };
 
   const style = {
@@ -411,6 +617,32 @@
         11: '....wosssssssohho.',
       },
       front: [[12, 10, ['.ohho', 'ohHho', 'oHhho', '.ohHo', 'ohHho', 'oHhho', '.ohHo', 'ohhho', '.ohHo', '.oZZo', '..oo.']]],
+    } },
+    // Short and curly all over, puffed out at her temples like a
+    // grown-up queen's.
+    'queen-curls': { name: I18n.t('heroes.queen.curls'), icon: '🌀', girl: true, art: {
+      short: true,
+      rows: {
+        0: '.....ooooooooo....',
+        1: '...ooHhhHhhHhhoo..',
+        2: '..ohHohHhohHhohHo.',
+        3: '.oHhhohHhhhHhohhHo',
+        4: '.ohHohhhhhhhhhoHho',
+        5: '.oHhhsshhhhsshhHho',
+        6: '.ohHhssssssssshHho',
+        7: '..oHhsskssskssHho.',
+        8: '.ohHhsskssskssHhho',
+        9: '..oHhspssssspsHho.',
+        10: '..oohssssmsssshoo.',
+      },
+    } },
+    // Two round buns low at the sides of her head, held with pearl pins.
+    'queen-lowbuns': { name: I18n.t('heroes.queen.lowbuns'), icon: '🍡', girl: true, art: {
+      short: true,
+      front: [
+        [-1, 7, ['.ooo.', 'ohHho', 'oHhhw', 'ohhho', 'ohhwo', '.ooo.']],
+        [14, 7, ['.ooo.', 'ohHho', 'whhHo', 'ohhho', 'owhho', '.ooo.']],
+      ],
     } },
   };
 
