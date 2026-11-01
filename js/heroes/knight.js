@@ -175,6 +175,65 @@
       '.....oMyooMyo.....',
       ...GOLD_BOOTS,
     ], { flap: 3, cloth: 'My', hem: 'y', leg: 'M', boot: 'y' }),
+    // Winter armour: a white fur collar over the shoulders, a fur hem and
+    // fur-topped boots.
+    'knight-winter': shape('winter', '❄️', {
+      12: '.ooo..oooooo..ooo.',
+      13: 'owwwooWwwwwWoowwwo',
+      14: 'owWwWwoLddDowWwWwo',
+      15: '.oowooLdyydDoowoo.',
+      16: '.oaAoLddyyddDoaAo.',
+    }, [
+      '....oLddyyddDo....',
+      '...oLddddddddDo...',
+      '...owWwWwWwWwWo...',
+      '....ooo.oo.ooo....',
+      '.....oaAooaAo.....',
+      '.....oaAooaAo.....',
+      '....owWwoowWwo....',
+      ...LEATHER_BOOTS,
+    ], { flap: 3, cloth: 'dD', hem: 'w', leg: 'a', sock: 'w', boot: 'f' }),
+    // Dragon scale armour from the Forest: green scales, spiky shoulders,
+    // a cream belly, clawed boots and a little dragon's tail.
+    'knight-dragon': shape('dragon', '🐉', {
+      12: '.o.o..oooooo..o.o.',
+      13: 'oqoqooQqqqqQooqoqo',
+      14: 'oqQqQoiIiiIioQqQqo',
+      15: '.ooooqiIiiIiqoooo.',
+      16: '.oqQoqQiIIiQqoqQo.',
+      17: '.ossoQQQyyQQQosso.',
+    }, [
+      '....oqQiIIiQqo....',
+      '...oqQqoiIoqQqo...',
+      '...oQqQoooQqQQo...',
+      '.....oqQooqQo.....',
+      '.....oQqooQqo.oo..',
+      '.....oqQooqQooqqo.',
+      '.....oQqooQqo.oQo.',
+      '....oqqQooqqQo.o..',
+      '...owqwQoowqwQo...',
+      '...oooooooooooo...',
+    ], { flap: 3, cloth: 'qQ', hem: 'Q', leg: 'q', boot: 'Q', shine: 'i' }, { forest: true }),
+    // Crystal armour from the Fairy Village: ice-blue plates, a pink heart
+    // jewel and crystal shards flaring round her hips.
+    'knight-crystal': shape('crystal', '💎', {
+      13: 'oZZcBoZccccBoZZcBo',
+      14: 'oZcBNoZcPPcBoZcBNo',
+      15: '.ooooZcPPPPcBoooo.',
+      16: '.oZBoZccPPccBoZBo.',
+      17: '.ossoZcBNNBcBosso.',
+    }, [
+      '....oZcccccBBo....',
+      '...oZcZcccBcBBo...',
+      '..oZcBoZccBoZBBo..',
+      '.oZcBo.oZBo.oZBBo.',
+      '.oooo.oZcooBo.ooo.',
+      '.....ocBoocBo.....',
+      '.....oZcooZco.....',
+      '....oZccooZcco....',
+      '...oZcBBooZcBBo...',
+      '...oooooooooooo...',
+    ], { flap: 3, cloth: 'Zc', hem: 'B', leg: 'c', boot: 'B', shine: 'w' }, { fairy: true }),
   };
 
   // ---- Head things --------------------------------------------------------
@@ -289,6 +348,43 @@
       '.oAaAo....oAaAo.',
       '.oaAaAooooAaAao.',
       '..oaAaAaAaAaAo..',
+    ] }),
+    // A kettle hat: a round steel crown and a wide brim all round.
+    'knight-kettle': thing('kettle', '👒', { x: -2, y: -3, rows: [
+      '.........oooo.........',
+      '.......ooMMaaoo.......',
+      '......oMMaaaaaAo......',
+      '.....oMaaaaaaaaAo.....',
+      '.....oyyyyyyyyyyo.....',
+      '..oooMaaaaaaaaaaAooo..',
+      '.oMMaaaaaaaaaaaaaaAAo.',
+      'oMaaaaaaaaaaaaaaaaaaAo',
+      '.oooooooooooooooooooo.',
+    ] }),
+    // A squire's red headband, its ends flying out behind.
+    'knight-headband': thing('headband', '🎽', { x: 1, y: 2, rows: [
+      '..............ooo.',
+      '.ooooooooooooeEeo.',
+      'oeeeeEeeeeeeeooeeo',
+      'oEeeeeeeeeeeEoeEo.',
+      '.ooooooooooooo.oo.',
+    ] }, { shop: true, price: 6 }),
+    // A green dragon's head to wear: little horns, big eyes and a row of
+    // white teeth over her brow.
+    'knight-dragonhelm': thing('dragonhelm', '🐲', { x: 1, y: -5, rows: [
+      '.oo..........oo.',
+      '.oio........oio.',
+      '..oIo.oooo.oIo..',
+      '..oIooqqqqooIo..',
+      '...oqqqqqqqqqo..',
+      '..oqwwqqqqwwqQo.',
+      '..oqwkqqqqwkqQo.',
+      '.oqqqqqqqqqqqQQo',
+      '.oqqqqqqqqqqqQQo',
+      'oQwQwQwQwQwQwQwo',
+      'oqo.w.w.w.w.oqQo',
+      'oqo.........oQQo',
+      '.oo..........oo.',
     ] }),
   };
 
@@ -406,6 +502,51 @@
       '.oJJo.',
       '..oo..',
     ] }, { forest: true }),
+    // A curled golden horn to call the knights, from the shop.
+    'knight-horn': thing('horn', '📯', { x: 12, y: 7, rows: [
+      '....oooo',
+      '...oyzyY',
+      '..oyyyYY',
+      '..ooyYYo',
+      '...oyYo.',
+      '..oyYo..',
+      '.oyYo...',
+      'oyYo....',
+      'oYyo....',
+      '.oYyoo..',
+      '..osso..',
+    ] }, { shop: true, price: 8 }),
+    // A unicorn's head on a stick to gallop about on, from the Unicorn
+    // Village.
+    'knight-hobby': thing('hobby', '🦄', { x: 12, y: 5, rows: [
+      '..oo.oo.',
+      '.oPPowyo',
+      'oPuowwwo',
+      'oPowwkwo',
+      'oPowwwwo',
+      '.oPowwpo',
+      '..oowwwo',
+      '...owwo.',
+      '..oJJo..',
+      '..oJo...',
+      '..oJo...',
+      '..osso..',
+      ...Array(9).fill('..oJo...'),
+      '...o....',
+    ] }, { unicorn: true }),
+    // The champion's golden cup, won at the tournament.
+    'knight-trophy': thing('trophy', '🏆', { x: 12, y: 10, rows: [
+      'oooooooo',
+      'oyzyyyYo',
+      'yyyyyyYY',
+      'oyyzyyYo',
+      'oyyyyyYo',
+      '.oyyyYo.',
+      '..oyYo..',
+      '..osso..',
+      '.oyyYYo.',
+      '.oooooo.',
+    ] }),
   };
 
   // ---- Back things --------------------------------------------------------
@@ -462,6 +603,48 @@
     ] }),
     // A pegasus's wings, from the Unicorn Village.
     'knight-pegasus': thing('pegasus', '🪽', { wings: [PEGASUS, { o: INK, w: '#ffffff', W: '#dde4f2', Z: '#c8f6ff' }, -1] }, { unicorn: true }),
+    // A pennant in her colour on a tall pole strapped to her back, flying
+    // high over her head.
+    'knight-standard': thing('standard', '🎌', { x: 12, y: -5, front: true, rows: [
+      '.....oyo',
+      'ooooooJo',
+      'oLdyydJo',
+      '.oLyyDJo',
+      'oLdddDJo',
+      'ooooooJo',
+      ...Array(16).fill('.....oJo'),
+      '......o.',
+    ] }),
+    // A baby dragon from the Forest, riding on her shoulder.
+    'knight-babydragon': thing('babydragon', '🐲', { x: 13, y: 7, front: true, rows: [
+      '....oo.',
+      '.ooooqo',
+      'oqqqqqo',
+      'oqwkqqo',
+      'oqwkqQo',
+      'oiiqqQo',
+      'oiiiqQo',
+      '.ooqqQo',
+      '.oqqQqo',
+      'oqiQqqo',
+      'oiiQoqo',
+      '.oqo.oo',
+      '..o....',
+    ] }, { forest: true }),
+    // A red sash of honour across her chest, a gold medal at her hip, from
+    // the shop.
+    'knight-sash': thing('sash', '🎖️', { x: 3, y: 13, front: true, rows: [
+      'oo..........',
+      'yvvo........',
+      'ovvvo.......',
+      '.ovvvo......',
+      '..ovvvo.....',
+      '...ovvvo....',
+      '....ooyoo...',
+      '...oyyYyo...',
+      '...oyYYyo...',
+      '....ooooo...',
+    ] }, { shop: true, price: 10 }),
   };
 
   // ---- Hairstyles ---------------------------------------------------------
@@ -506,6 +689,31 @@
         [1, -3, ['..........oo....', '.......ooohho...', '..ooooohhhHHho..', '.ohhhhhhHHhhhhho', 'ohhHHhhhhhhhhhho']],
         [14, 5, ['.ooo.', 'ohhHo', '.ohho', '..oo.']],
       ],
+    }, { boy: true }),
+    // Big curls bouncing out at both sides.
+    'knight-curly': thing('curly', '🌀', {
+      front: [
+        [-1, 3, ['..oo.', '.ohho', 'ohHho', 'ohhho', '.ohho', 'ohHho', 'ohhho', '.ohho', 'ohHho', 'ohhho', '.oo..']],
+        [14, 3, ['.oo..', 'ohho.', 'ohHho', 'ohhho', 'ohho.', 'ohHho', 'ohhho', 'ohho.', 'ohHho', 'ohhho', '..oo.']],
+      ],
+    }),
+    // Long hair flowing down behind her shoulders.
+    'knight-long': thing('long', '💇', {
+      back: [
+        [-2, 6, ['..oh', '.ohh', 'ohhh', 'ohHh', 'ohhh', 'ohhH', 'ohhh', 'oHhh', 'ohhh', 'ohHh', 'ohhh', '.ohh', 'ohho', 'oho.', '.o..']],
+        [16, 6, ['ho..', 'hho.', 'hhho', 'hHho', 'hhho', 'Hhho', 'hhho', 'hhHo', 'hhho', 'hHho', 'hhho', 'hho.', 'ohho', '.oho', '..o.']],
+      ],
+    }),
+    // Two braids behind her shoulders with red ribbons.
+    'knight-twinbraids': thing('twinbraids', '🎀', {
+      back: [
+        [-2, 8, ['.oo.', 'ohHo', 'oHho', '.oo.', 'ohHo', 'oHho', '.oo.', 'ohHo', 'oHho', '.oo.', 'oeEo', 'oeeo', '.oo.']],
+        [16, 8, ['.oo.', 'oHho', 'ohHo', '.oo.', 'oHho', 'ohHo', '.oo.', 'oHho', 'ohHo', '.oo.', 'oEeo', 'oeeo', '.oo.']],
+      ],
+    }, { girl: true }),
+    // A little tail tied at the back, flicking out to one side.
+    'knight-tail': thing('tail', '🐎', {
+      back: [[-2, 7, ['....oo', '..oohh', '.ohhHh', 'ohhHho', 'ohHho.', 'oHho..', 'ohho..', '.oho..', '.oo...']]],
     }, { boy: true }),
   };
 
