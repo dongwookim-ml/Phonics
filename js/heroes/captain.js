@@ -397,17 +397,18 @@
           '.ooooooooooooooodo',
           '................o.',
         ] } },
-        // A red spotted bandana tied at the side, its ends flying.
-        'captain-bandana': { name: name('bandana'), icon: '🏴‍☠️', art: { x: 0, y: -1, rows: [
-          '......oooooo......',
-          '....ooeewweeoo....',
-          '...oeweeeeeweeo...',
-          '..oeeeeweeeeeweo..',
-          '..oeweeeeeweeeeoo.',
-          '..oooooooooooooeeo',
-          '..............oeEo',
-          '...............oeo',
-          '................o.',
+        // A pirate's red bandana hugging her head, a white band along its
+        // edge, knotted above her ear with two ends flying.
+        'captain-bandana': { name: name('bandana'), icon: '🏴‍☠️', art: { x: 0, y: 0, rows: [
+          '......oooooo........',
+          '....ooevveeeoo......',
+          '...oeeeevveevveo....',
+          '..owwwwwwwwwwwwoo...',
+          '..oooooooooooooeeo..',
+          '..............oeEeo.',
+          '...............oeoeo',
+          '...............oeooe',
+          '................o..o',
         ] } },
         // A little crown of seashells and pearls (the Fairy Village's).
         'captain-shellcrown': { name: name('shellcrown'), icon: '🐚', fairy: true, art: { x: 3, y: -4, rows: [
@@ -418,28 +419,28 @@
           'oPo.oooo.oOo',
           'wcwcwcwcwcwc',
         ] } },
-        // A brass diving helmet with a round window for her face (sold in
-        // the shop).
-        'captain-divinghelmet': { name: name('divinghelmet'), icon: '🤿', shop: true, price: 12, art: { x: 0, y: -4, rows: [
-          '.......oooo.......',
-          '.......oyYo.......',
-          '....oooooooooo....',
-          '..ooyyyyyyyyyyoo..',
-          '.oyyzzyyyyyyyyyYo.',
-          '.oyzyyyyyyyyyyYYo.',
-          'oyzyyyyyyyyyyyyYYo',
-          'oyyyyyyoooooyyyYYo',
-          'oyyyyyoaaaaaoyyYYo',
-          'oyyyyoaz....aoyYYo',
-          'oyyyoa.......aoYYo',
-          'oyyoa.........aoYo',
-          'oyyoa.........aoYo',
-          'oyyoa.........aoYo',
-          'oyyyoa.......aoYYo',
-          'oyyyyoa.....aoyYYo',
-          'oyyyyyoaaaaaoyyYYo',
-          '.oYyyyyoooooyyYYo.',
-          '..ooooooooooooo...',
+        // A brass diving helmet with a round window for her face and little
+        // windows at its sides (sold in the shop).
+        'captain-divinghelmet': { name: name('divinghelmet'), icon: '🤿', shop: true, price: 12, art: { x: -2, y: -4, rows: [
+          '.........oooo.........',
+          '.........oyYo.........',
+          '......oooooooooo......',
+          '....ooyyyyyyyyyyoo....',
+          '...oyyzzyyyyyyyyyYo...',
+          '...oyzyyyyyyyyyyYYo...',
+          '..oyzyyyyyyyyyyyyYYo..',
+          '..oyyyyyyoooooyyyYYo..',
+          '..oyyyyyoaaaaaoyyYYo..',
+          '.ooyyyyoaz....aoyYYoo.',
+          'oyoyyyoa.......aoYYoyo',
+          'ocoyyoa.........aoYoco',
+          'ocoyyoa.........aoYoco',
+          'ocoyyoa.........aoYoco',
+          'ocoyyyoa.......aoYYoco',
+          'ocoyyyyoa.....aoyYYoco',
+          'oyoyyyyyoaaaaaoyyYYoyo',
+          '.o.oYyyyyoooooyyYYo.o.',
+          '....ooooooooooooo.....',
         ] } },
         // A seagull friend sitting on her head (the forest's).
         'captain-seagull': { name: name('seagull'), icon: '🕊️', forest: true, art: { x: 3, y: -5, rows: [
@@ -674,26 +675,16 @@
           'P.u.P.',
           '.P...P',
         ] } },
-        // A friendly sea turtle riding on her back, peeping over her shoulder.
-        'captain-turtle': { name: name('turtle'), icon: '🐢', art: { x: -2, y: 7, pal: { o: '#4a2c4f', k: '#3a2340' }, rows: [
-          '..................oo..',
-          '.................oqqo.',
-          '.................oqkqo',
-          '.......oooooooo..oqqqo',
-          '....ooQQQQQQQQQoooqqo.',
-          '...oQqqQqqQqqQqqQoo...',
-          '..oQqqQqqqQqqqQqqqQo..',
-          '.oQqqqQqqqQqqqQqqqqQo.',
-          '.oQQQQQQQQQQQQQQQQQQo.',
-          'oQqqqQqqqqQqqqqQqqqqQo',
-          'oQqqqQqqqqQqqqqQqqqqQo',
-          'oQQQQQQQQQQQQQQQQQQQQo',
-          '.oQqqqQqqqQqqqQqqqqQo.',
-          '.oqQqqqQqqqQqqqQqqqqo.',
-          '..oqQQQQQQQQQQQQQQqo..',
-          '.oqqooooooooooooooqqo.',
-          '.oqo..............oqo.',
-          '..o................o..',
+        // A friendly little sea turtle sitting on her shoulder: a round
+        // patterned shell, its head poking out, little flippers.
+        'captain-turtle': { name: name('turtle'), icon: '🐢', art: { x: 12, y: 10, front: true, pal: { o: '#4a2c4f', k: '#3a2340' }, rows: [
+          '..ooo...',
+          '.oQqQooo',
+          'oQqQqQkq',
+          'oqQqQqqq',
+          'oQQQQQoo',
+          'oIIIIIo.',
+          '.qo.qo..',
         ] } },
         // Soap bubbles floating all round her (sold in the shop).
         'captain-bubbles': { name: name('bubbles'), icon: '🫧', shop: true, price: 8, art: { x: -2, y: -5, front: true, pal: { o: '#6aa8d8', w: '#ffffff', c: '#d8f4ff' }, rows: [
@@ -780,8 +771,8 @@
             'ooo..',
           ]]],
         } },
-        // Neat and parted at the side, like a smart officer's: combed
-        // flat, tidy at the ears.
+        // Neat and parted at the side, like a smart officer's: combed over
+        // to one side, down to his temple, with sideburns.
         'captain-sidepart': { name: name('sidepart'), icon: '💇', boy: true, art: {
           rows: {
             1: '....oohhhhhhoo....',
@@ -789,9 +780,10 @@
             3: '..ohhhhhoHHhhhho..',
             4: '..ohhhhhoHhhhhho..',
             5: '..ohhhhhhHHhhhho..',
-            6: '...ohssssshhhhho..',
-            7: '...osskssskssho...',
-            8: '...osskssskssho...',
+            6: '...ohsssshhhhhho..',
+            7: '...ohsskssskhhho..',
+            8: '...ohsskssskssho..',
+            9: '....ohpssssspho...',
           },
         } },
         // Fluffy curls all round, like sea foam.
@@ -867,7 +859,8 @@
             12: '....oooossoooo....',
           },
         } },
-        // Buzzed very short all over, his ears showing.
+        // Buzzed very short all over: a bare forehead and his ears sticking
+        // out.
         'captain-buzz': { name: name('buzz'), icon: '🪒', boy: true, art: {
           rows: {
             0: '..................',
@@ -875,8 +868,11 @@
             2: '....ooHhHhHhoo....',
             3: '...ohHhHhHhHhho...',
             4: '..ohhhhhhhhhhhho..',
-            5: '..ohssssssssssho..',
-            6: '...ohsssssssssho..',
+            5: '..osssssssssssso..',
+            6: '..oosssssssssssoo.',
+            7: '.oposssksssksssopo',
+            8: '.oposssksssksssopo',
+            9: '..o.ospssssspso.o.',
           },
         } },
       },
