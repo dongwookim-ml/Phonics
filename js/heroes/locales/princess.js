@@ -1,6 +1,36 @@
 // Names of the princess kit's new things (heroes.princess.<key>), while they are drawn;
 // moved into js/locales/ko.js and en.js before release.
 Object.assign(PIXELTOWN_LOCALES.ko, {
+  'heroes.princess.palacegown': '궁전 무도회 드레스',
+  'heroes.princess.bubble': '풍선 치마 드레스',
+  'heroes.princess.nightgown': '공주님 잠옷',
+  'heroes.princess.fascinator': '깃털 꼬마 모자',
+  'heroes.princess.earmuffs': '보송보송 귀마개',
+  'heroes.princess.nightcap': '잠꾸러기 수면 모자',
+  'heroes.princess.frog': '개구리 왕자',
+  'heroes.princess.teacup': '공주님 찻잔',
+  'heroes.princess.ribbon': '무지개 리본 막대',
+  'heroes.princess.heartwings': '하트 날개',
+  'heroes.princess.bubbles': '둥실둥실 비눗방울',
+  'heroes.princess.lacecape': '레이스 깃 망토',
+  'heroes.princess.rapunzel': '라푼젤 땋은 머리',
+  'heroes.princess.twintails': '양갈래 긴 머리',
+  'heroes.princess.bangs': '일자 앞머리',
 });
 Object.assign(PIXELTOWN_LOCALES.en, {
+  'heroes.princess.palacegown': 'Palace ball gown',
+  'heroes.princess.bubble': 'Bubble dress',
+  'heroes.princess.nightgown': 'Princess nightgown',
+  'heroes.princess.fascinator': 'Little feather hat',
+  'heroes.princess.earmuffs': 'Fluffy earmuffs',
+  'heroes.princess.nightcap': 'Sleepy nightcap',
+  'heroes.princess.frog': 'Frog prince',
+  'heroes.princess.teacup': 'Royal teacup',
+  'heroes.princess.ribbon': 'Rainbow dance ribbon',
+  'heroes.princess.heartwings': 'Heart wings',
+  'heroes.princess.bubbles': 'Floating bubbles',
+  'heroes.princess.lacecape': 'Lace collar cape',
+  'heroes.princess.rapunzel': 'Rapunzel braid',
+  'heroes.princess.twintails': 'Long twin tails',
+  'heroes.princess.bangs': 'Straight-cut bangs',
 });
