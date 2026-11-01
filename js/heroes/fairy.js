@@ -482,20 +482,20 @@
             '.u.....',
           ] },
         },
-        // A little pot of honey with its dipper, a bee buzzing by.
+        // A squat pot brimming with honey, a label round it, the dipper
+        // standing in it with a blob of honey, and a bee buzzing by.
         'fairy-honeypot': {
           name: I18n.t('heroes.fairy.honeypot'), icon: '🍯', girl: true, shop: true, price: 7,
-          art: { x: 14, y: 10, rows: [
-            '....w.',
-            '...yxy',
-            '..J...',
-            '...J..',
-            '.ooJo.',
-            'oyyyyo',
-            'oOyOOo',
-            'oOyOOo',
-            'oOOOOo',
-            '.oooo.',
+          art: { x: 13, y: 11, rows: [
+            '....ZZ.',
+            '.yy.xyx',
+            '.yY....',
+            '.oJyyo.',
+            'oyyyyyo',
+            'oKyKKyo',
+            'oiIiIio',
+            'oKKKKKo',
+            '.ooooo.',
           ] },
         },
         // A little golden harp with a flower on it.
