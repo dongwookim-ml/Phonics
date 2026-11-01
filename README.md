@@ -453,8 +453,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   "⭐ 3 · 13/15" once the two differ, and the parent screen shows both.
   Hairstyles are never presents nor in the shop. Code in `js/salon.js`,
   the hair art in `HAIR_STYLE_ART` in `js/sprites.js`.
-- **Halloween** (both editions, 1 October to 7 November every year by the
-  tablet's clock, `HALLOWEEN_DAYS`): every village is dressed up. In front
+- **Halloween** (both editions, 1 to 31 October every year by the tablet's
+  clock, `HALLOWEEN_DAYS`; put away on 1 November): every village is dressed up. In front
   of each house stands something big, as people dress up their gardens: a
   stack of jack-o'-lanterns, a big ghost or a spider (twice the size, like
   garden inflatables), a skeleton, a witch at her cauldron, a coffin with
@@ -487,7 +487,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   whose loss would cut anything off), and the scene builders and data are
   not changed, so outside those days every village is exactly as it was.
   Opening the game once with `?halloween=0` in the address turns it off on
-  that tablet for good, `?halloween=1` shows it on any day, and
+  that tablet for good, `?halloween=1` shows it on any day for that visit
+  (it isn't kept, so no tablet stays dressed up after Halloween), and
   `?halloween=auto` goes back to the dates. The smoke and reach checks run
   both ways, the visual and voice checks with it on, the other flows
   without it, and `ONLY=halloween node tools/check-flows.js` checks it.
@@ -1021,7 +1022,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/blend-magic.js`: the sound magic, a little show of blending (bubbles, 🐢 slow, 🐇 fast, ✨ pop)
 - `js/heroes.js`: every title its own character (princess edition): how a hero kit is made and drawn; `js/heroes/<title>.js` each title's body and things to wear
 - `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
-- `js/halloween.js`: Halloween, laid over every village and room from 1 October to 7 November (`?halloween=0/1`)
+- `js/halloween.js`: Halloween, laid over every village and room from 1 to 31 October (`?halloween=0/1`)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)

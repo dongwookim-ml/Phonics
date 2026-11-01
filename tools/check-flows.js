@@ -2759,6 +2759,24 @@ async function halloween(browser, edition) {
   const changed = names.filter(n => on.r.scenes[n].sig !== off.r.scenes[n].sig);
   check(`${tag}: without its decorations every place is exactly as it is the rest of the year`, !changed.length, changed);
   check(`${tag}: no page errors`, !on.errors.length && !off.errors.length, [...on.errors, ...off.errors]);
+  // By the tablet's clock: October only, put away on 1 November, and a
+  // ?halloween=1 (or one kept by an earlier version) doesn't keep it on.
+  const when = {};
+  for (const [day, kept, ask] of [['2026-10-15', null, ''], ['2026-10-31', null, ''], ['2026-11-01', null, ''], ['2026-11-01', '1', ''], ['2026-11-01', null, '&halloween=1'], ['2026-11-02', null, '']]) {
+    const ctx = await browser.newContext();
+    await ctx.addInitScript(([d, k]) => {
+      const now = new Date(`${d}T12:00:00`).getTime();
+      const Real = Date;
+      Date = class extends Real { constructor(...a) { super(...(a.length ? a : [now])); } static now() { return now; } };
+      if (k && !sessionStorage.getItem('seeded')) { localStorage.setItem('pixeltown-halloween', k); sessionStorage.setItem('seeded', 1); }
+    }, [day, kept]);
+    const p = await ctx.newPage();
+    await p.goto(`${URL}?edition=${edition}${ask}`);
+    when[`${day}${kept ? ' kept 1' : ''}${ask}`] = await p.evaluate(() => [HALLOWEEN_ON, localStorage.getItem('pixeltown-halloween')]);
+    await ctx.close();
+  }
+  check(`${tag}: on in October by the clock, off from 1 November, and ?halloween=1 isn't kept (an old kept one goes)`,
+    JSON.stringify(Object.values(when)) === JSON.stringify([[true, null], [true, null], [false, null], [false, null], [true, null], [false, null]]), when);
 }
 
 // A gate added in an update (the Monster Village): a child already past its

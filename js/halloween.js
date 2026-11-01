@@ -19,18 +19,22 @@
 // anything and every village is just as it is the rest of the year.
 //
 // When: from HALLOWEEN_DAYS.from to .until every year (on this device's
-// clock), unless the address said otherwise once on this device:
-// ?halloween=0 turns it off for good (the villages as they are all year),
-// ?halloween=1 shows it on any day, ?halloween=auto goes back to the dates.
+// clock), unless the address said otherwise: ?halloween=0 turns it off for
+// good on this device (the villages as they are all year), ?halloween=1
+// shows it for that visit only (a look on another day; it isn't kept, so a
+// tablet never stays dressed up after Halloween), ?halloween=auto goes back
+// to the dates.
 
-const HALLOWEEN_DAYS = { from: [10, 1], until: [11, 7] }; // [month, day]
+const HALLOWEEN_DAYS = { from: [10, 1], until: [10, 31] }; // [month, day]: October, put away on 1 November
 const HALLOWEEN_ON = (() => {
   let ask = null;
   try { ask = new URLSearchParams(location.search).get('halloween'); } catch (e) { /* no address */ }
   try {
-    if (ask === '0' || ask === '1') localStorage.setItem('pixeltown-halloween', ask);
-    else if (ask === 'auto') localStorage.removeItem('pixeltown-halloween');
-    else ask = localStorage.getItem('pixeltown-halloween');
+    const kept = localStorage.getItem('pixeltown-halloween');
+    if (ask === '0') localStorage.setItem('pixeltown-halloween', ask);
+    // A '1' kept by an earlier version (on any day for good) goes.
+    else if (ask === 'auto' || ask === '1' || kept === '1') localStorage.removeItem('pixeltown-halloween');
+    else ask = kept;
   } catch (e) { /* private mode: for this visit only */ }
   if (ask === '1' || ask === '0') return ask === '1';
   const d = new Date();
