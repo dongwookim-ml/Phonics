@@ -4,8 +4,10 @@
 // little crown and a short royal-blue cape with a high collar. The king's
 // robes, the knight's armour, the captain's sailor suit, the explorer's and
 // the wizard's things are theirs now; the prince has his own doublet, ball
-// jacket and cape coat, crown, feathered beret and leaf crown, rapier, ball
-// invitation and harp, two capes and two haircuts.
+// jacket, cape coat, velvet suit, frog costume and pajamas; crown, beret,
+// leaf crown, cavalier hat, nightcap and frog hood; rapier, ball
+// invitation, harp, glass slipper, enchanted rose and hobby horse; capes, a
+// hooded cloak and pegasus wings; and four haircuts of his own.
 (() => {
   const t = key => I18n.t(`heroes.prince.${key}`);
 
@@ -96,6 +98,90 @@
   const UNI_PAL = { o: '#4a2c4f', y: '#ffd34d', w: '#ffffff', 1: '#e4d4ff', 2: '#c4aaf4', p: '#ffb8d8',
     r: '#ff8fb0', O: '#ffc070', Z: '#fff08a', q: '#9ee8a8', c: '#9fd8ff', u: '#c4a2ff' };
 
+  // Lace-collar velvet suit: a big white lace collar with a red bow, a
+  // short velvet jacket with gold buttons, knee breeches, white socks and
+  // buckled shoes.
+  const VELVET_TOP = [
+    '...owwwevvewwwo...',
+    '..oDwWwwwwwwWwDo..',
+    '..oDowDwDDwDwoDo..',
+    '..osoDDDyyDDDoso..',
+    '...ooDDDDDDDDoo...',
+  ];
+  const VELVET = [
+    '....odDDDDDDDo....',
+    '....odDDyyDDDo....',
+    '....oDDDooDDDo....',
+    '....odDDoodDDo....',
+    '.....ossoosso.....',
+    '.....owwoowwo.....',
+    '.....owWoowWo.....',
+    '.....oxyooxyo.....',
+    '.....oxxooxxo.....',
+    '.....oooooooo.....',
+  ];
+
+  // The Frog Prince: a green frog suit with a pale tummy, green hands, bent
+  // frog legs and big webbed feet.
+  const FROG_TOP = [
+    '...oqqqzzzzqqQo...',
+    '..oqqqzzzzzzqQQo..',
+    '..oqoqzzzzzzQoQo..',
+    '..oqoqzzzzzzQoqo..',
+    '...ooqqzzzzQQoo...',
+  ];
+  const FROG = [
+    '....oqqzzzzQQo....',
+    '....oqqqzzQQQo....',
+    '....oQqqqqqqQo....',
+    '...oqQqooooqQqo...',
+    '...oqQo....oQqo...',
+    '....oqQo..oQqo....',
+    '.....oqqooqqo.....',
+    '.....oqqooqqo.....',
+    '...oqqqqooqqqqo...',
+    '...oooooooooooo...',
+  ];
+  const FROG_WALK = { 7: '....oqqo..oqqo....', 8: '..oqqqqo..oqqqqo..', 9: '..oooooo..oooooo..' };
+
+  // Striped pajamas in his colour and white, buttoned, with red slippers.
+  const PAJAMA_TOP = [
+    '...oLLdwddwdLLo...',
+    '..odwLwdyydwLwdo..',
+    '..odowdwddwdwodo..',
+    '..osowdwyywdwoso..',
+    '...ooDDDDDDDDoo...',
+  ];
+  const PAJAMAS = [
+    '....owdwddwdwo....',
+    '....owdwddwdwo....',
+    '....owdwoowdwo....',
+    '....owdwoowdwo....',
+    '.....odwoowdo.....',
+    '.....odwoowdo.....',
+    '.....oDDooDDo.....',
+    '.....oEeooeEo.....',
+    '.....oeeooeeo.....',
+    '.....oooooooo.....',
+  ];
+
+  // His travel cloak's greens, and white feathers for the pegasus wings.
+  const CLOAK_PAL = { o: '#2e3a30', y: '#ffd34d', 1: '#4a8a56', 2: '#36683f', 3: '#6aaa72' };
+  const PEGASUS_WING = [
+    'oo.....',
+    'owoo...',
+    'owwwoo.',
+    '.owWwwo',
+    'owwwWwo',
+    'owcwwWo',
+    '.owwWwo',
+    'owcwwwo',
+    '.owwWwo',
+    '..owcWo',
+    '...owwo',
+    '....oo.',
+  ];
+
   addHeroKit('prince', {
     looks: ['boy'],
     base: { boy: { top: PRINCE_TOP } },
@@ -107,6 +193,12 @@
           bottom: JACKET, top: JACKET_TOP, walk: 'legs', ride: { flap: 4, cloth: 'dD', hem: 'y', leg: 'w', boot: 'x' } } },
         'prince-capecoat': { name: t('capecoat'), icon: '🧥', boy: true, art: {
           bottom: CAPECOAT, top: CAPECOAT_TOP, walk: 'legs', ride: { flap: 6, cloth: 'dD', hem: 'y', leg: 'n', boot: 'x' } } },
+        'prince-velvet': { name: t('velvet'), icon: '🎀', boy: true, art: {
+          bottom: VELVET, top: VELVET_TOP, walk: 'legs', ride: { flap: 2, cloth: 'dD', hem: 'D', leg: 's', sock: 'w', boot: 'x' } } },
+        'prince-frog': { name: t('frog'), icon: '🐸', boy: true, forest: true, art: {
+          bottom: FROG, top: FROG_TOP, walk: FROG_WALK, ride: { flap: 3, cloth: 'qQ', hem: 'Q', leg: 'q', boot: 'q', shine: 'z' } } },
+        'prince-pajamas': { name: t('pajamas'), icon: '🛌', boy: true, shop: true, price: 10, art: {
+          bottom: PAJAMAS, top: PAJAMA_TOP, walk: 'legs', ride: { flap: 2, cloth: 'dw', hem: 'd', leg: 'w', boot: 'e', shine: 'w' } } },
       },
       head: {
         // A little gold crown, three round points and a blue jewel: smaller
@@ -135,6 +227,46 @@
           '.q.q.qq.q.q.',
           'qQqQqeeqQqQq',
           'oqQqQqqQqQqo',
+        ] } },
+        // A musketeer's wide-brimmed dark hat with a gold band and a big
+        // red plume curling over the top.
+        'prince-cavalier': { name: t('cavalier'), icon: '🎩', boy: true, art: { x: 0, y: -5, rows: [
+          '....eeEEee........',
+          '..eeEEeeeEEeo.....',
+          '.eEeoxxxxxxeEe....',
+          'eEeoxXxxxxxxoEe...',
+          'eeoyyyyyyyyyyoeo..',
+          '.oxxxxxxxxxxxxxxo.',
+          'oxXXXXXXXXXXXXXXxo',
+          '.oooooooooooooooo.',
+        ] } },
+        // A striped nightcap that flops over to one side, with a pom-pom.
+        'prince-nightcap': { name: t('nightcap'), icon: '🌙', boy: true, shop: true, price: 6, art: { x: 3, y: -5, rows: [
+          '..oooooo.........',
+          '.odwdwdwoo.......',
+          'odwdwdwdwdoo.....',
+          'odwdwdwdwdwdoo...',
+          'oWwWwWwWwWwWdwo..',
+          'oWWWWWWWWWWWodwo.',
+          '............odwo.',
+          '............oowwo',
+          '............owwwo',
+          '.............ooo.',
+        ] } },
+        // A green frog hood with big frog eyes and a tiny gold crown between
+        // them, from the forest pond.
+        'prince-froghood': { name: t('froghood'), icon: '🐸', boy: true, forest: true, art: { x: 1, y: -5, rows: [
+          '.ooo........ooo.',
+          'owwwo......owwwo',
+          'owkwo.y.y.yowkwo',
+          'oqqqqoyyyyyoqqqo',
+          '.oqqqqqqqqqqqqo.',
+          'oqqqqqqqqqqqqqqo',
+          'oqQqqqqqqqqqqQqo',
+          'oqqoooooooooqqqo',
+          'oqo..........oqo',
+          'oqo..........oqo',
+          '.o............o.',
         ] } },
       },
       hand: {
@@ -181,6 +313,60 @@
           'oyyyo..',
           '.ooo...',
         ] } },
+        // Cinderella's glass slipper on a red velvet cushion with gold
+        // tassels.
+        'prince-slipper': { name: t('slipper'), icon: '👠', boy: true, art: { x: 10, y: 10, rows: [
+          '......oo..',
+          '.....oZco.',
+          '.....oZZo.',
+          '.oooooZco.',
+          'oZwccccZo.',
+          '.ooooooZo.',
+          'yoeEEEEEoy',
+          '.oeeeeeeo.',
+          'yooooooooy',
+        ] } },
+        // A red rose glowing under a glass dome, from the Fairy Village.
+        'prince-rose': { name: t('rose'), icon: '🌹', boy: true, fairy: true, art: { x: 13, y: 8, rows: [
+          '..ooo..',
+          '.oZwZo.',
+          'oZZeZZo',
+          'oZeEeZo',
+          'oZZeZZo',
+          'oZqqZZo',
+          'oZZqZZo',
+          'oyyyyyo',
+          'oYYYYYo',
+          '.ooooo.',
+        ] } },
+        // A toy unicorn's head on a stick to ride, from the Unicorn Village.
+        'prince-hobbyhorse': { name: t('hobbyhorse'), icon: '🦄', boy: true, unicorn: true, art: { x: 12, y: 3, rows: [
+          '.....o.y',
+          '..PoowYo',
+          '.PPwwwwo',
+          'PPwwkwwo',
+          '.Pwwwwwo',
+          '..owwwPo',
+          '..oKooo.',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..oJo...',
+          '..oKo...',
+          '..ooo...',
+        ] } },
       },
       back: {
         // A short royal-blue cape with a high collar, edged in gold.
@@ -222,6 +408,42 @@
           'orrOOZZqqccuurrOOZZo',
           '.oooooooooooooooooo.',
         ] } },
+        // A green travelling cloak with its hood down behind his head.
+        'prince-cloak': { name: t('cloak'), icon: '🧝', boy: true, art: { x: -1, y: -3, pal: CLOAK_PAL, rows: [
+          '.......oooooo.......',
+          '.....o22222222o.....',
+          '...o221111111122o...',
+          '..o22111111111122o..',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '.o2111111111111112o.',
+          '..o21111111111112o..',
+          '..o21111111111112o..',
+          '...o211111111112o...',
+          '...o211111111112o...',
+          '..o31111111111113o..',
+          '..o31111111111113o..',
+          '..o31111111111113o..',
+          '.o3111111111111113o.',
+          '.o3111111111111113o.',
+          '.o3111111111111113o.',
+          '.o3111111111111113o.',
+          'o331111111111111133o',
+          'o331111111111111133o',
+          'o331111111111111133o',
+          'o331111111111111133o',
+          'o331111111111111133o',
+          'o333333333333333333o',
+          '.oooooooooooooooooo.',
+        ] } },
+        // White feathered wings like a pegasus's, sold in the shop.
+        'prince-pegasus': { name: t('pegasus'), icon: '🪽', boy: true, shop: true, price: 12, art: {
+          wings: [PEGASUS_WING, { o: '#5a6a8a', w: '#ffffff', W: '#dde4f2', c: '#bfeaff' }, 7] } },
       },
       style: {
         // Combed to one side from a neat parting, the fringe swept across.
@@ -254,6 +476,31 @@
             'ohhhhhhhhhhhhhho',
             'ohhhhhhhhhhhhhho',
           ]]],
+        } },
+        // A round pageboy bob: straight bangs and sides to his chin.
+        'prince-pageboy': { name: t('pageboy'), icon: '🍄', boy: true, art: { rows: {
+          0: '.....oooooooo.....',
+          1: '...oohhhhhhhhoo...',
+          2: '..ohhHHHHHHHHhho..',
+          3: '.ohHHhhhhhhhhHHho.',
+          4: '.ohHhhhhhhhhhhHho.',
+          5: '.ohhhhhhhhhhhhhho.',
+          6: '.ohhhhhhhhhhhhhho.',
+          7: '.ohhhssksssksshho.',
+          8: '.ohhhssksssksshho.',
+          9: '.ohhhspssssspshho.',
+          10: '..ohhssssmssssho..',
+          11: '...ooosssssssooo..',
+        } } },
+        // Combed back off his face and tied behind with a red ribbon bow.
+        'prince-queue': { name: t('queue'), icon: '🎀', boy: true, art: {
+          rows: {
+            2: '...ohhHhhhHhhho...',
+            3: '..ohhHhhHhhHhhho..',
+            4: '..ohHhhHhhHhhHho..',
+            5: '..ohssssssssssho..',
+          },
+          back: [[13, 6, ['.o...o.', 'oeo.oeo', 'oeEoEeo', 'oeo.oeo', '.o.o.o.', '...oho.', '...oho.', '...oHo.', '...oho.', '....o..']]],
         } },
       },
     },
