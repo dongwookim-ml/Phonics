@@ -172,6 +172,69 @@
         '......ff..ff......',
       ]),
     },
+    // An alchemist's robe: a leather-trimmed apron over it, potion bottles
+    // in its pockets (sold in the shop).
+    'wizard-alchemist': {
+      name: I18n.t('heroes.wizard.alchemist'), icon: '⚗️', shop: true, price: 10,
+      art: robe([
+        '..oLdddKyyKdddDo..',
+        '.oLddDKiiiiKdDDDo.',
+        'oLddDoKiPiiKoDdDDo',
+        'oLdDDoKiiiiKoDDDDo',
+        'ottttoKKJJKKotttto',
+      ], [
+        '....oLKiiiiKDo....',
+        '....oLKicqiKDo....',
+        '...oLdKKKKKKdDo...',
+        '...oLdKiiiiKdDo...',
+        '...oLdKiyiiKdDo...',
+        '..oLddKiiiiKdDDo..',
+        '..oLddKKKKKKdDDo..',
+        '.oLdddddddddddDDo.',
+        '.otttttttttttttto.',
+        '......ff..ff......',
+      ], { ride: { flap: 6, cloth: 'dD', hem: 't', leg: 'n', boot: 'f', shine: 'i' } }),
+    },
+    // A short robe with a zigzag hem, striped stockings and gold slippers
+    // with curly toes (the Forest's).
+    'wizard-curlytoes': {
+      name: I18n.t('heroes.wizard.curlytoes'), icon: '🥿', forest: true,
+      art: robe(ROBE_TOP, [
+        '....oLddddddDo....',
+        '....oLddyddDDo....',
+        '...oLdddddddDDo...',
+        '...oLddddyddDDo...',
+        '...oLddddddddDo...',
+        '...otootootooto...',
+        '....oonnoonnoo....',
+        '.....oUUooUUo.....',
+        '.oy..owwoowwo..yo.',
+        '..oyyyyo..oyyyyo..',
+      ], { walk: { 8: 'oy...owwoowwo..yo.', 9: '.oyyyyo...oyyyyo..' }, ride: { flap: 4, cloth: 'dD', hem: 't', leg: 'U', sock: 'w', boot: 'y' } }),
+    },
+    // A long robe with a gold line down the front under a round capelet
+    // sprinkled with fairy dust (the Fairy Village's).
+    'wizard-mantle': {
+      name: I18n.t('heroes.wizard.mantle'), icon: '🧚', fairy: true,
+      art: robe([
+        '.oLLLLLLyyLLLLLLo.',
+        'oLLPLLLLLLLLLcLLLo',
+        'oLLLLLcLLLLPLLLLLo',
+        'oyyyyyyyyyyyyyyyyo',
+        'ottttoyyyyyyotttto',
+      ], [
+        '....oLdddydDDo....',
+        '....oLdddyddDo....',
+        '...oLddddyddDDo...',
+        '...oLddddyddDDo...',
+        '...oLddddyddDDo...',
+        '..oLdddddydddDDo..',
+        '..oLdddddydddDDo..',
+        '.oLddddddyddddDDo.',
+        '.otttttttttttttto.',
+        '......ff..ff......',
+      ]),
+    },
   };
 
   const head = {
@@ -282,6 +345,55 @@
         '.oioiooooooioio.',
       ] },
     },
+    // A long striped nightcap that flops over to one side, a pompom on its end.
+    'wizard-nightcap': {
+      name: I18n.t('heroes.wizard.nightcap'), icon: '🛌',
+      art: { x: 0, y: -3, rows: [
+        '.....oooooo.........',
+        '...ooddwwddoo.......',
+        '..oddwwddwwddoo.....',
+        '.oddwwddwwddwwddoo..',
+        '.owwddwwddwwddwwddo.',
+        'oWWWWWWWWWWWWWWowwo.',
+        'oWWWWWWWWWWWWWWoddo.',
+        '.ooooooooooooooowwo.',
+        '...............oddo.',
+        '...............owwo.',
+        '..............owWwwo',
+        '..............owwWwo',
+        '...............oooo.',
+      ] },
+    },
+    // A little black kitten with white paws, peeking over the top of her
+    // head (the Forest's).
+    'wizard-cat': {
+      name: I18n.t('heroes.wizard.cat'), icon: '🐈‍⬛', forest: true,
+      art: { x: 4, y: -5, rows: [
+        '.o.....o....',
+        'oXo...oXo...',
+        'oxxoooxxo...',
+        'oxxxxxxxo.o.',
+        'oxyxxxyxooxo',
+        'oxxxPxxxo.xo',
+        '.owxxxwo.ox.',
+        '..ooooo.oo..',
+      ] },
+    },
+    // A ring of pastel stars floating round her head (the Unicorn Village's).
+    'wizard-starhalo': {
+      name: I18n.t('heroes.wizard.starhalo'), icon: '💫', unicorn: true,
+      art: { x: 0, y: -5, pal: { u: '#b98cff', P: '#ff7fb6', c: '#9fe8ff' }, rows: [
+        '.........c........',
+        '........czc.z.....',
+        '....y.z..c....y...',
+        '.z.yzy.......yzy.z',
+        '....y.........y...',
+        '..P.............u.',
+        '.PzP...........uzu',
+        '..P.............u.',
+        '..................',
+      ] },
+    },
   };
 
   // Things in her hand: her right hand is at (14-15, 18), under her cuff.
@@ -376,6 +488,57 @@
         'PPoyoBB',
         'P.PwB.B',
       ].concat(shaft(23, 'w', 'W')) },
+    },
+    // A crystal ball on a little gold stand, glowing (sold in the shop).
+    'wizard-crystalball': {
+      name: I18n.t('heroes.wizard.crystalball'), icon: '🔮', shop: true, price: 8,
+      art: { x: 12, y: 10, rows: [
+        '.z...z.',
+        '..ooo..',
+        '.oZcco.',
+        'oZwccBo',
+        'oZcccBo',
+        'occcBBo',
+        '.oBBBo.',
+        '.oyyyo.',
+        'oyYYYYo',
+        '.ooooo.',
+      ] },
+    },
+    // A little black cauldron of bubbling green potion.
+    'wizard-cauldron': {
+      name: I18n.t('heroes.wizard.cauldron'), icon: '🫕',
+      art: { x: 12, y: 10, rows: [
+        '.q...z.',
+        '..ooo..',
+        '.o.q.o.',
+        '.oqQqo.',
+        'oXXXXXo',
+        'oxXxxxo',
+        'oxXxxxo',
+        '.oxxxo.',
+        '.o...o.',
+      ] },
+    },
+    // A short twig wand with a star at its tip, sparks flying (the Fairy
+    // Village's).
+    'wizard-wand': {
+      name: I18n.t('heroes.wizard.wand'), icon: '🪄', fairy: true,
+      art: { x: 13, y: 5, pal: { P: '#ff7fb6', c: '#9fe8ff' }, rows: [
+        '..z....',
+        '...z..z',
+        '.P...y.',
+        '....ywy',
+        '...z.y.',
+        'c...oK.',
+        '....oK.',
+        '.P.oK.z',
+        '...oK..',
+        '..oJ...',
+        '..oJ...',
+        '.oJ....',
+        '.oJ....',
+      ] },
     },
   };
 
@@ -476,6 +639,62 @@
         '....y..P..........y..c',
       ] },
     },
+    // A case of scrolls on her back, peeking over her shoulder, its strap
+    // across her front.
+    'wizard-scrolls': {
+      name: I18n.t('heroes.wizard.scrolls'), icon: '📜',
+      art: { x: -2, y: 4, front: true, pal: Object.assign({}, INK, { o: '#5a3428', e: '#e8485a', i: '#fff4dc', K: '#c08850', J: '#7a4a2e' }), rows: [
+        '.o.o.............',
+        'oioio............',
+        'oeoeo............',
+        'oioio............',
+        'oKKKo............',
+        'oKyKo............',
+        'oKKJo............',
+        'oKKJo............',
+        'oJJJoJJK.........',
+        'oKKJo..JJK.......',
+        'oKKJo....JyK.....',
+        '.ooo.......JJK...',
+        '.............JJK.',
+        '...............JJ',
+      ] },
+    },
+    // A long rainbow scarf round her neck, one end hanging down (the Unicorn
+    // Village's).
+    'wizard-scarf': {
+      name: I18n.t('heroes.wizard.scarf'), icon: '🧣', unicorn: true,
+      art: { x: 2, y: 12, front: true, pal: Object.assign({}, INK, { o: '#5a3a6a', w: '#ffffff' }), rows: [
+        '..oeeOOyyqBo.',
+        '.ooeeOOyyqBo.',
+        'oouuo........',
+        '.oeeo........',
+        '.oOOo........',
+        '.oyyo........',
+        '.oqqo........',
+        '.oBBo........',
+        '.ouuo........',
+        '.oeeo........',
+        '.owwo........',
+        '..w.w........',
+        '.............',
+      ] },
+    },
+    // A baby dragon friend sitting on her shoulder.
+    'wizard-dragonling': {
+      name: I18n.t('heroes.wizard.dragonling'), icon: '🐉',
+      art: { x: -2, y: 5, front: true, pal: Object.assign({}, INK, { o: '#2e4a30', q: '#62c46a', i: '#fff4dc', k: '#2e2433', m: '#e0707a', u: '#b98cff', U: '#8a5ad8' }), rows: [
+        '.y...y.',
+        '.oqqqo.',
+        'oqkqkqo',
+        'oqqiqqo',
+        '.oqmqo.',
+        'uoqqqou',
+        'Uuoiouu',
+        '.oqiqo.',
+        '..oqoqo',
+      ] },
+    },
   };
 
   // Hairstyles: hers long and wavy, his short and tousled. Her waves fall
@@ -507,6 +726,24 @@
     'oho.',
     '.o..',
   ];
+  // Her cloud of curls, his curls, and her buns (the left ones; mirrored).
+  const CLOUD = [
+    '..oo',
+    '.ohh',
+    'ohhh',
+    'oHhh',
+    '.ohh',
+    'ohhh',
+    'ohHh',
+    '.ohh',
+    'ohhh',
+    'oHhh',
+    '.ohh',
+    '.ohh',
+    '..oo',
+  ];
+  const CURLS = ['.oo', 'ohh', 'oHh', '.oo', 'ohh', 'oHh', '.oo', 'ohh', '.oo'];
+  const BUN = ['.ooo.', 'ohhHo', 'ohyho', 'oHhho', '.ooo.'];
   const style = {
     // Long and wavy down her back, out past her sleeves (her starting style).
     'wizard-wavy': {
@@ -561,6 +798,82 @@
           12: '.....oLLyyLLohho..',
         },
         front: [[12, 3, ['.ooo.', 'ohhho', 'ohHho', '.oho.']]],
+      },
+    },
+    // Cut in a bob at her chin, a star clip on one side.
+    'wizard-bob': {
+      name: I18n.t('heroes.wizard.bob'), icon: '✂️', girl: true,
+      art: {
+        rows: {
+          6: '.ohhhssssssssshho.',
+          7: '.ohHhsskssskssHho.',
+          8: '.ohhhsskssskssHho.',
+          10: '.ohhhssssmsssshho.',
+          11: '..ohhossssssohho..',
+          12: '...oooLLyyLLooo...',
+        },
+        short: true,
+        front: [[14, 6, ['.y.', 'yzy', '.y.']]],
+      },
+    },
+    // Big and curly like a cloud all round her head.
+    'wizard-cloud': {
+      name: I18n.t('heroes.wizard.cloud'), icon: '☁️', girl: true,
+      art: {
+        back: [[-2, 1, CLOUD], [16, 1, CLOUD.map(r => [...r].reverse().join(''))]],
+        front: [[3, -1, ['.oo..oo..oo.', 'ohhoohhoohho']]],
+      },
+    },
+    // Up in two round buns at the sides, a gold star pin in each.
+    'wizard-buns': {
+      name: I18n.t('heroes.wizard.buns'), icon: '🍡', girl: true,
+      art: {
+        rows: {
+          6: '.ohhhssssssssshho.',
+          7: '.ohhhsskssskssHho.',
+          10: '.ohhhssssmsssshho.',
+          11: '..ohhossssssohho..',
+          12: '...oooLLyyLLooo...',
+        },
+        short: true,
+        front: [[-2, 4, BUN], [15, 4, BUN.map(r => [...r].reverse().join(''))]],
+      },
+    },
+    // Long and straight down to his shoulders, like a wise old wizard's.
+    'wizard-long': {
+      name: I18n.t('heroes.wizard.long'), icon: '🧙‍♂️', boy: true,
+      art: {
+        rows: {
+          6: '..ohhssssssssshho.',
+          7: '..ohhsskssskssHho.',
+          8: '..ohhsskssskssHho.',
+          9: '..ohhspssssspsHho.',
+          10: '..ohhssssmssssHho.',
+          11: '..ohhosssssssohho.',
+          12: '..ohhoLLyyLLohho..',
+        },
+        front: [[2, 13, ['ohho', '.oho', '..o.']], [13, 13, ['ohho', 'oho.', '.o..']]],
+      },
+    },
+    // Tight curls all round his head.
+    'wizard-curly': {
+      name: I18n.t('heroes.wizard.curly'), icon: '➰', boy: true,
+      art: {
+        back: [[0, 3, CURLS], [15, 3, CURLS.map(r => [...r].reverse().join(''))]],
+        front: [[3, -1, ['.oo..oo..oo.', 'ohhoohhoohho']]],
+      },
+    },
+    // A round bowl cut, a straight fringe down to his eyebrows.
+    'wizard-bowl': {
+      name: I18n.t('heroes.wizard.bowl'), icon: '🥣', boy: true,
+      art: {
+        rows: {
+          5: '..ohhhhhhhhhhhho..',
+          6: '..ohhhhhhhhhhhho..',
+          7: '..ohhsskssskssho..',
+          8: '..ohhsskssskssho..',
+          9: '...ohspssssspsho..',
+        },
       },
     },
   };
