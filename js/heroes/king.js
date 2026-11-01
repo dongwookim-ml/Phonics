@@ -189,6 +189,91 @@
         ride: { flap: 6, cloth: 'Ld', hem: 'w', leg: 'L', boot: 'P' },
       },
     },
+    // A parade uniform: a jacket in his colour with gold epaulettes and a
+    // gold belt, white trousers with a gold stripe, tall black boots.
+    'king-parade': {
+      name: name('parade'), icon: '🎖️', boy: true,
+      art: {
+        top: {
+          13: '.oyYdddddddddddYyo',
+          14: '.oyyYdddddddddYyyo',
+          15: '.yYyoLdddddddDoyYy',
+          16: '.osoLddddddddDDoso',
+          17: '..ooyyyyyzyyyyyoo.',
+        },
+        bottom: [
+          '..oLddddddddddDDo.',
+          '..oLdddddoddddDDo.',
+          '..ooooooooooooooo.',
+          '....oywwwowwwyo...',
+          '....oywwwowwwyo...',
+          '....oywwwowwwyo...',
+          '....oxXxxoxxXxo...',
+          '....oxXxxoxxXxo...',
+          '...oxxxxxoxxxxxo..',
+          '...ooooooooooooo..',
+        ],
+        walk: { 7: '...oxXxxo.oxxXxo..', 8: '..oxxxxxo.oxxxxxo.', 9: '..ooooooo.ooooooo.' },
+        ride: { flap: 3, cloth: 'dD', hem: 'D', leg: 'w', boot: 'x' },
+      },
+    },
+    // A pharaoh's outfit: a striped gold and blue collar, gold armbands, a
+    // white linen kilt with a gold apron, and sandals.
+    'king-pharaoh': {
+      name: name('pharaoh'), icon: '🏺', boy: true,
+      art: {
+        top: {
+          13: '..oyyyyyyyyyyyyyo.',
+          14: '.oyBBBBBBBBBBBBByo',
+          15: '.oyoyeyeyeyeyeyoyo',
+          16: '.osowwwwwwwwwWWoso',
+          17: '..ooyyByyeyyByyoo.',
+        },
+        bottom: [
+          '..owwwwwyYywwwWWo.',
+          '..owwwwydYdywwWWo.',
+          '.owwwwwydYdywwWWo.',
+          '.oWwWwWoyyyoWwWWo.',
+          '..ooooo.oyo.oooo..',
+          '.....osso.osso....',
+          '.....osso.osso....',
+          '.....oyso.osyo....',
+          '....oyYyo.oyYyo...',
+          '....ooooo.ooooo...',
+        ],
+        walk: { 7: '....oyso...osyo...', 8: '...oyYyo...oyYyo..', 9: '...ooooo...ooooo..' },
+        ride: { flap: 4, cloth: 'wW', hem: 'y', leg: 's', boot: 'Y', shine: 'W' },
+      },
+    },
+    // An Arabian king's outfit: a short gold-edged vest over a white shirt
+    // with puffed sleeves, a wide gold sash, big puffy trousers in his
+    // colour and gold slippers with curled toes.
+    'king-arabian': {
+      name: name('arabian'), icon: '🪔', boy: true,
+      art: {
+        top: {
+          13: '..oxywwwwwwwwwyxo.',
+          14: '.owxxywwwwwwwyxxwo',
+          15: '.owoxxywwwwwyxxowo',
+          16: '.osoxxywwwwwyxxoso',
+          17: '..oyYyYyyyyyYyYyo.',
+        },
+        bottom: [
+          '..oLddddddddddDo..',
+          '.oLdddddddddddDDo.',
+          'oLddddddddddddDDDo',
+          'oLddddddDoLddddDDo',
+          'oLddddddDoLdddDDDo',
+          '.oLddddDo.oLdddDo.',
+          '...oLddo...oddDo..',
+          '..y.oyyo...oyyo.y.',
+          '..oyYyyo...oyyYyo.',
+          '..oooooo...oooooo.',
+        ],
+        walk: { 7: '.y..oyyo...oyyo..y', 8: '.oyYyyo.....oyyYyo', 9: '.oooooo.....oooooo' },
+        ride: { flap: 5, cloth: 'dD', hem: 'D', leg: 'd', boot: 'y' },
+      },
+    },
   };
 
   const head = {
@@ -264,6 +349,70 @@
         '..............oyo',
         '..............yYy',
         '...............y.',
+      ] },
+    },
+    // A big round white turban wound round and round, a ruby brooch and a
+    // white feather.
+    'king-turban': {
+      name: name('turban'), icon: '👳', boy: true,
+      art: { x: 2, y: -5, rows: [
+        '.......ow......',
+        '......owWo.....',
+        '......oWo......',
+        '...ooooyoooo...',
+        '..owWwyeywWwo..',
+        '.owWwwwywwwWwo.',
+        'owWwwWwwwWwwWwo',
+        'oWwwWwwwWwwWwWo',
+        '.ooooooooooooo.',
+      ] },
+    },
+    // A pharaoh's headdress: blue and gold stripes over his head and down
+    // both sides of his face, a gold band and a little gold snake.
+    'king-nemes': {
+      name: name('nemes'), icon: '🐍', boy: true,
+      art: { x: 0, y: -3, rows: [
+        '......ooooooo......',
+        '....ooyyyyyyyoo....',
+        '...oNNNNNNNNNNNo...',
+        '..oyyyyyyyyyyyyyo..',
+        '..oNNNNNNyNNNNNNo..',
+        '.oyyyyyyyYyyyyyyyo.',
+        '.oNNNNNNNyNNNNNNNo.',
+        '.oyoYYYYYYYYYYYoyo.',
+        'oNNo...........oNNo',
+        'oyyo...........oyyo',
+        'oNNo...........oNNo',
+        'oyyo...........oyyo',
+        'oNNo...........oNNo',
+        'oyyo...........oyyo',
+        'oNNo...........oNNo',
+        'oyyo...........oyyo',
+        '.oo.............oo.',
+      ] },
+    },
+    // A paper party crown: pink zigzag points with white dots and a
+    // yellow band with coloured stickers. Sold in the shop.
+    'king-paper': {
+      name: name('paper'), icon: '🎉', boy: true, shop: true, price: 8,
+      art: { x: 3, y: -2, rows: [
+        '.o..o...o..o.',
+        'oPooPo.oPooPo',
+        'oPwPPPoPPPwPo',
+        'oyByeyqyeyByo',
+        'oYYYYYYYYYYYo',
+        '.ooooooooooo.',
+      ] },
+    },
+    // A crown of daisies, pink roses and leaves, from the fairies.
+    'king-flowers': {
+      name: name('flowers'), icon: '🌼', boy: true, fairy: true,
+      art: { x: 3, y: -2, rows: [
+        '.w....w....w.',
+        'wywEPwywPEwyw',
+        'QwQPPQwQPPQwQ',
+        'oqQqQqQqQqQqo',
+        '.ooooooooooo.',
       ] },
     },
   };
@@ -360,6 +509,62 @@
         '..q..',
       ] },
     },
+    // A big golden castle key, held by its round bow.
+    'king-key': {
+      name: name('key'), icon: '🗝️', boy: true,
+      art: { x: 14, y: 3, rows: [
+        '.ooo.',
+        '.oyoo',
+        '.oyyo',
+        '.oyoo',
+        '.oyyo',
+        '.oyo.',
+        '.oYo.',
+        '.oyo.',
+        '.oYo.',
+        '.oyo.',
+        '.oYo.',
+        'ooyoo',
+        'oyYyo',
+        'oy.yo',
+        'oyyYo',
+        '.ooo.',
+      ] },
+    },
+    // A royal scroll held up for all to read: cream paper with writing and
+    // a red seal between two wooden rollers with gold ends.
+    'king-scroll': {
+      name: name('scroll'), icon: '📜', boy: true,
+      art: { x: 13, y: 5, rows: [
+        '.ooooo.',
+        'yKKKKKy',
+        '.oiiio.',
+        '.oIIIo.',
+        '.oiiio.',
+        '.oIiIo.',
+        '.oiiio.',
+        '.oIIio.',
+        '.oieio.',
+        'yKKKKKy',
+        '.ooooo.',
+      ] },
+    },
+    // A little rainbow layer cake with a candle, on a plate in his hand.
+    'king-cake': {
+      name: name('cake'), icon: '🎂', boy: true, unicorn: true,
+      art: { x: 13, y: 8, rows: [
+        '...y...',
+        '...O...',
+        '..owo..',
+        '.owPwo.',
+        '.oPPPo.',
+        '.oyyyo.',
+        '.oqqqo.',
+        '.oBBBo.',
+        'oWWWWWo',
+        '.ooooo.',
+      ] },
+    },
   };
 
   const back = {
@@ -432,6 +637,91 @@
         'oooooooooooooooooooooo',
       ] },
     },
+    // A golden throne to carry about: a red velvet back in a gold frame, its
+    // posts topped with gold balls beside his crown. Sold in the shop.
+    'king-throne': {
+      name: name('throne'), icon: '🪑', boy: true, shop: true, price: 12,
+      art: { x: -2, y: -5, pal: Object.assign({}, ERMINE, { e: '#e8485a', v: '#c8303f', z: '#fff6c0' }), rows: [
+        '.ozo...............ozo',
+        '.oyoooooooooooooooooyo',
+        '.oyyyyyyyyyyyyyyyyyyyo',
+        '.oYoooooooooooooooooYo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoveeeeeeeeeeeeevoyo',
+        '.oyoooooooooooooooooyo',
+        '.oyo...............oyo',
+        '.ooo...............ooo',
+      ] },
+    },
+    // A blue sash over his shoulder with a gold star medal at his hip (worn
+    // over his clothes, under his beard).
+    'king-sash': {
+      name: name('sash'), icon: '🎖️', boy: true,
+      art: { x: 1, y: 13, front: true, pal: { B: '#6fb7ff', N: '#3f74c8', y: '#ffd34d', Y: '#e0a52a', z: '#fff6c0', e: '#e8485a' }, rows: [
+        'BN..............',
+        '.BN.............',
+        '..BN............',
+        '....BN..........',
+        '.....BBBN.......',
+        '.......BBBN.....',
+        '.........BBBN...',
+        '...........Bee..',
+        '.............y..',
+        '...........yyYyy',
+        '............yzy.',
+        '............y.y.',
+      ] },
+    },
+    // A royal banner over his shoulder: a midnight-blue flag with a gold
+    // star flying beside his crown, from the Starlight Forest (carried in
+    // front of his hair).
+    'king-banner': {
+      name: name('banner'), icon: '🚩', boy: true, forest: true,
+      art: { x: -2, y: -5, front: true, pal: { o: '#4a2c4f', y: '#ffd34d', N: '#3a3a86', J: '#7a4a2e' }, rows: [
+        'yooooooo',
+        'JNNyNNNo',
+        'JNyyyNNo',
+        'JNNyNNNo',
+        'JNyNyNNo',
+        'Jooooooo',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'Jo......',
+        'o.......',
+      ] },
+    },
   };
 
   // His hairstyles (the beard stays with every one).
@@ -470,6 +760,35 @@
     'king-neat': {
       name: name('neat'), icon: '✨', boy: true,
       art: { rows: { 1: '....oohohhhhhoo...', 2: '...ohhoHHhhhhhho..', 3: '..ohhoHHhhhhhhhho.', 4: '..ohHHhhhhhhhhhho.', 5: '..ohhhhhhhhssshho.', 6: '..ohsssssssssssho.', 7: '.oshssskssskssshso', 8: '.oshssskssskssshso', 9: '..ohsppsssssppsho.' } },
+    },
+    // A shiny bald head with fluffy little tufts over his ears.
+    'king-bald': {
+      name: name('bald'), icon: '🥚', boy: true,
+      art: {
+        rows: { 1: '....oosssssssoo...', 2: '...oswwsssssssso..', 3: '..oswssssssssssso.', 4: '..ohsssssssssssho.', 5: '..ohhssssssssshho.' },
+        back: [
+          [-1, 3, ['..oo', '.ohh', 'ohHh', 'ohhh', 'ohHh', '.ohh', '..oo']],
+          [16, 3, ['oo..', 'hho.', 'hHho', 'hhho', 'hHho', 'hho.', 'oo..']],
+        ],
+      },
+    },
+    // A Korean topknot (sangtu): his hair combed up into a knot with a gold
+    // pin, and a black headband (manggeon) across his forehead.
+    'king-topknot': {
+      name: name('topknot'), icon: '🎎', boy: true,
+      art: {
+        rows: { 1: '....oohHhHhHhoo...', 2: '...ohHhHhHhHhHho..', 3: '..ohHhHhHhHhHhHho.', 4: '..oxxXxxxxxxxXxxo.', 5: '..ohsssssssssssho.' },
+        front: [[6, -4, ['..ooo..', '.ohHho.', 'yyhhhyy', '.ohhho.']]],
+      },
+    },
+    // A lion's mane: spiky hair all round his head like the sun.
+    'king-mane': {
+      name: name('mane'), icon: '🌞', boy: true,
+      art: { back: [
+        [2, -3, ['...o...o...o...', '..oho.oho.oho..', '.ohhhohhhohhho.', 'ohhhhhhhhhhhhho']],
+        [-1, 0, ['....o', '...oh', '..ohh', '.ohhh', 'ohHhh', '.ohhh', '..ohh', '.ohhh', 'ohHhh', '.ohhh', '..ohh', '.ohhh', 'ohHhh', '.ohhh', '..ooo']],
+        [15, 0, ['o....', 'ho...', 'hho..', 'hhho.', 'hhHho', 'hhho.', 'hho..', 'hhho.', 'hhHho', 'hhho.', 'hho..', 'hhho.', 'hhHho', 'hhho.', 'ooo..']],
+      ] },
     },
   };
 

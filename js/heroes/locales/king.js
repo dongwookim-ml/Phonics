@@ -1,6 +1,38 @@
 // Names of the king kit's new things (heroes.king.<key>), while they are drawn;
 // moved into js/locales/ko.js and en.js before release.
 Object.assign(PIXELTOWN_LOCALES.ko, {
+  'heroes.king.parade': '임금님 행진 제복',
+  'heroes.king.pharaoh': '파라오 임금님 옷',
+  'heroes.king.arabian': '아라비아 임금님 옷',
+  'heroes.king.turban': '보석 터번',
+  'heroes.king.nemes': '파라오 줄무늬 두건',
+  'heroes.king.paper': '종이 생일 왕관',
+  'heroes.king.flowers': '요정 꽃 왕관',
+  'heroes.king.key': '황금 성 열쇠',
+  'heroes.king.scroll': '임금님 두루마리',
+  'heroes.king.cake': '무지개 케이크',
+  'heroes.king.throne': '황금 옥좌',
+  'heroes.king.sash': '별 훈장 띠',
+  'heroes.king.banner': '별빛 깃발',
+  'heroes.king.bald': '반짝반짝 대머리',
+  'heroes.king.topknot': '임금님 상투',
+  'heroes.king.mane': '사자 갈기 머리',
 });
 Object.assign(PIXELTOWN_LOCALES.en, {
+  'heroes.king.parade': 'Royal parade uniform',
+  'heroes.king.pharaoh': "Pharaoh's outfit",
+  'heroes.king.arabian': "Arabian king's outfit",
+  'heroes.king.turban': 'Jewelled turban',
+  'heroes.king.nemes': "Pharaoh's striped headdress",
+  'heroes.king.paper': 'Paper party crown',
+  'heroes.king.flowers': 'Fairy flower crown',
+  'heroes.king.key': 'Golden castle key',
+  'heroes.king.scroll': 'Royal scroll',
+  'heroes.king.cake': 'Rainbow cake',
+  'heroes.king.throne': 'Golden throne',
+  'heroes.king.sash': 'Star medal sash',
+  'heroes.king.banner': 'Starlight banner',
+  'heroes.king.bald': 'Shiny bald head',
+  'heroes.king.topknot': 'Royal topknot',
+  'heroes.king.mane': "Lion's mane",
 });
