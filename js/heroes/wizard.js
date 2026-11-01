@@ -639,25 +639,24 @@
         '....y..P..........y..c',
       ] },
     },
-    // A case of scrolls on her back, peeking over her shoulder, its strap
-    // across her front.
+    // A leather case of scrolls on her shoulder, two scrolls poking out
+    // (tied with red and blue ribbons), its strap over her front.
     'wizard-scrolls': {
       name: I18n.t('heroes.wizard.scrolls'), icon: '📜',
-      art: { x: -2, y: 4, front: true, pal: Object.assign({}, INK, { o: '#5a3428', e: '#e8485a', i: '#fff4dc', K: '#c08850', J: '#7a4a2e' }), rows: [
-        '.o.o.............',
-        'oioio............',
-        'oeoeo............',
-        'oioio............',
-        'oKKKo............',
-        'oKyKo............',
-        'oKKJo............',
-        'oKKJo............',
-        'oJJJoJJK.........',
-        'oKKJo..JJK.......',
-        'oKKJo....JyK.....',
-        '.ooo.......JJK...',
-        '.............JJK.',
-        '...............JJ',
+      art: { x: -2, y: 5, front: true, pal: Object.assign({}, INK, { o: '#5a3428', e: '#e8485a', B: '#3f74c8', i: '#fff4dc', K: '#c08850', J: '#7a4a2e' }), rows: [
+        '....oo.....',
+        '...oiio....',
+        '.oooiio....',
+        'oiioBBo....',
+        'oeeoiio....',
+        'oiioiio....',
+        'oKKKKKo....',
+        'oKyKKJo....',
+        'oKKKKJo....',
+        'oJJJJJoJK..',
+        'oKKKKJo.JK.',
+        'oKKKKJo..JK',
+        '.ooooo.....',
       ] },
     },
     // A long rainbow scarf round her neck, one end hanging down (the Unicorn
@@ -743,7 +742,7 @@
     '..oo',
   ];
   const CURLS = ['.oo', 'ohh', 'oHh', '.oo', 'ohh', 'oHh', '.oo', 'ohh', '.oo'];
-  const BUN = ['.ooo.', 'ohhHo', 'ohyho', 'oHhho', '.ooo.'];
+  const BUN = ['.ooo.', 'ohhHo', 'ohyho', 'oHhho', 'ohhho', '.ooo.'];
   const style = {
     // Long and wavy down her back, out past her sleeves (her starting style).
     'wizard-wavy': {
@@ -783,7 +782,8 @@
         front: [[0, 8, ['..oh', '.ohh', 'ouUo', 'ohho', 'ohHo', 'oHho', 'ohho', '.oHo', '.oho', '..o.']]],
       },
     },
-    // A long fringe swept over to one side, down past his ear to his chin.
+    // A long fringe swept over to one side, down past his ear to his
+    // shoulder.
     'wizard-swoop': {
       name: I18n.t('heroes.wizard.swoop'), icon: '💨', boy: true,
       art: {
@@ -797,7 +797,7 @@
           11: '.....osssssssoHho.',
           12: '.....oLLyyLLohho..',
         },
-        front: [[12, 3, ['.ooo.', 'ohhho', 'ohHho', '.oho.']]],
+        front: [[12, 3, ['.ooo.', 'ohhho', 'ohHho', '.oho.']], [14, 12, ['ohho', 'oHho', '.oho', '.oho', '..o.']]],
       },
     },
     // Cut in a bob at her chin, a star clip on one side.
@@ -836,7 +836,7 @@
           12: '...oooLLyyLLooo...',
         },
         short: true,
-        front: [[-2, 4, BUN], [15, 4, BUN.map(r => [...r].reverse().join(''))]],
+        front: [[-2, 5, BUN], [15, 5, BUN.map(r => [...r].reverse().join(''))]],
       },
     },
     // Long and straight down to his shoulders, like a wise old wizard's.
@@ -863,16 +863,19 @@
         front: [[3, -1, ['.oo..oo..oo.', 'ohhoohhoohho']]],
       },
     },
-    // A round bowl cut, a straight fringe down to his eyebrows.
+    // A wide round bowl cut, a straight fringe down to his eyebrows and a
+    // straight edge all round at his jaw.
     'wizard-bowl': {
       name: I18n.t('heroes.wizard.bowl'), icon: '🥣', boy: true,
       art: {
         rows: {
-          5: '..ohhhhhhhhhhhho..',
-          6: '..ohhhhhhhhhhhho..',
-          7: '..ohhsskssskssho..',
-          8: '..ohhsskssskssho..',
-          9: '...ohspssssspsho..',
+          5: '.ohhHHHHHHHhhhhho.',
+          6: '.oHhhhhhhhhhhhhHo.',
+          7: '.oHhhsskssskssHho.',
+          8: '.oHhhsskssskssHho.',
+          9: '.oHhhspssssspsHho.',
+          10: '.oHhhssssmsssshHo.',
+          11: '.ooooosssssssoooo.',
         },
       },
     },
