@@ -177,6 +177,99 @@
       walk: STEP,
       ride: { flap: 4, cloth: 'dD', hem: 'L', leg: 's', sock: 'w', boot: 'J' },
     } },
+    // A puffy snow parka in her colour with fur at the hood, cuffs and hem,
+    // red mittens and fur-topped snow boots (sold in the shop).
+    'explorer-parka': { icon: '🧤', shop: true, price: 12, art: {
+      top: {
+        13: '...owWwwwwwwwWo...',
+        14: '.oLLdddddaddddDDo.',
+        15: '.oLDDDDDDaDDDDDDo.',
+        16: '.oLdoddddadddoDDo.',
+        17: '.owwoddddadddowwo.',
+      },
+      bottom: [
+        '.oeeoLdddadddoeeo.',
+        '..oooLDDDaDDDooo..',
+        '....owwwwwwwWo....',
+        '.....oDDooDDo.....',
+        '.....oDDooDDo.....',
+        '....owwWoowwWo....',
+        '....oKKKooKKKo....',
+        '....oKKKooKKKo....',
+        '....oJJJooJJJo....',
+        '....oooooooooo....',
+      ],
+      walk: { 6: '....oKKKooKKKo....', 7: '...oKKKo..oKKKo...', 8: '...oJJJo..oJJJo...', 9: '...ooooo..ooooo...' },
+      ride: { flap: 3, cloth: 'dD', hem: 'w', leg: 'D', sock: 'w', boot: 'K' },
+    } },
+    // A vest in her colour, all pockets, and long khaki cargo trousers with
+    // pockets at the knees.
+    'explorer-cargo': { icon: '🦺', art: {
+      top: {
+        13: '...oIdiddddidIo...',
+        14: '..oIIddidDiddISo..',
+        15: '..oiodDDiiDDdoio..',
+        16: '..osodDDiiDDdoso..',
+        17: '..osoJJJyyJJJoso..',
+      },
+      bottom: [
+        '....oIIIIIISSo....',
+        '....oIIIIIIISo....',
+        '....oIIIooIISo....',
+        '....oIIIooIISo....',
+        '....oSSIooISSo....',
+        '....oSSIooISSo....',
+        '....oIIIooIISo....',
+        '.....oJJooJJo.....',
+        '....oJJJooJJJo....',
+        '....oooooooooo....',
+      ],
+      walk: STEP,
+      ride: { flap: 2, cloth: 'IS', hem: 'S', leg: 'I', boot: 'J' },
+    } },
+    // A girl's safari shirt-dress in her colour: a white collar, puffed
+    // sleeves, a belt and a flared skirt (from the Unicorn Village).
+    'explorer-shirtdress': { icon: '👚', girl: true, unicorn: true, art: {
+      top: {
+        13: '...oLdwwsswwdDo...',
+        14: '..oLLddwddwddDDo..',
+        15: '..osodddydddDoso..',
+        16: '..osoLddydddDoso..',
+        17: '..osoJJJyyJJJoso..',
+      },
+      bottom: [
+        '....oLddyddDDo....',
+        '...oLdddydddDDo...',
+        '..oLddddyddddDDo..',
+        '..oLddddddddDDDo..',
+        '.otttttttttttttto.',
+        '.....ossoosso.....',
+        '.....owwoowwo.....',
+        '.....oJJooJJo.....',
+        '....oJJJooJJJo....',
+        '....oooooooooo....',
+      ],
+      walk: STEP,
+      ride: { flap: 4, cloth: 'dD', hem: 't', leg: 's', sock: 'w', boot: 'J' },
+    } },
+    // A boy's riding breeches in his colour, wide at the thighs, and tall
+    // black riding boots (from the Unicorn Village).
+    'explorer-jodhpurs': { icon: '🏇', boy: true, unicorn: true, art: {
+      bottom: [
+        '....oLdddddDDo....',
+        '...oLddddddDDDo...',
+        '..oLddddooddDDDo..',
+        '..oLdddo..oddDDo..',
+        '...oLddo..oddDo...',
+        '.....oxXooxXo.....',
+        '.....oxXooxXo.....',
+        '.....oxXooxXo.....',
+        '....oxxXooxxXo....',
+        '....oooooooooo....',
+      ],
+      walk: step('x', 'X'),
+      ride: { flap: 2, cloth: 'dD', hem: 'D', leg: 'd', boot: 'x' },
+    } },
   };
 
   const HEADS = {
@@ -230,6 +323,78 @@
       'eeeeoazwaoeeee',
       '....oAaaAo....',
       '.....oooo.....',
+    ] } },
+    // A diving mask over her eyes and a snorkel up beside her head.
+    'explorer-snorkel': { icon: '🤿', art: { x: 2, y: -3, rows: [
+      '.............ooo',
+      '.............oOo',
+      '.............oyo',
+      '.............oOo',
+      '.............oOo',
+      '.............oyo',
+      '.............oOo',
+      '.............oOo',
+      '.............oyo',
+      '..ooooooooooooOo',
+      'xxoBZkccckcBooOo',
+      '..oBckccckcBooOo',
+      '..oBBBBoBBBBooOo',
+      '...ooooooooo.oOo',
+      '........oOOOOOOo',
+      '.........oooooo',
+    ] } },
+    // A girl's big red jungle flower over her ear, with a leaf (from the
+    // Fairy Village).
+    'explorer-flower': { icon: '🌺', girl: true, fairy: true, art: { x: 0, y: 1, rows: [
+      '..oo.oo',
+      '.oEEoEEo',
+      'ooeEeeEoo',
+      'oEeeyeeEo',
+      '.oeyzyeo',
+      'oEeeyeeEo',
+      'ooeeEeooo',
+      '.oeoooqqo',
+      '..o..oqQo',
+      '......oo',
+    ] } },
+    // A knitted bobble hat in her colour with earflaps and woolly ties (from
+    // the Unicorn Village).
+    'explorer-beanie': { icon: '🧶', unicorn: true, art: { x: 1, y: -5, rows: [
+      '.......oo',
+      '......owWo',
+      '......oWwo',
+      '.....oooooo',
+      '..owdwdwdwdwDo',
+      '..oddddddddDDo',
+      '.oLDLDLDLDLDLDo',
+      'oddo........oddo',
+      'owdo........odwo',
+      'oddo........oddo',
+      '.odo........odo',
+      '..o..........o',
+      '..w..........w',
+      '..w..........w',
+      '.oWo........oWo',
+      '..o..........o',
+    ] } },
+    // A khaki desert cap with a leather peak and a cloth flap hanging over
+    // her ears and neck against the sun.
+    'explorer-desertcap': { icon: '🧢', art: { x: 1, y: -3, rows: [
+      '...ooooooooooo',
+      '...oiiiiiiiIIo',
+      '...oiiiiiiiIIo',
+      '...oiiiiiiiIIo',
+      '..oddddddddddDo',
+      'oIIoJJJJJJJJJoIIo',
+      'oIIoooooooooooIIo',
+      'oISo.........oSIo',
+      'oISo.........oSIo',
+      'oISo.........oSIo',
+      'oISo.........oSIo',
+      'oIIo.........oIIo',
+      'oISo.........oSIo',
+      '.oSo.........oSo',
+      '..o...........o',
     ] } },
   };
 
@@ -306,6 +471,48 @@
       'oqBuoqBuo',
       '.ooo.ooo.',
     ] } },
+    // A little spade for digging up treasure.
+    'explorer-shovel': { icon: '⛏️', art: { x: 14, y: 6, rows: [
+      'ooooo',
+      'oKJKo',
+      '.oJo',
+      '.oKo',
+      '.oJo',
+      '.oKo',
+      '.oJo',
+      '.oKo',
+      '.oJo',
+      '.oKo',
+      'oaaAo',
+      'oMaAo',
+      'oaaAo',
+      '.oAo',
+      '..o',
+    ] } },
+    // An instant camera with a rainbow stripe (sold in the shop).
+    'explorer-camera': { icon: '📷', shop: true, price: 10, art: { x: 10, y: 11, rows: [
+      '.ooo',
+      'oxxxooooo',
+      'owwwwwwyo',
+      'owoooowWo',
+      'owoZxowWo',
+      'owoxxowWo',
+      'owoooowWo',
+      'oeOyqBuWo',
+      'ooooooooo',
+    ] } },
+    // A jar of glowing fireflies (from the Starlight Forest).
+    'explorer-jar': { icon: '🫙', forest: true, art: { x: 13, y: 10, rows: [
+      '.oooo',
+      'oKJKJo',
+      '.oooo',
+      'oZcyco',
+      'oyczco',
+      'oczyco',
+      'oZcyzo',
+      'occcco',
+      '.oooo',
+    ] } },
   };
 
   // Things on her back, behind her (in their own colours, so the wardrobe
@@ -359,6 +566,73 @@
       'oAaAAo',
       '.oAAo',
       '..oo',
+    ] } },
+    // A red parrot friend sitting on her shoulder (from the Fairy Village).
+    'explorer-parrot': { icon: '🦜', fairy: true, art: { x: -2, y: 4, front: true, pal: INK, rows: [
+      '..oooo',
+      '.oeeeeo',
+      'oWwkeeo',
+      'oxoweeo',
+      '.ooeeeo',
+      '..oeyBo',
+      '..oeyBo',
+      '..oyBBo',
+      '..oKKo',
+      '...oBo',
+      '...oBo',
+      '...oeo',
+      '....o',
+    ] } },
+    // A little khaki pack with a flag in her colour flying above her.
+    'explorer-flagpack': { icon: '🚩', art: { x: -2, y: -5, pal: INK, rows: [
+      '.oooo',
+      'oydddoo',
+      'oJddyddo',
+      'oJdyyyDo',
+      'oJddyDDo',
+      'oJdDDoo',
+      'oJooo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJoooooooooooooooooo',
+      '.oSIIIIIIIIIIIIIIIISo',
+      '.oSIIIIIIIIIIIIIIIISo',
+      '.oSJIIIIIIIIIIIIIIJSo',
+      '.oSJIIIIIIIIIIIIIIJSo',
+      '.oSIIIIIIIIIIIIIIIISo',
+      '.oSIIIIIIIIIIIIIIIISo',
+      '.oSSIIIIIIIIIIIIIISSo',
+      '.oSSSSSSSSSSSSSSSSSSo',
+      '..oooooooooooooooooo',
+    ] } },
+    // A baby monkey riding on her shoulder, its tail curled (from the
+    // Starlight Forest).
+    'explorer-monkey': { icon: '🐒', forest: true, art: { x: -2, y: 3, front: true, pal: INK, rows: [
+      '.ooooo',
+      'oJJJJJo',
+      'KJiJiJK',
+      'Kikikik',
+      'oiiiiio',
+      '.oimio',
+      '..ooo',
+      '.oJJJo',
+      'oJJiJJo',
+      'oJo.oJo',
+      'Jo...o',
+      'J',
+      'J',
+      'Jo',
+      'oJ',
+      '.oJ',
+      'oJo',
+      'oo',
     ] } },
   };
 
@@ -420,6 +694,30 @@
         [15, 3, ['oo..', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hoo.', 'oo..']],
       ],
       front: [[3, 5, ['.oo.oo.oo.oo', 'ohhohhohhohh']]],
+    } },
+    // A girl's two low bunches, tied with bands in her colour.
+    'explorer-pigtails': { icon: '🎀', girl: true, art: { front: [[-2, 10, ['.oddo', 'ohhho', 'ohHho', 'ohhho', 'ohHho', 'ohhho', '.oHo.', '.oho.', '..o..']], [15, 10, ['oddo.', 'ohhho', 'ohHho', 'ohhho', 'ohHho', 'ohhho', '.oHo.', '.oho.', '..o..']]] } },
+    // A girl's short pixie cut with a star clip in her fringe.
+    'explorer-pixie': { icon: '✂️', girl: true, art: {
+      rows: { 5: '..ohhhhhhhhsshho..', 6: '..ohhhhhssssssho..', 7: '..ohhsskssskssho..', 8: '..ohhsskssskssho..', 9: '...ohspsFsFspso...', 10: '....ossssmsssso...', 11: '.....ossssssso....', 12: '......oossoo......' },
+      front: [[4, 5, ['.y.', 'yzy', '.y.']]],
+    } },
+    // A girl's long wavy hair, down past her shoulders.
+    'explorer-wavy': { icon: '🌊', girl: true, art: { back: [[-1, 9, ['.ohh', 'ohhh', 'ohHh', '.ohh', 'ohhh', 'oHhh', '.ohh', 'ohhh', 'ohHh', '.ohh', 'ohho', '.oo.']], [16, 9, ['hho.', 'hhho', 'hHho', 'hho.', 'hhho', 'hhHo', 'hho.', 'hhho', 'hHho', 'hho.', 'ohho', '.oo.']]] } },
+    // A boy's bowl cut: a straight, shiny fringe and straight sides.
+    'explorer-bowl': { icon: '🥣', boy: true, art: {
+      rows: { 4: '..ohHHHHHHHHHHho..', 5: '..ohhhhhhhhhhhho..', 6: '..ohhhhhhhhhhhho..' },
+      front: [[2, 6, ['ohh', 'ohh', 'ohh', 'ooo']], [14, 6, ['hho', 'hho', 'hho', 'ooo']]],
+    } },
+    // A boy's straight hair, parted in the middle, down to his shoulders.
+    'explorer-long': { icon: '🦁', boy: true, art: {
+      rows: { 5: '..ohhhhhsshhhhho..' },
+      back: [[1, 4, ['.oh', 'ohh', 'ohh', 'ohh', 'ohh', 'ohh', 'ohh', 'ohh', 'ohH', 'ohh', '.oo']], [14, 4, ['ho.', 'hho', 'hho', 'hho', 'hho', 'hho', 'hho', 'hho', 'Hho', 'hho', 'oo.']]],
+    } },
+    // A boy's fringe swept to one side and a little ponytail at his neck.
+    'explorer-tail': { icon: '🐿️', boy: true, art: {
+      rows: { 5: '..ohhhhhhhhhhsho..', 6: '...ohhhhhsssssho..' },
+      back: [[0, 9, ['...oo', '..odo', '.ohho', 'ohHo.', 'oho..', '.o...']]],
     } },
   };
 
