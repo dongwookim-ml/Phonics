@@ -509,26 +509,20 @@
         '..q..',
       ] },
     },
-    // A big golden castle key, held by its round bow.
+    // A big golden castle key held sideways across his tummy: its round bow
+    // in his hand, its teeth at the far end.
     'king-key': {
       name: name('key'), icon: '🗝️', boy: true,
-      art: { x: 14, y: 3, rows: [
-        '.ooo.',
-        '.oyoo',
-        '.oyyo',
-        '.oyoo',
-        '.oyyo',
-        '.oyo.',
-        '.oYo.',
-        '.oyo.',
-        '.oYo.',
-        '.oyo.',
-        '.oYo.',
-        'ooyoo',
-        'oyYyo',
-        'oy.yo',
-        'oyyYo',
-        '.ooo.',
+      art: { x: 5, y: 14, rows: [
+        '..........oooo.',
+        '.........oyzyyo',
+        'ooooooooooy..yo',
+        'oyyyyyyyyyy..Yo',
+        'oYYYYYYYYYyYYYo',
+        'oyyoyyoooooooo.',
+        'oYyoYyo........',
+        'oYyoooo........',
+        'oooo...........',
       ] },
     },
     // A royal scroll held up for all to read: cream paper with writing and
@@ -672,23 +666,27 @@
         '.ooo...............ooo',
       ] },
     },
-    // A blue sash over his shoulder with a gold star medal at his hip (worn
-    // over his clothes, under his beard).
+    // A wide blue sash with gold edges from his shoulder round past his
+    // beard to his hip, and a big gold star medal on a red ribbon.
     'king-sash': {
       name: name('sash'), icon: '🎖️', boy: true,
-      art: { x: 1, y: 13, front: true, pal: { B: '#6fb7ff', N: '#3f74c8', y: '#ffd34d', Y: '#e0a52a', z: '#fff6c0', e: '#e8485a' }, rows: [
-        'BN..............',
-        '.BN.............',
-        '..BN............',
-        '....BN..........',
-        '.....BBBN.......',
-        '.......BBBN.....',
-        '.........BBBN...',
-        '...........Bee..',
-        '.............y..',
-        '...........yyYyy',
-        '............yzy.',
-        '............y.y.',
+      art: { x: -1, y: 12, front: true, pal: { o: '#4a2c4f', B: '#6fb7ff', N: '#3f74c8', y: '#ffd34d', Y: '#e0a52a', z: '#fff6c0', e: '#e8485a' }, rows: [
+        'NyN................',
+        'NByN...............',
+        'NByBN..............',
+        '.NByBN.............',
+        '....NByN...........',
+        '....NBByBN.........',
+        '......NBByBN.......',
+        '........NBByBN.....',
+        '..........NBByBN...',
+        '.............ee....',
+        '.............oyo...',
+        '...........ooyYyoo.',
+        '...........oyyzyyo.',
+        '............oyYyo..',
+        '............oyoyo..',
+        '............oo.oo..',
       ] },
     },
     // A royal banner over his shoulder: a midnight-blue flag with a gold
