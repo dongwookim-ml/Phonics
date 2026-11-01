@@ -343,20 +343,6 @@
       '........oOOOOOOo',
       '.........oooooo',
     ] } },
-    // A girl's big red jungle flower over her ear, with a leaf (from the
-    // Fairy Village).
-    'explorer-flower': { icon: '🌺', girl: true, fairy: true, art: { x: 0, y: 1, rows: [
-      '..oo.oo',
-      '.oEEoEEo',
-      'ooeEeeEoo',
-      'oEeeyeeEo',
-      '.oeyzyeo',
-      'oEeeyeeEo',
-      'ooeeEeooo',
-      '.oeoooqqo',
-      '..o..oqQo',
-      '......oo',
-    ] } },
     // A knitted bobble hat in her colour with earflaps and woolly ties (from
     // the Unicorn Village).
     'explorer-beanie': { icon: '🧶', unicorn: true, art: { x: 1, y: -5, rows: [
@@ -395,6 +381,18 @@
       'oISo.........oSIo',
       '.oSo.........oSo',
       '..o...........o',
+    ] } },
+    // A girl's big red jungle flower over her ear, with a leaf (from the
+    // Fairy Village).
+    'explorer-flower': { icon: '🌺', girl: true, fairy: true, art: { x: -1, y: 0, rows: [
+      '..oo.oo',
+      '.oEeoeEo',
+      '.oeeyeeo',
+      '..oyzyo',
+      '.oeeyeeo',
+      'ooEeoeEo',
+      'oQoo.oo',
+      '.oo',
     ] } },
   };
 
@@ -583,35 +581,6 @@
       '...oeo',
       '....o',
     ] } },
-    // A little khaki pack with a flag in her colour flying above her.
-    'explorer-flagpack': { icon: '🚩', art: { x: -2, y: -5, pal: INK, rows: [
-      '.oooo',
-      'oydddoo',
-      'oJddyddo',
-      'oJdyyyDo',
-      'oJddyDDo',
-      'oJdDDoo',
-      'oJooo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJo',
-      'oJoooooooooooooooooo',
-      '.oSIIIIIIIIIIIIIIIISo',
-      '.oSIIIIIIIIIIIIIIIISo',
-      '.oSJIIIIIIIIIIIIIIJSo',
-      '.oSJIIIIIIIIIIIIIIJSo',
-      '.oSIIIIIIIIIIIIIIIISo',
-      '.oSIIIIIIIIIIIIIIIISo',
-      '.oSSIIIIIIIIIIIIIISSo',
-      '.oSSSSSSSSSSSSSSSSSSo',
-      '..oooooooooooooooooo',
-    ] } },
     // A baby monkey riding on her shoulder, its tail curled (from the
     // Starlight Forest).
     'explorer-monkey': { icon: '🐒', forest: true, art: { x: -2, y: 3, front: true, pal: INK, rows: [
@@ -633,6 +602,39 @@
       '.oJ',
       'oJo',
       'oo',
+    ] } },
+    // A little khaki pack with a flap and a flag in her colour flying
+    // above her.
+    'explorer-flagpack': { icon: '🚩', art: { x: -2, y: -5, pal: INK, rows: [
+      '.oooo',
+      'oydddoo',
+      'oJddyddo',
+      'oJdyyyDo',
+      'oJddyDDo',
+      'oJdDDoo',
+      'oJooo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJo',
+      'oJooooooooooooooooo',
+      'oJoddddddddddddddddo',
+      '.oddddddddddddddddDDo',
+      '.oDyDDDDDDDDDDDDDDyDo',
+      '.oSJIIIIIIIIIIIIIIJSo',
+      '.oSJIIIIIIIIIIIIIIJSo',
+      '.oSIIIIIIIIIIIIIIIISo',
+      '.oSIIIIooooooooIIIISo',
+      '.oSIIIIoIIIIIIoIIIISo',
+      '.oSIIIIoIIyyIIoIIIISo',
+      '.oSIIIIooooooooIIIISo',
+      '.oSSIIIIIIIIIIIIIISSo',
+      '..oSSSSSSSSSSSSSSSSo',
+      '...oooooooooooooooo',
     ] } },
   };
 
