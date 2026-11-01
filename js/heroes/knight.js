@@ -502,19 +502,19 @@
       '.oJJo.',
       '..oo..',
     ] }, { forest: true }),
-    // A curled golden horn to call the knights, from the shop.
-    'knight-horn': thing('horn', '📯', { x: 12, y: 7, rows: [
-      '....oooo',
-      '...oyzyY',
-      '..oyyyYY',
-      '..ooyYYo',
-      '...oyYo.',
-      '..oyYo..',
-      '.oyYo...',
-      'oyYo....',
-      'oYyo....',
-      '.oYyoo..',
-      '..osso..',
+    // A golden hunting horn to call the knights, from the shop: a steel
+    // mouthpiece, a tube curving round to a wide, open bell, a red tassel.
+    'knight-horn': thing('horn', '📯', { x: 7, y: 11, rows: [
+      '.oo......ooo.',
+      'oMao....oxxxo',
+      '.oyo...ozyyYo',
+      '.oyo..ozyyYo.',
+      '.oyYooJyyYYo.',
+      '..oyYJJyYYoe.',
+      '...ooYJYoo.e.',
+      '.....ooo..oEo',
+      '..........oeo',
+      '...........o.',
     ] }, { shop: true, price: 8 }),
     // A unicorn's head on a stick to gallop about on, from the Unicorn
     // Village.
@@ -711,9 +711,9 @@
         [16, 8, ['.oo.', 'oHho', 'ohHo', '.oo.', 'oHho', 'ohHo', '.oo.', 'oHho', 'ohHo', '.oo.', 'oEeo', 'oeeo', '.oo.']],
       ],
     }, { girl: true }),
-    // A little tail tied at the back, flicking out to one side.
+    // A little tail tied high with a red ribbon, swinging out at one side.
     'knight-tail': thing('tail', '🐎', {
-      back: [[-2, 7, ['....oo', '..oohh', '.ohhHh', 'ohhHho', 'ohHho.', 'oHho..', 'ohho..', '.oho..', '.oo...']]],
+      back: [[-2, 0, ['...ooo', '..oeEo', '.ohoeo', 'ohHhoo', 'ohhHho', 'oHhhHo', 'ohhHho', '.ohhHo', '.oHhho', 'ohhHo.', 'ohHho.', 'oHho..', 'ohho..', '.oo...']]],
     }, { boy: true }),
   };
 
