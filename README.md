@@ -127,9 +127,13 @@ Custom names in this audit use live speech fallback rather than requiring record
   starry robe with bell sleeves (a witch's hat and broom, or a white beard,
   star hat and staff); the explorer a khaki shirt with pockets, shorts,
   boots, freckles and a backpack; the captain a navy coat with epaulettes,
-  a sailor collar and a captain's cap. Each has at least 5 outfits, 5 head
-  things, 4 hand things, 3 back things and 3 hairstyles of its own, some
-  given in the Forest, the Unicorn Village and the Fairy Village; the old
+  a sailor collar and a captain's cap. Each has at least 8 outfits, 8 head
+  things, 7 hand things, 6 back things and 6 hairstyles of its own (in all
+  about 350: a frog prince suit, a queen's corgi, a king's paper birthday
+  crown, a knight's baby dragon, a fairy's bee dress, a wizard's kitten hat,
+  an explorer's snorkel mask, a captain's diving helmet...), some given in
+  the Forest, the Unicorn Village and the Fairy Village and some sold in
+  the shop; the old
   boy's robe, armour, wizard and explorer clothes and the sailor suit went
   to the king, the knight, the wizard, the explorer and the captain. A
   save from before plays on in the title's new starting clothes (the
