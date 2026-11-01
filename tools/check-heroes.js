@@ -4,8 +4,8 @@
 //   - a kit for the title, with the looks TITLES allows (a princess is a
 //     girl, a knight a girl or a boy);
 //   - its starting clothes exist and suit it;
-//   - for each look: at least 5 shapes, 5 head things, 4 hand things, 3
-//     back things and 3 hairstyles of its own to choose from, some given
+//   - for each look: at least 8 shapes, 8 head things, 7 hand things, 6
+//     back things and 6 hairstyles of its own to choose from, some given
 //     in the Forest, the Unicorn Village and the Fairy Village;
 //   - each of its things changes how it looks when worn, draws on a unicorn
 //     too, and has a name in Korean and English and a picture;
@@ -18,7 +18,7 @@ const path = require('path');
 const { launch } = require('./browser');
 
 const root = path.join(__dirname, '..');
-const NEED = { shape: 5, head: 5, hand: 4, back: 3, style: 3 };
+const NEED = { shape: 8, head: 8, hand: 7, back: 6, style: 6 };
 
 (async () => {
   const browser = await launch();

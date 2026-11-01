@@ -1,0 +1,6 @@
+// Names of the wizard kit's new things (heroes.wizard.<key>), while they are drawn;
+// moved into js/locales/ko.js and en.js before release.
+Object.assign(PIXELTOWN_LOCALES.ko, {
+});
+Object.assign(PIXELTOWN_LOCALES.en, {
+});
