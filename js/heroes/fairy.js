@@ -27,6 +27,35 @@
   // Long wavy hair over her left shoulder (mirrored for the right).
   const FLOWING_L = ['.ohho', 'ohhho', 'ohHho', 'ohhHo', '.ohho', '.ohHo', 'ohhho', 'oHhho', '.oho.', '..o..'];
 
+  // A cloud of curls behind her head, and her head's top rows filled in
+  // with curls (no outline inside the cloud).
+  const CURLS = [
+    '........oo..oo........',
+    '...ooo.oHhoohHo.ooo...',
+    '..oHhhoohhhhhhoohhHo..',
+    '..ohhhhhhhhhhhhhhhho..',
+    '.ooohhhhhhhhhhhhhhooo.',
+    'oHhhohhhhhhhhhhhhohhHo',
+    'ohhhhhhhhhhhhhhhhhhhho',
+    'ohhhhhhhhhhhhhhhhhhhho',
+    '.oohhhhhhhhhhhhhhhhoo.',
+    'oHhhhhhhhhhhhhhhhhhhHo',
+    'ohhhhhhhhhhhhhhhhhhhho',
+    '.ohhhhhhhhhhhhhhhhhho.',
+    '..oohhhhhhhhhhhhhhoo..',
+    '.oHhhhhhhhhhhhhhhhhHo.',
+    '.ohhhhhhhhhhhhhhhhhho.',
+    '..ooo.oooooooooo.ooo..',
+  ];
+  const CURLS_TOP = {
+    0: 'hhohhhhhhhhhhhhohh',
+    1: 'hhhhhhhhhhhhhhhhhh',
+    2: 'hhhhhhhhhhhhhhhhhh',
+    3: 'ohhhhhhhhhhhhhhhho',
+    4: 'hhhhhhhhhhhhhhhhhh',
+    5: 'hhhhhhhhhhhhhhhhhh',
+  };
+
   addHeroKit('fairy', {
     looks: ['girl'],
     base: {
@@ -182,6 +211,69 @@
             ride: 'skirt',
           },
         },
+        // A bluebell: a narrow bell whose lip flares and curls up at the
+        // sides.
+        'fairy-bluebell': {
+          name: I18n.t('heroes.fairy.bluebell'), icon: '🔔', girl: true, fairy: true,
+          art: {
+            bottom: [
+              '......oddddo......',
+              '.....oLddddDo.....',
+              '.....oLddddDo.....',
+              '....oLLddddDDo....',
+              '....oLdddddDDo....',
+              '...oLLdddddDDDo...',
+              '.o.oLddddddDDDo.o.',
+              '.oLLdoLddoddDoDDo.',
+              '..ooooos..sooooo..',
+              FEET,
+            ],
+            walk: { 8: '..oooos....soooo..', 9: FEET_B },
+            ride: 'skirt',
+          },
+        },
+        // A toadstool: a wide spotted cap, frilly gills under it, her legs
+        // for its stalk.
+        'fairy-toadstool': {
+          name: I18n.t('heroes.fairy.toadstool'), icon: '🍄', girl: true, forest: true,
+          art: {
+            bottom: [
+              '......oddddo......',
+              '....ooLddddDoo....',
+              '..ooLdwwddddDDoo..',
+              '.oLLddwwdddwwDDDo.',
+              'oLwddddddddwwDDDDo',
+              'oLwwdddwwdddddDDDo',
+              'oooooooooooooooooo',
+              '....oiIiIiIiIo....',
+              LEGS,
+              FEET,
+            ],
+            walk: STEP,
+            ride: 'skirt',
+          },
+        },
+        // A bumblebee: a striped skirt and striped stockings.
+        'fairy-bee': {
+          name: I18n.t('heroes.fairy.bee'), icon: '🐝', girl: true, shop: true, price: 10,
+          art: {
+            top: { 17: '......oxyxyo......' },
+            bottom: [
+              '......oyyyyo......',
+              '.....oxxxxxxo.....',
+              '....oyzyyyyyYo....',
+              '...oxxxxxxxxxxo...',
+              '..oyzyyyyyyyyYYo..',
+              '..oooooooooooooo..',
+              '......oy..yo......',
+              '......ox..xo......',
+              '......oy..yo......',
+              FEET,
+            ],
+            walk: { 6: '.....oy....yo.....', 7: '.....ox....xo.....', 8: '.....oy....yo.....', 9: FEET_B },
+            ride: { flap: 4, cloth: 'yx', hem: 'y', leg: 's', sock: 'x', boot: 'D', shine: 'z' },
+          },
+        },
       },
       head: {
         // Little wild flowers round her head: pink, white and blue.
@@ -246,6 +338,49 @@
             'cZc.oco.cZc',
             'ocoMaMaMoco',
             'aMaaaaaaaMa',
+          ] },
+        },
+        // An upside-down bluebell for a hat, a curl of stalk on top.
+        'fairy-bellcap': {
+          name: I18n.t('heroes.fairy.bellcap'), icon: '🪻', girl: true, fairy: true,
+          art: { x: 3, y: -5, pal: { B: '#9aa8ff', N: '#5a64d0', c: '#d4dcff' }, rows: [
+            '.......oqo...',
+            '......oqo....',
+            '.....oBBBo...',
+            '....oBcBBNo..',
+            '...oBcBBBBNo.',
+            '..oBcBBBBBNNo',
+            '.oBBBBBBBBBNo',
+            'oBoBoBoBoNoNo',
+            'o..o.o.o.o..o',
+          ] },
+        },
+        // A crescent moon clip with a little star by it.
+        'fairy-moonclip': {
+          name: I18n.t('heroes.fairy.moonclip'), icon: '🌙', girl: true, unicorn: true,
+          art: { x: 0, y: -1, rows: [
+            '..ooo....',
+            '.oyyzo...',
+            'oyzoo..w.',
+            'oyo...wyw',
+            'oyzoo..w.',
+            '.oyyzo...',
+            '..ooo....',
+          ] },
+        },
+        // A pointy cap made of a leaf, its tip flopping over.
+        'fairy-leafhat': {
+          name: I18n.t('heroes.fairy.leafhat'), icon: '🌿', girl: true,
+          art: { x: 3, y: -5, rows: [
+            '............oo',
+            '..........ooqo',
+            '........ooqqo.',
+            '......ooqQqo..',
+            '....ooqqQqqo..',
+            '...oqqqQqqqo..',
+            '..oqqqQqqqqqo.',
+            '.oQQQQQQQQQQQo',
+            '.ooooooooooooo',
           ] },
         },
       },
@@ -319,6 +454,62 @@
             '...Q.....',
             '..Q......',
             '..Q......',
+          ] },
+        },
+        // A bubble wand, bubbles floating up past her.
+        'fairy-bubbles': {
+          name: I18n.t('heroes.fairy.bubbles'), icon: '🫧', girl: true, unicorn: true,
+          art: { x: 13, y: -5, pal: { c: '#58b4e8', e: '#d070e0' }, rows: [
+            '....cc.',
+            '...c.wc',
+            '...e..c',
+            '....cc.',
+            '.c.....',
+            'c.e....',
+            '.c.....',
+            '.....c.',
+            '....u..',
+            '...u.u.',
+            '....u..',
+            '....u..',
+            '....u..',
+            '...u...',
+            '...u...',
+            '..u....',
+            '..u....',
+            '..u....',
+            '.u.....',
+            '.u.....',
+          ] },
+        },
+        // A little pot of honey with its dipper, a bee buzzing by.
+        'fairy-honeypot': {
+          name: I18n.t('heroes.fairy.honeypot'), icon: '🍯', girl: true, shop: true, price: 7,
+          art: { x: 14, y: 10, rows: [
+            '....w.',
+            '...yxy',
+            '..J...',
+            '...J..',
+            '.ooJo.',
+            'oyyyyo',
+            'oOyOOo',
+            'oOyOOo',
+            'oOOOOo',
+            '.oooo.',
+          ] },
+        },
+        // A little golden harp with a flower on it.
+        'fairy-harp': {
+          name: I18n.t('heroes.fairy.harp'), icon: '🎵', girl: true, fairy: true,
+          art: { x: 14, y: 9, rows: [
+            '.Y...Y',
+            '.yY.Yy',
+            '.yyyyy',
+            '.yw.wy',
+            'Pyw.wy',
+            'yPw.wy',
+            'Py.w.y',
+            '..yyy.',
           ] },
         },
       },
@@ -401,6 +592,45 @@
             '........zyyzy.........',
           ] },
         },
+        // Two big leaves, a vein down each.
+        'fairy-leafwings': {
+          name: I18n.t('heroes.fairy.leafwings'), icon: '🍀', girl: true, forest: true,
+          art: { wings: [[
+            'nn......',
+            'nGnn....',
+            'nGGqnn..',
+            'nGqqqQn.',
+            '.nGqqQqn',
+            '.nGqQqqn',
+            '..nqQqqn',
+            '..nqqQqn',
+            '...nqqQn',
+            '....nnQn',
+            '......nn',
+          ], { n: '#2e6a3a', G: '#8ee07a', q: '#5cbf5a', Q: '#3a8a48' }, 9] },
+        },
+        // Tall wings like the night sky, dotted with stars.
+        'fairy-nightwings': {
+          name: I18n.t('heroes.fairy.nightwings'), icon: '🌌', girl: true, shop: true, price: 12,
+          art: { wings: [[
+            'o......',
+            'oo.....',
+            'omo....',
+            'omno...',
+            '.omno..',
+            '.onyno.',
+            '.onnnno',
+            'onmnnno',
+            'onnwnno',
+            'onnnnno',
+            '.onnyno',
+            '.onnnno',
+            '..onnno',
+            '..onnno',
+            '...onno',
+            '....ooo',
+          ], { o: '#2a2560', n: '#3e3a9a', m: '#6a68d0', y: '#ffd34d', w: '#ffffff' }, 3] },
+        },
       },
       style: {
         // Short and tousled, a curl sticking up on top.
@@ -429,6 +659,40 @@
               [12, 12, mirror(FLOWING_L)],
             ],
           },
+        },
+        // A ponytail high on one side, tied with a flower.
+        'fairy-sidetail': {
+          name: I18n.t('heroes.fairy.sidetail'), icon: '💐', girl: true,
+          art: { front: [[-2, -3, [
+            '..oooo...',
+            '.ohhhho..',
+            'ohhHooP..',
+            'ohHo.PyP.',
+            'ohho..P..',
+            'ohHo.....',
+            '.oho.....',
+            '..o......',
+          ]]] },
+        },
+        // A big soft cloud of curls.
+        'fairy-curls': {
+          name: I18n.t('heroes.fairy.curls'), icon: '☁️', girl: true,
+          art: {
+            rows: CURLS_TOP,
+            back: [[-2, -5, CURLS]],
+          },
+        },
+        // A little topknot with a seedling sprouting from it.
+        'fairy-sprout': {
+          name: I18n.t('heroes.fairy.sprout'), icon: '🌱', girl: true,
+          art: { front: [[5, -5, [
+            '.oo...oo.',
+            'oqGo.oGqo',
+            '.oqQoQqo.',
+            '..ohQho..',
+            '.ohhhHho.',
+            '..oRRRo..',
+          ]]] },
         },
       },
     },
