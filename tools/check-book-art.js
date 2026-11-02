@@ -21,15 +21,17 @@ const root = path.join(__dirname, '..');
         openLibrary();
       });
       const cover = page.locator('.lib-book:not(.self) .cover-art');
-      assert.equal(await cover.count(), 10);
+      const stories = await page.evaluate(() => BOOKS.map(b => ({ id: b.id, pages: b.pages.length })));
+      assert.equal(await cover.count(), stories.length);
       for (const image of await cover.all()) {
         await image.scrollIntoViewIfNeeded();
         await image.evaluate(image => image.decode());
       }
-      for (const bookId of ['lion-mouse', 'red-hen', 'three-pigs', 'ugly-duckling', 'gingerbread', 'goldilocks', 'cried-wolf', 'tortoise-hare', 'ant-grasshopper', 'town-country-mouse']) {
+      for (const story of stories) {
+      const bookId = story.id;
       for (const [width, height] of [[1024, 768], [768, 1024], [844, 390], [390, 844]]) {
         await page.setViewportSize({ width, height });
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < story.pages; i++) {
           await page.evaluate(({ i, bookId }) => {
             if (!i) openBook(BOOKS.find(book => book.id === bookId));
             else bookTurn(1);
@@ -53,7 +55,19 @@ const root = path.join(__dirname, '..');
         }
         await page.evaluate(() => bookTurn(1));
         assert.equal(await page.evaluate(() => library.mode), 'quiz');
-        await page.evaluate(() => { bookQuestion(0); bookSummary(); });
+        const completion = await page.evaluate(() => {
+          const before = state.coins;
+          for (let i = 0; i < library.book.quiz.length; i++) {
+            bookQuestion(i);
+            const k = library.book.quiz[i].answer;
+            bookPick(k, document.querySelector(`#rd-options [data-k="${k}"]`));
+          }
+          bookNext();
+          return { mode: library.mode, earned: state.coins - before, answered: bookLog(library.book.id).got.length };
+        });
+        assert.equal(completion.mode, 'summary');
+        assert.equal(completion.answered, 3);
+        assert.equal(completion.earned, width === 1024 ? 3 : 0, `${bookId}: quiz rewards must pay only once`);
         await page.locator('.summary-art').evaluate(image => image.decode());
       }
       }
@@ -92,7 +106,7 @@ const root = path.join(__dirname, '..');
       await page.waitForFunction(() => !document.querySelector('#rd-pic img'));
       assert.ok((await page.locator('#rd-pic').innerText()).length);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${edition}/${language}: 10 covers, 80 illustrated pages at 4 sizes, quiz/summary, 8 self-books (42 pages), failed-image fallback`);
+      console.log(`PASS ${edition}/${language}: ${stories.length} covers, ${stories.reduce((n, b) => n + b.pages, 0)} illustrated story pages at 4 sizes, quiz/summary, 8 self-books (42 pages), failed-image fallback`);
       await page.close();
     }
   } finally { await browser.close(); }

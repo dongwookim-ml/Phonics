@@ -1,6 +1,6 @@
 // Story books for the royal library on the castle's second floor: short
 // public-domain fairy tales and fables, retold in very simple English.
-// Each page has one or two sentences and optional illustration (emoji fallback), and each
+// Pages have short sentences and optional illustration (emoji fallback), and each
 // book ends with three questions. Option text starts with its emoji; the
 // voice reads the words after it (bookSpoken).
 // tools/tts-phrases.js reads this file too, so keep it free of page code.
@@ -187,6 +187,122 @@ const BOOKS = [
     ],
   },
 ];
+
+// Longer traditional tales, retold for readers aged 6–7. Dialogue uses straight
+// quotation marks so bookSentences keeps each spoken line together.
+BOOKS.push(
+  {
+    id: "crow-pitcher", title: "The Crow and the Pitcher", label: I18n.t('books.theCrowAndThePitcher'), cover: "🐦", coverImage: 'img/books/crow-pitcher/page-09.webp', color: '#dba863',
+    readingAge: '6–7', source: 'https://www.gutenberg.org/ebooks/53103',
+    pages: [
+      { text: "On a hot summer day, a thirsty crow flew over the fields. He was looking for water.", pic: "🐦", image: 'img/books/crow-pitcher/page-01.webp', imageAlt: I18n.t('books.crowpitcherArt1') },
+      { text: "At last, he spotted a pitcher beside a tree. He landed next to it and looked inside.", pic: "🐦", image: 'img/books/crow-pitcher/page-02.webp', imageAlt: I18n.t('books.crowpitcherArt2') },
+      { text: "There was a little water at the bottom. The crow felt hopeful and pushed his beak into the pitcher.", pic: "🐦", image: 'img/books/crow-pitcher/page-03.webp', imageAlt: I18n.t('books.crowpitcherArt3') },
+      { text: "But the water was too far down. He stretched his neck, but he still could not reach it.", pic: "🐦", image: 'img/books/crow-pitcher/page-04.webp', imageAlt: I18n.t('books.crowpitcherArt4') },
+      { text: "He tried to tip the pitcher over. It was too heavy, and it would not move.", pic: "🐦", image: 'img/books/crow-pitcher/page-05.webp', imageAlt: I18n.t('books.crowpitcherArt5') },
+      { text: "The tired crow stopped to think. Then he noticed some small stones lying on the ground.", pic: "🐦", image: 'img/books/crow-pitcher/page-06.webp', imageAlt: I18n.t('books.crowpitcherArt6') },
+      { text: "He picked up a stone and dropped it into the pitcher. Plop! The water rose a little.", pic: "🐦", image: 'img/books/crow-pitcher/page-07.webp', imageAlt: I18n.t('books.crowpitcherArt7') },
+      { text: "The crow dropped in another stone, then another. With each stone, the water rose higher.", pic: "🐦", image: 'img/books/crow-pitcher/page-08.webp', imageAlt: I18n.t('books.crowpitcherArt8') },
+      { text: "At last, the water was close enough to reach. The crow dipped his beak in and took a long drink.", pic: "🐦", image: 'img/books/crow-pitcher/page-09.webp', imageAlt: I18n.t('books.crowpitcherArt9') },
+      { text: "Feeling cool and happy, he spread his wings. He had solved the problem by stopping to think and trying something new.", pic: "🐦", image: 'img/books/crow-pitcher/page-10.webp', imageAlt: I18n.t('books.crowpitcherArt10') },
+    ],
+    quiz: [
+      { q: "Why could the crow not drink at first?", options: ["💧 The water was too far down","❄️ The water was frozen","🏺 The pitcher was empty"], answer: 0 },
+      { q: "What did the crow put into the pitcher?", options: ["🍃 Leaves","🪨 Small stones","🌸 Flowers"], answer: 1 },
+      { q: "What happened when the crow added stones?", options: ["💨 The pitcher blew away","🧊 The water froze","💧 The water rose higher"], answer: 2 },
+    ],
+  },
+  {
+    id: "wind-sun", title: "The North Wind and the Sun", label: I18n.t('books.theNorthWindAndTheSun'), cover: "☀️", coverImage: 'img/books/wind-sun/page-09.webp', color: '#efbd58',
+    readingAge: '6–7', source: 'https://www.gutenberg.org/ebooks/53103',
+    pages: [
+      { text: "One day, the North Wind and the Sun began to argue. Each thought he was stronger than the other.", pic: "☀️", image: 'img/books/wind-sun/page-01.webp', imageAlt: I18n.t('books.windsunArt1') },
+      { text: "Below them, a traveller walked along a road. He wore a thick coat to keep himself warm.", pic: "☀️", image: 'img/books/wind-sun/page-02.webp', imageAlt: I18n.t('books.windsunArt2') },
+      { text: "\"Let's have a contest,\" said the Wind. \"Who can make that man take off his coat?\"", pic: "☀️", image: 'img/books/wind-sun/page-03.webp', imageAlt: I18n.t('books.windsunArt3') },
+      { text: "The Wind went first and blew a cold gust. The traveller shivered and pulled his coat tightly around him.", pic: "☀️", image: 'img/books/wind-sun/page-04.webp', imageAlt: I18n.t('books.windsunArt4') },
+      { text: "The Wind blew harder, shaking the trees. But the traveller held his coat even tighter.", pic: "☀️", image: 'img/books/wind-sun/page-05.webp', imageAlt: I18n.t('books.windsunArt5') },
+      { text: "At last, the Wind grew tired and stopped. \"Now it's my turn,\" said the Sun quietly.", pic: "☀️", image: 'img/books/wind-sun/page-06.webp', imageAlt: I18n.t('books.windsunArt6') },
+      { text: "The Sun came out from behind a cloud. His warm light fell gently on the road.", pic: "☀️", image: 'img/books/wind-sun/page-07.webp', imageAlt: I18n.t('books.windsunArt7') },
+      { text: "Soon, the traveller stopped shivering and opened his coat. \"What a lovely day,\" he said.", pic: "☀️", image: 'img/books/wind-sun/page-08.webp', imageAlt: I18n.t('books.windsunArt8') },
+      { text: "As the air grew warmer, he took off his coat. Then he sat beneath a tree to rest.", pic: "☀️", image: 'img/books/wind-sun/page-09.webp', imageAlt: I18n.t('books.windsunArt9') },
+      { text: "The Wind stared in surprise. The Sun smiled. \"You see? Being gentle can work better than pushing harder.\"", pic: "☀️", image: 'img/books/wind-sun/page-10.webp', imageAlt: I18n.t('books.windsunArt10') },
+    ],
+    quiz: [
+      { q: "What did the traveller do when the Wind blew harder?", options: ["🧥 He took off his coat","🧥 He held his coat tighter","🏊 He went swimming"], answer: 1 },
+      { q: "Who made the traveller take off his coat?", options: ["☀️ The Sun","💨 The North Wind","🌧️ The rain"], answer: 0 },
+      { q: "Where did the traveller sit down to rest?", options: ["🏰 In a castle","🌉 On a bridge","🌳 Beneath a tree"], answer: 2 },
+    ],
+  },
+  {
+    id: "three-goats", title: "The Three Billy Goats Gruff", label: I18n.t('books.theThreeBillyGoatsGruff'), cover: "🐐", coverImage: 'img/books/three-goats/page-12.webp', color: '#9bbf9f',
+    readingAge: '6–7', source: 'https://www.gutenberg.org/ebooks/30973',
+    pages: [
+      { text: "Three goat brothers lived beside a river. There was hardly any grass left for them to eat.", pic: "🐐", image: 'img/books/three-goats/page-01.webp', imageAlt: I18n.t('books.threegoatsArt1') },
+      { text: "Across the river, a hillside was covered in fresh green grass. To reach it, they had to cross a wooden bridge.", pic: "🐐", image: 'img/books/three-goats/page-02.webp', imageAlt: I18n.t('books.threegoatsArt2') },
+      { text: "But a hungry troll lived under the bridge. He did not want anyone crossing above his head.", pic: "🐐", image: 'img/books/three-goats/page-03.webp', imageAlt: I18n.t('books.threegoatsArt3') },
+      { text: "The smallest goat stepped onto the bridge. Trip, trap! His little hooves tapped against the wood.", pic: "🐐", image: 'img/books/three-goats/page-04.webp', imageAlt: I18n.t('books.threegoatsArt4') },
+      { text: "\"Who is crossing my bridge?\" roared the troll. The little goat trembled. \"Please let me pass. My bigger brother is coming.\"", pic: "🐐", image: 'img/books/three-goats/page-05.webp', imageAlt: I18n.t('books.threegoatsArt5') },
+      { text: "The troll wanted a bigger meal, so he let the little goat go. Soon, the middle brother stepped onto the bridge.", pic: "🐐", image: 'img/books/three-goats/page-06.webp', imageAlt: I18n.t('books.threegoatsArt6') },
+      { text: "Trip, trap! \"I'm going to eat you!\" shouted the troll. \"Wait for my brother,\" said the goat. \"He is bigger than me.\"", pic: "🐐", image: 'img/books/three-goats/page-07.webp', imageAlt: I18n.t('books.threegoatsArt7') },
+      { text: "The greedy troll let him pass too. Then the biggest brother stepped onto the bridge. TRIP, TRAP!", pic: "🐐", image: 'img/books/three-goats/page-08.webp', imageAlt: I18n.t('books.threegoatsArt8') },
+      { text: "The troll jumped up and blocked the way. \"At last! You will make a fine meal,\" he growled.", pic: "🐐", image: 'img/books/three-goats/page-09.webp', imageAlt: I18n.t('books.threegoatsArt9') },
+      { text: "The big goat stood firm and lowered his horns. \"You will not frighten my brothers again!\" he said.", pic: "🐐", image: 'img/books/three-goats/page-10.webp', imageAlt: I18n.t('books.threegoatsArt10') },
+      { text: "The troll rushed forward, but the goat pushed him off the bridge. Splash! The troll landed in the river and swam away.", pic: "🐐", image: 'img/books/three-goats/page-11.webp', imageAlt: I18n.t('books.threegoatsArt11') },
+      { text: "The big goat crossed safely and joined his brothers. Together, they ate the sweet green grass, with no troll to trouble them.", pic: "🐐", image: 'img/books/three-goats/page-12.webp', imageAlt: I18n.t('books.threegoatsArt12') },
+    ],
+    quiz: [
+      { q: "Why did the goats want to cross the bridge?", options: ["🌱 To eat fresh green grass","🛏️ To find a bed","🧸 To buy a toy"], answer: 0 },
+      { q: "Where did the troll live?", options: ["🌳 In a tree","🌉 Under the bridge","🏰 In a castle"], answer: 1 },
+      { q: "Which goat pushed the troll off the bridge?", options: ["🐐 The smallest goat","🐐 The middle goat","🐐 The biggest goat"], answer: 2 },
+    ],
+  },
+  {
+    id: "elves-shoemaker", title: "The Elves and the Shoemaker", label: I18n.t('books.theElvesAndTheShoemaker'), cover: "👞", coverImage: 'img/books/elves-shoemaker/page-11.webp', color: '#c89f7e',
+    readingAge: '6–7', source: 'https://www.gutenberg.org/ebooks/2591',
+    pages: [
+      { text: "A shoemaker and his wife had very little money. He worked hard, but they could hardly buy food.", pic: "👞", image: 'img/books/elves-shoemaker/page-01.webp', imageAlt: I18n.t('books.elvesshoemakerArt1') },
+      { text: "One evening, he cut his last piece of leather. It was just enough to make one pair of shoes.", pic: "👞", image: 'img/books/elves-shoemaker/page-02.webp', imageAlt: I18n.t('books.elvesshoemakerArt2') },
+      { text: "In the morning, two beautiful shoes stood on his table. \"Who made these?\" he asked in surprise.", pic: "👞", image: 'img/books/elves-shoemaker/page-03.webp', imageAlt: I18n.t('books.elvesshoemakerArt3') },
+      { text: "A customer loved the shoes and bought them. Now the shoemaker could buy leather for two more pairs.", pic: "👞", image: 'img/books/elves-shoemaker/page-04.webp', imageAlt: I18n.t('books.elvesshoemakerArt4') },
+      { text: "That night, he cut the new leather and went to bed. By morning, both pairs were finished!", pic: "👞", image: 'img/books/elves-shoemaker/page-05.webp', imageAlt: I18n.t('books.elvesshoemakerArt5') },
+      { text: "Soon, more customers came to his shop. Each night, someone made the shoes while the shoemaker slept.", pic: "👞", image: 'img/books/elves-shoemaker/page-06.webp', imageAlt: I18n.t('books.elvesshoemakerArt6') },
+      { text: "\"We must find our helpers,\" said his wife. That night, they hid behind a curtain and waited.", pic: "👞", image: 'img/books/elves-shoemaker/page-07.webp', imageAlt: I18n.t('books.elvesshoemakerArt7') },
+      { text: "At midnight, two tiny elves hurried inside. They stitched and tapped until every shoe was ready.", pic: "👞", image: 'img/books/elves-shoemaker/page-08.webp', imageAlt: I18n.t('books.elvesshoemakerArt8') },
+      { text: "The elves wore thin, torn clothes. \"They have helped us so much,\" whispered his wife. \"Let's help them too.\"", pic: "👞", image: 'img/books/elves-shoemaker/page-09.webp', imageAlt: I18n.t('books.elvesshoemakerArt9') },
+      { text: "She made tiny coats and trousers, and he made tiny shoes. They left the gifts on the table.", pic: "👞", image: 'img/books/elves-shoemaker/page-10.webp', imageAlt: I18n.t('books.elvesshoemakerArt10') },
+      { text: "The elves found the gifts and gasped with delight. They put everything on and danced around the room.", pic: "👞", image: 'img/books/elves-shoemaker/page-11.webp', imageAlt: I18n.t('books.elvesshoemakerArt11') },
+      { text: "The happy elves danced away into the night. The shoemaker kept working, and the couple always remembered their little friends.", pic: "👞", image: 'img/books/elves-shoemaker/page-12.webp', imageAlt: I18n.t('books.elvesshoemakerArt12') },
+    ],
+    quiz: [
+      { q: "Who secretly made the shoes at night?", options: ["🐈 Two cats","🧚 Two tiny elves","👑 A king"], answer: 1 },
+      { q: "Where did the couple hide to watch their helpers?", options: ["🪟 Behind a curtain","🌳 Behind a tree","🛏️ Under a bed"], answer: 0 },
+      { q: "What did the couple make for the elves?", options: ["🍰 A cake","🏠 A new house","👞 Tiny clothes and shoes"], answer: 2 },
+    ],
+  },
+  {
+    id: "jack-beanstalk", title: "Jack and the Beanstalk", label: I18n.t('books.jackAndTheBeanstalk'), cover: "🌱", coverImage: 'img/books/jack-beanstalk/page-04.webp', color: '#79ba9c',
+    readingAge: '6–7', source: 'https://www.gutenberg.org/ebooks/7439',
+    pages: [
+      { text: "Jack and his mother were very poor. When their cow stopped giving milk, Mother sent Jack to sell her at the market.", pic: "🌱", image: 'img/books/jack-beanstalk/page-01.webp', imageAlt: I18n.t('books.jackbeanstalkArt1') },
+      { text: "On the way, Jack met a man with five beans. \"These are magic,\" said the man. Jack traded the cow for them.", pic: "🌱", image: 'img/books/jack-beanstalk/page-02.webp', imageAlt: I18n.t('books.jackbeanstalkArt2') },
+      { text: "Mother was upset when Jack came home without any money. \"How will we buy food?\" she cried, throwing the beans out of the window.", pic: "🌱", image: 'img/books/jack-beanstalk/page-03.webp', imageAlt: I18n.t('books.jackbeanstalkArt3') },
+      { text: "By morning, a huge beanstalk had grown outside. It reached above the clouds! Curious and excited, Jack began to climb.", pic: "🌱", image: 'img/books/jack-beanstalk/page-04.webp', imageAlt: I18n.t('books.jackbeanstalkArt4') },
+      { text: "At the top, he found a giant's house. The giant's wife gave him bread, then hid him when her husband came home.", pic: "🌱", image: 'img/books/jack-beanstalk/page-05.webp', imageAlt: I18n.t('books.jackbeanstalkArt5') },
+      { text: "The giant counted his gold and fell asleep. Jack crept out, took a bag of coins, and hurried down the beanstalk.", pic: "🌱", image: 'img/books/jack-beanstalk/page-06.webp', imageAlt: I18n.t('books.jackbeanstalkArt6') },
+      { text: "Some time later, Jack climbed up again. This time, he found a hen that laid golden eggs. While the giant slept, Jack carried her home.", pic: "🌱", image: 'img/books/jack-beanstalk/page-07.webp', imageAlt: I18n.t('books.jackbeanstalkArt7') },
+      { text: "On his third visit, Jack saw a golden harp. It played beautiful music all by itself, and the giant soon fell asleep.", pic: "🌱", image: 'img/books/jack-beanstalk/page-08.webp', imageAlt: I18n.t('books.jackbeanstalkArt8') },
+      { text: "Jack picked up the harp and ran towards the door. \"Master! Master!\" cried the harp. The giant woke with an angry roar.", pic: "🌱", image: 'img/books/jack-beanstalk/page-09.webp', imageAlt: I18n.t('books.jackbeanstalkArt9') },
+      { text: "Terrified, Jack raced to the beanstalk and climbed down. The giant followed, making the whole stalk shake beneath his weight.", pic: "🌱", image: 'img/books/jack-beanstalk/page-10.webp', imageAlt: I18n.t('books.jackbeanstalkArt10') },
+      { text: "\"Mother, bring an axe!\" Jack shouted. He jumped to the ground and chopped the beanstalk. With a great crash, it fell.", pic: "🌱", image: 'img/books/jack-beanstalk/page-11.webp', imageAlt: I18n.t('books.jackbeanstalkArt11') },
+      { text: "The giant never came back. Jack hugged his mother, glad to be safe. With the hen's golden eggs, they never went hungry again.", pic: "🌱", image: 'img/books/jack-beanstalk/page-12.webp', imageAlt: I18n.t('books.jackbeanstalkArt12') },
+    ],
+    quiz: [
+      { q: "What did Jack get in exchange for the cow?", options: ["🌱 Five magic beans","🪙 A bag of coins","🍞 A loaf of bread"], answer: 0 },
+      { q: "What did the hen lay?", options: ["🪨 Small stones","🥚 Golden eggs","🌱 Magic beans"], answer: 1 },
+      { q: "What woke the giant on Jack's third visit?", options: ["🐄 The cow mooed","🌧️ Thunder","🎵 The harp cried out"], answer: 2 },
+    ],
+  },
+);
 
 // ---- I can read! ---------------------------------------------------------
 // Little books she reads herself (their own shelf in the library, above the

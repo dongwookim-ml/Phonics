@@ -2208,5 +2208,5 @@ body.captain .start.hw { background: radial-gradient(circle at 50% 38%, #f4f6ff,
 @media (max-height: 520px) {
   .reader.illustrated .rd-page { padding: 8px 10px; gap: 12px; }
   .reader.illustrated .rd-pic.has-art { flex: 1.2; }
-  .reader.illustrated .rd-text { font-size: 24px; line-height: 1.25; }
+  .reader.illustrated .rd-text { font-size: 22px; line-height: 1.25; }
 }
