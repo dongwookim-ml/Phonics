@@ -42,6 +42,7 @@ jobs:
       - run: node tools/check-book-art.js
       - run: node tools/smoke.js
       - run: node tools/check-heroes.js
+      - run: node tools/check-levels.js
       - run: UI_LANGUAGE=en node tools/smoke.js
       - run: node tools/check-merge.js
       - run: node tools/quiz-test.js

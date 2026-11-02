@@ -372,23 +372,66 @@ const Quiz = (() => {
     }
     return view;
   }
-  // The tier for the next question: hers, capped by the place, and one
-  // lower right after a miss and for every 4th question. Only questions at
+  // The highest tier a place asks of a kind (its band counts from after the
+  // kind's first steps).
+  const capAt = (kind, place) => Math.min((TIER_BAND[place] || [1, 1])[1] + leadOf(kind), tierMax(kind));
+  // Her last `n` first tries of a kind, at any tier, were all right.
+  const sure = (k, n) => { const l = k.last || []; return l.length >= n && l.slice(-n).every(Boolean); };
+  // The tier for the next question: hers, capped by the place whose
+  // questions these are (`home`: another village's, once she has mastered
+  // this one's, see nextKind), and one lower right after a miss and for
+  // every 6th question unless she is sure of this kind. Only questions at
   // her own tier count towards moving up or down.
-  function tierFor(kind, npc) {
+  function tierFor(kind, npc, home = placeOf(npc)) {
     const k = skill(kind);
-    const hi = Math.min((TIER_BAND[placeOf(npc)] || [1, 1])[1] + leadOf(kind), tierMax(kind));
+    const hi = capAt(kind, home);
     const own = Math.max(1, Math.min(k.t, hi));
     let t = own;
-    if (k.easy || ++k.n % SKILL.reviewEvery === 0) t--;
+    const review = ++k.n % SKILL.reviewEvery === 0 && !sure(k, SKILL.sure);
+    if (k.easy || review) t--;
     t = Math.max(1, t);
     return { t, cfg: TIERS[kind][t - 1], counts: t === own, cap: hi };
   }
+  // A kind she has mastered at a place: at the highest tier it asks there,
+  // and her last SKILL.mastered first tries at that tier right. A kind she
+  // has never played isn't (and isn't given a level by looking).
+  function mastered(kind, place) {
+    const all = (typeof state !== 'undefined' && state.skill) || {};
+    if (!all[kind] && !all[`${kind}First`]) return false;
+    const k = skill(kind);
+    const w = k.w || [];
+    return k.t >= capAt(kind, place) && w.length >= SKILL.mastered && w.slice(-SKILL.mastered).every(Boolean);
+  }
+  // Which kind a person asks next, and the place whose band its tier keeps
+  // to: one of this place's she hasn't mastered yet, not the kind this
+  // person asked last time if she can help it, and now and then
+  // (SKILL.review) one she has. Once she has mastered every kind here, the
+  // next village's are asked here instead (NEXT_STAGE; the ones she hasn't
+  // mastered there, else all of them): the easy ones she knows well are
+  // skipped and she goes on to the next step.
+  function nextKind(npc, place) {
+    const own = QUIZ_TYPES[place];
+    const homeOf = {};
+    for (const k of own) homeOf[k] = place;
+    const done = own.filter(k => mastered(k, place));
+    let open = own.filter(k => !done.includes(k));
+    const at = NEXT_STAGE[place];
+    if (!open.length && at) {
+      const theirs = QUIZ_TYPES[at].filter(k => !(k in homeOf));
+      for (const k of theirs) homeOf[k] = at;
+      open = theirs.filter(k => !mastered(k, at));
+      if (!open.length) open = theirs;
+    }
+    const list = open.length && !(done.length && Math.random() < SKILL.review) ? open : done.length ? done : own;
+    const choices = list.filter(k => k !== npc.lastQuiz);
+    const kind = pick(choices.length ? choices : list);
+    return [kind, homeOf[kind] || place];
+  }
   // Her first answer to a question (from record): moves her tier. Up after
-  // 5 of the last 6 (or, before her first miss, 3 in a row), down after 2
-  // misses in a row; never above what this place asks. A new best tier is a
-  // level-up for the child. A `letters` tier is passed only by knowing every
-  // letter (lettersPass), and she never goes back down to it.
+  // 3 right in a row or 5 of the last 6, down after 2 misses in a row;
+  // never above what the place whose questions these are asks. A new best
+  // tier is a level-up for the child. A `letters` tier is passed only by
+  // knowing every letter (lettersPass), and she never goes back down to it.
   function learn(q, right) {
     const kind = q.ladder || q.kind;
     const k = skill(kind);
@@ -399,11 +442,11 @@ const Quiz = (() => {
     if (!right) k.placed = true;
     k.w = k.w.concat(right ? 1 : 0).slice(-SKILL.window);
     const sum = k.w.reduce((a, b) => a + b, 0);
-    const run = k.w.slice(-SKILL.placementRun);
-    const placing = !k.placed && run.length === SKILL.placementRun && run.every(Boolean);
+    const run = k.w.slice(-SKILL.streak);
+    const streak = run.length === SKILL.streak && run.every(Boolean);
     const tiers = TIERS[kind];
     if (tiers[k.t - 1].letters) return;
-    if (k.t < max && (placing || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
+    if (k.t < max && (streak || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
       k.t++;
       k.w = [];
       if (k.t > (k.best || 1)) { k.best = k.t; q.levelUp = true; }
@@ -1141,20 +1184,18 @@ const Quiz = (() => {
     longRhyme: (npc, cfg) => rhymeQuestion('longRhyme', npc, cfg, longRhymes(), RHYME_SETS.filter(r => SHORT[r.v])),
   });
 
-  // Picks a kind of question this person didn't ask last time, at her tier.
-  // `force` ({ kind, tier }) is for tests and the village games
-  // (js/village-games.js), whose `cfg` changes that tier's settings (more
-  // cards); a forced question never moves her tier.
+  // Picks a kind of question (nextKind), at her tier. `force` ({ kind,
+  // tier }) is for tests and the village games (js/village-games.js), whose
+  // `cfg` changes that tier's settings (more cards); a forced question
+  // never moves her tier.
   function make(npc, force) {
-    const kinds = QUIZ_TYPES[placeOf(npc)];
+    const place = placeOf(npc);
     let kind = force && force.kind;
-    if (!kind) {
-      const choices = kinds.filter(k => k !== npc.lastQuiz);
-      kind = pick(choices.length ? choices : kinds);
-    }
+    let home = place;
+    if (!kind) [kind, home] = nextKind(npc, place);
     npc.lastQuiz = kind;
-    const tier = force && force.tier ? { t: force.tier, cfg: Object.assign({}, TIERS[kind][force.tier - 1], force.cfg), counts: false } : tierFor(kind, npc);
-    return build(kind, npc, tier);
+    const tier = force && force.tier ? { t: force.tier, cfg: Object.assign({}, TIERS[kind][force.tier - 1], force.cfg), counts: false } : tierFor(kind, npc, home);
+    return Object.assign(build(kind, npc, tier), home !== place ? { stage: home } : {});
   }
   // A first step's question is of its own kind (`kind`, for its id and
   // answers), on its ladder's tiers (`ladder`, whose tier it moves).

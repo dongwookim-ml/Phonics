@@ -901,11 +901,19 @@ const TIERS = {
 // from a kind's first tier without a `step`: blending's first steps come on
 // top, so the forest asks it up to its 6th tier, as up to the 4th before.
 const TIER_BAND = { town: [1, 4], house: [1, 4], forest: [1, 4], unicorn: [1, 3], dungeon: [1, 4], fairy: [1, 6] };
-// Up a tier after 5 right first tries of the last 6 at it (or the first 3
-// in a row, before her first miss of that kind); down after 2 misses in a
-// row. After a miss the next one is a tier easier, and every 4th question
-// is from the tier below; those two don't count.
-const SKILL = { window: 6, promoteAt: 5, placementRun: 3, demoteAfter: 2, reviewEvery: 4 };
+// Up a tier after 3 right first tries in a row at it (`streak`), or 5 of
+// the last 6; down after 2 misses in a row. After a miss the next one is a
+// tier easier, and every 6th question is from the tier below, unless her
+// last `sure` first tries of that kind were all right (she doesn't need
+// the easier ones); those don't count. A kind she has `mastered` here (at
+// the highest tier the place asks, its last 5 right) is asked only now and
+// then (`review`, a share), and once a place's every kind is, the next
+// village's are asked there too (NEXT_STAGE).
+const SKILL = { window: 6, promoteAt: 5, streak: 3, demoteAfter: 2, reviewEvery: 6, sure: 8, mastered: 5, review: 0.2 };
+// Where a place's questions go on once she has mastered them all: the
+// village after it (the cave asks the unicorns' questions, so on to the
+// fairies'). Its people's voices say those questions too (tools/tts-phrases.js).
+const NEXT_STAGE = { town: 'forest', house: 'forest', forest: 'unicorn', unicorn: 'fairy', dungeon: 'fairy', fairy: 'monster' };
 
 // ---- Sound blending's first steps (TIERS.blend, js/quiz.js) ------------------
 

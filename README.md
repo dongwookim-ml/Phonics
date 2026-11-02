@@ -186,10 +186,19 @@ Custom names in this audit use live speech fallback rather than requiring record
   apart at first, then more cards, text only, words that differ in one sound,
   and only at the top tier the sounds a Korean ear finds hard (a/e, f/p, l/r,
   m/n...). Each kind keeps her own tier (`state.skill`, saved, shared by both
-  editions): up after 5 right first tries of the last 6 (the first 3 in a
-  row before her first miss), down after 2 misses in a row; after a miss the
-  next one is a tier easier, and every 4th question is from the tier below.
-  Each place caps the tier (`TIER_BAND`). Reaching a new best tier shows
+  editions): up after 3 right first tries in a row (or 5 of the last 6),
+  down after 2 misses in a row; after a miss the next one is a tier easier,
+  and every 6th question is from the tier below unless her last 8 of that
+  kind were all right (`SKILL`). Each place caps the tier (`TIER_BAND`).
+- **Skipping what she knows**: a kind she has mastered at a place (at the
+  highest tier it asks there, her last 5 right) is asked only now and then
+  (a fifth of the time); once she has mastered every kind of a place, its
+  people ask the next village's questions instead (`NEXT_STAGE`: the town
+  and the letter houses the forest's, the forest the Unicorn Village's, the
+  Unicorn Village and the cave the fairies', the fairies the Monster
+  Village's), at her tier there, capped like that village, and in the
+  asker's own voice. A miss brings a kind back as usual (`nextKind` in
+  `js/quiz.js`; `node tools/check-levels.js` checks all of this). Reaching a new best tier shows
   "⭐ 레벨 업!" with a fanfare (no message going down). Spelling goes 3
   letters with the first given (4 tiles) → 3 letters, 5 tiles → sh, ck, ll as
   one tile (fish, duck, bell) → 4-letter blends (frog, milk) → 5 letters
