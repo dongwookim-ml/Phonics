@@ -42,6 +42,7 @@ jobs:
       - run: node tools/check-book-art.js
       - run: node tools/check-nails.js
       - run: node tools/check-town.js
+      - run: node tools/check-riverside.js
       - run: node tools/smoke.js
       - run: node tools/check-heroes.js
       - run: node tools/check-levels.js

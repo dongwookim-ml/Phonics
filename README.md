@@ -373,7 +373,10 @@ Custom names in this audit use live speech fallback rather than requiring record
   she has got that word three times), the others as grey "?" shapes. Tapping
   a sticker says its word, and "cat starts with C." once that is recorded.
   The words come from the word lists in `js/data.js`, so new words show up by
-  themselves. The robot edition calls it a word chip book. Code in
+  themselves. The X page includes illustrated xylophone and X-ray stickers,
+  available in sticker packs with recorded word audio. These alphabet words
+  stay out of sound-matching questions: xylophone begins with /z/.
+  The robot edition calls it a word chip book. Code in
   `js/album.js`.
 - **Next gate and medals**: the star counter shows the next gate that is
   still shut, "⭐ 7/10 🌲" over a bar (from 820 px down just the picture and
@@ -491,8 +494,14 @@ Custom names in this audit use live speech fallback rather than requiring record
   through a gateway above-left of the castle. Its sign shows the neighborhood
   name only. The homes use 2×2 footprints and are drawn at 2/3 of the old size.
   Central homes have warm flower-garden colors; Riverside has an animated
-  brook, wooden bridges and windmills. House IDs and existing
-  learning progress stay stable; entering/exiting returns to the proper
+  brook, wooden bridges and windmills.
+  The two empty plots form a riverside park: tap the swing to start its
+  gently settling motion, explore the slide and sandbox, and visit the
+  picnic blanket, basket, benches and apple trees. Butterflies drift through
+  the garden; a duck family swims along the brook and fish occasionally jump.
+  The dock's fisherman also offers the existing phonics fishing game.
+  `js/riverside-park.js` draws this scenery with the game's native pixel art.
+  House IDs and existing learning progress stay stable; entering/exiting returns to the proper
   neighborhood. Robot Town retains its existing twelve-workshop layout.
   `js/neighborhoods.js` draws the districts; `HOUSE_LETTERS` supplies all 26
   displays without changing the existing main quiz curriculum. Added homes

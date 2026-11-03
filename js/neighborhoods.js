@@ -61,10 +61,12 @@ function buildNeighborhood(key){
   const homes=TOWN_HOUSES.filter(h=>h.scene===key);
   homes.forEach((h,i)=>neighborhoodHome(sc,h,key,i));
   connectNeighborhoodDoors(sc);
+  addRiversidePark(sc);
   // Border planting frames the houses; the centre stays low and open.
   const plants=[makePlant('pine'),makePlant('birch'),makePlant('bush')];
   for(let r=0;r<32;r++)for(let c=0;c<32;c++){
     const t=tileAt(sc,c,r);if(t.blocked||t.type!=='grass')continue;
+    if(sc.parkAreas.some(a=>c>=a.c0&&c<=a.c1&&r>=a.r0&&r<=a.r1))continue;
     if(homes.some(h=>c>=h.c-2&&c<=h.c+3&&r>=h.r-2&&r<=h.r+4))continue;
     if(c>=13&&c<=18&&r>=25)continue;
     const border=c<2||r<2||c>29||r>29;
@@ -84,5 +86,6 @@ function buildNeighborhood(key){
   sc.links=[15,16].map(c=>({c,r:31,target:'town',at:theme.townReturn,icon:'🏰',style:'gate'}));
   addGate(sc,[14,17],30,theme.color,sc.links);
   const p=tileCenter(sc,15.5,30);sc.signs.push({x:p.x,y:p.y-64,text:place('town'),color:theme.color,links:sc.links});
+  sc.objects.sort((a,b)=>(a.c0+a.c1+a.r0+a.r1)-(b.c0+b.c1+b.r0+b.r1));
   renderGround(sc);return sc;
 }

@@ -1210,6 +1210,8 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "books.jackbeanstalkArt11": "잭이 콩나무를 도끼로 베고 엄마가 두려운 표정으로 지켜봐요.",
   "books.jackbeanstalkArt12": "안도한 잭과 엄마가 황금알을 낳는 암탉 옆에서 포옹해요.",
   "district.riverside": "🌊 강변 동네",
+  "park.name": "🌿 강변 공원",
+  "park.fisher": "강변 낚시꾼",
   "district.resident": "{0} 집 친구",
   "town.clothesAndGifts": "👗 의상·소품 상점",
   "nails.title": "💅 네일 살롱",

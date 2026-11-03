@@ -557,6 +557,11 @@ MINI_GAMES.fish = {
 
 // Walks her to the fisherman and starts. True when there is a pond game here.
 // Over to a game's host (the fisherman by default), and the game starts.
+if (!isCaptain()) MINI_GAMES.riverFish = Object.assign({}, MINI_GAMES.fish, {
+  scene: 'riverside', badge: () => '🎣',
+  host: () => state.scenes.riverside?.npcs.find(n => n.riverFisher),
+});
+
 function miniGo(npc = miniFisher()) {
   if (!npc || !miniGameOf(npc)) return false;
   Sound.tap();

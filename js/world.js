@@ -63,6 +63,9 @@ function addObject(sc, foot, bounds, draw, extra = {}) {
 // True when world point (wx, wy) lands on a painted pixel of the object
 // (one at least `min` opaque out of 255).
 function hitObject(obj, wx, wy, min = 40) {
+  // Moving scenery can provide a live tap target. Visibility tests still
+  // use painted pixels, so a fish's generous tap area never hides a person.
+  if (obj.tapHitTest && min >= 64) return obj.tapHitTest(wx, wy);
   const x = Math.floor(wx - obj.x);
   const y = Math.floor(wy - obj.y);
   if (x < 0 || y < 0 || x >= obj.w || y >= obj.h) return false;

@@ -1210,6 +1210,8 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "books.jackbeanstalkArt11": "Jack chops the beanstalk while his frightened mother watches.",
   "books.jackbeanstalkArt12": "Jack and Mother hug in relief beside the golden-egg hen.",
   "district.riverside": "🌊 Riverside neighborhood",
+  "park.name": "🌿 Riverside park",
+  "park.fisher": "Riverside fisherman",
   "district.resident": "{0} house friend",
   "town.clothesAndGifts": "👗 Clothes & gifts",
   "nails.title": "💅 Nail salon",
