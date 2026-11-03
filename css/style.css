@@ -1043,6 +1043,15 @@ body.monster { background: linear-gradient(#2a2458, #5a4aa0 50%, #9a88d8); }
 .nail-item[aria-pressed="true"] { border-color: #a7678f; box-shadow: 0 0 0 2px #e8b4cb; background: #fff2f7; }
 .nail-msg { flex: none; min-height: 45px; margin: 0; padding: 11px 12px; background: #f5e8ef; border-radius: 14px; font-size: 16px; line-height: 1.35; }
 .nail-salon button:focus-visible { outline: 3px solid #745190; outline-offset: 2px; }
+.nail-purchase { width: min(430px, calc(100% - 32px)); max-height: calc(100dvh - 24px); overflow-y: auto; margin: auto; padding: 24px; border: 4px solid var(--ink); border-radius: 26px; color: var(--ink); background: #fff6f0; box-shadow: 0 8px 0 rgba(74,44,79,.22); text-align: center; }
+.nail-purchase::backdrop { background: rgba(55,35,62,.45); }
+.nail-purchase h3 { margin: 0; font-size: 27px; }
+.nail-purchase-art { display: grid; place-items: center; margin: 12px 0; }
+.nail-purchase-art > svg { width: 80px; height: 80px; }
+.nail-purchase p { margin: 0 0 20px; font-size: 18px; line-height: 1.5; }
+.nail-purchase-actions { display: flex; gap: 12px; }
+.nail-purchase-actions button { flex: 1; min-height: 48px; padding: 8px; border: 2px solid #c6afc9; border-radius: 14px; background: #fff; font-size: 20px; }
+#nail-purchase-confirm { color: #fff; background: #a56791; border-color: #805075; }
 /* Let the manicure mat grow with a desktop monitor; keep tools within reach
    in a bounded column instead of splitting the extra space in half. */
 @media (min-width: 1200px) and (min-height: 600px) {

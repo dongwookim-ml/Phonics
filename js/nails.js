@@ -62,8 +62,11 @@ const nailUi = {
   hand: document.getElementById('nail-hand'), fingers: document.getElementById('nail-fingers'),
   tabs: document.getElementById('nail-tabs'), items: document.getElementById('nail-items'),
   msg: document.getElementById('nail-msg'), done: document.getElementById('nail-done'),
+  purchase: document.getElementById('nail-purchase'), purchaseArt: document.getElementById('nail-purchase-art'),
+  purchaseDetails: document.getElementById('nail-purchase-details'),
+  purchaseCancel: document.getElementById('nail-purchase-cancel'), purchaseConfirm: document.getElementById('nail-purchase-confirm'),
 };
-const nailSalon = { keeper: null, finger: 'middle', tab: 'polish' };
+const nailSalon = { keeper: null, finger: 'middle', tab: 'polish', purchase: null };
 const nailName = (slot, value) => I18n.t(`nails.${slot}.${value}`);
 const nailMine = (slot, value) => state.nails.owned[slot].includes(value);
 const nailPrice = (slot, value) => NAIL_ITEMS[slot][value].free ? 0 : (NAIL_ITEMS[slot][value].price ?? NAIL_PRICE[slot]);
@@ -238,11 +241,11 @@ function renderNailHand() {
   }
 }
 
-function nailItemArt(slot, value) {
+function nailItemArt(slot, value, prefix = 'nail-bottle') {
   if (value === 'none' || (slot === 'polish' && value === 'clear')) return '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="#fff9f4" stroke="#beadb9" stroke-width="3"/><path d="M20 44 44 20" stroke="#beadb9" stroke-width="3"/></svg>';
   if (slot === 'polish') {
     const bottle = 'M24 25H40Q50 25 50 35V47Q50 57 40 57H24Q14 57 14 47V35Q14 25 24 25Z';
-    return `<svg viewBox="0 0 64 64" aria-hidden="true">${nailPolishArt(value, bottle, `nail-bottle-${value}`, [14, 25, 36, 32])}<path d="${bottle}" fill="none" stroke="#705571" stroke-width="2"/><rect x="22" y="7" width="20" height="22" rx="4" fill="#705571"/><path d="M22 35V46" stroke="#fff" stroke-opacity=".65" stroke-width="3" stroke-linecap="round"/></svg>`;
+    return `<svg viewBox="0 0 64 64" aria-hidden="true">${nailPolishArt(value, bottle, `${prefix}-${value}`, [14, 25, 36, 32])}<path d="${bottle}" fill="none" stroke="#705571" stroke-width="2"/><rect x="22" y="7" width="20" height="22" rx="4" fill="#705571"/><path d="M22 35V46" stroke="#fff" stroke-opacity=".65" stroke-width="3" stroke-linecap="round"/></svg>`;
   }
   if (slot === 'sticker') return `<svg viewBox="-25 -25 50 50" aria-hidden="true">${nailSticker(value)}</svg>`;
   return `<svg viewBox="-40 -28 80 68" aria-hidden="true">${nailRing(value, 0, 4)}</svg>`;
@@ -292,17 +295,52 @@ function renderNailSalon() {
     b.innerHTML = `${nailItemArt(slot, value)}${lock}<span class="nail-item-name">${nailEscape(nailName(slot, value))}</span><span class="nail-price">${mine ? I18n.t(current ? 'nails.wearing' : 'nails.owned') : `⭐ ${price}`}</span>`;
     b.addEventListener('click', () => {
       nailApply(value);
-      if (!nailUi.card.classList.contains('hidden')) nailUi.items.querySelector(`[data-value="${value}"]`).focus({ preventScroll: true });
+      if (!nailUi.card.classList.contains('hidden') && !nailUi.purchase.open) nailUi.items.querySelector(`[data-value="${value}"]`).focus({ preventScroll: true });
     });
     nailUi.items.append(b);
   }
   nailUi.msg.textContent = I18n.t('nails.choose', nailFingerName(nailSalon.finger));
 }
 
-// One item tap buys (if locked) and applies to the selected finger only.
-// Ownership is checked at click time, including after an account sync.
+// Owned items apply immediately; locked items must be explicitly confirmed.
 function nailApply(value) {
-  const { tab, finger } = nailSalon;
+  if (nailUi.purchase.open) return;
+  nailCommit({ tab: nailSalon.tab, finger: nailSalon.finger, value }, false);
+}
+
+function nailAskPurchase(pick) {
+  nailSalon.purchase = pick;
+  nailUi.purchaseArt.innerHTML = nailItemArt(pick.tab, pick.value, 'nail-purchase-bottle');
+  nailUi.purchaseDetails.textContent = I18n.t('nails.confirmDetails', nailName(pick.tab, pick.value), pick.price, nailFingerName(pick.finger));
+  nailUi.purchase.showModal();
+  // The opening Enter key (or key repeat) must not confirm a purchase.
+  nailUi.purchaseCancel.focus({ preventScroll: true });
+}
+function nailDismissPurchase() {
+  const pick = nailSalon.purchase;
+  nailSalon.purchase = null;
+  if (nailUi.purchase.open) nailUi.purchase.close();
+  return pick;
+}
+function nailPurchaseFocus(pick) {
+  if (pick && !nailUi.card.classList.contains('hidden') && !nailUi.purchase.open && nailSalon.tab === pick.tab) {
+    nailUi.items.querySelector(`[data-value="${pick.value}"]`)?.focus({ preventScroll: true });
+  }
+}
+function nailCancelPurchase() {
+  Sound.tap();
+  nailPurchaseFocus(nailDismissPurchase());
+}
+function nailConfirmPurchase() {
+  const pick = nailDismissPurchase();
+  if (pick) nailCommit(pick, true);
+  nailPurchaseFocus(pick);
+}
+
+// Recheck ownership, price, balance and play limit after confirmation. Keep the
+// originally chosen finger, and never spend after a sync/close cancels the ask.
+function nailCommit(pick, confirmed) {
+  const { tab, finger, value } = pick;
   if (state.paused || nailUi.card.classList.contains('hidden') || !NAIL_SLOTS.includes(tab) || !NAIL_FINGERS.includes(finger) || !nailHas(NAIL_ITEMS[tab], value)) return;
   if (guideTimeUp()) { closeNailSalon(); return; }
   if (state.nails.fingers[finger][tab] === value) return;
@@ -310,6 +348,11 @@ function nailApply(value) {
   if (!mine && state.stars < price) {
     Sound.locked();
     nailUi.msg.textContent = I18n.t('nails.needStars', price - state.stars);
+    return;
+  }
+  if (!mine && (!confirmed || pick.price !== price)) {
+    Sound.tap();
+    nailAskPurchase({ tab, finger, value, price });
     return;
   }
   Sound.tap();
@@ -327,13 +370,22 @@ function nailApply(value) {
 
 function closeNailSalon() {
   nailUi.card.classList.add('hidden');
+  nailDismissPurchase();
   nailSalon.keeper = null;
   state.busy = busyNow();
 }
 function nailRefresh() {
+  nailDismissPurchase();
   if (!nailUi.card.classList.contains('hidden')) renderNailSalon();
 }
 function nailSetup() {
+  nailUi.purchaseCancel.addEventListener('click', nailCancelPurchase);
+  nailUi.purchaseConfirm.addEventListener('click', nailConfirmPurchase);
+  nailUi.purchase.addEventListener('cancel', e => { e.preventDefault(); nailCancelPurchase(); });
+  nailUi.purchase.addEventListener('click', e => {
+    const r = nailUi.purchase.getBoundingClientRect();
+    if (e.target === nailUi.purchase && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) nailCancelPurchase();
+  });
   nailUi.hand.addEventListener('click', e => { const g = e.target.closest('[data-finger]'); if (g) nailSelectFinger(g.dataset.finger, 'svg'); });
   nailUi.hand.addEventListener('keydown', e => { const g = e.target.closest('[data-finger]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); nailSelectFinger(g.dataset.finger, 'svg'); } });
   nailUi.tabs.addEventListener('keydown', e => {

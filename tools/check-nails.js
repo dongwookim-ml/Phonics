@@ -1,4 +1,4 @@
-// Direct item taps, locked purchases, separate fingers, persistence and layouts.
+// Direct owned-item taps, confirmed locked purchases, separate fingers, persistence and layouts.
 // Run: node tools/check-nails.js (Playwright + Chromium).
 const assert = require('node:assert/strict');
 const path = require('path');
@@ -38,11 +38,36 @@ const root = path.join(__dirname, '..');
       const item = value => page.locator(`#nail-items [data-value="${value}"]`);
       const stars = () => page.evaluate(() => state.stars);
       const design = f => page.evaluate(key => state.nails.fingers[key], f);
+      const buy = async value => {
+        const balance = await stars(), manicure = await page.evaluate(() => JSON.stringify(state.nails));
+        await item(value).click();
+        assert.ok(await page.locator('#nail-purchase').isVisible());
+        assert.equal(await stars(), balance, 'Opening a confirmation must not spend stars');
+        assert.equal(await page.evaluate(() => JSON.stringify(state.nails)), manicure, 'Opening a confirmation must not change any finger or ownership');
+        await page.locator('#nail-purchase-confirm').click();
+        assert.equal(await page.locator('#nail-purchase').isVisible(), false);
+      };
       const before = await page.evaluate(() => ({ outfit: JSON.stringify(state.outfit), sprite: heroSprite(state.outfit, 0).canvas.toDataURL(), earned: starsEarned() }));
       await finger('thumb');
       assert.equal(await item('rose').locator('.nail-item-lock').count(), 1);
       assert.ok((await item('rose').getAttribute('aria-label')).includes('3'));
+      const beforeAsk = await page.evaluate(() => localStorage.getItem(SAVE_KEY));
       await item('rose').click();
+      assert.ok(await page.locator('#nail-purchase').isVisible());
+      assert.equal(await stars(), 20); assert.equal((await design('thumb')).polish, 'clear');
+      assert.equal(await page.evaluate(() => document.activeElement.id), 'nail-purchase-cancel');
+      assert.ok((await page.locator('#nail-purchase-details').innerText()).includes('3'));
+      await page.locator('#nail-purchase-cancel').click();
+      assert.equal(await stars(), 20); assert.equal(await page.evaluate(() => localStorage.getItem(SAVE_KEY)), beforeAsk);
+      assert.equal(await item('rose').locator('.nail-item-lock').count(), 1);
+      await item('rose').focus(); await page.keyboard.press('Enter');
+      assert.equal(await page.evaluate(() => document.activeElement.id), 'nail-purchase-cancel');
+      await page.keyboard.press('Enter');
+      assert.equal(await page.locator('#nail-purchase').isVisible(), false); assert.equal(await stars(), 20);
+      await item('rose').click(); await page.keyboard.press('Escape');
+      assert.equal(await page.locator('#nail-purchase').isVisible(), false); assert.equal(await stars(), 20);
+      await buy('rose');
+      await page.evaluate(() => nailConfirmPurchase()); // A stale/double confirmation cannot charge again.
       assert.equal(await stars(), 17); assert.equal((await design('thumb')).polish, 'rose');
       assert.equal((await design('index')).polish, 'clear'); assert.equal((await design('right-thumb')).polish, 'clear');
       assert.equal(await item('rose').locator('.nail-item-lock').count(), 0);
@@ -52,16 +77,33 @@ const root = path.join(__dirname, '..');
       assert.equal(await stars(), 17);
       assert.equal(await page.evaluate(() => localStorage.getItem(SAVE_KEY)), savedOnce, 'Repeated taps on the current design must not buy or save again');
       await finger('index'); await item('rose').click(); assert.equal(await stars(), 17);
-      await finger('thumb'); await tab('sticker'); await item('heart').click();
-      await tab('ring'); await item('pearl').click(); assert.equal(await stars(), 10);
+      await finger('thumb'); await tab('sticker'); await buy('heart');
+      await tab('ring'); await buy('pearl'); assert.equal(await stars(), 10);
       const layered = await design('thumb');
       assert.equal(layered.polish, 'rose'); assert.equal(layered.sticker, 'heart'); assert.equal(layered.ring, 'pearl');
       await tab('sticker'); await item('none').click(); assert.equal((await design('thumb')).ring, 'pearl');
       await finger('right-thumb'); await item('heart').click();
       await tab('polish'); await item('blush').click();
       await tab('ring'); await item('pearl').click();
-      assert.equal(await stars(), 10); assert.equal((await design('thumb')).sticker, 'none');
+      assert.equal(await stars(), 10); assert.equal(await page.locator('#nail-purchase').isVisible(), false); assert.equal((await design('thumb')).sticker, 'none');
       assert.equal((await design('right-thumb')).sticker, 'heart');
+      // Closing/syncing cancels pending approval; pausing or losing stars before
+      // confirmation must not spend or apply the item.
+      await tab('polish'); await item('coral').click();
+      await page.evaluate(() => { closeNailSalon(); nailConfirmPurchase(); });
+      assert.equal(await page.locator('#nail-purchase').isVisible(), false); assert.equal(await stars(), 10);
+      await page.evaluate(() => openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)));
+      await item('coral').click();
+      await page.evaluate(() => { nailRefresh(); nailConfirmPurchase(); });
+      assert.equal(await page.locator('#nail-purchase').isVisible(), false); assert.equal(await stars(), 10);
+      await item('coral').click(); await page.evaluate(() => { state.paused = true; });
+      await page.locator('#nail-purchase-confirm').click();
+      assert.equal(await page.evaluate(() => nailMine('polish', 'coral')), false); assert.equal(await stars(), 10);
+      await page.evaluate(() => { state.paused = false; });
+      await item('coral').click(); await page.evaluate(() => { state.stars = 1; });
+      await page.locator('#nail-purchase-confirm').click();
+      assert.equal(await page.evaluate(() => nailMine('polish', 'coral')), false); assert.equal(await stars(), 1);
+      await page.evaluate(() => { state.stars = 10; renderNailSalon(); });
       // Pause/insufficient stars cannot change the design. Owned items work at zero stars.
       await finger('middle'); await tab('polish');
       await page.evaluate(() => { state.paused = true; }); await item('sky').click();
@@ -112,7 +154,7 @@ const root = path.join(__dirname, '..');
         assert.ok((await item(value).locator('.nail-price').innerText()).includes(String(price)));
         assert.equal(await item(value).locator('.nail-item-lock').count(), 1);
         const otherFinger = await design('right-index');
-        await item(value).click(); balance -= price;
+        await buy(value); balance -= price;
         assert.equal(await stars(), balance); assert.equal((await design('middle')).polish, value);
         assert.deepEqual(await design('right-index'), otherFinger, 'An item tap may change only the selected finger');
         assert.equal(await item(value).locator('.nail-item-lock').count(), 0);
@@ -129,6 +171,7 @@ const root = path.join(__dirname, '..');
         for (const slot of ['polish', 'sticker', 'ring']) {
           await tab(slot);
           await page.locator('#nail-items [data-value]').last().click();
+          if (await page.locator('#nail-purchase').isVisible()) await page.locator('#nail-purchase-confirm').click();
           await page.locator('#nail-items [data-value]').last().scrollIntoViewIfNeeded();
           const m = await page.evaluate(() => {
             const r = nailUi.card.getBoundingClientRect(), close = nailUi.done.getBoundingClientRect(), svg = nailUi.hand.querySelector('svg').getBoundingClientRect();
@@ -146,6 +189,16 @@ const root = path.join(__dirname, '..');
           }
           if (language === 'en') assert.ok(!/[가-힣]/.test(await page.locator('#nail-salon').innerText()), 'Korean text on the English nail salon');
         }
+        // The confirmation must fit even in short landscape and narrow phones.
+        await tab('polish'); const beforeCancel = await stars(); await item('coral').click();
+        assert.ok(await page.locator('#nail-purchase').isVisible());
+        const popup = await page.evaluate(() => {
+          const r = nailUi.purchase.getBoundingClientRect(), b = nailUi.purchaseConfirm.getBoundingClientRect();
+          return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1 && b.top >= r.top && b.bottom <= r.bottom;
+        });
+        assert.ok(popup, `Purchase dialog does not fit ${width}x${height}`);
+        if (language === 'en') assert.ok(!/[가-힣]/.test(await page.locator('#nail-purchase').innerText()));
+        await page.locator('#nail-purchase-cancel').click(); assert.equal(await stars(), beforeCancel);
       }
       await page.locator('#nail-done').click(); assert.equal(await page.evaluate(() => state.busy), false);
       await page.evaluate(() => { openWardrobe(); openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)); closeNailSalon(); });
@@ -158,7 +211,7 @@ const root = path.join(__dirname, '..');
         return { closed: nailUi.card.classList.contains('hidden'), same: stars === state.stars };
       });
       assert.ok(limited.closed && limited.same); assert.deepEqual(errors, []);
-      console.log(`PASS nails/${language}: direct tap apply/buy, locks, separate fingers, free reuse at zero stars, prices/shortages, reload/sync, keyboard, 8 layouts and play limit`);
+      console.log(`PASS nails/${language}: owned tap apply, purchase confirmation/cancel/Escape/rechecks, locks, separate fingers, free reuse at zero stars, prices/shortages, reload/sync, keyboard, 8 layouts and play limit`);
       await context.close();
     }
     const captain = await browser.newPage();
