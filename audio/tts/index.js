@@ -4026,6 +4026,8 @@ const TTS_INDEX = {
 "wolf": "e724bf8496",
 "wolf starts with W.": "d55d5fd918",
 "wolf!": "0d49bcaa7f",
+"x-ray": "c4cf547a6d",
+"xylophone": "86a6072870",
 "yam": "e8ac43af2c",
 "yarn": "29c4264bdc",
 "yarn starts with Y.": "f0c1893f35",
