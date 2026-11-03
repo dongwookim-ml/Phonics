@@ -89,7 +89,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
       // One asker of each kind, as the scenes make them.
       const askers = [];
       for (const n of TOWN_NPCS) askers.push(Object.assign({ level: 1 }, n));
-      for (const h of TOWN_HOUSES) askers.push({ name: h.who, look: h.look, letter: h.letter, level: 1 });
+      for (const h of TOWN_HOUSES) askers.push({ name: h.who, look: h.look, letter: h.letter, simpleSound: h.simpleSound, level: 1 });
       for (const n of FOREST_NPCS) askers.push(Object.assign({ level: 2 }, n));
       for (const n of UNICORN_NPCS) askers.push(Object.assign({ level: 3 }, n));
       for (const n of DUNGEON_NPCS) askers.push(Object.assign({ level: 4, monster: true }, n));
@@ -205,7 +205,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
       const knowAll = () => Object.fromEntries(ONE_SOUND.map(x => [x.l.toUpperCase(), { right: 2, hit: 5, last: 5 }]));
       const ladderOf = kind => (TIERS[kind] ? kind : Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === kind)));
       for (const kind of Quiz.kinds) {
-        const npcs = ['word', 'findStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.map(h => ({ level: 1, letter: h.letter }))) : [{ level: 1 }];
+        const npcs = ['word', 'findStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.filter(h=>kind==='word'||!h.simpleSound).map(h => ({ level: 1, letter: h.letter, simpleSound:h.simpleSound }))) : [{ level: 1 }];
         const ladder = ladderOf(kind);
         for (const npc of npcs) {
           state.history = {};
@@ -277,7 +277,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
         // (spelling's parent-only tier too), in turn.
         const place = placeOf(npc);
         const combos = [];
-        for (const kind of new Set(QUIZ_TYPES[place])) for (let t = 1; t <= Math.min(TIER_BAND[place][1] + Quiz.lead(kind), TIERS[kind].length); t++) combos.push({ kind, tier: t });
+        for (const kind of new Set(Quiz.kindsFor(npc))) for (let t = 1; t <= Math.min(TIER_BAND[place][1] + Quiz.lead(kind), TIERS[kind].length); t++) combos.push({ kind, tier: t });
         // A stand-in asks as much as a whole village would.
         const times = npc.standIn ? rounds * 6 : rounds;
         for (let i = 0; i < times; i++) {

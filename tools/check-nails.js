@@ -26,14 +26,14 @@ const root = path.join(__dirname, '..');
       });
       await page.waitForFunction(() => !nailUi.card.classList.contains('hidden'));
       assert.equal(await page.locator('#nail-hand [data-finger]').count(), 10);
-      assert.equal(await page.locator('#nail-all, #nail-buy').count(), 0);
+      assert.equal(await page.locator('#nail-all, #nail-buy, #nail-fingers, .nail-finger-choice').count(), 0);
       for (const side of ['left', 'right']) assert.equal(await page.locator(`#nail-hand [data-hand="${side}"] [data-finger]`).count(), 5);
       const migrated = await page.evaluate(() => {
         const legacy = nailSaved({ owned: { polish: ['rose', 'glitter'] }, fingers: { thumb: { polish: 'rose', at: 5 }, index: { polish: 'glitter', at: 6 } } });
         return { count: Object.keys(legacy.fingers).length, left: legacy.fingers.thumb.polish, right: legacy.fingers['right-thumb'].polish, glitter: legacy.fingers.index.polish };
       });
       assert.deepEqual(migrated, { count: 10, left: 'rose', right: 'clear', glitter: 'glitter' });
-      const finger = value => page.locator(`#nail-fingers [data-finger="${value}"]`).click();
+      const finger = value => page.locator(`#nail-hand [data-finger="${value}"]`).click();
       const tab = value => page.locator(`#nail-tabs [data-slot="${value}"]`).click();
       const item = value => page.locator(`#nail-items [data-value="${value}"]`);
       const stars = () => page.evaluate(() => state.stars);
@@ -47,6 +47,17 @@ const root = path.join(__dirname, '..');
         await page.locator('#nail-purchase-confirm').click();
         assert.equal(await page.locator('#nail-purchase').isVisible(), false);
       };
+      // Tap well below the nails on both hands: the entire finger selects.
+      for (const side of ['left', 'right']) {
+        const point = await page.evaluate(side => {
+          const hand = nailUi.hand.querySelector(`[data-hand="${side}"]`);
+          const p = new DOMPoint(195, 212).matrixTransform(hand.getScreenCTM());
+          return { x: p.x, y: p.y };
+        }, side);
+        await page.mouse.click(point.x, point.y);
+        assert.equal(await page.evaluate(() => nailSalon.finger), side === 'left' ? 'index' : 'right-index');
+        assert.equal(await page.locator('#nail-hand [aria-pressed="true"]').count(), 1);
+      }
       const before = await page.evaluate(() => ({ outfit: JSON.stringify(state.outfit), sprite: heroSprite(state.outfit, 0).canvas.toDataURL(), earned: starsEarned() }));
       await finger('thumb');
       assert.equal(await item('rose').locator('.nail-item-lock').count(), 1);
@@ -135,7 +146,7 @@ const root = path.join(__dirname, '..');
       assert.equal(await page.evaluate(() => nailSalon.finger), 'right-middle');
       await page.locator('#nail-hand [data-finger="thumb"]').focus(); await page.keyboard.press('Enter');
       assert.equal(await page.evaluate(() => nailSalon.finger), 'thumb');
-      await page.locator('#nail-fingers [data-finger="index"]').focus(); await page.keyboard.press('Enter');
+      await page.locator('#nail-hand [data-finger="index"]').focus(); await page.keyboard.press('Enter');
       await page.locator('#nail-tabs [data-slot="ring"]').focus(); await page.keyboard.press('ArrowLeft');
       assert.equal(await page.evaluate(() => nailSalon.tab), 'sticker');
       await item('heart').focus(); await page.keyboard.press('Enter');

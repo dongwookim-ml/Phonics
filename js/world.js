@@ -146,12 +146,6 @@ function renderGround(sc) {
 
 const TOWN_N = 40;
 const CASTLE_AT = { c: 15, r: 3, w: 10, d: 7 };
-// Each letter house gets its own look (see HOUSE_DRAW in sprites.js).
-const HOUSE_SHAPES = {
-  A: 'thatch', B: 'bakery', C: 'tower', D: 'cottage', F: 'windmill', G: 'mushroom',
-  H: 'manor', M: 'tower', N: 'thatch', P: 'bakery', S: 'windmill', T: 'manor',
-};
-
 function buildTown() {
   const sc = makeScene('town', TOWN_N, TOWN_N, 150, 60);
   sc.outdoor = true;
@@ -161,11 +155,13 @@ function buildTown() {
   const reserve = (c, r) => reserved.add(key(c, r));
 
   // Roads.
-  for (const rr of [14, 26]) for (let c = 2; c <= 37; c++) setTile(sc, c, rr, 'road');
-  for (const cc of [8, 31]) for (let r = 14; r <= 26; r++) setTile(sc, cc, r, 'road');
+  for (const rr of [10, 14, 26, 38]) for (let c = 2; c <= 37; c++) setTile(sc, c, rr, 'road');
+  for (const cc of [7, 32]) for (let r = 10; r <= 37; r++) setTile(sc, cc, r, 'road');
   for (const cc of [19, 20]) for (let r = 10; r <= 39; r++) setTile(sc, cc, r, 'road');
   // Plaza with the fountain.
-  for (let r = 17; r <= 22; r++) for (let c = 16; c <= 23; c++) setTile(sc, c, r, 'plaza');
+  for (let r = 12; r <= 27; r++) for (let c = 11; c <= 27; c++) {
+    if (Math.abs(c - 19.5) + Math.abs(r - 19.5) <= 13) setTile(sc, c, r, 'plaza');
+  }
   // Pond.
   for (let r = 28; r <= 35; r++) for (let c = 24; c <= 33; c++) {
     if (((c - 28.5) / 4.6) ** 2 + ((r - 31.5) / 3.3) ** 2 <= 1) setTile(sc, c, r, 'water');
@@ -186,21 +182,16 @@ function buildTown() {
   sc.doors.push({ c: 19, r: 10, obj: castle, target: 'castle' });
   sc.doors.push({ c: 20, r: 10, obj: castle, target: 'castle' });
 
-  // Houses.
-  for (const h of TOWN_HOUSES) {
-    const info = LETTERS.find(l => l.letter === h.letter);
-    block(sc, h.c, h.r, 3, 3);
-    for (let r = h.r - 1; r <= h.r + 3; r++) for (let c = h.c - 1; c <= h.c + 3; c++) reserve(c, r);
-    const style = { roof: info.color, wall: '#fff7ee', door: 'left', shape: HOUSE_SHAPES[h.letter] || 'cottage' };
-    const obj = addObject(sc, { c: h.c, r: h.r, w: 3, d: 3 }, footBounds(sc, h.c, h.r, 3, 3, houseUp(style.shape), 12),
-      ctx => drawHouse(ctx, boxCorners(sc, h.c, h.r, 3, 3), style), { kind: 'house', house: h, info });
-    const door = { c: h.c + 1, r: h.r + 3 };
-    sc.doors.push({ c: door.c, r: door.r, obj, target: `house-${h.letter}` });
-    // Sign hangs over the door.
-    const k = boxCorners(sc, h.c, h.r, 3, 3);
-    const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 30);
-    sc.signs.push({ x: sign.x, y: sign.y, text: info.letter + info.letter.toLowerCase(), color: info.color });
-  }
+  // Twelve small homes keep the central town lived-in; the others line the river.
+  TOWN_HOUSES.filter(h=>h.scene==='town').forEach((h,i)=>{
+    neighborhoodHome(sc,h,'garden',i);
+    for(let r=h.r-2;r<=h.r+4;r++)for(let c=h.c-2;c<=h.c+3;c++)reserve(c,r);
+  });
+  // Shops are planned before planting, so they need no tree-clearing patches.
+  addTownSalon(sc);
+  addTownNailSalon(sc);
+  addTownBoutique(sc);
+  for (const S of Object.values(TOWN_MARKET)) for (let r=S.r-1;r<=S.r+4;r++) for (let c=S.c-1;c<=S.c+3;c++) reserve(c,r);
 
   // Fountain in the plaza.
   block(sc, 19, 19, 2, 2);
@@ -209,9 +200,11 @@ function buildTown() {
   sc.objects.push(stillFrame({ c0: 19, r0: 19, c1: 20, r1: 20, x: fc.x - 30, y: fc.y - 40, w: 60, h: 60,
     animated: (ctx, t) => drawFountain(ctx, Math.round(fc.x), Math.round(fc.y), t), react: { word: 'fountain', fx: 'splash' } }));
 
+  connectNeighborhoodDoors(sc);
+
   // Lamps along the roads.
   const lamp = makeLamp();
-  const lampSpots = [[18, 13], [21, 13], [18, 24], [21, 24], [18, 30], [21, 30], [18, 36], [21, 36], [7, 15], [32, 15], [7, 25], [32, 25]];
+  const lampSpots = [[18, 13], [21, 13], [12, 23], [26, 21], [18, 30], [21, 30], [18, 36], [21, 36], [7, 15], [32, 15], [7, 25], [32, 25]];
   for (const [c, r] of lampSpots) {
     block(sc, c, r, 1, 1);
     reserve(c, r);
@@ -220,7 +213,7 @@ function buildTown() {
     sc.lamps.push({ x: p.x, y: p.y - lamp.ay + lamp.glow.y });
   }
 
-  for (const n of TOWN_NPCS) reserve(n.c, n.r);
+  for (const n of [...TOWN_NPCS, ...sc.npcs]) for (let dr=-2;dr<=2;dr++) for (let dc=-2;dc<=2;dc++) reserve(n.c+dc,n.r+dr);
   reserve(20, 12);
 
   // Trees: a forest ring around town and a few scattered inside.
@@ -266,8 +259,8 @@ function buildTown() {
   sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS, links: toForest });
   addTownFairyGate(sc);
   addTownMonsterGate(sc, addSideGate); // js/monster-village.js
-  addTownSalon(sc); // the hair salon, js/salon.js
-  addTownNailSalon(sc); // manicure atelier, js/nails.js
+  addNeighborhoodEntrances(sc);
+  placeTownVillagers(sc);
   renderGround(sc);
   return sc;
 }
@@ -371,7 +364,7 @@ const FURNITURE = {
 };
 
 function buildHouseInterior(h) {
-  const info = LETTERS.find(l => l.letter === h.letter);
+  const info = houseLetter(h.letter);
   const sc = makeScene('room', 8, 7, 110, 50);
   sc.floorTint = '#e8b488';
   for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) setTile(sc, c, r, 'wood');
@@ -405,7 +398,7 @@ function buildHouseInterior(h) {
   sc.signs.push({ x: poster.x, y: poster.y, text: info.letter + info.letter.toLowerCase(), color: info.color, big: true, plain: true, poster: info });
   info.words.slice(0, 3).forEach(([word, emoji], i) => {
     const p = wallPt(WB, WB.len * (0.6 + i * 0.13), 40 + (i % 2) * 6);
-    sc.decor.push({ x: p.x, y: p.y, emoji, word, letter: info.letter, frame: true });
+    sc.decor.push({ x: p.x, y: p.y, emoji, word, letter: h.simpleSound ? undefined : info.letter, frame: true });
   });
 
   // Furniture.
@@ -419,7 +412,10 @@ function buildHouseInterior(h) {
   furn(7, 5, 1, 1, 30, ctx => drawPlant(ctx, sc, 7, 5), FURNITURE.plant);
   furn(5, 5, 1, 1, 24, ctx => drawTable(ctx, sc, 5, 5), FURNITURE.table);
 
-  sc.npcs.push(makeNpc({ who: h.who, look: h.look, c: 4, r: 2 }, h.letter));
+  const host = makeNpc({ who: h.who, look: h.look, c: 4, r: 2 }, h.letter);
+  host.simpleSound = h.simpleSound;
+  sc.npcs.push(host);
+  if (h.scene) sc.returnTo = { scene:h.scene, at:{c:h.c+1,r:h.r+(h.d||3)} };
   sc.exit = exit;
   sc.start = { c: exit.c, r: exit.r - 1 };
   sc.house = h;

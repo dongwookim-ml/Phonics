@@ -95,7 +95,7 @@ function touchPoster(sg) {
   sg.touchedAt = now;
   const info = sg.poster;
   const host = state.scene.npcs.find(n => n.letter === info.letter);
-  Sound.say([{ text: info.letter, narrator: true }, { pause: 300 }, { text: houseHello(info) }], voiceOf(host));
+  Sound.say([{ text: info.letter, narrator: true }, { pause: 300 }].concat(houseSpeech(info)), voiceOf(host));
 }
 
 // Water splashes and says "pond".

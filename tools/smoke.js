@@ -42,7 +42,7 @@ for (const s of scripts) {
       document.querySelector(`[data-title="${title}"]`).click();
       document.querySelector('.start').classList.add('hidden');
       state.stars = 99;
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`),
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`), ...(!isCaptain()?Object.keys(NEIGHBORHOODS):[]),
         ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
       const bad = [];
       for (const n of names) {
@@ -51,7 +51,7 @@ for (const s of scripts) {
       }
       // Every door can be walked to from where she arrives, nobody stands on
       // it, and the room behind it leads back out to the scene it is in.
-      for (const n of ['town', 'forest', 'unicorn', 'fairy', 'monster']) {
+      for (const n of ['town', 'forest', 'unicorn', 'fairy', 'monster', ...(!isCaptain()?Object.keys(NEIGHBORHOODS):[])]) {
         const sc = sceneFor(n);
         for (const d of sc.doors) {
           const where = `${n} door ${d.c},${d.r} -> ${d.target}`;

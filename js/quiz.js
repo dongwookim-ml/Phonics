@@ -52,7 +52,7 @@ const Quiz = (() => {
         Object.assign(index[w], { long, team: g.team, says: g.says });
       }
     }
-    LETTERS.forEach(l => l.words.forEach(([w, e]) => add(w, e)));
+    LETTERS.concat(HOUSE_LETTERS).forEach(l => l.words.forEach(([w, e]) => add(w, e)));
     WORD_FAMILIES.forEach(f => f.forEach(([w, e]) => add(w, e)));
     RHYME_SETS.concat(LONG_RHYMES).forEach(r => r.set.forEach(([w, e]) => add(w, e)));
     for (const x of SENTENCES.concat(SENTENCES_L1, SENTENCES_L2)) { add(x.w[0], x.w[1]); x.other.forEach(([w, e]) => add(w, e)); }
@@ -150,7 +150,7 @@ const Quiz = (() => {
   // and each kind has a pool of the ids it can ask at a tier, so the game can
   // tell which ones she has already got right (state.history, see record()).
   const pools = {
-    word: npc => withId('word', letterWords().filter(x => !npc.letter || x.info.letter === npc.letter)),
+    word: npc => withId('word', npc.letter ? houseLetter(npc.letter).words.map(([w])=>Object.assign({info:houseLetter(npc.letter)},words()[w])) : letterWords()),
     start: (npc, cfg) => withId('start', prefer(letterWords(), cfg.single && single)),
     // Only the picture is shown, so only pictures she can name for sure.
     findStart: (npc, cfg) => withId('findStart', prefer(letterWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && clear(x)), cfg.single && single)),
@@ -318,6 +318,7 @@ const Quiz = (() => {
   // ---- Tiers -----------------------------------------------------------------
   // Level 6 is the Monster Village and its tower.
   const placeOf = npc => (npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
+  const kindsFor = npc => npc.simpleSound ? ['word'] : QUIZ_TYPES[placeOf(npc)];
   const settings = () => (typeof state !== 'undefined' && state.settings) || {};
   // Tiers a kind has; a tier with a `setting` only once a parent turns it on.
   const allowed = c => !c.setting || settings()[c.setting];
@@ -545,7 +546,7 @@ const Quiz = (() => {
   // ---- Cards -----------------------------------------------------------------
   const firstBig = w => `<span class="first">${w[0]}</span>${w.slice(1)}`;
   const long = w => (w.length > 6 ? ' long' : '');
-  const wordCard = (w, e) => `<span class="pic">${e}</span><span class="w${long(w)}">${firstBig(w)}</span>`;
+  const wordCard = (w, e, ending = false) => `<span class="pic">${e}</span><span class="w${long(w)}">${ending ? `${w.slice(0,-1)}<span class="first">${w.slice(-1)}</span>` : firstBig(w)}</span>`;
   const picCard = (w, e) => `<span class="bigpic">${e}</span><span class="w hide">${w}</span>`;
   const letterCard = l => `<span class="letter">${l}</span>`;
   const plainCard = w => `<span class="w${long(w)}">${w}</span>`;
@@ -568,22 +569,23 @@ const Quiz = (() => {
 
   // Hints shared by the kinds where she hears a word and picks it: what she
   // picked, then the word again ("cap… Listen. cat").
-  const hearAgain = t => ({
-    teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), voiced(t.w, 0.85)],
+  const hearAgain = (t, narrator = false) => ({
+    teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), Object.assign(voiced(t.w, 0.85), narrator ? {narrator:true} : {})],
     picked: o => [named(o.wrong)],
-    model: sounded(t),
+    model: narrator ? [say(t.w)] : sounded(t),
   });
 
   const builders = {
     word(npc, cfg) {
       const t = take('word', npc, cfg);
+      const spoken = () => Object.assign(voiced(t.w), npc.simpleSound ? {narrator:true} : {});
       return Object.assign({
         id: t.id, target: t.w, clue: '',
-        ask: [{ text: line('ask') }, { pause: 750 }, voiced(t.w), READY],
-        replay: [voiced(t.w)],
-        options: deal(t, letterOthers(t, cfg.n - 1, cfg), o => ({ html: wordCard(o.w, o.e), wrong: o.w, words: true, alwaysPictures: cfg.pics })),
-        answer: [say(`${t.w}!`)],
-      }, hearAgain(t));
+        ask: [{ text: line('ask') }, { pause: 750 }, spoken(), READY],
+        replay: [spoken()],
+        options: deal(t, letterOthers(t, cfg.n - 1, cfg), o => ({ html: wordCard(o.w, o.e, npc.letter === 'X' && o === t), wrong: o.w, words: true, alwaysPictures: cfg.pics })),
+        answer: [say(npc.simpleSound ? t.w : `${t.w}!`)],
+      }, hearAgain(t, npc.simpleSound));
     },
 
     start(npc, cfg) {
@@ -1146,7 +1148,7 @@ const Quiz = (() => {
   // (js/village-games.js), whose `cfg` changes that tier's settings (more
   // cards); a forced question never moves her tier.
   function make(npc, force) {
-    const kinds = QUIZ_TYPES[placeOf(npc)];
+    const kinds = kindsFor(npc);
     let kind = force && force.kind;
     if (!kind) {
       const choices = kinds.filter(k => k !== npc.lastQuiz);
@@ -1206,6 +1208,7 @@ const Quiz = (() => {
       Object.assign(k, { t: to, w: [], placed: true, easy: false });
     },
     kinds: Object.keys(pools),
+    kindsFor,
     // Every id a kind can ask here, at any tier the parent's settings allow
     // (blending's first steps are kinds of their own).
     pool: (kind, npc = {}) => (pools[kind] ? [...new Set(tiersOf(kind).filter(allowed).flatMap(cfg => pools[kind](npc, cfg).map(x => x.id)))] : []),

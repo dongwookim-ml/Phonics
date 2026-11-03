@@ -344,6 +344,7 @@ function sceneFor(target) {
     const house = TOWN_HOUSES.find(h => `house-${h.letter}` === target);
     if (captain) state.scenes[target] = captain();
     else if (target === 'town') state.scenes[target] = buildTown();
+    else if (!isCaptain() && NEIGHBORHOODS[target]) state.scenes[target] = buildNeighborhood(target);
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
     else if (target === 'castle2') state.scenes[target] = buildCastleUpstairs();
     else if (target === 'yuna') state.scenes[target] = buildYunaRoom();
@@ -491,8 +492,10 @@ function enterDoor(door) {
     Sound.say([{ text: line('tower'), pitch: 1.3 }]);
   } else if (door.obj.info) {
     const info = door.obj.info;
+    const room = sceneFor(door.target);
+    room.returnTo = { scene: door.obj.house.scene || 'town', at: { c: door.c, r: door.r } };
     changeScene(door.target, null, `${info.letter}${info.letter.toLowerCase()} ${isCaptain() ? I18n.t('game.workshop') : I18n.t('game.house')}`);
-    Sound.say([{ text: line('house', { letter: info.letter }) }]);
+    Sound.say(door.obj.house.simpleSound ? [{ text: info.letter, narrator: true }] : [{ text: line('house', { letter: info.letter }) }]);
     questAdd('house'); // today's adventures (js/quest.js)
   } else {
     changeScene(door.target);
@@ -504,7 +507,7 @@ function enterDoor(door) {
 function leaveRoom() {
   const sc = state.scene;
   Sound.door();
-  const back = sc.returnTo || { scene: 'town', at: sc.house ? { c: sc.house.c + 1, r: sc.house.r + 3 } : { c: 19, r: 10 } };
+  const back = sc.returnTo || { scene: sc.house?.scene || 'town', at: sc.house ? { c: sc.house.c + 1, r: sc.house.r + (sc.house.d || 3) } : { c: 19, r: 10 } };
   changeScene(back.scene, back.at, place(back.scene));
 }
 
@@ -660,7 +663,7 @@ function openDialog(npc) {
   // In a letter house the host skips the chat and teaches the letter instead.
   // Others say their own hello the first time she talks to them, and just a
   // short lead after that.
-  const house = npc.letter && LETTERS.find(l => l.letter === npc.letter);
+  const house = npc.letter && houseLetter(npc.letter);
   const villain = isCaptain() && npc.monster && villainRound(npc);
   // A Crystal Cave monster: she steps back to give its magic room (js/cave-magic.js).
   if (!isCaptain() && npc.monster) monsterFaceOff(npc);
@@ -688,7 +691,7 @@ function openDialog(npc) {
   // The cards wait until she has heard the word (Quiz.READY in q.ask).
   const ask = () => {
     ui.dialog.classList.remove('hidden');
-    listen(q, [{ text: hello }, { pause: house ? 500 : 400 }].concat(q.ask), 12000);
+    listen(q, (house ? houseSpeech(house) : [{ text: hello }]).concat({ pause: house ? 500 : 400 }, q.ask), 12000);
   };
   // The first question at a new step of blending: the sound magic shows
   // how, first, with an easy word (js/blend-magic.js); then the dialog.
@@ -703,6 +706,14 @@ function openDialog(npc) {
 // "This is the C house. C says kuh." (recorded per voice by tools/tts-phrases.js)
 function houseHello(info) {
   return `This is the ${info.letter} ${isCaptain() ? 'workshop' : 'house'}. ${info.letter} says ${info.sound}.`;
+}
+
+// New alphabet houses reuse recorded narrator letter/sound clips. Existing
+// residents retain their full recorded greeting in their own voice.
+function houseSpeech(info) {
+  if (!TOWN_HOUSES.find(h=>h.letter===info.letter)?.simpleSound) return [{text:houseHello(info)}];
+  if (info.letter==='Q') return [{text:'Q',narrator:true},{pause:200},{text:'/k/',narrator:true},{text:'/w/',narrator:true}];
+  return [{text:info.letter,narrator:true},{pause:200},{text:`${info.letter} says ${info.sound}.`,narrator:true}];
 }
 
 // Says `parts` with the cards dimmed, and lets her answer from Quiz.READY
@@ -1135,6 +1146,8 @@ function followLink(link) {
   } else if (link.target === 'monster') {
     changeScene('monster', link.at, place('monster'));
     Sound.say([{ text: line('monster'), pitch: 1.3 }]);
+  } else if (NEIGHBORHOODS[link.target]) {
+    changeScene(link.target, link.at, place(link.target));
   } else if (link.target === 'town') {
     changeScene('town', link.at, place('town'));
   } else if (link.target === 'castle2') {
@@ -2630,7 +2643,7 @@ function tapOverlay(sc, wx, wy) {
   }
   const font = '"Baloo 2", "Trebuchet MS", sans-serif';
   for (const sg of sc.signs) {
-    if (!sg.links && !sg.poster && !sg.react) continue;
+    if (!sg.links && !sg.poster && !sg.react && !sg.shop) continue;
     if (sg.shown) {
       // A room's sign may be drawn pulled in from the edge (drawOverlay):
       // the tap counts where she sees it, with a little room around it.
@@ -2642,7 +2655,8 @@ function tapOverlay(sc, wx, wy) {
       const half = sctx.measureText(sg.text).width / 2 + 4;
       if (Math.abs(wx - sg.x) > half || Math.abs(wy - sg.y) > (sg.big ? 13 : 8)) continue;
     }
-    if (sg.links) goLink(sg.links, true);
+    if (sg.shop) talkTo(sg.shop.keeper);
+    else if (sg.links) goLink(sg.links, true);
     else if (sg.poster) touchPoster(sg);
     else touchReact(sg, sg.react, { x: sg.x, y: sg.y }, { x: sg.x, y: sg.y - 14 });
     return true;

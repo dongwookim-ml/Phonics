@@ -1,5 +1,5 @@
 // The hair salon in town (the princess edition): a pink shop with a striped
-// awning and a barber's pole, by the main road south of the houses, its
+// awning and a large scissors sign on the fountain square, its
 // hairdresser outside (addTownSalon, from buildTown in js/world.js).
 // Tapping either opens the salon card: a tab of hairstyles (HAIR_STYLES)
 // and one of hair colours (HAIR_COLORS), each a picture of her with it, at
@@ -11,7 +11,7 @@
 // hairdresser are in js/data.js.
 
 // The salon's footprint (3 x 3 tiles, its door on the front-left face).
-const SALON_AT = { c: 15, r: 28 };
+const SALON_AT = TOWN_MARKET.salon;
 const SALON_TABS = ['style', 'hair'];
 
 const salonUi = {
@@ -32,44 +32,9 @@ const salon = { keeper: null, tab: 'style', pick: null };
 // make way, and a little path runs from its door to the road.
 function addTownSalon(sc) {
   const S = SALON_AT;
-  const gone = o => o.tree && o.c1 >= S.c - 1 && o.c0 <= S.c + 3 && o.r1 >= S.r - 1 && o.r0 <= S.r + 4;
-  for (const o of sc.objects.filter(gone)) tileAt(sc, o.c0, o.r0).blocked = false;
-  sc.objects = sc.objects.filter(o => !gone(o));
-  block(sc, S.c, S.r, 3, 3);
-  for (let c = S.c + 1; c <= 18; c++) setTile(sc, c, S.r + 3, 'path');
-  const k = boxCorners(sc, S.c, S.r, 3, 3);
-  const obj = addObject(sc, { c: S.c, r: S.r, w: 3, d: 3 }, footBounds(sc, S.c, S.r, 3, 3, 110, 12), ctx => drawSalon(ctx, k), { kind: 'salon' });
-  const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 50);
-  sc.signs.push({ x: sign.x, y: sign.y, text: place('salon'), color: '#e0609a' });
-  const keeper = makeNpc({ who: I18n.t('salon.hairdresser'), look: 'stylist', c: S.c, r: S.r + 3 }, null);
+  const keeper = makeNpc({ who: I18n.t('salon.hairdresser'), look: 'stylist', c: S.c + 1, r: S.r + 4 }, null);
   Object.assign(keeper, { salon: true, badge: '✂️' });
-  obj.keeper = keeper;
-  sc.npcs.push(keeper);
-}
-
-// A pink cottage with a pink and white awning over its door and a barber's
-// pole beside it. `k` is its footprint's corners.
-function drawSalon(ctx, k) {
-  drawCottage(ctx, k, { roof: '#ff9cc8', wall: '#fff0f6', door: 'left' });
-  const W = wall(k.L, k.B);
-  const mid = W.len / 2;
-  // The awning: stripes sloping out over the door, scalloped at the front.
-  for (let x = mid - 13; x < mid + 13; x++) {
-    const col = Math.floor((x - mid + 13) / 3) % 2 ? '#ffffff' : '#ff6fa8';
-    wallRect(ctx, W, x, x + 1, 25, 31, col);
-    wallRect(ctx, W, x, x + 1, 24 - ((x - mid + 13) % 3 === 1 ? 1 : 0), 25, col);
-  }
-  wallRect(ctx, W, mid - 13, mid + 13, 30, 31, '#e0609a');
-  // The barber's pole: red, white and blue twisting up, gold caps.
-  const pole = mid - 17;
-  for (let v = 2; v < 20; v++) {
-    for (let i = 0; i < 3; i++) {
-      const band = (v + i * 2) % 6;
-      wallRect(ctx, W, pole + i, pole + i + 1, v, v + 1, band < 2 ? '#e8485a' : band < 4 ? '#ffffff' : '#6fb7ff');
-    }
-  }
-  wallRect(ctx, W, pole - 1, pole + 4, 20, 22, '#ffd34d');
-  wallRect(ctx, W, pole - 1, pole + 4, 0, 2, '#ffd34d');
+  addMarketStore(sc, 'salon', keeper);
 }
 
 // ---- The salon card -------------------------------------------------------------

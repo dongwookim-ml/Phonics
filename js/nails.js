@@ -1,6 +1,6 @@
 // A small nail atelier beside the hair salon. Its manicure is saved separately
 // from the hero's outfit: it is visible only on this card's two hands.
-const NAIL_AT = { c: 10, r: 28 };
+const NAIL_AT = TOWN_MARKET.nails;
 const NAIL_DIGITS = ['thumb', 'index', 'middle', 'ring', 'little'];
 const NAIL_SIDES = ['left', 'right'];
 // Keep the original five save keys for the left hand. The new right hand
@@ -59,7 +59,7 @@ function nailSaved(raw) {
 
 const nailUi = {
   card: document.getElementById('nail-salon'), stars: document.getElementById('nail-stars'),
-  hand: document.getElementById('nail-hand'), fingers: document.getElementById('nail-fingers'),
+  hand: document.getElementById('nail-hand'),
   tabs: document.getElementById('nail-tabs'), items: document.getElementById('nail-items'),
   msg: document.getElementById('nail-msg'), done: document.getElementById('nail-done'),
   purchase: document.getElementById('nail-purchase'), purchaseArt: document.getElementById('nail-purchase-art'),
@@ -72,34 +72,12 @@ const nailMine = (slot, value) => state.nails.owned[slot].includes(value);
 const nailPrice = (slot, value) => NAIL_ITEMS[slot][value].free ? 0 : (NAIL_ITEMS[slot][value].price ?? NAIL_PRICE[slot]);
 const nailEscape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Uses the town's native pixel drawing helpers, including a little polish
-// bottle sign. The clear path never crosses the lamp at (18, 36).
+// The polish-bottle shopfront on the fountain square.
 function addTownNailSalon(sc) {
   const S = NAIL_AT;
-  const gone = o => o.tree && o.c1 >= S.c - 1 && o.c0 <= 18 && o.r1 >= S.r - 1 && o.r0 <= S.r + 3;
-  for (const o of sc.objects.filter(gone)) tileAt(sc, o.c0, o.r0).blocked = false;
-  sc.objects = sc.objects.filter(o => !gone(o));
-  block(sc, S.c, S.r, 3, 3);
-  for (let c = S.c; c <= 18; c++) setTile(sc, c, S.r + 3, 'path');
-  const k = boxCorners(sc, S.c, S.r, 3, 3);
-  const obj = addObject(sc, { c: S.c, r: S.r, w: 3, d: 3 }, footBounds(sc, S.c, S.r, 3, 3, 110, 12), ctx => {
-    drawCottage(ctx, k, { roof: '#b7a0d5', wall: '#fff3ed', door: 'left' });
-    const W = wall(k.L, k.B), mid = W.len / 2;
-    for (let x = mid - 13; x < mid + 13; x++) wallRect(ctx, W, x, x + 1, 25, 31, Math.floor((x - mid + 13) / 4) % 2 ? '#fff8ee' : '#8bcbbb');
-    wallRect(ctx, W, mid - 13, mid + 13, 24, 26, '#5f9f92');
-    wallRect(ctx, W, mid - 23, mid - 12, 10, 22, '#fffaf0');
-    wallRect(ctx, W, mid - 21, mid - 14, 11, 17, '#dc7ca5');
-    wallRect(ctx, W, mid - 20, mid - 15, 17, 21, '#705271');
-    wallRect(ctx, W, mid - 20, mid - 19, 12, 16, '#ffd9e6');
-    const R = wall(k.R, k.B);
-    for (let i = 0; i < 3; i++) wallRect(ctx, R, 10 + i * 8, 15 + i * 8, 12, 21, ['#ed9db7', '#b19bde', '#8acdbc'][i]);
-  }, { kind: 'nail-salon' });
-  const sign = wallPt(wall(k.L, k.B), (k.B.x - k.L.x) / 2, 50);
-  sc.signs.push({ x: sign.x, y: sign.y, text: I18n.t('nails.title'), color: '#9871b4' });
-  const keeper = makeNpc({ who: I18n.t('nails.artist'), look: 'stylist', c: S.c, r: S.r + 3 }, null);
+  const keeper = makeNpc({ who: I18n.t('nails.artist'), look: 'stylist', c: S.c + 1, r: S.r + 4 }, null);
   Object.assign(keeper, { nailSalon: true, badge: '💅' });
-  obj.keeper = keeper;
-  sc.npcs.push(keeper);
+  addMarketStore(sc, 'nails', keeper);
 }
 
 // Tiny vector stickers stay crisp when the hand is large, with no font/emoji
@@ -206,39 +184,35 @@ function renderNailHand() {
   // follow each segment's outline, rather than using one ring size for all.
   const ringPoses = { thumb: [241, 295, 34, 24], index: [195, 212, 12, 20.5], middle: [145, 177, 5, 19.5], ring: [94, 182, 0, 17], little: [47, 194, -12, 13.5] };
   const nailPath = 'M-10-6Q-10-19 0-19Q10-19 10-6L10 11Q0 17-10 11Z';
+  // These broad, rounded paths cover each finger from tip through its base.
+  // Clipping to the hand keeps gaps between fingers from becoming tap targets.
+  const fingerBodies = {
+    thumb: { path: 'M276 247L241 295', width: 58 },
+    index: { path: 'M219 96L195 230', width: 50 },
+    middle: { path: 'M154 54L145 211', width: 48 },
+    ring: { path: 'M94 88L94 212', width: 44 },
+    little: { path: 'M35 127L53 215', width: 40 },
+  };
   let hands = '';
   for (const side of NAIL_SIDES) {
     let nails = '', ringsBack = '', ringsFront = '';
     const skinClip = `nail-hand-clip-${side}`;
+    let selectedBody = null;
     for (const digit of NAIL_DIGITS) {
       const finger = nailKey(side, digit);
       const [x, y, rotate] = poses[digit], d = state.nails.fingers[finger];
-      const chosen = finger === nailSalon.finger;
+      const chosen = finger === nailSalon.finger, body = fingerBodies[digit];
+      if (chosen) selectedBody = body;
       const label = nailEscape(I18n.t('nails.chooseFinger', nailFingerName(finger)));
-      nails += `<g class="nail-finger${chosen ? ' selected' : ''}" data-finger="${finger}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${chosen}" transform="translate(${x} ${y}) rotate(${rotate})"><rect x="-19" y="-25" width="38" height="49" rx="16" fill="transparent"/><path class="nail-selection" d="${nailPath}" transform="scale(1.28)" fill="none"/>${nailPolishArt(d.polish, nailPath, `nail-paint-${finger}`, [-10, -19, 20, 36])}<path d="${nailPath}" fill="none" stroke="#bb8573" stroke-width="1.5"/><path d="M-6-5Q-6-12-3-13" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="2.5" stroke-linecap="round"/><clipPath id="nail-clip-${finger}"><path d="${nailPath}"/></clipPath><g clip-path="url(#nail-clip-${finger})"><g transform="translate(0 -1) scale(.46)">${nailSticker(d.sticker)}</g></g></g>`;
+      nails += `<g class="nail-finger${chosen ? ' selected' : ''}" data-finger="${finger}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${chosen}"><path class="nail-hit" d="${body.path}" fill="none" stroke="transparent" stroke-width="${body.width}" stroke-linecap="round" pointer-events="stroke" clip-path="url(#${skinClip})"/><g transform="translate(${x} ${y}) rotate(${rotate})" pointer-events="none">${nailPolishArt(d.polish, nailPath, `nail-paint-${finger}`, [-10, -19, 20, 36])}<path d="${nailPath}" fill="none" stroke="#bb8573" stroke-width="1.5"/><path d="M-6-5Q-6-12-3-13" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="2.5" stroke-linecap="round"/><clipPath id="nail-clip-${finger}"><path d="${nailPath}"/></clipPath><g clip-path="url(#nail-clip-${finger})"><g transform="translate(0 -1) scale(.46)">${nailSticker(d.sticker)}</g></g></g></g>`;
       const worn = nailWornRing(d.ring, ringPoses[digit], skinClip);
       ringsBack += worn.back; ringsFront += worn.front;
     }
-    hands += `<g class="nail-hand-pose" data-hand="${side}" transform="${side === 'left' ? 'translate(60 10)' : 'translate(660 10) scale(-1 1)'}"><defs><clipPath id="${skinClip}" clipPathUnits="userSpaceOnUse"><path d="${outline}"/></clipPath></defs>${ringsBack}<path d="${outline}" fill="#f6d1c9" stroke="#b9856d" stroke-width="2.5" stroke-linejoin="round"/>${ringsFront}${nails}</g>`;
+    const halo = selectedBody ? `<path d="${selectedBody.path}" fill="none" stroke="#af8cda" stroke-width="${selectedBody.width + 16}" stroke-linecap="round" opacity=".5" filter="url(#nail-finger-glow)" pointer-events="none"/>` : '';
+    hands += `<g class="nail-hand-pose" data-hand="${side}" transform="${side === 'left' ? 'translate(60 10)' : 'translate(660 10) scale(-1 1)'}"><defs><clipPath id="${skinClip}" clipPathUnits="userSpaceOnUse"><path d="${outline}"/></clipPath></defs>${halo}${ringsBack}<path d="${outline}" fill="#f6d1c9" stroke="#b9856d" stroke-width="2.5" stroke-linejoin="round"/>${ringsFront}${nails}</g>`;
   }
-  nailUi.hand.innerHTML = `<svg viewBox="0 0 720 555" role="group" aria-label="${nailEscape(I18n.t('nails.hand'))}">${hands}</svg>`;
-  nailUi.fingers.replaceChildren();
-  for (const side of NAIL_SIDES) {
-    const row = document.createElement('div'); row.className = 'nail-finger-row';
-    row.setAttribute('role', 'group'); row.setAttribute('aria-label', I18n.t(`nails.side.${side}`));
-    const label = document.createElement('span'); label.className = 'nail-side-label';
-    label.textContent = I18n.t(`nails.side.${side}`); row.append(label);
-    for (const digit of NAIL_DIGITS) {
-      const finger = nailKey(side, digit), b = document.createElement('button');
-      b.className = 'nail-finger-choice'; b.dataset.finger = finger;
-      b.textContent = I18n.t(digit === 'little' ? 'nails.littleShort' : `nails.finger.${digit}`);
-      b.setAttribute('aria-label', I18n.t('nails.chooseFinger', nailFingerName(finger)));
-      b.setAttribute('aria-pressed', String(finger === nailSalon.finger));
-      b.addEventListener('click', () => nailSelectFinger(finger));
-      row.append(b);
-    }
-    nailUi.fingers.append(row);
-  }
+  nailUi.hand.innerHTML = `<svg viewBox="0 0 720 555" role="group" aria-label="${nailEscape(I18n.t('nails.hand'))}"><defs><filter id="nail-finger-glow" filterUnits="userSpaceOnUse" x="-40" y="-40" width="800" height="680" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="4"/></filter></defs>${hands}</svg>`;
+
 }
 
 function nailItemArt(slot, value, prefix = 'nail-bottle') {
@@ -261,12 +235,12 @@ function openNailSalon(keeper) {
   Sound.say([{ text: 'Which one would you like to try?' }], voiceOf(keeper));
 }
 
-function nailSelectFinger(finger, source = 'button') {
+function nailSelectFinger(finger) {
   if (!NAIL_FINGERS.includes(finger)) return;
   Sound.tap();
   nailSalon.finger = finger;
   renderNailSalon();
-  nailUi.card.querySelector(`${source === 'svg' ? '#nail-hand' : '#nail-fingers'} [data-finger="${finger}"]`).focus({ preventScroll: true });
+  nailUi.hand.querySelector(`[data-finger="${finger}"]`).focus({ preventScroll: true });
 }
 
 function renderNailSalon() {
@@ -386,8 +360,8 @@ function nailSetup() {
     const r = nailUi.purchase.getBoundingClientRect();
     if (e.target === nailUi.purchase && (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)) nailCancelPurchase();
   });
-  nailUi.hand.addEventListener('click', e => { const g = e.target.closest('[data-finger]'); if (g) nailSelectFinger(g.dataset.finger, 'svg'); });
-  nailUi.hand.addEventListener('keydown', e => { const g = e.target.closest('[data-finger]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); nailSelectFinger(g.dataset.finger, 'svg'); } });
+  nailUi.hand.addEventListener('click', e => { const g = e.target.closest('[data-finger]'); if (g) nailSelectFinger(g.dataset.finger); });
+  nailUi.hand.addEventListener('keydown', e => { const g = e.target.closest('[data-finger]'); if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); nailSelectFinger(g.dataset.finger); } });
   nailUi.tabs.addEventListener('keydown', e => {
     if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
     e.preventDefault();

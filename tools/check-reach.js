@@ -22,6 +22,9 @@ const root = path.join(__dirname, '..');
     await page.click('#login-guest');
     const report = await page.evaluate(() => {
       const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+      for (let i=0;i<names.length;i++) for (const l of (sceneFor(names[i]).links||[])) {
+        if (typeof l.target==='string'&&!names.includes(l.target)) names.push(l.target);
+      }
       const problems = [];
       // Where she can arrive: each scene's start, every link's landing spot,
       // and the tiles in front of the doors she comes out of.
@@ -31,7 +34,7 @@ const root = path.join(__dirname, '..');
       for (const n of names) {
         const sc = sceneFor(n);
         for (const l of sc.links || []) if (l.at) arrive(l.target, Object.assign({ from: `${n} link` }, l.at));
-        if (sc.house) arrive('town', { c: sc.house.c + 1, r: sc.house.r + 3, from: `${n} exit` });
+        if (sc.house) arrive(sc.house.scene||'town', { c: sc.house.c + 1, r: sc.house.r + (sc.house.d||3), from: `${n} exit` });
         if (sc.returnTo) arrive(sc.returnTo.scene, Object.assign({ from: `${n} exit` }, sc.returnTo.at));
       }
       arrive('town', { c: 19, r: 10, from: 'castle exit' });

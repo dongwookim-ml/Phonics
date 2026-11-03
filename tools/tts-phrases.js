@@ -15,7 +15,7 @@ const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS', 'TOWER2_NPCS'];
 // Content constants read from js/data.js (and, for the robot edition, the
 // js/captain-*.js files, which change those tables and add their own), and
 // js/kid-monsters.js in both: the monsters she drew, with their voices and hellos.
-const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES',
+const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES', 'HOUSE_LETTERS',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
@@ -123,7 +123,7 @@ function collect(D) {
     // The word in each question, said by whoever asks it (`voiced` in quiz.js).
     for (const w of asks) add(v, w, 0.85);
     // "Which one starts with C?", the letter said by its name (letter houses).
-    if (kinds.has('findStart')) for (const lead of D.LINES.findStart) for (const h of D.TOWN_HOUSES) add(v, `${lead} ${h.letter}?`);
+    if (kinds.has('findStart')) for (const lead of D.LINES.findStart) for (const h of D.TOWN_HOUSES.filter(h=>!h.simpleSound)) add(v, `${lead} ${h.letter}?`);
     if (kinds.has('sentence') || kinds.has('meaning')) {
       for (const x of sentences) {
         const [before, after] = x.s.split('{}');
@@ -149,7 +149,7 @@ function collect(D) {
   // Their questions are their village's, recorded above by their look.
   for (const h of D.VILLAGE_HOMES) for (const l of D.HOME_HELLO[h.theme]) for (const t of fills(l)) add(D.VOICES[h.look].tts, t);
   // Each letter house's host: "This is the C house. C says kuh." (houseHello in game.js)
-  for (const h of D.TOWN_HOUSES) {
+  for (const h of D.TOWN_HOUSES.filter(h=>!h.simpleSound)) {
     const l = D.LETTERS.find(x => x.letter === h.letter);
     add(D.VOICES[h.look].tts, `This is the ${l.letter} ${robots ? 'workshop' : 'house'}. ${l.letter} says ${l.sound}.`);
   }
@@ -211,12 +211,12 @@ function collect(D) {
   // quest's picture says its word, which is recorded with the words below.
   lines(N, ['questHello', 'questReady', 'questChest'].filter(k => D.LINES[k]));
   for (const t of partShow) add(N, t);
-  for (const l of D.TOWN_HOUSES) lines(N, ['house'], { letter: l.letter });
+  for (const l of D.TOWN_HOUSES.filter(h=>!h.simpleSound)) lines(N, ['house'], { letter: l.letter });
   // Gates opening, medals and the sticker album (js/album.js). A sticker says
   // what its word starts with, unless it starts with two letters that make
   // one sound (chair, ship, three) or one that sounds like another (one).
   lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'openMonster', 'medalVillage', 'album']);
-  for (const l of D.TOWN_HOUSES) lines(N, ['medalHouse'], { letter: l.letter });
+  for (const l of D.TOWN_HOUSES.filter(h=>!h.simpleSound)) lines(N, ['medalHouse'], { letter: l.letter });
   const stickers = [...D.WORD_FAMILIES.flat(), ...D.RHYME_SETS.flatMap(r => r.set), ...sentences.map(x => x.w),
     ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat(), ...D.LONG_VOWELS.flatMap(g => g.words), ...D.LONG_RHYMES.flatMap(r => r.set),
     ...D.ONE_SOUND.flatMap(x => x.words), ...D.TWO_SOUNDS].map(([w]) => w);

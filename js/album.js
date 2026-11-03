@@ -53,7 +53,7 @@ function albumWords() {
   if (albumList) return albumList;
   albumIndex = new Map();
   /* global RHYMES */
-  const tables = [LETTERS, WORD_FAMILIES, typeof RHYMES !== 'undefined' && RHYMES, SENTENCES].concat(albumMoreTables());
+  const tables = [LETTERS, HOUSE_LETTERS, WORD_FAMILIES, typeof RHYMES !== 'undefined' && RHYMES, SENTENCES].concat(albumMoreTables());
   for (const [w, e] of albumPairs(tables, [])) {
     if (!/^[a-z]+$/.test(w) || !e || /^[\x20-\x7e]*$/.test(e) || albumIndex.has(w)) continue;
     albumIndex.set(w, { w, e, L: w[0].toUpperCase() });
@@ -388,7 +388,7 @@ function medalList() {
   const houseKinds = QUIZ_TYPES.house || [];
   for (const h of TOWN_HOUSES) {
     const ids = new Set();
-    for (const kind of houseKinds) {
+    for (const kind of (h.simpleSound ? ['word'] : houseKinds)) {
       const own = reviewPool(kind, { letter: h.letter });
       if (own.length && own.length < reviewPool(kind).length) own.forEach(id => ids.add(id));
     }
@@ -434,7 +434,7 @@ function medalFanfare(list) {
   const show = fanfareBanner(`${medalIcon()}${list.length > 1 ? medalIcon() : ''}`, list.map(medalName).join(' · '), I18n.t('album.youEarnedAMedal'), 2000);
   fanfareFireworks(show, 3);
   Sound.party();
-  const said = first.letter ? line('medalHouse', { letter: first.letter }) : line('medalVillage');
+  const said = first.letter && !TOWN_HOUSES.find(h=>h.letter===first.letter)?.simpleSound ? line('medalHouse', { letter: first.letter }) : line('medalVillage');
   Sound.say([{ pause: 400 }, { text: said, narrator: true }]);
   return show;
 }
@@ -660,7 +660,7 @@ function stickerTap(b, x, got) {
   b.classList.add('wiggle');
   Sound.tap();
   if (!got) return;
-  const parts = [{ text: `${x.w}!`, narrator: true }];
+  const parts = [{ text: Sound.hasClip(`${x.w}!`) ? `${x.w}!` : x.w, narrator: true }];
   const starts = `${x.w} starts with ${x.L}.`;
   if (Sound.hasClip(starts)) parts.push({ pause: 300 }, { text: starts, narrator: true });
   Sound.say(parts);

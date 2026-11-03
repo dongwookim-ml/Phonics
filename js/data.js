@@ -56,7 +56,7 @@ const placeName = key => place(key).replace(/^[^\p{L}]+\s/u, '');
 
 // Letters and words. `sound` is what the speech engine says for the
 // letter sound; short spellings like "buh" work better than IPA.
-// The first twelve letters each get a house in town (see TOWN_HOUSES).
+// The original word curriculum. All 26 house displays are in HOUSE_LETTERS.
 const LETTERS = [
   { letter: 'A', sound: 'ah',  color: '#ff7a8a', words: [['apple', '🍎'], ['ant', '🐜'], ['alligator', '🐊'], ['ambulance', '🚑'], ['avocado', '🥑'], ['anchor', '⚓'], ['astronaut', '👨‍🚀'], ['arrow', '🏹']] },
   { letter: 'B', sound: 'buh', color: '#6fa8ff', words: [['bus', '🚌'], ['ball', '⚽'], ['banana', '🍌'], ['bear', '🐻'], ['bird', '🐦'], ['book', '📖'], ['boat', '⛵'], ['butterfly', '🦋']] },
@@ -73,6 +73,29 @@ const LETTERS = [
   { letter: 'L', sound: 'lll', color: '#9bd36b', words: [['lion', '🦁'], ['leaf', '🍃'], ['lemon', '🍋'], ['ladybug', '🐞'], ['lollipop', '🍭'], ['lizard', '🦎'], ['lock', '🔒'], ['llama', '🦙']] },
   { letter: 'R', sound: 'rrr', color: '#ff8f8f', words: [['rabbit', '🐰'], ['rainbow', '🌈'], ['ring', '💍'], ['robot', '🤖'], ['rocket', '🚀'], ['rose', '🌹'], ['rooster', '🐓'], ['raccoon', '🦝']] },
 ];
+
+// Keep the established quiz curriculum unchanged. Extra alphabet homes have
+// their own picture-word lessons; X uses familiar words ending in /ks/.
+const HOUSE_LETTERS = LETTERS.concat([
+  {letter:'E',sound:'eh',color:'#efa080',words:[['egg','🥚'],['elephant','🐘']]},
+  {letter:'I',sound:'ih',color:'#85bfdc',words:[['insect','🦗']]},
+  {letter:'J',sound:'juh',color:'#bb9bd9',words:[['juice','🧃'],['jet','✈️']]},
+  {letter:'K',sound:'kuh',color:'#dcad6d',words:[['kite','🪁'],['key','🔑'],['kiwi','🥝']]},
+  {letter:'O',sound:'aw',color:'#edaa72',words:[['octopus','🐙'],['ox','🐂']]},
+  {letter:'Q',sound:'kwuh',color:'#ba9cdc',words:[['queen','👸'],['quilt','🛏️']]},
+  {letter:'U',sound:'uh',color:'#e4a1b8',words:[['umbrella','☂️'],['up','⬆️']]},
+  {letter:'V',sound:'vvv',color:'#84bda9',words:[['violin','🎻'],['van','🚐'],['volcano','🌋']]},
+  {letter:'W',sound:'wuh',color:'#83bcd7',words:[['watermelon','🍉'],['web','🕸️']]},
+  {letter:'X',sound:'ks',color:'#c99cc9',ending:true,words:[['fox','🦊'],['box','📦'],['six','6️⃣']]},
+  {letter:'Y',sound:'yuh',color:'#d9bc6b',words:[['yoyo','🪀'],['yarn','🧶']]},
+  {letter:'Z',sound:'zzz',color:'#a6bb87',words:[['zero','0️⃣'],['zebra','🦓']]},
+]);
+const houseLetter = L => HOUSE_LETTERS.find(l=>l.letter===L);
+const NEIGHBORHOODS = {
+  riverside: { name: 'district.riverside', icon:'🌊', color:'#78b8c8',
+    entrance: { cols:[8,9], row:3 }, townReturn:{c:8,r:6}, start:{c:15,r:29} },
+};
+for (const [key, district] of Object.entries(NEIGHBORHOODS)) PLACES[key] = I18n.t(district.name);
 
 // Optional recorded audio. Set to true and drop files into audio/ as
 //   audio/letters/b.mp3  (the letter sound, e.g. "buh")
@@ -310,6 +333,26 @@ const TOWN_HOUSES = [
   { letter: 'S', c: 26, r: 23, who: I18n.t('data.starLady'),     look: 'flower' },
   { letter: 'T', c: 33, r: 23, who: I18n.t('data.tigerKnight'), look: 'knight' },
 ];
+
+// Smaller, two-tile homes: twelve in town and fourteen beside the river. Existing house
+// identities/medals remain stable; Robot Town keeps its twelve workshops.
+if (!isCaptain()) {
+  const old = Object.fromEntries(TOWN_HOUSES.map(h=>[h.letter,h]));
+  const townLots = [[3,7],[3,16],[3,25],[8,32],[14,33],
+    [25,35],[34,34],[34,25],[34,16],[30,5],[8,24],[29,10]];
+  // Keep the two vacated plots together as an open green beside the river.
+  const riverLots = [3,10,18,25].flatMap(r=>[3,9,21,27].map(c=>[c,r])).slice(2);
+  const looks = ['flower','farmer','baker','granny','kid','bard','maid'];
+  const homes = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].map((letter,i)=>{
+    const [c,r]=i<12?townLots[i]:riverLots[i-12], prior=old[letter];
+    return Object.assign({},prior||{letter,who:I18n.t('district.resident',letter),look:looks[i%looks.length]},
+      {c,r,w:2,d:2,scene:i<12?'town':'riverside',simpleSound:!prior});
+  });
+  TOWN_HOUSES.splice(0,TOWN_HOUSES.length,...homes);
+  const people = { knight:[18,11], flower:[10,21], granny:[21,24], fisher:[28,27],
+    baker:[14,21], kid:[31,20], bard:[23,23], farmer:[11,30] };
+  for (const npc of TOWN_NPCS) { const [c,r]=people[npc.look]; Object.assign(npc,{c,r}); }
+}
 
 // ---- Voices and lines ------------------------------------------------------
 
@@ -766,8 +809,7 @@ const SENTENCES_L2 = [
 
 // ---- Word bank and difficulty (js/quiz.js) ---------------------------------
 
-// More first letters for the town's letter questions (no houses: E, O,
-// K, V, W and Z). K says the same sound as C, so no question shows both.
+// More first letters in the established town question bank. K says the same sound as C, so no question shows both.
 const LETTERS_MORE = [
   { letter: 'E', sound: 'eh',  color: '#7ab8ff', words: [['egg', '🥚'], ['elephant', '🐘'], ['elf', '🧝'], ['envelope', '✉️']] },
   { letter: 'O', sound: 'aw',  color: '#ffa94d', words: [['octopus', '🐙'], ['ox', '🐂'], ['otter', '🦦']] },

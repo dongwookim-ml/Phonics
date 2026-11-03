@@ -459,8 +459,28 @@ Custom names in this audit use live speech fallback rather than requiring record
   prices; the mirror shows her with the one picked on (a treasure on its
   own). Prices are in `shopPrice()` in `js/game.js` (treasures 3 coins, a
   village's 5), or `price` on an item.
-- **Hair salon** (the princess edition): the pink cottage with the striped
-  awning and the barber's pole by the main road, south of the letter houses
+- **Default town square**: the fountain faces a pedestrian shopping square
+  below the castle. Pink hair salon (scissors), lavender nail salon (polish
+  bottle), and gold clothes/gifts shop (dress) share low shopfronts, striped
+  awnings and display windows. Tap a building, shop sign or keeper to visit.
+  The clothes shop uses the existing coin inventory and village unlock rules;
+  the forest shop remains available. `js/town-market.js` holds shop lots/art.
+  Twelve alphabet homes (A–L) sit around the central town's outer streets. The
+  other fourteen (M–Z) live in one unlocked Riverside neighborhood, reached
+  through a gateway above-left of the castle. Its sign shows the neighborhood
+  name only. The homes use 2×2 footprints and are drawn at 2/3 of the old size.
+  Central homes have warm flower-garden colors; Riverside has an animated
+  brook, wooden bridges and windmills. House IDs and existing
+  learning progress stay stable; entering/exiting returns to the proper
+  neighborhood. Robot Town retains its existing twelve-workshop layout.
+  `js/neighborhoods.js` draws the districts; `HOUSE_LETTERS` supplies all 26
+  displays without changing the existing main quiz curriculum. Added homes
+  use picture-word lessons and existing narrator clips, including X-ending
+  words such as fox/box/six. The original residents retain their lessons.
+  Town villagers are placed in clear spaces using sprite-pixel occlusion checks,
+  with gaps between people and clear door/gate arrival tiles.
+- **Hair salon** (the princess edition): the pink shopfront with the striped
+  awning and large scissors sign on the square in front of the castle
   (💇 미용실). Tap it or the hairdresser (✂️ bubble) to change her hair for
   stars: a ✂️ tab of hairstyles (long, bob, pigtails, ponytail, bun,
   braids, curls for a girl; short, spiky, curls, shaggy for a boy) at 5
@@ -473,10 +493,13 @@ Custom names in this audit use live speech fallback rather than requiring record
   "⭐ 3 · 13/15" once the two differ, and the parent screen shows both.
   Hairstyles are never presents nor in the shop. Code in `js/salon.js`,
   the hair art in `HAIR_STYLE_ART` in `js/sprites.js`.
-- **Nail salon** (the princess edition, all titles/looks): the lavender cottage
-  with the mint awning beside the hair salon, at `NAIL_AT` in `js/nails.js`.
+- **Nail salon** (the princess edition, all titles/looks): the lavender shopfront
+  with its polish-bottle sign on the fountain square, at `NAIL_AT` in `js/nails.js`.
   Tap the building or nail artist to open two large interactive hands. Choose a
-  finger, then tap owned polish, a nail sticker or a ring to apply it immediately.
+  finger anywhere along its body or nail in the hand drawing; a soft lavender
+  glow behind the whole finger marks the selection without tinting its skin. Then tap an owned polish, nail sticker
+  or ring to apply it immediately. Owned supplies have a mint background; locked
+  supplies have a lavender background and a lock badge.
   Unowned supplies show a lock and their star price; tapping opens a purchase
   confirmation with the item, price and chosen finger. Only confirming spends
   stars and applies the item. Cancel, Escape, closing the salon or an account
