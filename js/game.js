@@ -187,11 +187,11 @@ function load(raw) {
     const firstSteps = s.guide || { step: s.stars || Object.keys(s.history || {}).length ? 3 : 0 };
     // Stars, coins and dust are also counted per device (js/progress.js).
     return { outfit, owned: ownedFrom(s.owned, outfit, s.shelf), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks, history: Progress.history(s.history), books: s.books || {},
-      skill, settings, friends: s.friends || {}, guide: firstSteps, playtime,
+      skill, settings, friends: s.friends || {}, guide: firstSteps, playtime, nails: nailSaved(s.nails),
       stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
   } catch (e) {
     return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: true, history: {}, books: {},
-      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0, quests: null };
+      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0, quests: null, nails: nailSaved(null) };
   }
 }
 
@@ -230,7 +230,7 @@ function save() {
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
   const data = Object.assign({}, savedRest, { fmt: Progress.FMT, kits: 1, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, stamps: state.stamps, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
-    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests, shelf: state.owned.treasure || [] }, Progress.count(state));
+    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests, nails: state.nails, shelf: state.owned.treasure || [] }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -242,7 +242,7 @@ function save() {
 function applyProgress(s) {
   const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
   Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures, stamps: p.stamps,
-    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests });
+    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests, nails: p.nails });
   const ride = state.outfit.ride;
   state.worn = isCaptain() ? PLAYER.look : heroKey();
   state.outfit = p.outfit;
@@ -255,6 +255,7 @@ function applyProgress(s) {
   renderStars(false);
   renderRide();
   if (!ui.wardrobe.classList.contains('hidden')) renderWardrobe();
+  nailRefresh();
   if (!ui.start.classList.contains('hidden')) {
     ui.nameInput.value = PLAYER.shown;
     ui.spokenInput.value = PLAYER.spoken;
@@ -272,6 +273,7 @@ const state = {
   looks: saved.looks, // the outfit last worn as a girl and as a boy
   worn: isCaptain() ? PLAYER.look : heroKey(), // which of those state.outfit is (js/heroes.js)
   owned: saved.owned,
+  nails: saved.nails,
   stars: saved.stars,
   coins: saved.coins,
   dust: saved.dust,  // fairy dust from the Fairy Village
@@ -329,7 +331,7 @@ function setPaused(on) {
 // js/cave-magic.js). Every close sets state.busy from this, so closing one
 // thing never frees the game under another, nor leaves it stuck with
 // nothing open.
-const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'salon', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic'];
+const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'salon', 'nail-salon', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic'];
 function busyNow() {
   const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
   return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep || caveFighting();
@@ -640,6 +642,7 @@ function openDialog(npc) {
   faceEachOther(npc);
   if (npc.shop) { openShop(npc); return; }
   if (npc.salon) { openSalon(npc); return; } // the hair salon (js/salon.js)
+  if (npc.nailSalon) { openNailSalon(npc); return; }
   state.busy = true;
   state.talking = npc;
   libraryDialog(npc);
@@ -2585,7 +2588,7 @@ function tapObject(o, wx, wy, front) {
     goLink(o.stairs || o.links, true);
     return true;
   }
-  if (o.kind === 'shop' || o.kind === 'salon') {
+  if (o.kind === 'shop' || o.kind === 'salon' || o.kind === 'nail-salon') {
     Sound.tap();
     talkTo(o.keeper);
     return true;
@@ -2714,6 +2717,7 @@ const OUTSIDE_CARDS = [
   { id: 'wardrobe', close: closeWardrobe },
   { id: 'shop', close: () => { Sound.tap(); closeShop(); } },
   { id: 'salon', close: () => { Sound.tap(); closeSalon(); } },
+  { id: 'nail-salon', close: () => { Sound.tap(); closeNailSalon(); } },
   { id: 'library', close: () => { Sound.tap(); closeLibrary(); } },
   { id: 'album', close: closeAlbum, skip: e => albumUi.skipped === e },
   { id: 'quests', close: closeQuests, skip: e => questUi.skipped === e },

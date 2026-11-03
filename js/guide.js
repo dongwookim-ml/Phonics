@@ -39,7 +39,7 @@ const guidePlaying = () => ui.start.classList.contains('hidden') && !guide.aslee
 
 // The villager nearest to her who can be talked to (not a shopkeeper, the
 // hairdresser, a ride or a caught monster).
-const guideAsks = n => !n.mount && !n.shop && !n.salon && !n.caught;
+const guideAsks = n => !n.mount && !n.shop && !n.salon && !n.nailSalon && !n.caught;
 function guideNearest() {
   const h = state.hero;
   let best = null;

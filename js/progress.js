@@ -379,9 +379,21 @@ const Progress = (() => {
     for (const [k, e] of Object.entries(perDevice(f))) out[k] = { [key]: Object.values(e).reduce((t, v) => t + n(v), 0) };
     return out;
   }
+  // Nail supplies stay unlocked on both tablets. Each finger keeps its latest
+  // design, so decorating different fingers on two devices preserves both.
+  function joinNails(a, b) {
+    if (!isObj(a) || !isObj(b)) return isObj(a) ? a : b;
+    const fingers = {};
+    const A = isObj(a.fingers) ? a.fingers : {}, B = isObj(b.fingers) ? b.fingers : {};
+    for (const key of new Set([...Object.keys(A), ...Object.keys(B)])) {
+      const x = A[key], y = B[key];
+      fingers[key] = !isObj(x) ? y : !isObj(y) ? x : n(y.at) > n(x.at) ? y : x;
+    }
+    return Object.assign({}, b, a, { owned: join(a.owned, b.owned), fingers });
+  }
   // The first-steps pointer (js/guide.js) only ever grows, so the larger wins.
   const JOIN = { history: joinHistory, books: joinBooks, owned: grow, skill: joinSkill, settings: joinSettings,
-    friends: joinFriends, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers };
+    friends: joinFriends, guide: grow, quests: joinQuests, playtime: joinPlaytime, stickers: joinStickers, nails: joinNails };
   // The outfit and name come whole from one copy.
   const WHOLE = ['outfit', 'player', 'recent', 'at', 'ver'];
   const COUNTED = ['stars', 'coins', 'dust', 'earned', 'spent'];
@@ -505,7 +517,8 @@ const Progress = (() => {
   function played(save) {
     return Object.values(editions(save)).some(ed => {
       const t = totals(tallyOf(ed));
-      return t.stars > 0 || t.coins > 0 || t.dust > 0 || (isObj(ed.history) && Object.keys(ed.history).length > 0);
+      return t.stars > 0 || t.coins > 0 || t.dust > 0 || (isObj(ed.history) && Object.keys(ed.history).length > 0)
+        || (isObj(ed.nails) && isObj(ed.nails.fingers) && Object.values(ed.nails.fingers).some(f => isObj(f) && n(f.at) > 0));
     });
   }
   function stars(save) {

@@ -267,6 +267,7 @@ function buildTown() {
   addTownFairyGate(sc);
   addTownMonsterGate(sc, addSideGate); // js/monster-village.js
   addTownSalon(sc); // the hair salon, js/salon.js
+  addTownNailSalon(sc); // manicure atelier, js/nails.js
   renderGround(sc);
   return sc;
 }
