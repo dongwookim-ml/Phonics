@@ -383,9 +383,12 @@ function drawGateTrail(now) {
 // that start with it); a village's are all the questions of its kinds. A
 // place whose kinds are another's (the cave asks the unicorns' questions)
 // shares that medal.
+// Kinds there for variety (the same sounds asked another way: sameStart,
+// oddRhyme) add nothing to a medal, so medals stay as big as they were.
+const MEDAL_SKIP = ['sameStart', 'oddRhyme'];
 function medalList() {
   const out = [];
-  const houseKinds = QUIZ_TYPES.house || [];
+  const houseKinds = (QUIZ_TYPES.house || []).filter(k => !MEDAL_SKIP.includes(k));
   for (const h of TOWN_HOUSES) {
     const ids = new Set();
     for (const kind of houseKinds) {
@@ -396,7 +399,7 @@ function medalList() {
   }
   const seen = new Set();
   for (const key of ['town', 'forest', 'unicorn', 'fairy', 'dungeon', 'monster']) {
-    const kinds = QUIZ_TYPES[key];
+    const kinds = QUIZ_TYPES[key] && QUIZ_TYPES[key].filter(k => !MEDAL_SKIP.includes(k));
     const sig = kinds && kinds.slice().sort().join();
     if (!kinds || seen.has(sig)) continue;
     seen.add(sig);

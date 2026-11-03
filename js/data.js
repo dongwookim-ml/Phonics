@@ -516,6 +516,11 @@ LINES.album = isCaptain() ? ['Your word chip book!', "Let's look at your word ch
 //   start      hear a word (with its picture), pick the letter it starts with
 //   findStart  hear a letter's name, pick the picture that starts with it
 //   rhyme      pick the picture that rhymes with a word
+//   sameStart  see and hear a word with its picture (cat 🐱), pick the
+//              picture that starts with the same sound (🐮); in a letter
+//              house, a word of that letter
+//   oddRhyme   three pictures (four at the top tier), all but one rhyme:
+//              pick the one that doesn't
 //   family     hear a word, pick it from four that share the first letter
 //   vowel      fill in the missing middle letter: c ? t
 //   ending     fill in the missing last letter: ca ?
@@ -524,9 +529,9 @@ LINES.album = isCaptain() ? ['Your word chip book!', "Let's look at your word ch
 //              starts with one sound, then two (ONE_SOUND, TWO_SOUNDS)
 //   spell      hear a word, tap its letters (Fairy Village)
 const QUIZ_TYPES = {
-  town: ['word', 'start', 'rhyme'],
-  house: ['word', 'findStart', 'rhyme'],
-  forest: ['family', 'vowel', 'ending', 'read', 'rhyme', 'blend'],
+  town: ['word', 'start', 'rhyme', 'sameStart'],
+  house: ['word', 'findStart', 'rhyme', 'sameStart'],
+  forest: ['family', 'vowel', 'ending', 'read', 'rhyme', 'blend', 'oddRhyme'],
 };
 
 // How many recent answers of a kind to keep out of new questions (at most
@@ -608,6 +613,10 @@ LINES.firstSound = ['Which letter does it start with?', 'What is the first lette
 LINES.rhymeEnd = ['Listen to the end.', 'Listen to the end of the word.'];
 LINES.findStart = ['Which one starts with', 'Which picture starts with', 'What begins with'];
 LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
+// The word follows: "Which one starts like … cat".
+LINES.sameStart = ['Which one starts like', 'Which picture starts like', 'What starts the same as'];
+// Before the pictures' words, said in the order they are shown.
+LINES.oddRhyme = ["Which one doesn't rhyme?", "Listen! Which one doesn't rhyme?", "Find the one that doesn't rhyme!"];
 LINES.vowel = ['Which letter goes in the middle?', 'What letter is missing in the middle?', 'Can you find the middle letter?'];
 LINES.ending = ['Which letter goes at the end?', 'What letter is missing at the end?', 'Can you find the last letter?'];
 LINES.read = ['Can you read this word?', 'Read the word, then find the picture!', 'Read it all by yourself!'];
@@ -777,6 +786,24 @@ const LETTERS_MORE = [
   { letter: 'Z', sound: 'zzz', color: '#ff9fb0', words: [['zebra', '🦓'], ['zero', '0️⃣']] },
 ];
 LETTERS.push(...LETTERS_MORE);
+// More words for each letter's questions (word, start, findStart,
+// sameStart), from the word lists below, so a letter house has more than
+// eight to ask: pictures she names for sure, by no other name (ALIAS) that
+// starts with another sound, each starting with its letter's own sound (no
+// ch, sh or th, no soft g). A house's poster keeps its first three words.
+const LETTER_WORDS_MORE = {
+  B: [['bed', '🛏️'], ['box', '📦'], ['bat', '🦇'], ['bag', '👜'], ['bell', '🔔'], ['bone', '🦴'], ['bee', '🐝'], ['balloon', '🎈']],
+  C: [['can', '🥫'], ['clock', '⏰'], ['crown', '👑'], ['clown', '🤡'], ['crab', '🦀'], ['cactus', '🌵']],
+  D: [['dice', '🎲'], ['deer', '🦌'], ['dress', '👗']],
+  F: [['four', '4️⃣'], ['five', '5️⃣']],
+  H: [['hand', '✋'], ['hotdog', '🌭']],
+  P: [['pen', '🖊️'], ['plant', '🌱'], ['pear', '🍐'], ['peach', '🍑']],
+  S: [['six', '6️⃣'], ['soap', '🧼'], ['sandwich', '🥪'], ['snail', '🐌'], ['sled', '🛷'], ['stop', '🛑']],
+  T: [['ten', '🔟'], ['truck', '🚚'], ['trumpet', '🎺']],
+  L: [['leg', '🦵'], ['light', '💡']],
+  R: [['rice', '🍚']],
+};
+for (const l of LETTERS) l.words.push(...(LETTER_WORDS_MORE[l.letter] || []));
 
 // Other names a child may use for a picture, so a wrong card is never
 // right by her own name for it (🦍 is "monkey" to her: not a wrong M).
@@ -804,13 +831,14 @@ const CVC_A1 = [
   ['cat', '🐱', 2], ['dog', '🐶', 2], ['pig', '🐷', 2], ['sun', '☀️', 2], ['bus', '🚌', 2], ['hat', '🎩', 2],
   ['bed', '🛏️', 2], ['box', '📦', 2], ['fox', '🦊', 2], ['hen', '🐔', 2], ['map', '🗺️', 2], ['cup', '🥤', 1],
   ['man', '👨', 1], ['six', '6️⃣', 2], ['ten', '🔟', 2], ['bug', '🐛', 2], ['pen', '🖊️', 2], ['van', '🚐', 2],
+  ['bat', '🦇', 2], ['cap', '🧢', 2], ['bag', '👜', 2], ['can', '🥫', 2], ['leg', '🦵', 2],
 ];
 // The other 3-letter words.
 const CVC_A2 = [
-  ['bat', '🦇', 2], ['cap', '🧢', 2], ['bag', '👜', 2], ['can', '🥫', 2], ['leg', '🦵', 2], ['nut', '🥜', 2],
-  ['red', '🔴', 1], ['web', '🕸️', 2], ['mom', '👩', 1], ['pin', '📌', 1], ['rat', '🐀', 1], ['tub', '🛁', 1],
-  ['tap', '🚰', 1], ['mug', '☕', 1], ['jet', '✈️', 1], ['net', '🥅', 1], ['kid', '🧒', 1], ['lip', '👄', 1],
-  ['pan', '🍳', 1], ['gas', '⛽', 1], ['run', '🏃', 1], ['nap', '😴', 1], ['sad', '😢', 1], ['yum', '😋', 1],
+  ['nut', '🥜', 2], ['red', '🔴', 1], ['web', '🕸️', 2], ['mom', '👩', 1], ['pin', '📌', 1], ['rat', '🐀', 1],
+  ['tub', '🛁', 1], ['tap', '🚰', 1], ['mug', '☕', 1], ['jet', '✈️', 1], ['net', '🥅', 1], ['kid', '🧒', 1],
+  ['lip', '👄', 1], ['pan', '🍳', 1], ['gas', '⛽', 1], ['run', '🏃', 1], ['nap', '😴', 1], ['sad', '😢', 1],
+  ['yum', '😋', 1],
 ];
 // Blends: two letters first (frog) or last (milk).
 const CCVC = [
@@ -886,6 +914,10 @@ const TIERS = {
   start:     [{ n: 2, far: true, sound: true, single: true }, { n: 3, sound: true }, { n: 3 }, { n: 3, near: true, lower: true }],
   findStart: [{ n: 2, far: true, sound: true, single: true }, { n: 3, sound: true }, { n: 3, near: true }],
   rhyme:     [{ n: 2 }, { n: 3 }, { n: 3, sameVowel: true }],
+  sameStart: [{ n: 2, far: true, sound: true, single: true }, { n: 3, sound: true }, { n: 3 }, { n: 3, near: true }],
+  // n counts the odd one too: it has another vowel, at a `far` tier another
+  // last sound too (cat, hat, dog); at a `sameVowel` tier the rhyme's vowel (cat, hat, can).
+  oddRhyme:  [{ n: 3, far: true }, { n: 3 }, { n: 3, sameVowel: true }, { n: 4 }],
   family:    [{ n: 3, pics: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 4, words: 'FAM' }, { n: 4, minimal: true }],
   vowel:     [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],
   ending:    [{ n: 2, far: true, words: 'CVC_A1' }, { n: 3, words: 'CVC' }, { n: 3, near: true, words: 'CVC' }],

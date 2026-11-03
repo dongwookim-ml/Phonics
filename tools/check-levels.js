@@ -128,6 +128,7 @@ const check = (name, ok, detail) => {
       master(QUIZ_TYPES.town, 'town');
       Quiz.skill('word').w = [1, 1, 1, 1, 0];
       out.slip = tally(town());
+      out.townKinds = QUIZ_TYPES.town;
       return out;
     });
     const tag = edition;
@@ -136,7 +137,7 @@ const check = (name, ok, detail) => {
     const below = t => t.filter(x => x < 3).length;
     check(`${tag}: every 6th question is from the tier below when she isn't sure (${r.notSure.join('')})`, below(r.notSure) === 3 && r.notSure.every((t, i) => (t < 3) === ((i + 1) % 6 === 0)), r.notSure);
     check(`${tag}: none is easier when her last 8 were right (${r.sure.join('')})`, below(r.sure) === 0, r.sure);
-    check(`${tag}: nothing mastered: only the town's kinds, and no level for kinds she never played`, !r.none.stages.forest && Object.keys(r.none.kinds).every(k => ['word', 'start', 'rhyme'].includes(k)) && r.noneSkill.split(',').every(k => ['word', 'start', 'rhyme'].includes(k)), r.none);
+    check(`${tag}: nothing mastered: only the town's kinds, and no level for kinds she never played`, !r.none.stages.forest && Object.keys(r.none.kinds).every(k => r.townKinds.includes(k)) && r.noneSkill.split(',').every(k => r.townKinds.includes(k)), r.none);
     const share = (t, k) => (t.kinds[k] || 0) / Object.values(t.kinds).reduce((a, b) => a + b, 0);
     check(`${tag}: a mastered kind is asked now and then (${Math.round(share(r.one, 'word') * 100)}%)`, share(r.one, 'word') > 0.08 && share(r.one, 'word') < 0.3 && !r.one.stages.forest, r.one);
     check(`${tag}: all mastered in town: the forest's questions, capped like the forest, the town's now and then (${JSON.stringify(r.town.stages)})`,

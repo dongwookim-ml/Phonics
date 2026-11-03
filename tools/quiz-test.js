@@ -30,6 +30,16 @@
 // two-sound words, far ones at a far tier. Each place asks blending up to
 // its band counted from after the first steps, and the first steps' ids
 // are in their own kinds' pools, not blending's.
+// sameStart: the clue word (a house's own letter in a house) and a right
+// picture that starts with its letter by every name she may call it, the
+// other pictures as for findStart and never the clue's; its sound said
+// with the question at a `sound` tier, and in the answer. oddRhyme: all
+// cards but one from one rhyme, pictures she names for sure by no other
+// name, the odd one from a rhyme that doesn't rhyme with it (nor by
+// another name, nor nearly: hat, jet), another vowel or at a `sameVowel`
+// tier the same when it can, another last sound at a `far` tier, and the
+// cards' words said in the order they are shown. The letters' extra words
+// (LETTER_WORDS_MORE) start with their letter's own sound.
 // First it runs tools/check-books.js: every word of the books she reads
 // herself can be sounded out at the book's level, or is a sight word.
 // Run: node tools/quiz-test.js  (needs the playwright package and Chromium)
@@ -179,6 +189,19 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
           if (U12.test(e)) problems.push(`ONE_SOUND ${s.l}: ${w} ${e} is newer than Unicode 12`);
         }
       }
+      // The letters' extra words: each starts with its letter's own sound, a
+      // picture she names for sure by no name that starts with another one,
+      // and no word is any letter's twice.
+      for (const [L, list] of Object.entries(LETTER_WORDS_MORE)) {
+        const l = L.toLowerCase();
+        for (const [w, e] of list) {
+          const x = Quiz.words()[w];
+          if (w[0] !== l || (notSound[l] && notSound[l].test(w)) || /^(ch|sh|th|wh|ph|kn|wr)/.test(w)) problems.push(`LETTER_WORDS_MORE ${L}: ${w} doesn't start with /${l}/`);
+          if (!x || x.pic < 2 || x.e !== e || x.aka.some(m => !sameSound(m[0], l))) problems.push(`LETTER_WORDS_MORE ${L}: ${w} ${e} is not a picture she names for sure`);
+        }
+      }
+      const allLetterWords = LETTERS.flatMap(x => x.words.map(([w]) => w));
+      if (new Set(allLetterWords).size !== allLetterWords.length) problems.push('LETTERS: a word is there twice');
       for (const [w, e, two] of TWO_SOUNDS) {
         const x = Quiz.words()[w];
         if (two.length !== 2) problems.push(`TWO_SOUNDS ${w}: ${two.join('-')} is not two sounds`);
@@ -205,7 +228,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
       const knowAll = () => Object.fromEntries(ONE_SOUND.map(x => [x.l.toUpperCase(), { right: 2, hit: 5, last: 5 }]));
       const ladderOf = kind => (TIERS[kind] ? kind : Object.keys(TIERS).find(k => TIERS[k].some(c => c.step === kind)));
       for (const kind of Quiz.kinds) {
-        const npcs = ['word', 'findStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.map(h => ({ level: 1, letter: h.letter }))) : [{ level: 1 }];
+        const npcs = ['word', 'findStart', 'sameStart'].includes(kind) ? [{ level: 1 }].concat(TOWN_HOUSES.map(h => ({ level: 1, letter: h.letter }))) : [{ level: 1 }];
         const ladder = ladderOf(kind);
         for (const npc of npcs) {
           state.history = {};
@@ -368,7 +391,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
             if (q.kind === 'blend' && (!q.magic || q.magic.w !== q.target || q.magic.parts.join('') !== q.target)) problems.push(`${where}: its magic is ${JSON.stringify(q.magic)}`);
             const pics = q.options.map(picOf).filter(Boolean);
             if (new Set(pics).size !== pics.length) problems.push(`${where}: two cards show the same picture ${pics.join(' ')}`);
-            if ((cfg.pics || ['rhyme', 'meaning', 'longRhyme'].includes(q.kind)) && q.kind !== 'sentence' && pics.length !== n) problems.push(`${where}: a card without its picture`);
+            if ((cfg.pics || ['rhyme', 'meaning', 'longRhyme', 'oddRhyme'].includes(q.kind)) && q.kind !== 'sentence' && pics.length !== n) problems.push(`${where}: a card without its picture`);
             const right = q.options.find(o => o.right);
             const rw = String(right.wrong).toLowerCase();
             const wrongs = q.options.filter(o => !o.right).map(o => String(o.wrong).toLowerCase());
@@ -376,7 +399,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
             if (/bigpic/.test(q.options[0].html) && !cfg.minimal) for (const w of ws) if (!W[w] || W[w].pic < 2) problems.push(`${where}: unclear picture ${w} on a picture-only card`);
             const letterCards = /class="letter"/.test(q.options[0].html);
             const firstOf = w => (letterCards ? w : w[0]);
-            if (['word', 'findStart', 'start', 'vowel', 'ending'].includes(q.kind)) {
+            if (['word', 'findStart', 'start', 'vowel', 'ending', 'sameStart'].includes(q.kind)) {
               const L = q.kind === 'vowel' ? q.target[1] : q.kind === 'ending' ? q.target[2] : q.target[0];
               const hard = wrongs.filter(w => hardPair(firstOf(w), L));
               // Same sound (c, k): never. Hard to hear apart: only at the top tier, once.
@@ -385,14 +408,14 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
               if (cfg.near && hard.length > 1) problems.push(`${where}: ${hard.length} hard cards`);
             }
             // Never two cards whose letters (or first letters) say the same sound (c, k).
-            if (['word', 'findStart', 'start'].includes(q.kind) || letterCards) for (let a = 0; a < ws.length; a++) for (let b = a + 1; b < ws.length; b++) if (sameSound(firstOf(ws[a]), firstOf(ws[b]))) problems.push(`${where}: ${ws[a]} and ${ws[b]} start with the same sound`);
+            if (['word', 'findStart', 'start', 'sameStart'].includes(q.kind) || letterCards) for (let a = 0; a < ws.length; a++) for (let b = a + 1; b < ws.length; b++) if (sameSound(firstOf(ws[a]), firstOf(ws[b]))) problems.push(`${where}: ${ws[a]} and ${ws[b]} start with the same sound`);
             // Never a card she could call by the target's name, or (first-sound
             // questions) by a name that starts with the target's sound.
             if (!letterCards) for (const w of wrongs) {
               const x = W[w];
               if (!x) continue;
               if (x.aka.includes(t.w) || t.aka.includes(w)) problems.push(`${where}: ${w} is also called ${t.w}`);
-              if (['findStart', 'word'].includes(q.kind) && x.aka.some(m => sameSound(m[0], t.w[0]))) problems.push(`${where}: ${w} (${x.aka.join('/')}) starts like ${t.w}`);
+              if (['findStart', 'word', 'sameStart'].includes(q.kind) && x.aka.some(m => sameSound(m[0], t.w[0]))) problems.push(`${where}: ${w} (${x.aka.join('/')}) starts like ${t.w}`);
             }
             if (q.kind === 'start') for (const w of wrongs) if (t.aka.some(m => sameSound(m[0], w.toLowerCase()))) problems.push(`${where}: ${q.target} (${t.aka}) starts with ${w}`);
             // Words that differ only in a sound she can't hear yet: top tiers only.
@@ -423,6 +446,60 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
                 const can = end && RHYME_SETS.some(r => SHORT[r.v] && lastSound(r.rime) === end);
                 if (shorts.length !== (cfg.endSound && can ? 1 : 0) || shorts.some(w => lastSound(setOf(w).rime) !== end)) problems.push(`${where}: short vowel cards ${shorts.join(',') || 'none'}`);
               }
+            }
+            // The words a question says in the asker's voice, in order.
+            const voicedIn = parts => parts.filter(p => p && p.file && p.text).map(p => p.text);
+            // sameStart: the clue word (a house's own letter in a house) with
+            // its picture, said when asked; the right picture starts with its
+            // letter by every name she may call it, the others never look like
+            // the clue or go by its name; its sound with the question at a
+            // `sound` tier, and always in the answer.
+            if (q.kind === 'sameStart') {
+              const base = W[q.base] || { e: '?', aka: [] };
+              const L = String(q.base)[0];
+              const stop = 'bdgptkc'.includes(L);
+              const its = stop ? `${L}-${L}-${L}` : L;
+              if (!q.clue.includes(base.e)) problems.push(`${where}: the clue has no picture of ${q.base}`);
+              if (npc.letter && L !== npc.letter.toLowerCase()) problems.push(`${where}: ${q.base} in the ${npc.letter} house`);
+              if (rw === q.base || rw[0] !== L || t.aka.some(m => !sameSound(m[0], L))) problems.push(`${where}: ${rw} (${t.aka.join('/')}) may not start like ${q.base}`);
+              for (const w of wrongs) if (W[w] && (W[w].e === base.e || W[w].aka.includes(q.base) || base.aka.includes(w))) problems.push(`${where}: ${w} looks like ${q.base}`);
+              if (voicedIn(q.ask).join() !== q.base) problems.push(`${where}: asked with ${voicedIn(q.ask).join()}, not ${q.base}`);
+              if (spoken(q.ask) !== (cfg.sound ? its : '')) problems.push(`${where}: asked with the sound ${spoken(q.ask) || 'none'}`);
+              for (const [what, parts] of [['answered', q.answer], ['shown', q.model]]) if (spoken(parts) !== its) problems.push(`${where}: ${what} with the sound ${spoken(parts)}, not ${its}`);
+            }
+            // oddRhyme: all cards but the right one from one rhyme, pictures
+            // she names for sure by no other name; the odd one from a rhyme
+            // that doesn't rhyme with it, by no rhyming name, never nearly
+            // (hat, jet), another vowel (the same at a `sameVowel` tier when
+            // there is one), another last sound at a `far` tier; no two
+            // rhyming cards she can't hear apart (tree, three); the cards'
+            // words said in the order they are shown.
+            if (q.kind === 'oddRhyme') {
+              const setOf = w => RHYME_SETS.find(r => r.set.some(([x]) => x === w));
+              const sure = w => W[w] && W[w].pic >= 2 && !LONG_RHYME_UNSURE.has(w);
+              const set = setOf(wrongs[0]);
+              const odd = setOf(rw);
+              if (wrongs.length !== n - 1 || wrongs.some(w => setOf(w) !== set)) problems.push(`${where}: ${wrongs.join(',')} are not one rhyme`);
+              else if (!odd || odd === set) problems.push(`${where}: ${rw} is not from another rhyme`);
+              else {
+                if (odd.v === set.v && lastSound(odd.rime) === lastSound(set.rime)) problems.push(`${where}: ${rw} rhymes with ${wrongs.join(',')}`);
+                if (t.aka.some(a => a.endsWith(set.rime) || set.set.some(([x]) => x === a))) problems.push(`${where}: ${rw} (${t.aka.join('/')}) may rhyme with ${wrongs.join(',')}`);
+                if (hardPair(SHORT[odd.v], SHORT[set.v]) && odd.rime.slice(1) === set.rime.slice(1)) problems.push(`${where}: ${rw} (${odd.rime}) nearly rhymes with ${set.rime}`);
+                if (cfg.far && lastSound(odd.rime) === lastSound(set.rime)) problems.push(`${where}: ${rw} ends like ${set.rime} at a far tier`);
+                const can = RHYME_SETS.some(s => s !== set && s.v === set.v && lastSound(s.rime) !== lastSound(set.rime) &&
+                  s.set.some(([x]) => sure(x) && !W[x].aka.some(a => a.endsWith(set.rime)) && !wrongs.some(w => W[w].e === W[x].e)));
+                if ((odd.v === set.v) !== !!(cfg.sameVowel && can)) problems.push(`${where}: odd one ${rw} (${odd.v}) for ${set.rime} (${set.v})`);
+                for (const w of wrongs) if (W[w].aka.some(a => !set.set.some(([x]) => x === a))) problems.push(`${where}: ${w} (${W[w].aka.join('/')}) may not rhyme`);
+                const twin = (a, b) => {
+                  const x = heardOf(a);
+                  const y = heardOf(b);
+                  const d = x.map((s, i) => [s, y[i]]).filter(([p, r]) => p !== r);
+                  return x.length === y.length && d.length === 1 && hardPair(d[0][0], d[0][1]);
+                };
+                for (let a = 0; a < wrongs.length; a++) for (let b = a + 1; b < wrongs.length; b++) if (twin(wrongs[a], wrongs[b])) problems.push(`${where}: ${wrongs[a]} and ${wrongs[b]} differ only in a hard pair`);
+              }
+              for (const w of ws) if (!sure(w)) problems.push(`${where}: ${w} is not a picture she names for sure`);
+              if (voicedIn(q.ask).join() !== ws.join() || voicedIn(q.replay).join() !== ws.join()) problems.push(`${where}: says ${voicedIn(q.ask).join()} for the cards ${ws.join()}`);
             }
             // The Monster Village's words: no card she hears as the answer
             // (road, rode), and no two that differ only in a sound she can't

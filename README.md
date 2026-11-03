@@ -155,10 +155,13 @@ Custom names in this audit use live speech fallback rather than requiring record
   house to walk in. Each house's resident asks words that start with that
   house's letter, and the wall shows the letter and its pictures.
 - **Villagers** (♪ bubble): tap one to talk and they ask a question with
-  answers **1, 2, 3**. Town folk mix three kinds: pick the word you hear,
-  pick the letter a word starts with, or find the word that rhymes. House
-  residents ask for the picture that starts with their house's letter
-  instead of the letter question. The cards wait (dimmed, the 🔊 glowing) until
+  answers **1, 2, 3**. Town folk mix four kinds: pick the word you hear,
+  pick the letter a word starts with, find the word that rhymes, or find
+  the picture that starts like a word ("Which one starts like… cat?",
+  `sameStart`: cow). House residents ask for the picture that starts with
+  their house's letter instead of the letter question, and their words
+  start with it (`LETTER_WORDS_MORE` adds more of them). `sameStart` adds
+  nothing to a medal. The cards wait (dimmed, the 🔊 glowing) until
   the word has been said. Someone she has already talked to that day skips
   the chat and just asks.
 - **A wrong answer** never sends her away. The picked card shakes, turns
@@ -382,7 +385,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   words that share the first letter (hug / hut / hat / hen), the missing
   middle sound (c ? t), the missing last sound (ca ?), reading a word with
   no voice and picking its picture, hearing a word's sounds one by one
-  ("/s/ … /u/ … /n/") and picking its picture, and rhymes. Only the forest
+  ("/s/ … /u/ … /n/") and picking its picture, rhymes, and the one of three
+  (four at the top) that doesn't rhyme (`oddRhyme`, not in its medal). Only the forest
   (and the villages past it) gives out its treasures: fairy wings, a
   starlight cape, a night-sky dress, the star sword and dragon wings for a
   boy, a glowing mushroom and an acorn. Word families live in
