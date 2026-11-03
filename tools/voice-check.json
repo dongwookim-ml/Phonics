@@ -1,9 +1,9 @@
 {
 "calibration": {"prompt": null, "rates": {"'Um... uh, the.'": "3/40", "'Umm, uh, a, the... Uh, so, um, like, the... a'": "2/40", "None": "3/40"}, "words": 40},
-"index": "1af930fb9bf6",
+"index": "6d1eaba1309a",
 "model": "small.en",
 "shards": 10,
-"summary": {"different": 3, "ok": 16447, "phonetic": 1586, "unclear": 1111},
+"summary": {"different": 3, "ok": 16449, "phonetic": 1586, "unclear": 1111},
 "unchecked": 0,
 "clips": {
 "af_aoede|. Ding, dong!": {"asr": "different", "heard": "dot ding dong.", "id": "7849a1b159", "status": "unclear"},
@@ -4027,6 +4027,8 @@
 "af_heart|wolf": {"heard": "Wolf.", "id": "e724bf8496", "status": "ok", "words": [["Wolf.", 0.0, 0.32, 0.58]]},
 "af_heart|wolf starts with W.": {"heard": "Wolf starts with W.", "id": "d55d5fd918", "status": "phonetic"},
 "af_heart|wolf!": {"heard": "Wolf?", "id": "0d49bcaa7f", "status": "ok", "words": [["Wolf?", 0.0, 0.3, 0.73]]},
+"af_heart|x-ray": {"heard": "X-ray", "id": "c4cf547a6d", "status": "ok"},
+"af_heart|xylophone": {"heard": "Xylophone", "id": "86a6072870", "status": "ok", "words": [["Xylophone", 0.0, 0.8, 0.85]]},
 "af_heart|yam": {"heard": "yam.", "id": "e8ac43af2c", "status": "ok", "words": [["yam.", 0.0, 0.54, 0.55]]},
 "af_heart|yarn": {"heard": "Yarn.", "id": "29c4264bdc", "status": "ok", "words": [["Yarn.", 0.0, 0.46, 0.82]]},
 "af_heart|yarn starts with Y.": {"heard": "Yarn starts with Y.", "id": "f0c1893f35", "status": "phonetic"},
