@@ -34,9 +34,29 @@ Tortoise’s steady determination and joy.
 contrasting summer play and winter hunger with warm expressions of kindness.
 **The Town Mouse and the Country Mouse** has eight soft pastel-pencil scenes,
 with consistent country-cottage and town dining-room settings and expressive
-contrasts between excitement, fear and relief. All ten story books now have
-illustrations. Story
-sentences, recorded narration, page order and comprehension questions are unchanged.
+contrasts between excitement, fear and relief. These ten original story books
+retain their existing sentences, recorded narration, page order and questions.
+
+Five additional classics use original English retellings aimed at ages 6–7,
+with three comprehension questions answered by the text in each book:
+
+| Book | Pages | Illustration style |
+| --- | ---: | --- |
+| The Crow and the Pitcher | 10 | Scratchboard engraving with selective watercolor |
+| The North Wind and the Sun | 10 | Luminous stained-glass mosaic |
+| The Three Billy Goats Gruff | 12 | Scandinavian embroidered fabric applique |
+| The Elves and the Shoemaker | 12 | Hand-carved wooden puppet diorama |
+| Jack and the Beanstalk | 12 | Painted animated-adventure storybook |
+
+Source editions are [Aesop's Fables](https://www.gutenberg.org/ebooks/53103),
+[East of the Sun and West of the Moon](https://www.gutenberg.org/ebooks/30973),
+[Grimms' Fairy Tales](https://www.gutenberg.org/ebooks/2591), and
+[English Fairy Tales](https://www.gutenberg.org/ebooks/7439). These are newly
+written adaptations, with non-graphic endings for the troll and giant.
+Each new book records its source URL and reading age in `js/books.js`.
+New narration lines are listed in `tools/tts-phrases.json`; until recorded by
+the existing Polly workflow, they use the speech server/device voice fallback.
+
 The reader places art beside the sentences on wide screens and above them on
 portrait screens, and keeps emoji as a fallback if an image fails to load.
 
@@ -625,8 +645,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   lost. The robot edition has missions, boxes, batteries and a blue chest.
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
-  "📖 책 읽어주세요" button, for ten short fairy tales and fables retold in
-  simple English. The reader reads each sentence aloud and highlights it,
+  "📖 책 읽어주세요" button, for fifteen illustrated fairy tales and fables
+  retold in simple English (8–12 pages). The reader reads each sentence aloud and highlights it,
   turning pages on its own (⏸ pauses, ◀ ▶ turn pages, tap a sentence to hear
   it). After the last page come three questions; each right answer pays
   🪙 1 coin, but only the first time that question is answered right, so
