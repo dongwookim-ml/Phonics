@@ -1004,6 +1004,92 @@ body.monster { background: linear-gradient(#2a2458, #5a4aa0 50%, #9a88d8); }
 .salon .wd-count { color: #c0508a; }
 .salon .shop-item.mine .price { background: #e4f8e0; color: #3a8a48; }
 .salon .shop-item.worn { box-shadow: 0 0 0 3px #ff9cc8; }
+
+/* Nail atelier: a large, touchable hand on a mint manicure mat. */
+.nail-salon { position: fixed; z-index: 24; top: calc(var(--hud) + 12px); bottom: 12px; left: 50%; transform: translateX(-50%); width: min(1100px, calc(100% - 28px)); display: flex; flex-direction: column; padding: 14px; gap: 12px; color: var(--ink); background: #fff6f0; border: 4px solid var(--ink); border-radius: 28px; box-shadow: 0 8px 0 rgba(74,44,79,.22), inset 0 0 0 5px #eadcf3; }
+.nail-salon.hidden { display: none; }
+.nail-head { display: flex; align-items: center; gap: 12px; padding: 0 4px; }
+.nail-head h2 { flex: 1; margin: 0; font-size: 27px; }
+.nail-stars { font-family: "Baloo 2", var(--ui-font); font-size: 24px; font-weight: 800; white-space: nowrap; background: #fff0be; padding: 3px 14px; border: 2px solid #d7b970; border-radius: 20px; }
+.nail-close { flex: none; width: 48px; height: 48px; border: 3px solid var(--ink); border-radius: 50%; background: #fff; font-size: 24px; }
+.nail-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; flex: 1; min-height: 0; }
+.nail-stage { display: flex; flex-direction: column; align-items: stretch; min-height: 0; padding: 12px; border: 2px solid #8ebbb0; border-radius: 90px 90px 22px 22px; background: radial-gradient(ellipse at 50% 45%, #eaf7ec, #cce6dc); }
+.nail-instruction { margin: 3px 0 0; text-align: center; font-size: 17px; color: #49796f; }
+.nail-hand { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center; }
+.nail-hand > svg { display: block; width: 100%; height: 100%; min-height: 0; overflow: visible; }
+.nail-selection { stroke: transparent; stroke-width: 3; }
+.nail-finger { cursor: pointer; outline: none; }
+.nail-finger.selected .nail-selection { stroke: #467f78; stroke-dasharray: 4 3; }
+.nail-finger:focus-visible .nail-selection { stroke: #754d91; stroke-width: 5; stroke-dasharray: none; }
+.nail-fingers { display: flex; flex-direction: column; gap: 5px; flex: none; }
+.nail-finger-row { display: flex; gap: 5px; align-items: center; }
+.nail-side-label { width: 54px; flex: none; font-size: 13px; color: #49796f; text-align: center; }
+.nail-finger-choice { flex: 1; min-width: 0; min-height: 44px; padding: 5px 2px; background: #f7fff9; border: 2px solid #9dbfb3; border-radius: 12px; color: #426b62; font-size: 14px; }
+.nail-finger-choice[aria-pressed="true"] { background: #548d81; color: #fff; border-color: #42766b; }
+.nail-workbench { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.nail-tabs { display: flex; gap: 6px; flex: none; }
+.nail-tab { flex: 1; padding: 10px 4px; min-height: 46px; border: 2px solid #d2bdd4; border-radius: 14px; background: #f3eaf6; font-size: 19px; white-space: nowrap; }
+.nail-tab[aria-selected="true"] { color: #fff; background: #896395; border-color: #705279; }
+.nail-items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-content: start; flex: 1; min-height: 0; overflow-y: auto; padding: 3px 3px 8px; }
+.nail-item { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 115px; padding: 6px 3px; background: #fff; border: 2px solid #d9c3d2; border-radius: 17px; }
+.nail-item > svg { width: 48px; height: 52px; flex: none; }
+.nail-item-name { font-size: 15px; line-height: 1.15; }
+.nail-price { margin-top: auto; padding: 3px 7px; background: #fff0be; border-radius: 10px; color: #8b6723; font-family: "Baloo 2", var(--ui-font); font-weight: 800; font-size: 15px; line-height: 1.15; }
+.nail-item.mine .nail-price { background: #e5f2e9; color: #49795d; }
+.nail-item.dear .nail-price { background: #f3edf2; color: #91818e; }
+.nail-item[aria-pressed="true"] { border-color: #a7678f; box-shadow: 0 0 0 2px #e8b4cb; background: #fff2f7; }
+.nail-all { flex: none; border: 2px solid #c8dcd3; border-radius: 12px; min-height: 44px; padding: 6px 8px; background: #f3faf5; color: #537f71; font-size: 16px; }
+.nail-all[aria-pressed="true"] { background: #d8ecdf; border-color: #6da38d; }
+.nail-action { flex: none; padding: 10px 12px; background: #f5e8ef; border-radius: 18px; }
+.nail-msg { min-height: 43px; margin: 0 0 7px; font-size: 16px; line-height: 1.35; }
+.nail-buy { display: block; width: 100%; min-height: 48px; padding: 8px; background: #db7c9c; border: 2px solid #9e517c; border-radius: 14px; color: #fff; font-size: 20px; box-shadow: 0 3px 0 #9e517c; }
+.nail-buy:disabled { background: #e7d5de; border-color: #d4bdcc; box-shadow: none; color: #9e8496; cursor: default; }
+.nail-salon button:focus-visible { outline: 3px solid #745190; outline-offset: 2px; }
+@media (max-width: 600px) and (min-height: 521px) {
+  .nail-salon { top: calc(var(--hud) + 7px); bottom: 7px; padding: 10px; gap: 8px; width: calc(100% - 14px); border-radius: 22px; }
+  .nail-head { gap: 7px; }
+  .nail-head h2 { font-size: 22px; }
+  .nail-stars { font-size: 20px; padding: 3px 9px; }
+  .nail-close { width: 42px; height: 42px; font-size: 21px; }
+  .nail-layout { display: flex; flex-direction: column; gap: 9px; overflow-y: auto; overscroll-behavior: contain; }
+  .nail-stage { flex: 1.1; min-height: 350px; padding: 6px 10px; border-radius: 55px 55px 18px 18px; }
+  .nail-instruction { font-size: 14px; }
+  .nail-finger-row { gap: 3px; }
+  .nail-side-label { width: 32px; font-size: 10px; }
+  .nail-finger-choice { min-height: 36px; font-size: 11px; }
+  .nail-workbench { flex: 1; gap: 6px; min-height: 300px; }
+  .nail-tab { min-height: 40px; padding: 6px 3px; font-size: 16px; }
+  .nail-items { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; min-height: 100px; }
+  .nail-item { min-height: 91px; gap: 2px; padding: 4px 1px; border-radius: 13px; }
+  .nail-item > svg { width: 36px; height: 39px; }
+  .nail-item-name, .nail-price { font-size: 12px; }
+  .nail-all { min-height: 35px; font-size: 14px; }
+  .nail-action { padding: 7px 10px; }
+  .nail-msg { min-height: 19px; font-size: 13px; margin-bottom: 5px; }
+  .nail-buy { min-height: 40px; font-size: 17px; }
+}
+@media (max-height: 520px) {
+  .nail-salon { top: calc(var(--hud) + 6px); bottom: 6px; padding: 7px 10px; gap: 6px; border-radius: 20px; }
+  .nail-head h2 { font-size: 21px; }
+  .nail-stars { font-size: 20px; padding: 0 10px; }
+  .nail-close { width: 36px; height: 36px; font-size: 18px; }
+  .nail-layout { gap: 10px; grid-template-columns: 1fr 1.15fr; }
+  .nail-stage { padding: 4px 8px; border-radius: 40px 40px 15px 15px; }
+  .nail-instruction { font-size: 13px; margin: 0; }
+  .nail-finger-row { gap: 3px; }
+  .nail-side-label { width: 42px; font-size: 10px; }
+  .nail-finger-choice { min-height: 25px; padding: 2px; font-size: 11px; }
+  .nail-workbench { gap: 5px; }
+  .nail-tab { min-height: 35px; padding: 4px; font-size: 15px; }
+  .nail-items { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; padding-bottom: 3px; }
+  .nail-item { min-height: 90px; gap: 1px; padding: 3px 1px; border-radius: 12px; }
+  .nail-item > svg { width: 32px; height: 37px; }
+  .nail-item-name, .nail-price { font-size: 11px; }
+  .nail-all { min-height: 30px; padding: 3px; font-size: 13px; }
+  .nail-action { padding: 5px 8px; }
+  .nail-msg { min-height: 18px; font-size: 12px; margin: 0 0 4px; }
+  .nail-buy { min-height: 34px; padding: 4px; font-size: 16px; }
+}
 @media (max-width: 560px) {
   .shop-items { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
   .shop-item .price { font-size: 13px; padding: 2px 6px 2px 3px; }

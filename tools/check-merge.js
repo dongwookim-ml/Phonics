@@ -657,6 +657,29 @@ var state = {};`, ctx);
   check('salon: next to an older version, its total is kept (7 + 1)', mo.stars === 8 && A.earned(st(A, mo), 'stars') >= 12, [mo.stars, mo.earned]);
 }
 
+// Nail supplies join, while each finger keeps the newest complete design.
+{
+  const a = { edition: 'princess', nails: { owned: { polish: ['clear', 'rose'], sticker: ['none', 'heart'], ring: ['none'] }, fingers: {
+    thumb: { polish: 'rose', sticker: 'none', ring: 'none', at: 200 },
+    index: { polish: 'clear', sticker: 'none', ring: 'none', at: 0 },
+  } } };
+  const b = { edition: 'princess', nails: { owned: { polish: ['clear', 'mint'], sticker: ['none'], ring: ['none', 'pearl'] }, fingers: {
+    thumb: { polish: 'clear', sticker: 'none', ring: 'none', at: 0 },
+    index: { polish: 'mint', sticker: 'none', ring: 'pearl', at: 300 },
+  } } };
+  for (const how of ['mine', 'theirs', 'foreign']) {
+    const m = A.merge(a, b, how);
+    check(`nails (${how}): supplies from both devices stay owned`, m.nails.owned.polish.includes('rose') && m.nails.owned.polish.includes('mint') && m.nails.owned.sticker.includes('heart') && m.nails.owned.ring.includes('pearl'), m.nails);
+    check(`nails (${how}): decorating different fingers preserves both`, m.nails.fingers.thumb.polish === 'rose' && m.nails.fingers.index.ring === 'pearl', m.nails);
+    check(`nails (${how}): merging again does not change the manicure`, A.same(A.merge(m, b, 'mine'), m), m.nails);
+  }
+  const removed = Object.assign({}, b, { nails: Object.assign({}, b.nails, { fingers: { thumb: { polish: 'clear', sticker: 'none', ring: 'none', at: 400 } } }) });
+  check('nails: a newer removal wins over an older decoration', A.merge(a, removed, 'mine').nails.fingers.thumb.polish === 'clear');
+  check('nails: an older save without a manicure preserves it', A.merge(a, { edition: 'princess' }, 'theirs').nails.fingers.thumb.polish === 'rose');
+  check('nails: a free manicure counts as guest progress', A.played({ edition: 'princess', nails: { fingers: { thumb: { polish: 'blush', at: 10 } } } }));
+  check('nails: untouched starter supplies do not count as played', !A.played({ edition: 'princess', nails: { fingers: { thumb: { polish: 'clear', at: 0 } } } }));
+}
+
 // ---- Fields this version doesn't know, and broken entries ---------------------------
 {
   const mu = A.merge({ edition: 'princess', stickers: ['cat'], skill: { word: { t: 2, n: 10 }, rhyme: { t: 1, n: 2 } }, x: { a: 1 } },
