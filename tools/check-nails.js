@@ -1,4 +1,4 @@
-// Manicure purchases, independent layers, persistence, sync and touch layouts.
+// Direct item taps, locked purchases, separate fingers, persistence and layouts.
 // Run: node tools/check-nails.js (Playwright + Chromium).
 const assert = require('node:assert/strict');
 const path = require('path');
@@ -26,63 +26,59 @@ const root = path.join(__dirname, '..');
       });
       await page.waitForFunction(() => !nailUi.card.classList.contains('hidden'));
       assert.equal(await page.locator('#nail-hand [data-finger]').count(), 10);
+      assert.equal(await page.locator('#nail-all, #nail-buy').count(), 0);
       for (const side of ['left', 'right']) assert.equal(await page.locator(`#nail-hand [data-hand="${side}"] [data-finger]`).count(), 5);
       const migrated = await page.evaluate(() => {
         const legacy = nailSaved({ owned: { polish: ['rose', 'glitter'] }, fingers: { thumb: { polish: 'rose', at: 5 }, index: { polish: 'glitter', at: 6 } } });
-        return { count: Object.keys(legacy.fingers).length, left: legacy.fingers.thumb.polish, right: legacy.fingers['right-thumb'].polish, owned: legacy.owned.polish.includes('rose'), glitter: legacy.fingers.index.polish };
+        return { count: Object.keys(legacy.fingers).length, left: legacy.fingers.thumb.polish, right: legacy.fingers['right-thumb'].polish, glitter: legacy.fingers.index.polish };
       });
-      assert.deepEqual(migrated, { count: 10, left: 'rose', right: 'clear', owned: true, glitter: 'glitter' });
-      const result = await page.evaluate(() => {
-        const before = { outfit: JSON.stringify(state.outfit), sprite: heroSprite(state.outfit, 0).canvas.toDataURL(), earned: starsEarned() };
-        const set = (finger, tab, pick, all = false) => { Object.assign(nailSalon, { finger, tab, pick, all }); renderNailSalon(); };
-        set('thumb', 'polish', 'rose');
-        const preview = { stars: state.stars, saved: state.nails.fingers.thumb.polish, visible: nailUi.hand.querySelector('[data-finger="thumb"]').innerHTML.includes(NAIL_ITEMS.polish.rose.color) };
-        nailApply(); const first = state.stars; nailApply(); const twice = state.stars;
-        set('index', 'polish', 'rose'); nailApply(); const reused = state.stars;
-        set('thumb', 'sticker', 'heart'); nailApply();
-        set('thumb', 'ring', 'pearl'); nailApply();
-        const layers = Object.assign({}, state.nails.fingers.thumb), paid = state.stars;
-        set('middle', 'polish', 'mint'); closeNailSalon();
-        const cancelled = { color: state.nails.fingers.middle.polish, stars: state.stars, busy: state.busy };
-        openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon));
-        set('middle', 'polish', 'lavender', true); nailApply();
-        const all = { stars: state.stars, colors: NAIL_FINGERS.map(f => state.nails.fingers[f].polish), thumb: Object.assign({}, state.nails.fingers.thumb) };
-        set('thumb', 'sticker', 'none'); nailApply();
-        const removed = Object.assign({}, state.nails.fingers.thumb);
-        set('right-thumb', 'polish', 'blush'); nailApply();
-        set('right-thumb', 'sticker', 'heart'); nailApply();
-        set('right-thumb', 'ring', 'pearl'); nailApply();
-        const separate = { left: Object.assign({}, state.nails.fingers.thumb), right: Object.assign({}, state.nails.fingers['right-thumb']), stars: state.stars };
-        set('middle', 'polish', 'sky'); state.paused = true; nailApply(); state.paused = false;
-        const paused = { stars: state.stars, color: state.nails.fingers.middle.polish };
-        state.stars = 0; save();
-        const manicure = JSON.stringify(state.nails);
-        set('middle', 'ring', 'star'); nailApply();
-        const poor = { stars: state.stars, same: manicure === JSON.stringify(state.nails), msg: nailUi.msg.textContent, mine: state.nails.owned.ring.includes('star') };
-        const unchanged = { outfit: JSON.stringify(state.outfit) === before.outfit, sprite: heroSprite(state.outfit, 0).canvas.toDataURL() === before.sprite, earned: starsEarned() === before.earned };
-        closeNailSalon();
-        return { preview, first, twice, reused, layers, paid, cancelled, all, removed, separate, paused, poor, unchanged };
-      });
-      assert.deepEqual(result.preview, { stars: 20, saved: 'clear', visible: true });
-      assert.equal(result.first, 17); assert.equal(result.twice, 17); assert.equal(result.reused, 17);
-      assert.equal(result.paid, 10);
-      assert.equal(result.layers.polish, 'rose'); assert.equal(result.layers.sticker, 'heart'); assert.equal(result.layers.ring, 'pearl');
-      assert.deepEqual(result.cancelled, { color: 'clear', stars: 10, busy: false });
-      assert.equal(result.all.colors.length, 10); assert.equal(result.all.stars, 7); assert.ok(result.all.colors.every(c => c === 'lavender'));
-      assert.equal(result.all.thumb.sticker, 'heart'); assert.equal(result.all.thumb.ring, 'pearl');
-      assert.equal(result.separate.stars, 7);
-      assert.equal(result.separate.left.polish, 'lavender'); assert.equal(result.separate.left.sticker, 'none');
-      assert.equal(result.separate.right.polish, 'blush'); assert.equal(result.separate.right.sticker, 'heart'); assert.equal(result.separate.right.ring, 'pearl');
-      assert.equal(result.removed.sticker, 'none'); assert.equal(result.removed.ring, 'pearl');
-      assert.deepEqual(result.paused, { stars: 7, color: 'lavender' });
-      assert.ok(result.poor.same && !result.poor.mine && result.poor.msg.includes('5')); assert.equal(result.poor.stars, 0);
-      assert.deepEqual(result.unchanged, { outfit: true, sprite: true, earned: true });
-      await page.reload();
+      assert.deepEqual(migrated, { count: 10, left: 'rose', right: 'clear', glitter: 'glitter' });
+      const finger = value => page.locator(`#nail-fingers [data-finger="${value}"]`).click();
+      const tab = value => page.locator(`#nail-tabs [data-slot="${value}"]`).click();
+      const item = value => page.locator(`#nail-items [data-value="${value}"]`);
+      const stars = () => page.evaluate(() => state.stars);
+      const design = f => page.evaluate(key => state.nails.fingers[key], f);
+      const before = await page.evaluate(() => ({ outfit: JSON.stringify(state.outfit), sprite: heroSprite(state.outfit, 0).canvas.toDataURL(), earned: starsEarned() }));
+      await finger('thumb');
+      assert.equal(await item('rose').locator('.nail-item-lock').count(), 1);
+      assert.ok((await item('rose').getAttribute('aria-label')).includes('3'));
+      await item('rose').click();
+      assert.equal(await stars(), 17); assert.equal((await design('thumb')).polish, 'rose');
+      assert.equal((await design('index')).polish, 'clear'); assert.equal((await design('right-thumb')).polish, 'clear');
+      assert.equal(await item('rose').locator('.nail-item-lock').count(), 0);
+      assert.equal(await item('rose').getAttribute('aria-pressed'), 'true');
+      const savedOnce = await page.evaluate(() => localStorage.getItem(SAVE_KEY));
+      await item('rose').click();
+      assert.equal(await stars(), 17);
+      assert.equal(await page.evaluate(() => localStorage.getItem(SAVE_KEY)), savedOnce, 'Repeated taps on the current design must not buy or save again');
+      await finger('index'); await item('rose').click(); assert.equal(await stars(), 17);
+      await finger('thumb'); await tab('sticker'); await item('heart').click();
+      await tab('ring'); await item('pearl').click(); assert.equal(await stars(), 10);
+      const layered = await design('thumb');
+      assert.equal(layered.polish, 'rose'); assert.equal(layered.sticker, 'heart'); assert.equal(layered.ring, 'pearl');
+      await tab('sticker'); await item('none').click(); assert.equal((await design('thumb')).ring, 'pearl');
+      await finger('right-thumb'); await item('heart').click();
+      await tab('polish'); await item('blush').click();
+      await tab('ring'); await item('pearl').click();
+      assert.equal(await stars(), 10); assert.equal((await design('thumb')).sticker, 'none');
+      assert.equal((await design('right-thumb')).sticker, 'heart');
+      // Pause/insufficient stars cannot change the design. Owned items work at zero stars.
+      await finger('middle'); await tab('polish');
+      await page.evaluate(() => { state.paused = true; }); await item('sky').click();
+      assert.equal(await stars(), 10); assert.equal((await design('middle')).polish, 'clear');
+      await page.evaluate(() => { state.paused = false; state.stars = 0; save(); renderNailSalon(); });
+      await tab('ring'); const poorBefore = await design('middle'); await item('star').click();
+      assert.equal(await stars(), 0); assert.deepEqual(await design('middle'), poorBefore);
+      assert.equal(await item('star').locator('.nail-item-lock').count(), 1);
+      assert.equal(await page.locator('#nail-msg').innerText(), await page.evaluate(() => I18n.t('nails.needStars', 5)));
+      await tab('polish'); await item('rose').click();
+      assert.equal((await design('middle')).polish, 'rose'); assert.equal(await stars(), 0);
+      const unchanged = await page.evaluate(() => ({ outfit: JSON.stringify(state.outfit), sprite: heroSprite(state.outfit, 0).canvas.toDataURL(), earned: starsEarned() }));
+      assert.deepEqual(unchanged, before);
+      await page.locator('#nail-done').click(); await page.reload();
       await page.waitForFunction(() => typeof state !== 'undefined');
-      const saved = await page.evaluate(() => ({ stars: state.stars, color: state.nails.fingers.index.polish, ring: state.nails.fingers.thumb.ring, owned: state.nails.owned, right: state.nails.fingers['right-thumb'] }));
-      assert.equal(saved.stars, 0); assert.equal(saved.color, 'lavender'); assert.equal(saved.ring, 'pearl');
-      assert.ok(saved.owned.polish.includes('rose') && saved.owned.ring.includes('pearl'));
-      assert.equal(saved.right.polish, 'blush'); assert.equal(saved.right.sticker, 'heart'); assert.equal(saved.right.ring, 'pearl');
+      assert.equal(await stars(), 0); assert.equal((await design('index')).polish, 'rose'); assert.equal((await design('thumb')).ring, 'pearl');
+      assert.equal((await design('right-thumb')).polish, 'blush'); assert.equal((await design('right-thumb')).sticker, 'heart');
       await page.evaluate(() => {
         Sound.say = () => {}; ui.startBtn.click(); openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon));
         const local = JSON.parse(localStorage.getItem(SAVE_KEY)), remote = JSON.parse(JSON.stringify(local));
@@ -90,100 +86,79 @@ const root = path.join(__dirname, '..');
         remote.nails.fingers['right-little'] = { polish: 'blush', sticker: 'none', ring: 'star', at: Date.now() + 1000 };
         applyProgress(Progress.merge(local, remote, 'theirs'));
       });
-      assert.equal(await page.evaluate(() => state.nails.fingers['right-little'].ring), 'star');
-      await page.locator('#nail-tabs [data-slot="ring"]').click();
-      assert.ok((await page.locator('#nail-items [data-value="star"]').getAttribute('class')).includes('mine'));
-      // Both mirrored hands select the intended finger directly; controls retain focus.
+      assert.equal((await design('right-little')).ring, 'star');
+      await tab('ring'); assert.equal(await item('star').locator('.nail-item-lock').count(), 0);
+      // Both hand diagrams and native keyboard controls retain selection/focus.
       await page.locator('#nail-hand [data-finger="right-middle"]').click();
       assert.equal(await page.evaluate(() => nailSalon.finger), 'right-middle');
-      assert.equal(await page.locator('#nail-fingers [aria-pressed="true"]').getAttribute('data-finger'), 'right-middle');
-      await page.locator('#nail-hand [data-finger="thumb"]').click();
+      await page.locator('#nail-hand [data-finger="thumb"]').focus(); await page.keyboard.press('Enter');
       assert.equal(await page.evaluate(() => nailSalon.finger), 'thumb');
-      // Native keyboard activation and retained focus after preview re-rendering.
-      await page.locator('#nail-fingers [data-finger="index"]').focus();
-      await page.keyboard.press('Enter');
-      assert.equal(await page.evaluate(() => nailSalon.finger), 'index');
+      await page.locator('#nail-fingers [data-finger="index"]').focus(); await page.keyboard.press('Enter');
       await page.locator('#nail-tabs [data-slot="ring"]').focus(); await page.keyboard.press('ArrowLeft');
       assert.equal(await page.evaluate(() => nailSalon.tab), 'sticker');
-      await page.locator('#nail-items [data-value="heart"]').focus(); await page.keyboard.press('Enter');
+      await item('heart').focus(); await page.keyboard.press('Enter');
       assert.equal(await page.evaluate(() => document.activeElement.dataset.value), 'heart');
-      // Premium prices must be used consistently by the catalog, checkout and
-      // insufficient-funds calculation. All ten nails still unlock just once.
+      assert.equal((await design('index')).sticker, 'heart');
+      // Premium locks use the same price for the label, shortage and direct purchase.
       const specialPrices = { glitter: 8, rainbow: 10, confetti: 10, holographic: 12, mermaid: 12, crystal: 14, galaxy: 15 };
-      await page.locator('#nail-tabs [data-slot="polish"]').click();
-      await page.evaluate(() => { state.stars = 13; renderNailSalon(); });
-      await page.locator('#nail-items [data-value="crystal"]').click();
-      await page.locator('#nail-buy').click();
-      assert.equal(await page.evaluate(() => state.stars), 13);
+      await tab('polish'); await page.evaluate(() => { state.stars = 13; renderNailSalon(); });
+      await item('crystal').click(); assert.equal(await stars(), 13);
       assert.equal(await page.evaluate(() => nailMine('polish', 'crystal')), false);
       assert.equal(await page.locator('#nail-msg').innerText(), await page.evaluate(() => I18n.t('nails.needStars', 1)));
       await page.evaluate(() => { state.stars = 100; renderNailSalon(); });
       let balance = 100;
       for (const [value, price] of Object.entries(specialPrices)) {
-        const item = page.locator(`#nail-items [data-value="${value}"]`);
-        assert.ok((await item.locator('.nail-price').innerText()).includes(String(price)));
-        await item.click();
-        assert.equal(await page.evaluate(() => state.stars), balance, 'Preview must not spend stars');
-        assert.ok((await page.locator('#nail-buy').innerText()).includes(String(price)));
-        // Applying a premium finish to both hands costs the catalog price once.
-        if (value === 'rainbow') await page.locator('#nail-all').click();
-        await page.locator('#nail-buy').click();
-        balance -= price;
-        assert.equal(await page.evaluate(() => state.stars), balance);
-        if (value === 'rainbow') {
-          assert.ok(await page.evaluate(() => NAIL_FINGERS.every(f => state.nails.fingers[f].polish === 'rainbow')));
-          await page.locator('#nail-fingers [data-finger="middle"]').click();
-        }
-        // Reuse on the other hand is free.
-        await page.locator('#nail-fingers [data-finger="right-thumb"]').click();
-        await page.locator('#nail-items [data-value="clear"]').click();
-        await page.locator('#nail-buy').click();
-        await page.locator(`#nail-items [data-value="${value}"]`).click();
-        await page.locator('#nail-buy').click();
-        assert.equal(await page.evaluate(() => state.stars), balance);
-        assert.equal(await page.evaluate(() => state.nails.fingers['right-thumb'].polish), value);
-        await page.locator('#nail-fingers [data-finger="middle"]').click();
+        await finger('middle');
+        assert.ok((await item(value).locator('.nail-price').innerText()).includes(String(price)));
+        assert.equal(await item(value).locator('.nail-item-lock').count(), 1);
+        const otherFinger = await design('right-index');
+        await item(value).click(); balance -= price;
+        assert.equal(await stars(), balance); assert.equal((await design('middle')).polish, value);
+        assert.deepEqual(await design('right-index'), otherFinger, 'An item tap may change only the selected finger');
+        assert.equal(await item(value).locator('.nail-item-lock').count(), 0);
+        await finger('right-thumb'); await item(value).click();
+        assert.equal(await stars(), balance); assert.equal((await design('right-thumb')).polish, value);
       }
-      await page.reload();
-      await page.waitForFunction(() => typeof state !== 'undefined');
-      assert.equal(await page.evaluate(() => state.stars), balance);
-      assert.equal(await page.evaluate(() => state.nails.fingers['right-thumb'].polish), 'galaxy');
+      await page.reload(); await page.waitForFunction(() => typeof state !== 'undefined');
+      assert.equal(await stars(), balance); assert.equal((await design('right-thumb')).polish, 'galaxy');
       for (const value of Object.keys(specialPrices)) assert.ok(await page.evaluate(v => nailMine('polish', v), value));
       await page.evaluate(() => { Sound.say = () => {}; ui.startBtn.click(); openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)); });
-      // Every viewport keeps the hand accessible and the purchase/exit reachable;
-      // small portrait screens deliberately scroll the workbench below the hand.
-      for (const [width, height] of [[1180,820],[768,1024],[844,390],[390,844],[320,568]]) {
+      // Every layout keeps catalog items, feedback and exit accessible.
+      for (const [width, height] of [[1180,820],[1920,1080],[2560,1440],[3440,1440],[768,1024],[844,390],[390,844],[320,568]]) {
         await page.setViewportSize({ width, height });
         for (const slot of ['polish', 'sticker', 'ring']) {
-          await page.locator(`#nail-tabs [data-slot="${slot}"]`).click();
-          await page.locator('#nail-items [data-value]').last().scrollIntoViewIfNeeded();
+          await tab(slot);
           await page.locator('#nail-items [data-value]').last().click();
-          await page.locator('#nail-buy').scrollIntoViewIfNeeded();
+          await page.locator('#nail-items [data-value]').last().scrollIntoViewIfNeeded();
           const m = await page.evaluate(() => {
-            const r = nailUi.card.getBoundingClientRect(), b = nailUi.buy.getBoundingClientRect(), svg = nailUi.hand.querySelector('svg').getBoundingClientRect();
-            return { inside: r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1, buy: b.top >= r.top && b.bottom <= r.bottom + 1, hand: svg.width > 0 && svg.height > 100, noHorizontalScroll: nailUi.card.scrollWidth <= nailUi.card.clientWidth + 1 };
+            const r = nailUi.card.getBoundingClientRect(), close = nailUi.done.getBoundingClientRect(), svg = nailUi.hand.querySelector('svg').getBoundingClientRect();
+            const last = nailUi.items.lastElementChild.getBoundingClientRect();
+            return { inside: r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1, close: close.top >= r.top && close.bottom <= r.bottom, item: last.top >= r.top && last.bottom <= r.bottom + 1, hand: svg.width > 0 && svg.height > 100, noHorizontalScroll: nailUi.card.scrollWidth <= nailUi.card.clientWidth + 1 };
           });
-          assert.ok(m.inside && m.buy && m.hand && m.noHorizontalScroll, `${language}/${width}x${height}/${slot}: ${JSON.stringify(m)}`);
+          assert.ok(m.inside && m.close && m.item && m.hand && m.noHorizontalScroll, `${language}/${width}x${height}/${slot}: ${JSON.stringify(m)}`);
+          if (width >= 1920) {
+            const large = await page.evaluate(() => {
+              const card = nailUi.card.getBoundingClientRect(), mat = nailUi.hand.getBoundingClientRect();
+              const hands = [...nailUi.hand.querySelectorAll('.nail-hand-pose')].map(el => el.getBoundingClientRect());
+              return { wide: card.width >= innerWidth * .9, largeHands: hands.every(r => r.height >= innerHeight * .5), fit: hands.every(r => r.left >= mat.left && r.right <= mat.right && r.top >= mat.top && r.bottom <= mat.bottom) };
+            });
+            assert.ok(large.wide && large.largeHands && large.fit, `${language}/${width}x${height}: ${JSON.stringify(large)}`);
+          }
           if (language === 'en') assert.ok(!/[가-힣]/.test(await page.locator('#nail-salon').innerText()), 'Korean text on the English nail salon');
         }
       }
-      await page.locator('#nail-done').click();
-      assert.equal(await page.evaluate(() => state.busy), false);
-      await page.evaluate(() => {
-        openWardrobe(); openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)); closeNailSalon();
-      });
+      await page.locator('#nail-done').click(); assert.equal(await page.evaluate(() => state.busy), false);
+      await page.evaluate(() => { openWardrobe(); openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)); closeNailSalon(); });
       assert.equal(await page.evaluate(() => state.busy), true);
       await page.evaluate(() => closeWardrobe());
-      // An expired play session cannot reopen the salon or spend more stars.
       const limited = await page.evaluate(() => {
         state.settings.playLimit = 1; state.playtime = { day: guideDay(), ms: 120000 };
         const stars = state.stars;
-        openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)); nailApply();
+        openNailSalon(sceneFor('town').npcs.find(n => n.nailSalon)); nailApply('rose');
         return { closed: nailUi.card.classList.contains('hidden'), same: stars === state.stars };
       });
-      assert.ok(limited.closed && limited.same);
-      assert.deepEqual(errors, []);
-      console.log(`PASS nails/${language}: town entry, preview, purchases/reuse, independent hands/ten fingers, legacy saves, premium pricing/reuse, insufficient stars, unchanged hero/gates, reload/sync, keyboard, 5 layouts and play limit`);
+      assert.ok(limited.closed && limited.same); assert.deepEqual(errors, []);
+      console.log(`PASS nails/${language}: direct tap apply/buy, locks, separate fingers, free reuse at zero stars, prices/shortages, reload/sync, keyboard, 8 layouts and play limit`);
       await context.close();
     }
     const captain = await browser.newPage();
