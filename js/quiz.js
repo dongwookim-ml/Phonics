@@ -432,7 +432,10 @@ const Quiz = (() => {
     const own = QUIZ_TYPES[place];
     const homeOf = {};
     for (const k of own) homeOf[k] = place;
-    const done = own.filter(k => mastered(k, place));
+    // A letter house's are about its letter, a few each, all in its medal:
+    // a kind there is done once its questions there are all solved too.
+    const allSolved = k => pools[k](npc, TIERS[k][Math.min(skill(k).t, capAt(k, place)) - 1]).every(x => solved(x.id));
+    const done = own.filter(k => mastered(k, place) && (place !== 'house' || allSolved(k)));
     let open = own.filter(k => !done.includes(k));
     const at = NEXT_STAGE[place];
     if (!open.length && at) {
@@ -447,7 +450,9 @@ const Quiz = (() => {
     return [kind, homeOf[kind] || place];
   }
   // Her first answer to a question (from record): moves her tier. Up after
-  // 3 right in a row or 5 of the last 6, down after 2 misses in a row;
+  // her first 3 at a tier all right (an easy tier for her is soon passed),
+  // else after 5 of the last 6 (it settles where she gets most right),
+  // down after 2 misses in a row;
   // never above what the place whose questions these are asks. A new best
   // tier is a level-up for the child. A `letters` tier is passed only by
   // knowing every letter (lettersPass), and she never goes back down to it.
@@ -459,10 +464,13 @@ const Quiz = (() => {
     k.easy = !right;
     if (!q.counts) return;
     if (!right) k.placed = true;
+    // Asked below her tier because a place asks no higher: a right answer
+    // says nothing about her own tier (a miss does).
+    if (right && q.tier < k.t) return;
     k.w = k.w.concat(right ? 1 : 0).slice(-SKILL.window);
     const sum = k.w.reduce((a, b) => a + b, 0);
-    const run = k.w.slice(-SKILL.streak);
-    const streak = run.length === SKILL.streak && run.every(Boolean);
+    // Easy for her: her first `streak` answers at this tier all right.
+    const streak = k.w.length >= SKILL.streak && k.w.every(Boolean);
     const tiers = TIERS[kind];
     if (tiers[k.t - 1].letters) return;
     if (k.t < max && (streak || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
@@ -625,6 +633,8 @@ const Quiz = (() => {
     const L = t.w[0];
     const ok = (x, out, partner) => x.info !== t.info && !alike(x, t) && (!picture || clear(x)) &&
       !(clue && (x.e === clue.e || alike(x, clue))) &&
+      // Nor one that starts like what she may call the clue (🐳 "fish": no 🔥).
+      !(clue && clue.aka.some(a => [x.w].concat(x.aka).some(m => sameSound(m[0], a[0]) || (!partner && (cfg.far ? nearPair : hardPair)(m[0], a[0]))))) &&
       ![x.w].concat(x.aka).some(m => sameSound(m[0], L)) &&
       (partner || !(cfg.far ? nearPair : hardPair)(x.w[0], L)) &&
       !out.some(o => o.info === x.info || o.e === x.e || alike(o, x) || sameSound(o.w[0], x.w[0]));
@@ -1002,7 +1012,10 @@ const Quiz = (() => {
     const pool = RHYME_SETS.filter(s => s !== r).flatMap(s => sureRhymes(s).map(([w]) => Object.assign({ v: s.v, rime: s.rime }, words()[w])));
     const rhymes = x => (x.v === r.v && lastSound(x.rime) === end) || x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
     const near = x => hardPair(SHORT[x.v], SHORT[r.v]) && x.rime.slice(1) === r.rime.slice(1);
-    const ok = (x, out, partner) => (partner || x.v !== r.v) && !rhymes(x) && !near(x) && (!cfg.far || lastSound(x.rime) !== end) &&
+    // With the same vowel, below the top tier, never one whose last sound
+    // she can't tell from the rhyme's yet (frog, clock: g/k; drum, sun: m/n).
+    const hardEnd = x => cfg.sameVowel && x.v === r.v && hardPair(lastSound(x.rime), end);
+    const ok = (x, out, partner) => (partner || x.v !== r.v) && !rhymes(x) && !near(x) && !hardEnd(x) && (!cfg.far || lastSound(x.rime) !== end) &&
       !group.some(o => o.e === x.e || alike(o, x));
     return others(pool, 1, ok, cfg.sameVowel && (x => x.v === r.v))[0];
   }

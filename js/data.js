@@ -933,8 +933,9 @@ const TIERS = {
 // from a kind's first tier without a `step`: blending's first steps come on
 // top, so the forest asks it up to its 6th tier, as up to the 4th before.
 const TIER_BAND = { town: [1, 4], house: [1, 4], forest: [1, 4], unicorn: [1, 3], dungeon: [1, 4], fairy: [1, 6] };
-// Up a tier after 3 right first tries in a row at it (`streak`), or 5 of
-// the last 6; down after 2 misses in a row. After a miss the next one is a
+// Up a tier after her first 3 first tries at it all right (`streak`: an
+// easy tier is soon passed), else after 5 of the last 6 (so she settles
+// where she gets most right); down after 2 misses in a row. After a miss the next one is a
 // tier easier, and every 6th question is from the tier below, unless her
 // last `sure` first tries of that kind were all right (she doesn't need
 // the easier ones); those don't count. A kind she has `mastered` here (at

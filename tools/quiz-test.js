@@ -463,6 +463,8 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
               if (npc.letter && L !== npc.letter.toLowerCase()) problems.push(`${where}: ${q.base} in the ${npc.letter} house`);
               if (rw === q.base || rw[0] !== L || t.aka.some(m => !sameSound(m[0], L))) problems.push(`${where}: ${rw} (${t.aka.join('/')}) may not start like ${q.base}`);
               for (const w of wrongs) if (W[w] && (W[w].e === base.e || W[w].aka.includes(q.base) || base.aka.includes(w))) problems.push(`${where}: ${w} looks like ${q.base}`);
+              // Nor one that starts like another name of the clue's picture (🐳 "fish", 🔥).
+              for (const w of wrongs) if (W[w] && base.aka.some(a => [w].concat(W[w].aka).some(m => sameSound(m[0], a[0])))) problems.push(`${where}: ${w} starts like ${base.aka.join('/')} (${q.base})`);
               if (voicedIn(q.ask).join() !== q.base) problems.push(`${where}: asked with ${voicedIn(q.ask).join()}, not ${q.base}`);
               if (spoken(q.ask) !== (cfg.sound ? its : '')) problems.push(`${where}: asked with the sound ${spoken(q.ask) || 'none'}`);
               for (const [what, parts] of [['answered', q.answer], ['shown', q.model]]) if (spoken(parts) !== its) problems.push(`${where}: ${what} with the sound ${spoken(parts)}, not ${its}`);
@@ -486,7 +488,10 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
                 if (t.aka.some(a => a.endsWith(set.rime) || set.set.some(([x]) => x === a))) problems.push(`${where}: ${rw} (${t.aka.join('/')}) may rhyme with ${wrongs.join(',')}`);
                 if (hardPair(SHORT[odd.v], SHORT[set.v]) && odd.rime.slice(1) === set.rime.slice(1)) problems.push(`${where}: ${rw} (${odd.rime}) nearly rhymes with ${set.rime}`);
                 if (cfg.far && lastSound(odd.rime) === lastSound(set.rime)) problems.push(`${where}: ${rw} ends like ${set.rime} at a far tier`);
-                const can = RHYME_SETS.some(s => s !== set && s.v === set.v && lastSound(s.rime) !== lastSound(set.rime) &&
+                // Same vowel, a last sound she can't tell from the rhyme's yet (frog, clock).
+                const hardEnd = s => s.v === set.v && hardPair(lastSound(s.rime), lastSound(set.rime));
+                if (cfg.sameVowel && hardEnd(odd)) problems.push(`${where}: ${rw} (${odd.rime}) ends like ${set.rime} to her ear`);
+                const can = RHYME_SETS.some(s => s !== set && s.v === set.v && lastSound(s.rime) !== lastSound(set.rime) && !hardEnd(s) &&
                   s.set.some(([x]) => sure(x) && !W[x].aka.some(a => a.endsWith(set.rime)) && !wrongs.some(w => W[w].e === W[x].e)));
                 if ((odd.v === set.v) !== !!(cfg.sameVowel && can)) problems.push(`${where}: odd one ${rw} (${odd.v}) for ${set.rime} (${set.v})`);
                 for (const w of wrongs) if (W[w].aka.some(a => !set.set.some(([x]) => x === a))) problems.push(`${where}: ${w} (${W[w].aka.join('/')}) may not rhyme`);

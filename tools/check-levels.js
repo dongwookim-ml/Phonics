@@ -1,12 +1,14 @@
 // How she moves on (js/quiz.js, SKILL and NEXT_STAGE in js/data.js):
-//   - 3 right first tries in a row at her tier move her up a tier, at any
-//     time (not only before her first miss); 2 misses in a row, down;
+//   - her first 3 first tries at a tier all right move her up (an easy
+//     tier is soon passed), else 5 of the last 6; 2 misses in a row, down;
+//     a right answer asked below her tier by a place's cap doesn't count;
 //   - every 6th question is from the tier below, unless her last 8 first
 //     tries of that kind were all right; after a miss the next is easier;
 //   - a kind she has mastered at a place (at the highest tier it asks
 //     there, the last 5 right) is asked only now and then; once every kind
 //     of a place is, its people ask the next village's (NEXT_STAGE), at her
-//     tier there, capped like that village; never before;
+//     tier there, capped like that village; never before; a letter house
+//     keeps asking its own until its questions are all solved (its medal);
 //   - looking at whether she has mastered a kind gives no level to a kind
 //     she has never played.
 // Run: node tools/check-levels.js  (needs the playwright package and Chromium)
@@ -47,6 +49,18 @@ const check = (name, ok, detail) => {
         path1.push(Quiz.skill('word').t);
       }
       out.streak = path1;
+
+      // 1b. Asked below her tier by a place's cap (sentences at a unicorn,
+      // tier 3, she is at 4 from the cave).
+      const capped = right => {
+        fresh();
+        Object.assign(Quiz.skill('sentence'), { t: 4, best: 4, placed: true, w: [], last: [], n: 0 });
+        let q;
+        do { q = ask({ name: 'unicorn', level: 3 }, 'sentence'); if (!q.counts) Quiz.record(q, true); } while (!q.counts);
+        Quiz.record(q, right);
+        return Quiz.skill('sentence').w.join('');
+      };
+      out.capped = { right: capped(true), wrong: capped(false) };
 
       // 2. Two misses in a row at her tier: one tier down.
       fresh();
@@ -106,9 +120,12 @@ const check = (name, ok, detail) => {
       fresh();
       master(QUIZ_TYPES.town, 'town');
       out.town = tally(town());
-      // A letter house: its own three, then the forest's too.
+      // A letter house: its kinds stay its own while its questions (in its
+      // medal) aren't all solved; then the forest's too.
       fresh();
       master(QUIZ_TYPES.house, 'house');
+      out.houseOpen = tally({ name: 'host', letter: 'C' });
+      for (const kind of QUIZ_TYPES.house) for (const id of Quiz.pool(kind, { letter: 'C' })) state.history[id] = { kind, tries: 1, right: 1, wrong: 0, last: Date.now() };
       out.house = tally({ name: 'host', letter: 'C' });
       // The forest, mastered: the Unicorn Village's sentences.
       fresh();
@@ -132,7 +149,8 @@ const check = (name, ok, detail) => {
       return out;
     });
     const tag = edition;
-    check(`${tag}: 3 right in a row move her up, and again after a miss (${r.streak.join(' ')})`, r.streak.join() === '1,1,2,2,2,2,3,3,3,4', r.streak);
+    check(`${tag}: her first 3 at a tier right move her up; after a miss there, 5 of 6 (${r.streak.join(' ')})`, r.streak.join() === '1,1,2,2,2,2,2,2,3,3', r.streak);
+    check(`${tag}: right answers asked below her tier (a place's cap) don't count towards her tier there; a miss does`, r.capped.right === '' && r.capped.wrong === '0', r.capped);
     check(`${tag}: 2 misses in a row at her tier, one tier down (${r.down.join(' ')})`, r.down.join() === '3,2', r.down);
     const below = t => t.filter(x => x < 3).length;
     check(`${tag}: every 6th question is from the tier below when she isn't sure (${r.notSure.join('')})`, below(r.notSure) === 3 && r.notSure.every((t, i) => (t < 3) === ((i + 1) % 6 === 0)), r.notSure);
@@ -142,7 +160,8 @@ const check = (name, ok, detail) => {
     check(`${tag}: a mastered kind is asked now and then (${Math.round(share(r.one, 'word') * 100)}%)`, share(r.one, 'word') > 0.08 && share(r.one, 'word') < 0.3 && !r.one.stages.forest, r.one);
     check(`${tag}: all mastered in town: the forest's questions, capped like the forest, the town's now and then (${JSON.stringify(r.town.stages)})`,
       r.town.stages.forest > 200 && r.town.stages.here > 20 && !r.town.bad.length && ['family', 'vowel', 'ending', 'read', 'blend'].every(k => r.town.kinds[k] > 0), r.town);
-    check(`${tag}: in a letter house too (${JSON.stringify(r.house.stages)})`, r.house.stages.forest > 200 && !r.house.bad.length, r.house);
+    check(`${tag}: a letter house keeps asking its own while its questions aren't all solved`, !r.houseOpen.stages.forest, r.houseOpen);
+    check(`${tag}: then the forest's there too (${JSON.stringify(r.house.stages)})`, r.house.stages.forest > 200 && !r.house.bad.length, r.house);
     check(`${tag}: the forest mastered: the Unicorn Village's sentences (${JSON.stringify(r.forest.kinds)})`, r.forest.stages.unicorn > 200 && r.forest.kinds.sentence > 0 && r.forest.kinds.meaning > 0 && !r.forest.bad.length, r.forest);
     check(`${tag}: mastered there too: still the next village's, all of them`, r.both.stages.forest > 200 && !r.both.bad.length, r.both);
     check(`${tag}: the Monster Village, mastered, asks its own`, !Object.keys(r.monster.stages).some(s => s !== 'here'), r.monster);
