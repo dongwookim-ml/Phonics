@@ -726,6 +726,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   border-radius: 18px;
 }
 .sticker .em { font-size: 48px; line-height: 1.1; filter: brightness(0); opacity: 0.13; }
+.sticker .em svg, .sticker-fly .em svg { display: block; width: 1.1em; height: 1.1em; }
 .sticker .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 22px; font-size: min(22px, 17cqi); line-height: 1.1; white-space: nowrap; color: #c4b4c0; }
 .sticker .w.long { font-size: 16px; font-size: min(22px, 14cqi); }
 .sticker .first { color: var(--accent-ink); }

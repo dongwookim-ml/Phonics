@@ -91,6 +91,12 @@ const HOUSE_LETTERS = LETTERS.concat([
   {letter:'Z',sound:'zzz',color:'#a6bb87',words:[['zero','0️⃣'],['zebra','🦓']]},
 ]);
 const houseLetter = L => HOUSE_LETTERS.find(l=>l.letter===L);
+// Alphabet-album words, separate from sound-matching questions. Xylophone
+// begins with /z/; neither word teaches the X house's ending /ks/ sound.
+const ALBUM_EXTRA_WORDS = [
+  {w:'xylophone',e:'🎵',L:'X'},
+  {w:'x-ray',label:'X-ray',e:'🦴',L:'X'},
+];
 const NEIGHBORHOODS = {
   riverside: { name: 'district.riverside', icon:'🌊', color:'#78b8c8',
     entrance: { cols:[8,9], row:3 }, townReturn:{c:8,r:6}, start:{c:15,r:29} },

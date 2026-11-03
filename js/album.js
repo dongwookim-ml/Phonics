@@ -58,6 +58,7 @@ function albumWords() {
     if (!/^[a-z]+$/.test(w) || !e || /^[\x20-\x7e]*$/.test(e) || albumIndex.has(w)) continue;
     albumIndex.set(w, { w, e, L: w[0].toUpperCase() });
   }
+  for (const x of ALBUM_EXTRA_WORDS) albumIndex.set(x.w, x);
   albumList = [...albumIndex.values()];
   return albumList;
 }
@@ -76,6 +77,12 @@ function albumSaved(x) {
 
 // The word with its first letter in colour, as on the answer cards.
 const albumWordHtml = w => `<span class="first">${w[0]}</span>${w.slice(1)}`;
+// Real pictures for the X words, including on devices without an X-ray emoji.
+function albumStickerArt(x) {
+  if(x.w==='xylophone')return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 48L52 53M11 19L55 24" fill="none" stroke="#9d7956" stroke-width="5" stroke-linecap="round"/>'+['#e78da1','#efa766','#e5c66d','#8fc58d','#82bfce','#a59cd7'].map((c,i)=>`<rect x="${7+i*8}" y="${16+i*2}" width="7" height="${37-i*4}" rx="2" fill="${c}" stroke="#9b7a85" stroke-width=".7"/><circle cx="${10.5+i*8}" cy="${22+i*2}" r="1" fill="#fff3dd"/>`).join('')+'<path d="M17 10L39 42M46 10L27 42" stroke="#987151" stroke-width="2.5" stroke-linecap="round"/><circle cx="17" cy="10" r="5" fill="#e9a3b6"/><circle cx="46" cy="10" r="5" fill="#a1d3cb"/></svg>';
+  if(x.w==='x-ray')return '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="4" width="48" height="56" rx="6" fill="#547b9e" stroke="#a6c8d7" stroke-width="3"/><rect x="13" y="9" width="38" height="46" rx="3" fill="#294f75"/><path d="M32 15V48M29 19Q21 16 19 23M35 19Q43 16 45 23M29 26Q19 21 18 28Q21 33 29 33M35 26Q45 21 46 28Q43 33 35 33M29 34Q20 30 19 36Q22 41 29 41M35 34Q44 30 45 36Q42 41 35 41" fill="none" stroke="#d8f0eb" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="51" r="1.5" fill="#9ab8ca"/></svg>';
+  return x.e;
+}
 const albumIcon = key => place(key).split(' ')[0];
 
 // ---- The HUD and the album's page -------------------------------------------
@@ -181,7 +188,7 @@ function stickerFly(list, from) {
   list.forEach((s, i) => {
     const el = document.createElement('div');
     el.className = 'sticker-fly';
-    el.innerHTML = `<span class="card"><span class="em">${s.e}</span><span class="w">${albumWordHtml(s.w)}</span></span>`;
+    el.innerHTML = `<span class="card"><span class="em">${albumStickerArt(s)}</span><span class="w">${albumWordHtml(s.label||s.w)}</span></span>`;
     const x0 = start.left + start.width / 2 + (i - (list.length - 1) / 2) * 110;
     const y0 = start.top + start.height / 2;
     el.style.left = `${Math.round(x0)}px`;
@@ -657,7 +664,7 @@ function renderAlbum() {
     b.classList.toggle('got', !!st);
     b.classList.toggle('new', !!st && !!st.new);
     b.classList.toggle('shiny', !!st && st.n >= 3);
-    b.innerHTML = `<span class="em">${x.e}</span><span class="w${st && x.w.length > 7 ? ' long' : ''}">${st ? albumWordHtml(x.w) : '?'}</span>`;
+    b.innerHTML = `<span class="em">${albumStickerArt(x)}</span><span class="w${st && x.w.length > 7 ? ' long' : ''}">${st ? albumWordHtml(x.label||x.w) : '?'}</span>`;
     b.addEventListener('click', () => stickerTap(b, x, !!st));
     albumUi.page.append(b);
   }

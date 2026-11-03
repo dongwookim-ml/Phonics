@@ -15,7 +15,7 @@ const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS', 'TOWER2_NPCS'];
 // Content constants read from js/data.js (and, for the robot edition, the
 // js/captain-*.js files, which change those tables and add their own), and
 // js/kid-monsters.js in both: the monsters she drew, with their voices and hellos.
-const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES', 'HOUSE_LETTERS',
+const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES', 'HOUSE_LETTERS', 'ALBUM_EXTRA_WORDS',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
@@ -170,6 +170,7 @@ function collect(D) {
 
   // The narrator: words, letters and lines said by nobody in particular.
   const N = D.TTS_NARRATOR;
+  for (const x of D.ALBUM_EXTRA_WORDS) add(N, x.w, 0.8);
   const words = new Set();
   for (const l of D.LETTERS) for (const [w] of l.words) words.add(w);
   for (const f of D.WORD_FAMILIES) for (const [w] of f) words.add(w);
