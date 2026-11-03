@@ -611,6 +611,13 @@ const HARD_PAIRS = {
 LINES.firstSound = ['Which letter does it start with?', 'What is the first letter?', 'Which letter comes first?'];
 // A wrong rhyme: listen to the end of the word.
 LINES.rhymeEnd = ['Listen to the end.', 'Listen to the end of the word.'];
+// A letter house's host once she has got every question there right (its
+// medal): no more questions here, so on to the nearest house with new words
+// (houseSendOff in js/game.js); {home} is house, or workshop for the robot.
+LINES.houseDone = [
+  'You know all my {letter} words! There are no more questions here. How about the {next} {home}?',
+  'Great job! You did every question in the {letter} {home}. Let\'s visit the {next} {home} next!',
+];
 LINES.findStart = ['Which one starts with', 'Which picture starts with', 'What begins with'];
 LINES.rhyme = ['Which one rhymes with', 'Find a word that sounds like', 'What rhymes with'];
 // The word follows: "Which one starts like … cat".

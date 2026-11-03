@@ -181,7 +181,12 @@ Custom names in this audit use live speech fallback rather than requiring record
   `sameStart`: cow). House residents ask for the picture that starts with
   their house's letter instead of the letter question, and their words
   start with it (`LETTER_WORDS_MORE` adds more of them). `sameStart` adds
-  nothing to a medal. The cards wait (dimmed, the 🔊 glowing) until
+  nothing to a medal. Once she has got every question of a house right (its
+  medal), its host asks nothing more and sends her on: "You know all my C
+  words! There are no more questions here. How about the B house?", the
+  nearest house with new words, its letter shown big (`LINES.houseDone`,
+  `houseNext` in `js/game.js`); once every house is done, the hosts ask on
+  as usual. The cards wait (dimmed, the 🔊 glowing) until
   the word has been said. Someone she has already talked to that day skips
   the chat and just asks.
 - **A wrong answer** never sends her away. The picked card shakes, turns

@@ -158,6 +158,10 @@ function collect(D) {
   for (const h of D.TOWN_HOUSES) {
     const l = D.LETTERS.find(x => x.letter === h.letter);
     add(D.VOICES[h.look].tts, `This is the ${l.letter} ${robots ? 'workshop' : 'house'}. ${l.letter} says ${l.sound}.`);
+    // Once she has every question there right: on to another house (houseSendOff).
+    for (const n of D.TOWN_HOUSES) if (n !== h) for (const t of D.LINES.houseDone || []) {
+      add(D.VOICES[h.look].tts, t.replace(/\{letter\}/g, h.letter).replace(/\{next\}/g, n.letter).replace(/\{home\}/g, robots ? 'workshop' : 'house'));
+    }
   }
   // The fisherman's game at the pond (js/minigame.js): his lines; the pure
   // sounds and "moon starts with M." are the narrator's, recorded below.

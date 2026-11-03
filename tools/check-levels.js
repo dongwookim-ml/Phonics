@@ -10,13 +10,17 @@
 //     tier there, capped like that village; never before; a letter house
 //     keeps asking its own until its questions are all solved (its medal);
 //   - looking at whether she has mastered a kind gives no level to a kind
-//     she has never played.
+//     she has never played;
+//   - a letter house she has finished (its medal) asks nothing: its host
+//     sends her to the nearest house with new words.
 // Run: node tools/check-levels.js  (needs the playwright package and Chromium)
 
 const path = require('path');
 const { launch } = require('./browser');
 
 const root = path.join(__dirname, '..');
+// The send-off's wordings (LINES.houseDone in js/data.js).
+const LINES_HOUSE_DONE = /no more questions here|did every question/;
 let failed = 0;
 const check = (name, ok, detail) => {
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${ok ? '' : `\n     ${JSON.stringify(detail)}`}`);
@@ -166,6 +170,54 @@ const check = (name, ok, detail) => {
     check(`${tag}: mastered there too: still the next village's, all of them`, r.both.stages.forest > 200 && !r.both.bad.length, r.both);
     check(`${tag}: the Monster Village, mastered, asks its own`, !Object.keys(r.monster.stages).some(s => s !== 'here'), r.monster);
     check(`${tag}: a miss on a mastered kind brings it back as usual`, r.slip.kinds.word > 50 && !r.slip.stages.forest, r.slip);
+
+    // A letter house she has finished (every question of its medal right):
+    // its host asks nothing and sends her on to the nearest house with new
+    // words, its letter shown; the dialog closes by itself, 🔊 says it
+    // again. Not before; and once every house is done, it asks as usual.
+    const h = await page.evaluate(async () => {
+      const sleep = ms => new Promise(res => setTimeout(res, ms));
+      state.skill = {};
+      state.history = {};
+      document.querySelector('.start').classList.add('hidden');
+      const host = sceneFor('house-C').npcs.find(n => n.letter === 'C');
+      const solve = letter => { for (const id of medalList().find(m => m.id === `house:${letter}`).ids) state.history[id] = { kind: id.split(':')[0], tries: 1, right: 1, wrong: 0, last: Date.now() }; };
+      const open = () => {
+        closeDialog();
+        host.missed = null;
+        openDialog(host);
+        return { question: !!state.question, cards: ui.choices.children.length, text: ui.text.textContent, clue: ui.clue.textContent, shown: !ui.dialog.classList.contains('hidden') };
+      };
+      const out = { before: open() };
+      solve('C');
+      out.done = open();
+      const here = TOWN_HOUSES.find(x => x.letter === 'C');
+      const away = x => Math.abs(x.c - here.c) + Math.abs(x.r - here.r);
+      out.nearest = TOWN_HOUSES.filter(x => x !== here).sort((a, b) => away(a) - away(b))[0].letter;
+      let said = 0;
+      const say = Sound.say;
+      Sound.say = (parts, v) => { said++; return say.call(Sound, parts, v); };
+      askAgain();
+      Sound.say = say;
+      out.again = said;
+      // Once it has been said (or after 12 s at the latest: no voice).
+      for (let i = 0; i < 70 && !ui.dialog.classList.contains('hidden'); i++) await sleep(200);
+      out.closed = ui.dialog.classList.contains('hidden') && !state.talking && !state.busy;
+      // The nearest done too: the next nearest.
+      solve(out.nearest);
+      out.second = open();
+      out.secondNearest = TOWN_HOUSES.filter(x => x !== here && x.letter !== out.nearest).sort((a, b) => away(a) - away(b))[0].letter;
+      for (const x of TOWN_HOUSES) solve(x.letter);
+      out.all = open();
+      closeDialog();
+      return out;
+    });
+    const sentTo = (o, letter) => !o.question && o.cards === 0 && o.shown && LINES_HOUSE_DONE.test(o.text) && o.text.includes(` ${letter} `) && o.clue === `${letter}${letter.toLowerCase()}`;
+    check(`${tag}: a letter house asks as usual until she has finished it`, h.before.question && h.before.cards >= 2, h.before);
+    check(`${tag}: finished, its host asks nothing and sends her to the nearest house with new words (${h.nearest}): "${h.done.text}"`, sentTo(h.done, h.nearest), h.done);
+    check(`${tag}: 🔊 says it again, and the dialog closes by itself`, h.again === 1 && h.closed, h);
+    check(`${tag}: that one finished too, the next nearest (${h.secondNearest})`, sentTo(h.second, h.secondNearest), h.second);
+    check(`${tag}: every house finished: the hosts ask on as usual`, h.all.question && h.all.cards >= 2, h.all);
     check(`${tag}: no page errors`, !errors.length, errors);
     await page.close();
   }
