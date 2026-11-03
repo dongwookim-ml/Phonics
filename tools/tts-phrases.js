@@ -19,7 +19,7 @@ const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
-  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', ...MONSTER_TABLES];
+  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', 'WEAK_PICTURES', 'LONG_RHYME_UNSURE', ...MONSTER_TABLES];
 function loadData(edition) {
   const files = ['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/data.js'];
   if (edition === 'captain') {
@@ -86,13 +86,16 @@ function collect(D) {
   const longRhymes = D.RHYME_SETS.filter(r => ['eɪ', 'i', 'aɪ', 'oʊ', 'ɑr'].includes(r.v)).concat(D.LONG_RHYMES);
   // The lines each kind of question says in the asker's voice (js/quiz.js),
   // and the words it says in that voice (`voiced`).
-  const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
+  const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], sameStart: ['sameStart'],
+    oddRhyme: ['oddRhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
     ending: ['ending'], read: ['read'], blend: ['blend'], sentence: ['sentence'], meaning: ['meaning', 'silly'], spell: ['spell'],
     longBlend: ['longBlend'], longRead: ['read'], longWord: ['ask'], longRhyme: ['rhyme', 'rhymeEnd'] };
   const kindWords = {
     word: D.LETTERS.flatMap(l => first(l.words)),
     start: D.LETTERS.flatMap(l => first(l.words)),
     rhyme: D.RHYME_SETS.flatMap(r => first(r.set)),
+    sameStart: D.LETTERS.flatMap(l => first(l.words)),
+    oddRhyme: D.RHYME_SETS.flatMap(r => first(r.set)),
     family: cvc.concat(first(D.WORD_FAMILIES.flat()), D.MINIMAL_SETS.flat()),
     vowel: cvc,
     ending: cvc,
@@ -190,6 +193,12 @@ function collect(D) {
   for (const g of Object.keys(D.PART_SOUNDS)) if (g.length > 1) add(N, `/${g}/`, 0.8);
   lines(N, ['levelUp'].concat((D.CAVE_LINES && D.CAVE_LINES.narrator) || []));
   for (const r of D.RHYME_SETS.concat(D.LONG_RHYMES)) for (const [a] of r.set) for (const [b] of r.set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
+  // The odd one of an oddRhyme question, said after the rhyming two ("dog
+  // doesn't rhyme."): a rhyme picture she names for sure (pic 2 in every
+  // list, not a weak or unsure one, as sureRhymes in js/quiz.js).
+  const unsure = new Set([...D.WEAK_PICTURES, ...D.LONG_RHYME_UNSURE].concat([D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH]
+    .flat().concat(D.LONG_VOWELS.flatMap(g => g.words)).filter(x => x[2] < 2).map(([w]) => w)));
+  for (const r of D.RHYME_SETS) for (const [w] of r.set) if (!unsure.has(w)) add(N, `${w} doesn't rhyme.`);
   // What makes a vowel say its name, after a miss on a long vowel: "Magic e
   // makes the A say its name!", "O A says O!" (rule in js/quiz.js).
   for (const g of D.LONG_VOWELS) {

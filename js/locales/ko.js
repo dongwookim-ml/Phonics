@@ -578,6 +578,8 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "parent.letterHouses": "글자 집",
   "parent.rhymes": "라임",
   "parent.town2": "마을 · {0}",
+  "parent.sameFirstSound": "첫소리가 같은 그림 찾기",
+  "parent.oddRhymeOut": "라임이 다른 그림 찾기",
   "parent.wordFamilies": "단어 가족",
   "parent.middleSound": "가운데 소리",
   "parent.lastSound": "끝소리",

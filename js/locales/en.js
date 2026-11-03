@@ -578,6 +578,8 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "parent.letterHouses": "Letter houses",
   "parent.rhymes": "Rhymes",
   "parent.town2": "Town · {0}",
+  "parent.sameFirstSound": "Find the same first sound",
+  "parent.oddRhymeOut": "Find the one that doesn't rhyme",
   "parent.wordFamilies": "Word families",
   "parent.middleSound": "Middle sound",
   "parent.lastSound": "Last sound",

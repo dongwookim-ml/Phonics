@@ -92,7 +92,8 @@ const Quiz = (() => {
   // The short twin of a long word (kit for kite), if it has one.
   const twinOf = w => (LONG_TWINS.find(([, long]) => long === w) || [])[0];
   const minimalWords = () => [...new Set(MINIMAL_SETS.flat())].map(w => words()[w]);
-  const letterWords = () => LETTERS.flatMap(info => info.words.map(([w]) => Object.assign({ info }, words()[w])));
+  let letterList = null;
+  const letterWords = () => letterList || (letterList = LETTERS.flatMap(info => info.words.map(([w]) => Object.assign({ info }, words()[w]))));
   const clear = x => x.pic >= 2;
   // Three letters, a vowel in the middle and a plain last letter (cat, not cow).
   const cvcShape = x => /^[^aeiou][aeiou][^aeiouwy]$/.test(x.w) && !!PART_SOUNDS[x.w[2]];
@@ -121,6 +122,18 @@ const Quiz = (() => {
   // Two of them she hears apart, to rhyme (not tree and three).
   const rhymePairs = r => sureRhymes(r).flatMap(([a], i, all) => all.slice(i + 1).map(([b]) => [words()[a], words()[b]]))
     .filter(([a, b]) => !hardTwin(a, b));
+  // The rhyming pictures of an oddRhyme question: the ones she names for
+  // sure, by no other name (🧢 is a hat to her, ⛵ a ship, 🐔 a chicken),
+  // so none of them looks like the odd one.
+  const rhymers = r => sureRhymes(r).map(([w]) => words()[w]).filter(x => x.aka.every(a => r.set.some(([w]) => w === a)));
+  // k of them, no two the same picture or that she can't hear apart (tree,
+  // three); null when there aren't k. `mix`: in a new order each time.
+  function rhymeGroup(r, k, mix) {
+    const out = [];
+    const list = rhymers(r);
+    for (const x of mix ? shuffle(list) : list) if (out.length < k && !out.some(o => o.e === x.e || alike(o, x) || hardTwin(o, x))) out.push(x);
+    return out.length === k ? out : null;
+  }
   // The last sound of a rhyme (ake: k, ell: l, ee: none), to find words that
   // end the same after another vowel (kite, bat).
   const lastSound = rime => {
@@ -155,6 +168,12 @@ const Quiz = (() => {
     // Only the picture is shown, so only pictures she can name for sure.
     findStart: (npc, cfg) => withId('findStart', prefer(letterWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && clear(x)), cfg.single && single)),
     rhyme: () => withId('rhyme', RHYME_SETS.map(r => ({ r, w: r.set[0][0] }))),
+    // A word with a picture that starts like it (in a house, a word of its
+    // letter); at a `single` tier both start with one consonant, when they can.
+    sameStart: (npc, cfg) => withId('sameStart', prefer(letterWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && mates(x).length),
+      cfg.single && (x => single(x) && mates(x).some(single)))),
+    // A rhyme with as many pictures she names for sure as the rhyming cards.
+    oddRhyme: (npc, cfg) => withId('oddRhyme', RHYME_SETS.filter(r => rhymeGroup(r, cfg.n - 1)).map(r => ({ r, w: r.set[0][0] }))),
     family: (npc, cfg) => withId('family', cfg.minimal ? minimalWords() : BANK[cfg.words]()),
     vowel: (npc, cfg) => withId('vowel', BANK[cfg.words]().filter(cvcShape)),
     ending: (npc, cfg) => withId('ending', BANK[cfg.words]().filter(cvcShape)),
@@ -556,14 +575,36 @@ const Quiz = (() => {
   // Never one she could call by a name that starts like the target (🦍 is
   // a monkey to her), nor two cards starting with letters that say the same
   // sound (c, k); at the top tier one starts with a letter she finds hard to
-  // tell from the target's.
-  function letterOthers(t, n, cfg, picture) {
+  // tell from the target's. With a `clue` word (sameStart), never its
+  // picture or one she may call by its name either, and the hard one is
+  // hard to hear (her cards show no letter).
+  function letterOthers(t, n, cfg, picture, clue) {
     const L = t.w[0];
     const ok = (x, out, partner) => x.info !== t.info && !alike(x, t) && (!picture || clear(x)) &&
+      !(clue && (x.e === clue.e || alike(x, clue))) &&
       ![x.w].concat(x.aka).some(m => sameSound(m[0], L)) &&
       (partner || !(cfg.far ? nearPair : hardPair)(x.w[0], L)) &&
       !out.some(o => o.info === x.info || o.e === x.e || alike(o, x) || sameSound(o.w[0], x.w[0]));
-    return others(letterWords(), n, ok, cfg.near && (x => nearPair(x.w[0], L)));
+    const near = clue ? hardPair : nearPair;
+    return others(letterWords(), n, ok, cfg.near && (x => near(x.w[0], L)));
+  }
+
+  // The pictures that start like a word (sameStart): its letter's other
+  // words she names for sure, by no name that starts with another sound
+  // (🦍 is a monkey to her), never the same picture or one she may call by
+  // the word's own name.
+  const mateList = {};
+  const mates = t => mateList[t.w] || (mateList[t.w] = letterWords().filter(x => x.info === t.info && x.w !== t.w && x.e !== t.e &&
+    clear(x) && !alike(x, t) && [x.w].concat(x.aka).every(m => sameSound(m[0], t.w[0]))));
+  // One of them: at a `single` tier one consonant first when there is one,
+  // and not the one she had for this word last time.
+  const lastMate = {};
+  function mateOf(t, cfg) {
+    let list = prefer(mates(t), cfg.single && single);
+    if (list.length > 1) list = list.filter(x => x.w !== lastMate[t.w]);
+    const x = pick(list);
+    lastMate[t.w] = x.w;
+    return x;
   }
 
   // Hints shared by the kinds where she hears a word and picks it: what she
@@ -637,6 +678,59 @@ const Quiz = (() => {
     },
 
     rhyme: (npc, cfg) => rhymeQuestion('rhyme', npc, cfg, RHYME_SETS),
+
+    // She sees and hears a word with its picture ("cat 🐱") and picks the
+    // picture that starts with the same sound (🐮); the other pictures as
+    // in findStart. With `sound`, she hears that sound on its own too.
+    sameStart(npc, cfg) {
+      const t = take('sameStart', npc, cfg);
+      const L = t.w[0];
+      const ans = mateOf(t, cfg);
+      const hint = cfg.sound ? [{ pause: 400 }, ...alone(L)] : [];
+      const ask = line('sameStart');
+      // "cat! cow! /k/ /k/ /k/"
+      const both = [say(`${t.w}!`), { pause: 250 }, say(`${ans.w}!`), { pause: 300 }, ...alone(L)];
+      return {
+        id: t.id, target: ans.w, base: t.w,
+        clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
+        prompt: `${ask} "${t.w}"?`,
+        ask: [{ text: ask }, { pause: 300 }, voiced(t.w)].concat(hint, READY),
+        replay: [voiced(t.w)].concat(hint),
+        options: deal(ans, letterOthers(ans, cfg.n - 1, cfg, true, t), o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: both,
+        // "dog… Listen. cat… /k/ /k/ /k/"
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), voiced(t.w, 0.85), { pause: 300 }, ...alone(L)],
+        picked: o => [named(o.wrong)],
+        model: both,
+      };
+    },
+
+    // Three pictures (four at the top tier), all but one from one rhyme:
+    // she picks the one that doesn't rhyme. Their words are said in the
+    // order the cards show them.
+    oddRhyme(npc, cfg) {
+      const { r, id } = take('oddRhyme', npc, cfg);
+      const group = rhymeGroup(r, cfg.n - 1, true) || rhymeGroup(r, cfg.n - 1);
+      const odd = oddOne(r, group, cfg);
+      const cards = shuffle(group.concat(odd));
+      const said = cards.flatMap((o, i) => (i ? [{ pause: 450 }, voiced(o.w)] : [voiced(o.w)]));
+      const ask = line('oddRhyme');
+      // "cat, hat!" (recorded for every two words of a rhyme) and "dog doesn't rhyme."
+      const pair = (a, b) => ({ text: `${a.w}, ${b.w}!`, narrator: true });
+      const not = { text: `${odd.w} doesn't rhyme.`, narrator: true };
+      return {
+        id, target: odd.w, clue: '',
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 500 }].concat(said, READY),
+        replay: said,
+        options: cards.map(o => ({ html: wordCard(o.w, o.e), wrong: o.w, alwaysPictures: true, item: o, right: o === odd })),
+        answer: [pair(group[0], group[1]), { pause: 300 }, not],
+        // "hat… Listen to the end. hat, cat!"
+        teach: o => [named(o.wrong), { pause: 300 }, lead('rhymeEnd'), { pause: 200 }, pair(o.item, group.find(x => x !== o.item))],
+        picked: o => [named(o.wrong)],
+        model: [not, { pause: 300 }, pair(group[0], group[1])],
+      };
+    },
 
     // Hear a word, find it among words that start the same way, so she has
     // to listen to the middle and the end.
@@ -852,6 +946,22 @@ const Quiz = (() => {
       picked: o => [named(o.wrong)],
       model: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
     };
+  }
+
+  // The odd one of an oddRhyme question: a picture she names for sure from
+  // another rhyme, never one that ends the same after a short vowel she
+  // can't tell from this one (hat, jet) or that she may call by a rhyming
+  // name (🚐 "car" for star), nor one of the rhyming cards' pictures. It has
+  // another vowel; `far` another last sound too (cat, hat, dog); at a
+  // `sameVowel` tier the rhyme's own vowel when there is one (cat, hat, can).
+  function oddOne(r, group, cfg) {
+    const end = lastSound(r.rime);
+    const pool = RHYME_SETS.filter(s => s !== r).flatMap(s => sureRhymes(s).map(([w]) => Object.assign({ v: s.v, rime: s.rime }, words()[w])));
+    const rhymes = x => (x.v === r.v && lastSound(x.rime) === end) || x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
+    const near = x => hardPair(SHORT[x.v], SHORT[r.v]) && x.rime.slice(1) === r.rime.slice(1);
+    const ok = (x, out, partner) => (partner || x.v !== r.v) && !rhymes(x) && !near(x) && (!cfg.far || lastSound(x.rime) !== end) &&
+      !group.some(o => o.e === x.e || alike(o, x));
+    return others(pool, 1, ok, cfg.sameVowel && (x => x.v === r.v))[0];
   }
 
   // Words for the other cards of family, read and blend: ones that sound
