@@ -46,6 +46,22 @@ const { hiddenVillagers } = require('./scene-visibility');
           back:sceneFor(`house-${h.letter}`).returnTo.scene===h.scene};
       }));
       assert.equal(new Set(lessons.map(l=>l.letter)).size,26);assert.ok(lessons.every(l=>l.good&&l.back));
+      const progress=await page.evaluate(()=>{
+        const keep={history:state.history,skill:state.skill},medals=medalList();
+        const results=TOWN_HOUSES.map(h=>{
+          state.history={};state.skill={};
+          const npc=sceneFor(`house-${h.letter}`).npcs.find(n=>n.letter),medal=medals.find(m=>m.letter===h.letter);
+          const wordOnly=!h.simpleSound||Array.from({length:12},()=>Quiz.make(npc).kind).every(k=>k==='word');
+          for(const id of medal.ids)state.history[id]={kind:id.split(':')[0],tries:1,right:1};
+          const next=houseNext(npc);houseSendOff(npc,next);
+          const recorded=state.sendOff.every(p=>!p.text||Sound.hasClip(p.text,p.narrator?{}:voiceOf(npc)));
+          closeDialog();
+          return {good:medal.ids.length>0&&wordOnly&&next.scene===h.scene&&recorded,
+            xComplete:h.letter!=='X'||medal.ids.length===houseLetter('X').words.length};
+        });
+        Object.assign(state,keep);return results;
+      });
+      assert.ok(progress.every(p=>p.good&&p.xComplete),'All 26 houses keep lessons, medals and recorded same-neighborhood send-offs');
       const stickerAudio=await page.evaluate(()=>{
         const said=[],before=Sound.say;Sound.say=parts=>said.push(...parts.filter(p=>p.text).map(p=>p.text));
         for(const w of ['queen','quilt','umbrella','insect'])stickerTap(document.createElement('button'),{w,L:w[0].toUpperCase()},true);

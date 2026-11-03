@@ -383,26 +383,36 @@ function drawGateTrail(now) {
 // that start with it); a village's are all the questions of its kinds. A
 // place whose kinds are another's (the cave asks the unicorns' questions)
 // shares that medal.
+// Kinds there for variety (the same sounds asked another way: sameStart,
+// oddRhyme) add nothing to a medal, nor do the words added to each letter
+// for variety (LETTER_WORDS_MORE), so medals stay as big as they were.
+const MEDAL_SKIP = ['sameStart', 'oddRhyme'];
+const medalKeeps = id => {
+  const at = id.indexOf(':');
+  if (!['word', 'start', 'findStart'].includes(id.slice(0, at))) return true;
+  const w = id.slice(at + 1);
+  return !Object.values(typeof LETTER_WORDS_MORE !== 'undefined' ? LETTER_WORDS_MORE : {}).some(list => list.some(([x]) => x === w));
+};
 function medalList() {
   const out = [];
-  const houseKinds = QUIZ_TYPES.house || [];
+  const houseKinds = (QUIZ_TYPES.house || []).filter(k => !MEDAL_SKIP.includes(k));
   for (const h of TOWN_HOUSES) {
     const ids = new Set();
     for (const kind of (h.simpleSound ? ['word'] : houseKinds)) {
       const own = reviewPool(kind, { letter: h.letter });
       if (own.length && own.length < reviewPool(kind).length) own.forEach(id => ids.add(id));
     }
-    out.push({ id: `house:${h.letter}`, letter: h.letter, ids: [...ids] });
+    out.push({ id: `house:${h.letter}`, letter: h.letter, ids: h.simpleSound ? [...ids] : [...ids].filter(medalKeeps) });
   }
   const seen = new Set();
   for (const key of ['town', 'forest', 'unicorn', 'fairy', 'dungeon', 'monster']) {
-    const kinds = QUIZ_TYPES[key];
+    const kinds = QUIZ_TYPES[key] && QUIZ_TYPES[key].filter(k => !MEDAL_SKIP.includes(k));
     const sig = kinds && kinds.slice().sort().join();
     if (!kinds || seen.has(sig)) continue;
     seen.add(sig);
     const ids = new Set();
     for (const kind of kinds) reviewPool(kind).forEach(id => ids.add(id));
-    out.push({ id: `village:${key}`, key, ids: [...ids] });
+    out.push({ id: `village:${key}`, key, ids: [...ids].filter(medalKeeps) });
   }
   return out;
 }

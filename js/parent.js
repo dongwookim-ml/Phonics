@@ -9,6 +9,8 @@ const PARENT_KINDS = [
   ['start', I18n.t('parent.firstSound'), I18n.t('parent.town')],
   ['findStart', I18n.t('parent.findTheFirstSoundPicture'), I18n.t('parent.letterHouses')],
   ['rhyme', I18n.t('parent.rhymes'), I18n.t('parent.town2', placeName('forest'))],
+  ['sameStart', I18n.t('parent.sameFirstSound'), I18n.t('parent.town2', I18n.t('parent.letterHouses'))],
+  ['oddRhyme', I18n.t('parent.oddRhymeOut'), placeName('forest')],
   ['family', I18n.t('parent.wordFamilies'), placeName('forest')],
   ['vowel', I18n.t('parent.middleSound'), placeName('forest')],
   ['ending', I18n.t('parent.lastSound'), placeName('forest')],
@@ -169,11 +171,11 @@ function parentTier(kind) {
 }
 
 // First-try accuracy per first letter, from the letter questions (word,
-// start, findStart), as small chips: "C 4/5".
+// start, findStart, sameStart), as small chips: "C 4/5".
 function parentLetters() {
   const per = {};
   for (const [id, h] of Object.entries(state.history || {})) {
-    if (!['word', 'start', 'findStart'].includes(h.kind)) continue;
+    if (!['word', 'start', 'findStart', 'sameStart'].includes(h.kind)) continue;
     const L = id.slice(id.indexOf(':') + 1)[0].toUpperCase();
     const p = per[L] || (per[L] = { tries: 0, right: 0 });
     p.tries += h.tries;

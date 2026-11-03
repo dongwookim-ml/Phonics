@@ -92,7 +92,8 @@ const Quiz = (() => {
   // The short twin of a long word (kit for kite), if it has one.
   const twinOf = w => (LONG_TWINS.find(([, long]) => long === w) || [])[0];
   const minimalWords = () => [...new Set(MINIMAL_SETS.flat())].map(w => words()[w]);
-  const letterWords = () => LETTERS.flatMap(info => info.words.map(([w]) => Object.assign({ info }, words()[w])));
+  let letterList = null;
+  const letterWords = () => letterList || (letterList = LETTERS.flatMap(info => info.words.map(([w]) => Object.assign({ info }, words()[w]))));
   const clear = x => x.pic >= 2;
   // Three letters, a vowel in the middle and a plain last letter (cat, not cow).
   const cvcShape = x => /^[^aeiou][aeiou][^aeiouwy]$/.test(x.w) && !!PART_SOUNDS[x.w[2]];
@@ -121,6 +122,18 @@ const Quiz = (() => {
   // Two of them she hears apart, to rhyme (not tree and three).
   const rhymePairs = r => sureRhymes(r).flatMap(([a], i, all) => all.slice(i + 1).map(([b]) => [words()[a], words()[b]]))
     .filter(([a, b]) => !hardTwin(a, b));
+  // The rhyming pictures of an oddRhyme question: the ones she names for
+  // sure, by no other name (🧢 is a hat to her, ⛵ a ship, 🐔 a chicken),
+  // so none of them looks like the odd one.
+  const rhymers = r => sureRhymes(r).map(([w]) => words()[w]).filter(x => x.aka.every(a => r.set.some(([w]) => w === a)));
+  // k of them, no two the same picture or that she can't hear apart (tree,
+  // three); null when there aren't k. `mix`: in a new order each time.
+  function rhymeGroup(r, k, mix) {
+    const out = [];
+    const list = rhymers(r);
+    for (const x of mix ? shuffle(list) : list) if (out.length < k && !out.some(o => o.e === x.e || alike(o, x) || hardTwin(o, x))) out.push(x);
+    return out.length === k ? out : null;
+  }
   // The last sound of a rhyme (ake: k, ell: l, ee: none), to find words that
   // end the same after another vowel (kite, bat).
   const lastSound = rime => {
@@ -155,6 +168,12 @@ const Quiz = (() => {
     // Only the picture is shown, so only pictures she can name for sure.
     findStart: (npc, cfg) => withId('findStart', prefer(letterWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && clear(x)), cfg.single && single)),
     rhyme: () => withId('rhyme', RHYME_SETS.map(r => ({ r, w: r.set[0][0] }))),
+    // A word with a picture that starts like it (in a house, a word of its
+    // letter); at a `single` tier both start with one consonant, when they can.
+    sameStart: (npc, cfg) => withId('sameStart', prefer(letterWords().filter(x => (!npc.letter || x.info.letter === npc.letter) && mates(x).length),
+      cfg.single && (x => single(x) && mates(x).some(single)))),
+    // A rhyme with as many pictures she names for sure as the rhyming cards.
+    oddRhyme: (npc, cfg) => withId('oddRhyme', RHYME_SETS.filter(r => rhymeGroup(r, cfg.n - 1)).map(r => ({ r, w: r.set[0][0] }))),
     family: (npc, cfg) => withId('family', cfg.minimal ? minimalWords() : BANK[cfg.words]()),
     vowel: (npc, cfg) => withId('vowel', BANK[cfg.words]().filter(cvcShape)),
     ending: (npc, cfg) => withId('ending', BANK[cfg.words]().filter(cvcShape)),
@@ -373,23 +392,71 @@ const Quiz = (() => {
     }
     return view;
   }
-  // The tier for the next question: hers, capped by the place, and one
-  // lower right after a miss and for every 4th question. Only questions at
+  // The highest tier a place asks of a kind (its band counts from after the
+  // kind's first steps).
+  const capAt = (kind, place) => Math.min((TIER_BAND[place] || [1, 1])[1] + leadOf(kind), tierMax(kind));
+  // Her last `n` first tries of a kind, at any tier, were all right.
+  const sure = (k, n) => { const l = k.last || []; return l.length >= n && l.slice(-n).every(Boolean); };
+  // The tier for the next question: hers, capped by the place whose
+  // questions these are (`home`: another village's, once she has mastered
+  // this one's, see nextKind), and one lower right after a miss and for
+  // every 6th question unless she is sure of this kind. Only questions at
   // her own tier count towards moving up or down.
-  function tierFor(kind, npc) {
+  function tierFor(kind, npc, home = placeOf(npc)) {
     const k = skill(kind);
-    const hi = Math.min((TIER_BAND[placeOf(npc)] || [1, 1])[1] + leadOf(kind), tierMax(kind));
+    const hi = capAt(kind, home);
     const own = Math.max(1, Math.min(k.t, hi));
     let t = own;
-    if (k.easy || ++k.n % SKILL.reviewEvery === 0) t--;
+    const review = ++k.n % SKILL.reviewEvery === 0 && !sure(k, SKILL.sure);
+    if (k.easy || review) t--;
     t = Math.max(1, t);
     return { t, cfg: TIERS[kind][t - 1], counts: t === own, cap: hi };
   }
+  // A kind she has mastered at a place: at the highest tier it asks there,
+  // and her last SKILL.mastered first tries at that tier right. A kind she
+  // has never played isn't (and isn't given a level by looking).
+  function mastered(kind, place) {
+    const all = (typeof state !== 'undefined' && state.skill) || {};
+    if (!all[kind] && !all[`${kind}First`]) return false;
+    const k = skill(kind);
+    const w = k.w || [];
+    return k.t >= capAt(kind, place) && w.length >= SKILL.mastered && w.slice(-SKILL.mastered).every(Boolean);
+  }
+  // Which kind a person asks next, and the place whose band its tier keeps
+  // to: one of this place's she hasn't mastered yet, not the kind this
+  // person asked last time if she can help it, and now and then
+  // (SKILL.review) one she has. Once she has mastered every kind here, the
+  // next village's are asked here instead (NEXT_STAGE; the ones she hasn't
+  // mastered there, else all of them): the easy ones she knows well are
+  // skipped and she goes on to the next step.
+  function nextKind(npc, place) {
+    const own = kindsFor(npc);
+    const homeOf = {};
+    for (const k of own) homeOf[k] = place;
+    // A letter house's are about its letter, a few each, all in its medal:
+    // a kind there is done once its questions there are all solved too.
+    const allSolved = k => pools[k](npc, TIERS[k][Math.min(skill(k).t, capAt(k, place)) - 1]).every(x => solved(x.id));
+    const done = own.filter(k => mastered(k, place) && (place !== 'house' || allSolved(k)));
+    let open = own.filter(k => !done.includes(k));
+    const at = NEXT_STAGE[place];
+    if (!open.length && at) {
+      const theirs = QUIZ_TYPES[at].filter(k => !(k in homeOf));
+      for (const k of theirs) homeOf[k] = at;
+      open = theirs.filter(k => !mastered(k, at));
+      if (!open.length) open = theirs;
+    }
+    const list = open.length && !(done.length && Math.random() < SKILL.review) ? open : done.length ? done : own;
+    const choices = list.filter(k => k !== npc.lastQuiz);
+    const kind = pick(choices.length ? choices : list);
+    return [kind, homeOf[kind] || place];
+  }
   // Her first answer to a question (from record): moves her tier. Up after
-  // 5 of the last 6 (or, before her first miss, 3 in a row), down after 2
-  // misses in a row; never above what this place asks. A new best tier is a
-  // level-up for the child. A `letters` tier is passed only by knowing every
-  // letter (lettersPass), and she never goes back down to it.
+  // her first 3 at a tier all right (an easy tier for her is soon passed),
+  // else after 5 of the last 6 (it settles where she gets most right),
+  // down after 2 misses in a row;
+  // never above what the place whose questions these are asks. A new best
+  // tier is a level-up for the child. A `letters` tier is passed only by
+  // knowing every letter (lettersPass), and she never goes back down to it.
   function learn(q, right) {
     const kind = q.ladder || q.kind;
     const k = skill(kind);
@@ -398,13 +465,16 @@ const Quiz = (() => {
     k.easy = !right;
     if (!q.counts) return;
     if (!right) k.placed = true;
+    // Asked below her tier because a place asks no higher: a right answer
+    // says nothing about her own tier (a miss does).
+    if (right && q.tier < k.t) return;
     k.w = k.w.concat(right ? 1 : 0).slice(-SKILL.window);
     const sum = k.w.reduce((a, b) => a + b, 0);
-    const run = k.w.slice(-SKILL.placementRun);
-    const placing = !k.placed && run.length === SKILL.placementRun && run.every(Boolean);
+    // Easy for her: her first `streak` answers at this tier all right.
+    const streak = k.w.length >= SKILL.streak && k.w.every(Boolean);
     const tiers = TIERS[kind];
     if (tiers[k.t - 1].letters) return;
-    if (k.t < max && (placing || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
+    if (k.t < max && (streak || (k.w.length >= SKILL.window && sum >= SKILL.promoteAt))) {
       k.t++;
       k.w = [];
       if (k.t > (k.best || 1)) { k.best = k.t; q.levelUp = true; }
@@ -557,14 +627,38 @@ const Quiz = (() => {
   // Never one she could call by a name that starts like the target (🦍 is
   // a monkey to her), nor two cards starting with letters that say the same
   // sound (c, k); at the top tier one starts with a letter she finds hard to
-  // tell from the target's.
-  function letterOthers(t, n, cfg, picture) {
+  // tell from the target's. With a `clue` word (sameStart), never its
+  // picture or one she may call by its name either, and the hard one is
+  // hard to hear (her cards show no letter).
+  function letterOthers(t, n, cfg, picture, clue) {
     const L = t.w[0];
     const ok = (x, out, partner) => x.info !== t.info && !alike(x, t) && (!picture || clear(x)) &&
+      !(clue && (x.e === clue.e || alike(x, clue))) &&
+      // Nor one that starts like what she may call the clue (🐳 "fish": no 🔥).
+      !(clue && clue.aka.some(a => [x.w].concat(x.aka).some(m => sameSound(m[0], a[0]) || (!partner && (cfg.far ? nearPair : hardPair)(m[0], a[0]))))) &&
       ![x.w].concat(x.aka).some(m => sameSound(m[0], L)) &&
       (partner || !(cfg.far ? nearPair : hardPair)(x.w[0], L)) &&
       !out.some(o => o.info === x.info || o.e === x.e || alike(o, x) || sameSound(o.w[0], x.w[0]));
-    return others(letterWords(), n, ok, cfg.near && (x => nearPair(x.w[0], L)));
+    const near = clue ? hardPair : nearPair;
+    return others(letterWords(), n, ok, cfg.near && (x => near(x.w[0], L)));
+  }
+
+  // The pictures that start like a word (sameStart): its letter's other
+  // words she names for sure, by no name that starts with another sound
+  // (🦍 is a monkey to her), never the same picture or one she may call by
+  // the word's own name.
+  const mateList = {};
+  const mates = t => mateList[t.w] || (mateList[t.w] = letterWords().filter(x => x.info === t.info && x.w !== t.w && x.e !== t.e &&
+    clear(x) && !alike(x, t) && [x.w].concat(x.aka).every(m => sameSound(m[0], t.w[0]))));
+  // One of them: at a `single` tier one consonant first when there is one,
+  // and not the one she had for this word last time.
+  const lastMate = {};
+  function mateOf(t, cfg) {
+    let list = prefer(mates(t), cfg.single && single);
+    if (list.length > 1) list = list.filter(x => x.w !== lastMate[t.w]);
+    const x = pick(list);
+    lastMate[t.w] = x.w;
+    return x;
   }
 
   // Hints shared by the kinds where she hears a word and picks it: what she
@@ -639,6 +733,59 @@ const Quiz = (() => {
     },
 
     rhyme: (npc, cfg) => rhymeQuestion('rhyme', npc, cfg, RHYME_SETS),
+
+    // She sees and hears a word with its picture ("cat 🐱") and picks the
+    // picture that starts with the same sound (🐮); the other pictures as
+    // in findStart. With `sound`, she hears that sound on its own too.
+    sameStart(npc, cfg) {
+      const t = take('sameStart', npc, cfg);
+      const L = t.w[0];
+      const ans = mateOf(t, cfg);
+      const hint = cfg.sound ? [{ pause: 400 }, ...alone(L)] : [];
+      const ask = line('sameStart');
+      // "cat! cow! /k/ /k/ /k/"
+      const both = [say(`${t.w}!`), { pause: 250 }, say(`${ans.w}!`), { pause: 300 }, ...alone(L)];
+      return {
+        id: t.id, target: ans.w, base: t.w,
+        clue: `<span class="clue-pic">${t.e}</span><span class="clue-word">${firstBig(t.w)}</span>`,
+        prompt: `${ask} "${t.w}"?`,
+        ask: [{ text: ask }, { pause: 300 }, voiced(t.w)].concat(hint, READY),
+        replay: [voiced(t.w)].concat(hint),
+        options: deal(ans, letterOthers(ans, cfg.n - 1, cfg, true, t), o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: both,
+        // "dog… Listen. cat… /k/ /k/ /k/"
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), voiced(t.w, 0.85), { pause: 300 }, ...alone(L)],
+        picked: o => [named(o.wrong)],
+        model: both,
+      };
+    },
+
+    // Three pictures (four at the top tier), all but one from one rhyme:
+    // she picks the one that doesn't rhyme. Their words are said in the
+    // order the cards show them.
+    oddRhyme(npc, cfg) {
+      const { r, id } = take('oddRhyme', npc, cfg);
+      const group = rhymeGroup(r, cfg.n - 1, true) || rhymeGroup(r, cfg.n - 1);
+      const odd = oddOne(r, group, cfg);
+      const cards = shuffle(group.concat(odd));
+      const said = cards.flatMap((o, i) => (i ? [{ pause: 450 }, voiced(o.w)] : [voiced(o.w)]));
+      const ask = line('oddRhyme');
+      // "cat, hat!" (recorded for every two words of a rhyme) and "dog doesn't rhyme."
+      const pair = (a, b) => ({ text: `${a.w}, ${b.w}!`, narrator: true });
+      const not = { text: `${odd.w} doesn't rhyme.`, narrator: true };
+      return {
+        id, target: odd.w, clue: '',
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 500 }].concat(said, READY),
+        replay: said,
+        options: cards.map(o => ({ html: wordCard(o.w, o.e), wrong: o.w, alwaysPictures: true, item: o, right: o === odd })),
+        answer: [pair(group[0], group[1]), { pause: 300 }, not],
+        // "hat… Listen to the end. hat, cat!"
+        teach: o => [named(o.wrong), { pause: 300 }, lead('rhymeEnd'), { pause: 200 }, pair(o.item, group.find(x => x !== o.item))],
+        picked: o => [named(o.wrong)],
+        model: [not, { pause: 300 }, pair(group[0], group[1])],
+      };
+    },
 
     // Hear a word, find it among words that start the same way, so she has
     // to listen to the middle and the end.
@@ -854,6 +1001,25 @@ const Quiz = (() => {
       picked: o => [named(o.wrong)],
       model: [{ text: `${base.w}, ${ans.w}!`, narrator: true }],
     };
+  }
+
+  // The odd one of an oddRhyme question: a picture she names for sure from
+  // another rhyme, never one that ends the same after a short vowel she
+  // can't tell from this one (hat, jet) or that she may call by a rhyming
+  // name (🚐 "car" for star), nor one of the rhyming cards' pictures. It has
+  // another vowel; `far` another last sound too (cat, hat, dog); at a
+  // `sameVowel` tier the rhyme's own vowel when there is one (cat, hat, can).
+  function oddOne(r, group, cfg) {
+    const end = lastSound(r.rime);
+    const pool = RHYME_SETS.filter(s => s !== r).flatMap(s => sureRhymes(s).map(([w]) => Object.assign({ v: s.v, rime: s.rime }, words()[w])));
+    const rhymes = x => (x.v === r.v && lastSound(x.rime) === end) || x.aka.some(a => a.endsWith(r.rime) || r.set.some(([w]) => w === a));
+    const near = x => hardPair(SHORT[x.v], SHORT[r.v]) && x.rime.slice(1) === r.rime.slice(1);
+    // With the same vowel, below the top tier, never one whose last sound
+    // she can't tell from the rhyme's yet (frog, clock: g/k; drum, sun: m/n).
+    const hardEnd = x => cfg.sameVowel && x.v === r.v && hardPair(lastSound(x.rime), end);
+    const ok = (x, out, partner) => (partner || x.v !== r.v) && !rhymes(x) && !near(x) && !hardEnd(x) && (!cfg.far || lastSound(x.rime) !== end) &&
+      !group.some(o => o.e === x.e || alike(o, x));
+    return others(pool, 1, ok, cfg.sameVowel && (x => x.v === r.v))[0];
   }
 
   // Words for the other cards of family, read and blend: ones that sound
@@ -1143,20 +1309,18 @@ const Quiz = (() => {
     longRhyme: (npc, cfg) => rhymeQuestion('longRhyme', npc, cfg, longRhymes(), RHYME_SETS.filter(r => SHORT[r.v])),
   });
 
-  // Picks a kind of question this person didn't ask last time, at her tier.
-  // `force` ({ kind, tier }) is for tests and the village games
-  // (js/village-games.js), whose `cfg` changes that tier's settings (more
-  // cards); a forced question never moves her tier.
+  // Picks a kind of question (nextKind), at her tier. `force` ({ kind,
+  // tier }) is for tests and the village games (js/village-games.js), whose
+  // `cfg` changes that tier's settings (more cards); a forced question
+  // never moves her tier.
   function make(npc, force) {
-    const kinds = kindsFor(npc);
+    const place = placeOf(npc);
     let kind = force && force.kind;
-    if (!kind) {
-      const choices = kinds.filter(k => k !== npc.lastQuiz);
-      kind = pick(choices.length ? choices : kinds);
-    }
+    let home = place;
+    if (!kind) [kind, home] = nextKind(npc, place);
     npc.lastQuiz = kind;
-    const tier = force && force.tier ? { t: force.tier, cfg: Object.assign({}, TIERS[kind][force.tier - 1], force.cfg), counts: false } : tierFor(kind, npc);
-    return build(kind, npc, tier);
+    const tier = force && force.tier ? { t: force.tier, cfg: Object.assign({}, TIERS[kind][force.tier - 1], force.cfg), counts: false } : tierFor(kind, npc, home);
+    return Object.assign(build(kind, npc, tier), home !== place ? { stage: home } : {});
   }
   // A first step's question is of its own kind (`kind`, for its id and
   // answers), on its ladder's tiers (`ladder`, whose tier it moves).

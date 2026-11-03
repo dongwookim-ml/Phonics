@@ -175,10 +175,18 @@ Custom names in this audit use live speech fallback rather than requiring record
   house to walk in. Each house's resident asks words that start with that
   house's letter, and the wall shows the letter and its pictures.
 - **Villagers** (♪ bubble): tap one to talk and they ask a question with
-  answers **1, 2, 3**. Town folk mix three kinds: pick the word you hear,
-  pick the letter a word starts with, or find the word that rhymes. House
-  residents ask for the picture that starts with their house's letter
-  instead of the letter question. The cards wait (dimmed, the 🔊 glowing) until
+  answers **1, 2, 3**. Town folk mix four kinds: pick the word you hear,
+  pick the letter a word starts with, find the word that rhymes, or find
+  the picture that starts like a word ("Which one starts like… cat?",
+  `sameStart`: cow). House residents ask for the picture that starts with
+  their house's letter instead of the letter question, and their words
+  start with it (`LETTER_WORDS_MORE` adds more of them). `sameStart` adds
+  nothing to a medal. Once she has got every question of a house right (its
+  medal), its host asks nothing more and sends her on: "You know all my C
+  words! There are no more questions here. How about the B house?", the
+  nearest house with new words, its letter shown big (`LINES.houseDone`,
+  `houseNext` in `js/game.js`); once every house is done, the hosts ask on
+  as usual. The cards wait (dimmed, the 🔊 glowing) until
   the word has been said. Someone she has already talked to that day skips
   the chat and just asks.
 - **A wrong answer** never sends her away. The picked card shakes, turns
@@ -206,10 +214,22 @@ Custom names in this audit use live speech fallback rather than requiring record
   apart at first, then more cards, text only, words that differ in one sound,
   and only at the top tier the sounds a Korean ear finds hard (a/e, f/p, l/r,
   m/n...). Each kind keeps her own tier (`state.skill`, saved, shared by both
-  editions): up after 5 right first tries of the last 6 (the first 3 in a
-  row before her first miss), down after 2 misses in a row; after a miss the
-  next one is a tier easier, and every 4th question is from the tier below.
-  Each place caps the tier (`TIER_BAND`). Reaching a new best tier shows
+  editions): up as soon as her first 3 first tries at a tier are all right
+  (an easy tier is soon passed), else after 5 of the last 6 (so she settles
+  where she gets most right), down after 2 misses in a row; after a miss the next one is a tier easier,
+  and every 6th question is from the tier below unless her last 8 of that
+  kind were all right (`SKILL`). Each place caps the tier (`TIER_BAND`).
+- **Skipping what she knows**: a kind she has mastered at a place (at the
+  highest tier it asks there, her last 5 right) is asked only now and then
+  (a fifth of the time); once she has mastered every kind of a place, its
+  people ask the next village's questions instead (`NEXT_STAGE`: the town
+  and the letter houses the forest's, the forest the Unicorn Village's, the
+  Unicorn Village and the cave the fairies', the fairies the Monster
+  Village's), at her tier there, capped like that village, and in the
+  asker's own voice. A letter house keeps asking its own kinds until its
+  questions (its medal) are all solved too. A miss brings a kind back as
+  usual (`nextKind` in `js/quiz.js`; `node tools/check-levels.js` checks
+  all of this). Reaching a new best tier shows
   "⭐ 레벨 업!" with a fanfare (no message going down). Spelling goes 3
   letters with the first given (4 tiles) → 3 letters, 5 tiles → sh, ck, ll as
   one tile (fish, duck, bell) → 4-letter blends (frog, milk) → 5 letters
@@ -393,7 +413,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   words that share the first letter (hug / hut / hat / hen), the missing
   middle sound (c ? t), the missing last sound (ca ?), reading a word with
   no voice and picking its picture, hearing a word's sounds one by one
-  ("/s/ … /u/ … /n/") and picking its picture, and rhymes. Only the forest
+  ("/s/ … /u/ … /n/") and picking its picture, rhymes, and the one of three
+  (four at the top) that doesn't rhyme (`oddRhyme`, not in its medal). Only the forest
   (and the villages past it) gives out its treasures: fairy wings, a
   starlight cape, a night-sky dress, the star sword and dragon wings for a
   boy, a glowing mushroom and an acorn. Word families live in

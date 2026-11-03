@@ -654,6 +654,9 @@ function openDialog(npc) {
   kidDrawingShow(npc); // a monster she drew shows her drawing instead (js/kid-monsters.js)
   ui.name.textContent = npc.name;
   const back = comeBack(npc);
+  // A letter house she has finished sends her on to another one.
+  const next = !back && houseNext(npc);
+  if (next) { houseSendOff(npc, next); return; }
   const q = back ? Quiz.again(npc.missed, npc) : Quiz.make(npc);
   if (back) npc.missed = null;
   state.question = q;
@@ -704,6 +707,49 @@ function openDialog(npc) {
 }
 
 // "This is the C house. C says kuh." (recorded per voice by tools/tts-phrases.js)
+// A letter house whose questions (its medal's) she has all got right:
+// the nearest house that still has new words for her, else none (once
+// every house is done, the hosts ask on as usual: js/quiz.js).
+function houseNext(npc) {
+  if (!npc.letter || typeof medalList !== 'function') return null;
+  const done = m => !!m && m.ids.length > 0 && m.ids.every(medalSolved);
+  const medals = medalList().filter(m => m.letter);
+  const medalOf = h => medals.find(m => m.letter === h.letter);
+  const here = TOWN_HOUSES.find(h => h.letter === npc.letter);
+  if (!here || !done(medalOf(here))) return null;
+  const away = h => Math.abs(h.c - here.c) + Math.abs(h.r - here.r);
+  const sameScene = h => (h.scene || 'town') === (here.scene || 'town');
+  const open = TOWN_HOUSES.filter(h => h !== here && medalOf(h) && !done(medalOf(h)))
+    .sort((a, b) => Number(sameScene(b)) - Number(sameScene(a)) || away(a) - away(b));
+  return open[0] || null;
+}
+// Its host says there is nothing more to ask here and names that house
+// (its letter shown big, as on its sign), asks nothing, and the dialog
+// closes once that is said (🔊 says it again).
+function houseSendOff(npc, next) {
+  const text = line('houseDone', { letter: npc.letter, next: next.letter, home: isCaptain() ? 'workshop' : 'house' });
+  // Original house pairs have full host recordings. New letters reuse
+  // recorded praise and the next letter/house name, also on replay.
+  const who = voiceOf(npc);
+  state.sendOff = Sound.hasClip(text, who) ? [{ text }] : [
+    { text: 'Great listening!', narrator: true }, { pause: 350 },
+    { text: next.letter, narrator: true },
+    ...(!isCaptain() ? [{ pause: 180 }, { text: 'house', narrator: true }] : []),
+  ];
+  ui.text.textContent = text;
+  ui.clue.innerHTML = `<span class="clue-letter">${next.letter}${next.letter.toLowerCase()}</span>`;
+  ui.clue.classList.remove('hidden');
+  ui.choices.innerHTML = '';
+  ui.choices.classList.remove('four', 'spell');
+  ui.reward.classList.add('hidden');
+  ui.dialog.classList.remove('hidden', 'listening');
+  musicUpdate();
+  const turn = npc.sendTurn = (npc.sendTurn || 0) + 1;
+  const close = () => { if (state.talking === npc && !state.question && npc.sendTurn === turn) closeDialog(); };
+  Sound.say(state.sendOff.concat({ pause: 900 }, { call: close }), who);
+  later(Sound.muted ? 3000 : 12000, close);
+}
+
 function houseHello(info) {
   return `This is the ${info.letter} ${isCaptain() ? 'workshop' : 'house'}. ${info.letter} says ${info.sound}.`;
 }
@@ -737,6 +783,7 @@ function listen(q, parts, ms) {
 // 🔊: the word again (once the answer is shown or given, the answer).
 function askAgain() {
   const q = state.question;
+  if (!q && state.sendOff && state.talking) { Sound.say(state.sendOff, voiceOf(state.talking)); return; }
   if (!q || q.magicPending) return;
   const parts = q.done ? q.answer : q.reveal ? q.model : q.replay;
   if (q.locked) listen(q, parts.slice(), 5000);
@@ -914,6 +961,7 @@ function closeDialog() {
   state.question = null;
   state.talking = null;
   state.gift = null;
+  state.sendOff = null;
   musicUpdate();
 }
 

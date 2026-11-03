@@ -19,7 +19,7 @@ const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
-  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', ...MONSTER_TABLES];
+  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', 'WEAK_PICTURES', 'LONG_RHYME_UNSURE', 'NEXT_STAGE', ...MONSTER_TABLES];
 function loadData(edition) {
   const files = ['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/data.js'];
   if (edition === 'captain') {
@@ -63,7 +63,9 @@ function collect(D) {
   if (D.LINES.partShow) flat(D.LINES.partShow);
 
   // Who asks what: each place's people ask that place's kinds of question
-  // (QUIZ_TYPES); the cave monsters ask the Unicorn Village's.
+  // (QUIZ_TYPES), and the next village's once she has mastered those
+  // (NEXT_STAGE, nextKind in js/quiz.js); the cave monsters ask the Unicorn
+  // Village's.
   const town = new Set([...D.TOWN_NPCS.map(n => n.look), ...D.TOWN_HOUSES.map(h => h.look), 'king', 'queen', 'maid',
     ...D.CASTLE_UP_NPCS.map(n => n.look), ...(D.CAPTAIN_HQ_NPCS || []).map(n => n.look)]);
   const forest = new Set(D.FOREST_NPCS.map(n => n.look));
@@ -73,9 +75,10 @@ function collect(D) {
   // The Monster Village and its tower, and any home there.
   const monsterVillage = new Set([...MONSTER_TABLES.flatMap(k => D[k] || []),
     ...D.VILLAGE_HOMES.filter(h => (D.HOME_LEVEL || {})[h.scene] === 6)].map(n => n.look));
-  const kindsOf = look => new Set([].concat(town.has(look) ? D.QUIZ_TYPES.town.concat(D.QUIZ_TYPES.house) : [],
-    forest.has(look) ? D.QUIZ_TYPES.forest : [], unicorn.has(look) ? D.QUIZ_TYPES.unicorn : [], fairies.has(look) ? D.QUIZ_TYPES.fairy : [],
-    monsterVillage.has(look) ? D.QUIZ_TYPES.monster : []));
+  const asked = place => D.QUIZ_TYPES[place].concat(D.NEXT_STAGE[place] ? D.QUIZ_TYPES[D.NEXT_STAGE[place]] : []);
+  const kindsOf = look => new Set([].concat(town.has(look) ? asked('town').concat(asked('house')) : [],
+    forest.has(look) ? asked('forest') : [], unicorn.has(look) ? asked('unicorn').concat(asked('dungeon')) : [], fairies.has(look) ? asked('fairy') : [],
+    monsterVillage.has(look) ? asked('monster') : []));
   const first = list => list.map(([w]) => w);
   const cvc = first(D.CVC_A1.concat(D.CVC_A2));
   const sentences = D.SENTENCES.concat(D.SENTENCES_L1, D.SENTENCES_L2);
@@ -86,13 +89,16 @@ function collect(D) {
   const longRhymes = D.RHYME_SETS.filter(r => ['eɪ', 'i', 'aɪ', 'oʊ', 'ɑr'].includes(r.v)).concat(D.LONG_RHYMES);
   // The lines each kind of question says in the asker's voice (js/quiz.js),
   // and the words it says in that voice (`voiced`).
-  const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
+  const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], sameStart: ['sameStart'],
+    oddRhyme: ['oddRhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
     ending: ['ending'], read: ['read'], blend: ['blend'], sentence: ['sentence'], meaning: ['meaning', 'silly'], spell: ['spell'],
     longBlend: ['longBlend'], longRead: ['read'], longWord: ['ask'], longRhyme: ['rhyme', 'rhymeEnd'] };
   const kindWords = {
     word: D.LETTERS.flatMap(l => first(l.words)),
     start: D.LETTERS.flatMap(l => first(l.words)),
     rhyme: D.RHYME_SETS.flatMap(r => first(r.set)),
+    sameStart: D.LETTERS.flatMap(l => first(l.words)),
+    oddRhyme: D.RHYME_SETS.flatMap(r => first(r.set)),
     family: cvc.concat(first(D.WORD_FAMILIES.flat()), D.MINIMAL_SETS.flat()),
     vowel: cvc,
     ending: cvc,
@@ -152,6 +158,10 @@ function collect(D) {
   for (const h of D.TOWN_HOUSES.filter(h=>!h.simpleSound)) {
     const l = D.LETTERS.find(x => x.letter === h.letter);
     add(D.VOICES[h.look].tts, `This is the ${l.letter} ${robots ? 'workshop' : 'house'}. ${l.letter} says ${l.sound}.`);
+    // Once she has every question there right: on to another house (houseSendOff).
+    for (const n of D.TOWN_HOUSES.filter(n=>!n.simpleSound)) if (n !== h) for (const t of D.LINES.houseDone || []) {
+      add(D.VOICES[h.look].tts, t.replace(/\{letter\}/g, h.letter).replace(/\{next\}/g, n.letter).replace(/\{home\}/g, robots ? 'workshop' : 'house'));
+    }
   }
   // The fisherman's game at the pond (js/minigame.js): his lines; the pure
   // sounds and "moon starts with M." are the narrator's, recorded below.
@@ -190,6 +200,12 @@ function collect(D) {
   for (const g of Object.keys(D.PART_SOUNDS)) if (g.length > 1) add(N, `/${g}/`, 0.8);
   lines(N, ['levelUp'].concat((D.CAVE_LINES && D.CAVE_LINES.narrator) || []));
   for (const r of D.RHYME_SETS.concat(D.LONG_RHYMES)) for (const [a] of r.set) for (const [b] of r.set) if (a !== b) add(N, `${a}, ${b}!`, 0.9);
+  // The odd one of an oddRhyme question, said after the rhyming two ("dog
+  // doesn't rhyme."): a rhyme picture she names for sure (pic 2 in every
+  // list, not a weak or unsure one, as sureRhymes in js/quiz.js).
+  const unsure = new Set([...D.WEAK_PICTURES, ...D.LONG_RHYME_UNSURE].concat([D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH]
+    .flat().concat(D.LONG_VOWELS.flatMap(g => g.words)).filter(x => x[2] < 2).map(([w]) => w)));
+  for (const r of D.RHYME_SETS) for (const [w] of r.set) if (!unsure.has(w)) add(N, `${w} doesn't rhyme.`);
   // What makes a vowel say its name, after a miss on a long vowel: "Magic e
   // makes the A say its name!", "O A says O!" (rule in js/quiz.js).
   for (const g of D.LONG_VOWELS) {
