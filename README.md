@@ -492,23 +492,29 @@ Custom names in this audit use live speech fallback rather than requiring record
 - **Nail salon** (the princess edition, all titles/looks): the lavender cottage
   with the mint awning beside the hair salon, at `NAIL_AT` in `js/nails.js`.
   Tap the building or nail artist to open two large interactive hands. Choose a
-  finger, then preview polish, a nail sticker or a ring; the apply button
-  confirms the purchase. Basic polish costs 3 stars, stickers 2, rings 5. Special finishes cost more:
-  glitter 8, rainbow/confetti 10, holographic/mermaid 12, crystal 14, galaxy 15.
+  finger, then tap owned polish, a nail sticker or a ring to apply it immediately.
+  Unowned supplies show a lock and their star price; tapping opens a purchase
+  confirmation with the item, price and chosen finger. Only confirming spends
+  stars and applies the item. Cancel, Escape, closing the salon or an account
+  refresh cancels the purchase. Insufficient stars leave the design and balance
+  intact. Basic polish costs 3 stars, stickers 2, rings 5. Special finishes cost
+  more: glitter 8, rainbow/confetti 10, holographic/mermaid 12, crystal 14, galaxy 15.
   Bottle swatches and actual nails share the same clipped finish artwork.
   Previously purchased glitter remains owned after the price change.
   Clear polish, soft pink and removing stickers/rings are free. Purchased
-  supplies stay owned and can be used again on any finger without more stars;
-  “all ten fingers” applies the selected supply to both hands for one purchase.
+  supplies stay owned and can be used again on any finger without more stars.
   The original five save keys remain the left hand; `right-` keys store the
   right hand, which starts clear when upgrading an older save.
-  Polish, stickers and rings are separate layers. Trying a preview and leaving
-  spends nothing. Designs and supplies persist in `nails`, independently of
+  Polish, stickers and rings are separate layers. There is no bulk application
+  or separate apply button. Owned selections and confirmed purchases save
+  immediately. Designs and supplies persist in `nails`, independently of
   the character's outfit: the world sprite never changes. Account sync joins
   owned supplies and keeps the latest design for each finger; spent stars
   follow the usual counters, so previously opened gates stay open.
   `tools/check-nails.js` checks purchases, persistence/sync, unchanged hero,
-  keyboard input, English/Korean and five screen sizes. Hand and item artwork
+  keyboard input, English/Korean and eight screen sizes, including large and
+  ultrawide monitors. Desktop layouts use the window width for the hands while
+  the tool column stays bounded. Hand and item artwork
   are native SVG so nails can be selected and decorated directly.
 - **Halloween** (both editions, 1 to 31 October every year by the tablet's
   clock, `HALLOWEEN_DAYS`; put away on 1 November): every village is dressed up. In front
