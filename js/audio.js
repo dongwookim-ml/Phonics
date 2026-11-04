@@ -52,6 +52,8 @@ const Sound = (() => {
     const text = norm(item.text);
     const id = clipId(item, who);
     if (id) return { url: `audio/tts/${v}/${id}.mp3` };
+    const math = typeof MathSpeech !== 'undefined' && MathSpeech.clip(v, text);
+    if (math) return { url: math };
     if (!TTS_SERVER) return null;
     const speed = item.narrator ? 0.8 : 0.95;
     return { url: `${TTS_SERVER.replace(/\/$/, '')}/tts?voice=${v}&speed=${speed}&text=${encodeURIComponent(text)}`, live: true };
@@ -225,7 +227,7 @@ const Sound = (() => {
 
   // Whether a line has a recording in this person's voice (new lines play
   // only once they have been recorded).
-  const hasClip = (text, who = {}) => !!(index[who.tts || TTS_NARRATOR] || {})[norm(text)];
+  const hasClip = (text, who = {}) => !!((index[who.tts || TTS_NARRATOR] || {})[norm(text)] || (typeof MathSpeech !== 'undefined' && MathSpeech.clip(who.tts || TTS_NARRATOR,text)));
 
   return {
     say,

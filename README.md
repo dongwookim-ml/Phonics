@@ -483,6 +483,36 @@ Custom names in this audit use live speech fallback rather than requiring record
   prices; the mirror shows her with the one picked on (a treasure on its
   own). Prices are in `shopPrice()` in `js/game.js` (treasures 3 coins, a
   village's 5), or `price` on an item.
+- **Math village**: the free 🔢 gateway on the upper-right side of town leads
+  to a shopping village in both editions. Cookie Bakery has counting 1–10,
+  11–20 and 21–30 with ten-cookie trays; Scoop & Smile has single-digit
+  addition/subtraction within ten; Shape Workshop has shape names, matching,
+  side counts and patterns. The toy shop compares prices shown as coins.
+  Each visit gives one random question from that shop, avoiding the previous
+  question type when another is available. There are no topic tabs. A picture
+  hint and an explained answer after two misses help her practice. Three
+  first-try successes move to a harder level; two misses ease it. Correct
+  answers use the existing stars and gift meter and make the shop's little
+  customer celebrate. Completing 3, 6 and 9 different math questions collects
+  a car, bear and robot on the toy shelf (history `completed: 1`, merged by max).
+  The Number Train station has counting by twos and missing carriage numbers.
+  Its free ride button (or tapping the train) takes her once around the village;
+  she returns to the entry platform, or gets off early with the button/Escape.
+  The railway pauses with the parent panel and play limit. Reduced-motion
+  mode parks the ambient train, while explicitly requested rides still work.
+  Math history/levels save and appear in the parent panel. Prompts/hints
+  follow the interface language; hosts greet and read questions, hints and
+  answers in English, like the other villages. 🔊 repeats the question and
+  💡 explains a picture hint. Speech waits before unlocking answer cards;
+  muting still lets her answer immediately.
+  Data, question bank, shop art, shop actions and train are in `js/math-*.js`.
+  `tools/check-math.js` checks every answer, activities, train trips, rewards,
+  persistence and phone layouts. Math speech is cached as 77 local AAC clips
+  in `audio/math/`, made by `python3 tools/record-math.py` using the existing
+  speech service’s Polly neural voices. Its manifest keeps the source, text,
+  voice, duration and file hashes. Existing generative phonics recordings
+  stay in `audio/tts/` and take priority for phrases already recorded.
+  `node tools/check-math-audio.js` checks every file and real offline playback.
 - **Default town square**: the fountain faces a pedestrian shopping square
   below the castle. Pink hair salon (scissors), lavender nail salon (polish
   bottle), and gold clothes/gifts shop (dress) share low shopfronts, striped

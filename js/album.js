@@ -166,6 +166,7 @@ function stickerOf(q) {
 // the card to 📒 (about 1.5 s; a tap ends it); one she has already just
 // counts once more (three times or more and it shines).
 function collectSticker(q, from) {
+  if(q.math)return;
   const s = stickerOf(q);
   if (!s) return;
   const had = state.stickers[s.w];

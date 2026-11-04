@@ -26,6 +26,7 @@ const PARENT_KINDS = [
   ['longRead', I18n.t('parent.readLongVowels'), parentMonster],
   ['longWord', I18n.t('parent.hearLongVowelsMagicE'), parentMonster],
   ['longRhyme', I18n.t('parent.longVowelRhymes'), parentMonster],
+  ...MATH_TOPICS.map(t=>[t.kind,I18n.t(`math.topic.${t.key}`),placeName('math')]),
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
 
@@ -139,6 +140,7 @@ function parentKindStats(kind) {
 // "rhyme:cat" → "🐱 cat", "sentence:The {} says moo." → "The ___ says moo. (cow)".
 function parentLabel(id) {
   const kind = id.slice(0, id.indexOf(':'));
+  if(MathQuiz.isKind(kind))return MathQuiz.label(id);
   const key = id.slice(kind.length + 1);
   if (kind === 'sentence' || kind === 'meaning') {
     const x = SENTENCES.concat(SENTENCES_L1, SENTENCES_L2).find(s => s.s === key);
@@ -161,9 +163,10 @@ function parentTier(kind) {
     const chips = letters.map(x => `<span class="l-chip${x.known ? ' good' : ''}">${x.l}</span>`).join('');
     return I18n.t('parent.lettersKnownKnownAfterTwoFirst', letters.filter(x => x.known).length, letters.length, chips);
   }
-  if (!Quiz.tierMax(kind)) return '';
-  const k = Quiz.skill(kind);
-  const max = Quiz.tierMax(kind);
+  const api=MathQuiz.isKind(kind)?MathQuiz:Quiz;
+  if (!api.tierMax(kind)) return '';
+  const k = api.skill(kind);
+  const max = api.tierMax(kind);
   const t = Math.min(k.t, max);
   const last = k.last || [];
   const recent = last.length ? I18n.t('parent.recent', last.filter(Boolean).length, last.length) : '';
@@ -262,7 +265,8 @@ function parentSelfBooks(body) {
 function parentClick(e) {
   const b = e.target.closest('.tier-btn');
   if (b) {
-    Quiz.setTier(b.dataset.kind, Quiz.skill(b.dataset.kind).t + Number(b.dataset.step));
+    const api=MathQuiz.isKind(b.dataset.kind)?MathQuiz:Quiz;
+    api.setTier(b.dataset.kind, api.skill(b.dataset.kind).t + Number(b.dataset.step));
     save();
     parentStats();
   }

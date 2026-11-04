@@ -331,7 +331,7 @@ function setPaused(on) {
 // js/cave-magic.js). Every close sets state.busy from this, so closing one
 // thing never frees the game under another, nor leaves it stuck with
 // nothing open.
-const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'salon', 'nail-salon', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic'];
+const BUSY_CARDS = ['dialog', 'reward', 'wardrobe', 'shop', 'salon', 'nail-salon', 'library', 'reader', 'feed', 'mini', 'sleep', 'album', 'quests', 'magic', 'math-ride'];
 function busyNow() {
   const shown = id => { const el = document.getElementById(id); return !!el && !el.classList.contains('hidden'); };
   return BUSY_CARDS.some(shown) || ui.fade.classList.contains('on') || !!document.querySelector('.parent-panel') || guide.asleep || caveFighting();
@@ -344,6 +344,7 @@ function sceneFor(target) {
     const house = TOWN_HOUSES.find(h => `house-${h.letter}` === target);
     if (captain) state.scenes[target] = captain();
     else if (target === 'town') state.scenes[target] = buildTown();
+    else if (target === 'math') state.scenes[target] = buildMathVillage();
     else if (!isCaptain() && NEIGHBORHOODS[target]) state.scenes[target] = buildNeighborhood(target);
     else if (target === 'castle') state.scenes[target] = buildCastleInterior();
     else if (target === 'castle2') state.scenes[target] = buildCastleUpstairs();
@@ -425,6 +426,7 @@ function updateHero(dt) {
 // ---- Scenes and doors ----------------------------------------------------
 
 function changeScene(target, at, label) {
+  MathTrain.leave();
   state.busy = true;
   ui.fade.classList.add('on');
   later(320, () => {
@@ -564,6 +566,7 @@ function getOff() {
 }
 
 function toggleRide() {
+  if(state.mathRide)return;
   Sound.tap();
   if (!hasUnicorn()) {
     const first = state.owned.ride.find(v => v !== 'none');
@@ -653,13 +656,19 @@ function openDialog(npc) {
   drawPortrait(ui.portrait, npc.unicorn ? unicornSprite(npc.unicorn, 0) : villagerSprite(npc.look, 0));
   kidDrawingShow(npc); // a monster she drew shows her drawing instead (js/kid-monsters.js)
   ui.name.textContent = npc.name;
-  const back = comeBack(npc);
+  if(npc.mathTopics)MathQuiz.pickTopic(npc);
+  const back = comeBack(npc) && (!npc.mathTopic || npc.missed.entry?.topic===npc.mathTopic);
   // A letter house she has finished sends her on to another one.
   const next = !back && houseNext(npc);
   if (next) { houseSendOff(npc, next); return; }
   const q = back ? Quiz.again(npc.missed, npc) : Quiz.make(npc);
   if (back) npc.missed = null;
   state.question = q;
+  ui.dialog.classList.toggle('math-dialog',!!q.math);
+  MathPlay.extras(npc);
+  const replay=document.getElementById('dlg-replay');
+  replay.textContent='🔊';replay.title=I18n.t('library.listenAgain');
+  document.getElementById('dlg-math-hint').classList.toggle('hidden',!q.math);
   musicUpdate(); // the music stays down until the question closes (js/music.js)
   if (q.review) ui.name.insertAdjacentHTML('beforeend', I18n.t('game.review'));
   // A captain-edition villain shows its hearts and taunts between questions.
@@ -672,9 +681,9 @@ function openDialog(npc) {
   if (!isCaptain() && npc.monster) monsterFaceOff(npc);
   const greet = !npc.greeted;
   npc.greeted = true;
-  const hello = house ? houseHello(house) : villain ||
+  const hello = q.math ? (greet?MathSpeech.welcome(npc.mathShop):line('next')) : house ? houseHello(house) : villain ||
     (back ? line('again') : greet ? line(`persona-${npc.look}`, {}, PERSONA[npc.look]) : line('next'));
-  ui.text.textContent = `${hello} ${q.prompt}`;
+  ui.text.textContent = q.math ? q.prompt : `${hello} ${q.prompt}`;
   ui.clue.innerHTML = q.clue;
   ui.clue.classList.toggle('hidden', !q.clue);
   ui.choices.innerHTML = '';
@@ -682,19 +691,21 @@ function openDialog(npc) {
     const b = document.createElement('button');
     b.className = 'choice';
     b.innerHTML = `<span class="num">${i + 1}</span>${o.html}`;
+    if(q.math)b.setAttribute('aria-label',o.label);
     if (o.words) b.dataset.words = '1';
     b.classList.toggle('pictures', o.alwaysPictures || (o.words && state.pictures));
     b.addEventListener('click', () => choose(i, b));
     ui.choices.append(b);
   });
   ui.choices.classList.toggle('four', q.options.length > 3);
+  ui.choices.classList.toggle('math-two',!!q.math&&q.options.length===2);
   ui.choices.classList.toggle('spell', !!q.tiles);
   if (q.tiles) renderSpell(q);
   ui.reward.classList.add('hidden');
   // The cards wait until she has heard the word (Quiz.READY in q.ask).
   const ask = () => {
     ui.dialog.classList.remove('hidden');
-    listen(q, (house ? houseSpeech(house) : [{ text: hello }]).concat({ pause: house ? 500 : 400 }, q.ask), 12000);
+    listen(q, (house ? houseSpeech(house) : [{ text: hello,plain:!!q.math }]).concat({ pause: house ? 500 : 400 }, q.ask), q.math?20000:12000);
   };
   // The first question at a new step of blending: the sound magic shows
   // how, first, with an easy word (js/blend-magic.js); then the dialog.
@@ -814,9 +825,10 @@ function answeredRight(q, btn) {
   btn.classList.add('right');
   ui.choices.querySelectorAll('.choice').forEach(b => { b.disabled = true; });
   if (q.solved) ui.clue.innerHTML = q.solved;
+  MathPlay.succeed(q);
   collectSticker(q, btn);
   const praise = comboCheer(q) || line('praise');
-  ui.text.textContent = praise;
+  ui.text.textContent = q.math ? I18n.t('math.correct') : praise;
   Sound.correct();
   // A kind of question just went up to a new tier; blending's to two sounds,
   // every letter known, says so once that line is recorded.
@@ -870,6 +882,7 @@ function missed(q, o, btn) {
 
 // First miss: what she picked, and a hint for this kind of question.
 function hint(q, o) {
+  if(q.math){MathQuiz.showHint(q);return;}
   const parts = q.teach(o);
   ui.text.textContent = shownText(parts);
   listen(q, parts, 7000);
@@ -882,6 +895,7 @@ function showAnswer(q, o) {
     const b = ui.choices.children[j];
     if (x.right) { b.classList.add('glow', 'pictures'); b.disabled = false; } else { b.classList.add('gone'); b.disabled = true; }
   });
+  if(q.math){ui.clue.innerHTML=q.solved;ui.text.textContent=q.solutionText+' '+I18n.t('math.tapAnswer');listen(q,q.model.concat(Quiz.READY,{text:line('tapIt')}),10000);return;}
   const showMe = line('showMe');
   const tap = isCaptain() && state.talking.monster ? villainTapLine() : { text: line('tapIt') };
   // A nudge if she hasn't tapped it a while later.
@@ -945,7 +959,7 @@ function finishShown(q, btn) {
   state.answered++;
   save();
   const soon = line('soon');
-  ui.text.textContent = soon;
+  ui.text.textContent = q.math ? I18n.t('math.tryAgainSoon') : soon;
   const close = () => { if (state.question === q) closeDialog(); };
   Sound.say(q.answer.concat({ pause: 400 }, { text: soon }, { pause: 600 }, { call: close }), voiceOf(npc));
   later(Sound.muted ? 1500 : 9000, close);
@@ -955,6 +969,12 @@ function closeDialog() {
   closeBlendMagic(); // its show, if one plays over it (js/blend-magic.js)
   ui.dialog.classList.add('hidden');
   ui.dialog.classList.remove('listening');
+  ui.dialog.classList.remove('math-dialog');
+  ui.choices.classList.remove('math-two');
+  MathPlay.hide();
+  document.getElementById('dlg-math-hint').classList.add('hidden');
+  const replay=document.getElementById('dlg-replay');
+  replay.textContent='🔊';replay.title=I18n.t('library.listenAgain');
   kidDrawingShow(null);
   ui.reward.classList.add('hidden');
   state.busy = busyNow();
@@ -1194,7 +1214,7 @@ function followLink(link) {
   } else if (link.target === 'monster') {
     changeScene('monster', link.at, place('monster'));
     Sound.say([{ text: line('monster'), pitch: 1.3 }]);
-  } else if (NEIGHBORHOODS[link.target]) {
+  } else if (link.target==='math' || NEIGHBORHOODS[link.target]) {
     changeScene(link.target, link.at, place(link.target));
   } else if (link.target === 'town') {
     changeScene('town', link.at, place('town'));
@@ -2062,8 +2082,9 @@ function drawScene(now) {
   const vw = view.width + 80;
   const vh = view.height + 80;
   const list = sc.objects.filter(o => overlaps(o, vx, vy, vw, vh));
+  if(sc.mathTrain)list.sort((a,b)=>(a.c0+a.c1+a.r0+a.r1)-(b.c0+b.c1+b.r0+b.r1));
   const chars = sc.npcs.map(n => ({ isChar: true, npc: n, c: n.c, r: n.r }));
-  chars.push({ isChar: true, hero: true, c: state.hero.c, r: state.hero.r });
+  if(!state.mathRide)chars.push({ isChar: true, hero: true, c: state.hero.c, r: state.hero.r });
   chars.sort((a, b) => (a.c + a.r) - (b.c + b.r));
   for (const ch of chars) {
     const p = tileCenter(sc, ch.c, ch.r);
@@ -2084,14 +2105,14 @@ function drawScene(now) {
   const hp = heroWorld();
   const hx = hp.x - heroBox.w / 2;
   const hy = hp.y - heroBox.h;
-  let heroDrawn = false;
+  let heroDrawn = !!state.mathRide;
   for (const o of list) {
     if (o.isChar) {
       drawCharacter(o, now);
       if (o.hero) heroDrawn = true;
       continue;
     }
-    const over = heroDrawn && !o.background && overlaps(o, hx, hy, heroBox.w, heroBox.h) && (!o.canvas || hitObject(o, hp.x, hp.y - 14) || hitObject(o, hp.x, hp.y - 4));
+    const over = heroDrawn && !o.mathTrain && !o.background && overlaps(o, hx, hy, heroBox.w, heroBox.h) && (!o.canvas || hitObject(o, hp.x, hp.y - 14) || hitObject(o, hp.x, hp.y - 4));
     o.fade = Math.max(0.45, Math.min(1, (o.fade || 1) + (over ? -0.08 : 0.08)));
     vctx.globalAlpha = o.fade;
     // A thing she just tapped shakes or hops (js/touch.js).
@@ -2643,6 +2664,8 @@ function onPointer(e) {
 // What a tapped object does. True when it took the tap.
 function tapObject(o, wx, wy, front) {
   const sc = state.scene;
+  if(o.mathTrain){MathTrain.requestRide();return true;}
+  if(o.mathHost){Sound.tap();talkTo(o.mathHost);return true;}
   // A staircase walks her to its foot and up (or down); any part of a
   // gate or the cave goes through it.
   if (o.stairs || o.links) {
@@ -2691,7 +2714,7 @@ function tapOverlay(sc, wx, wy) {
   }
   const font = '"Baloo 2", "Trebuchet MS", sans-serif';
   for (const sg of sc.signs) {
-    if (!sg.links && !sg.poster && !sg.react && !sg.shop) continue;
+    if (!sg.links && !sg.poster && !sg.react && !sg.shop && !sg.mathHost) continue;
     if (sg.shown) {
       // A room's sign may be drawn pulled in from the edge (drawOverlay):
       // the tap counts where she sees it, with a little room around it.
@@ -2703,7 +2726,8 @@ function tapOverlay(sc, wx, wy) {
       const half = sctx.measureText(sg.text).width / 2 + 4;
       if (Math.abs(wx - sg.x) > half || Math.abs(wy - sg.y) > (sg.big ? 13 : 8)) continue;
     }
-    if (sg.shop) talkTo(sg.shop.keeper);
+    if (sg.mathHost) talkTo(sg.mathHost);
+    else if (sg.shop) talkTo(sg.shop.keeper);
     else if (sg.links) goLink(sg.links, true);
     else if (sg.poster) touchPoster(sg);
     else touchReact(sg, sg.react, { x: sg.x, y: sg.y }, { x: sg.x, y: sg.y - 14 });
@@ -2825,7 +2849,8 @@ function frame(now) {
   const dt = Math.min(0.05, ms / 1000);
   lastTime = now;
   if (state.scene) {
-    if (!state.paused) updateHero(dt);
+    MathTrain.tick(dt);
+    if (!state.paused && !state.mathRide) updateHero(dt);
     updateEffects(dt, now);
     const target = cameraTarget();
     const k = Math.min(1, dt * 6);
@@ -2882,6 +2907,7 @@ setPictures(state.pictures);
 
 screen.addEventListener('pointerdown', onPointer);
 ui.replay.addEventListener('click', () => { Sound.tap(); askAgain(); });
+document.getElementById('dlg-math-hint').addEventListener('click',()=>MathQuiz.showHint(state.question));
 ui.close.addEventListener('click', () => { Sound.tap(); closeDialog(); });
 ui.rewardYes.addEventListener('click', () => acceptReward(true));
 ui.rewardNo.addEventListener('click', () => acceptReward(false));

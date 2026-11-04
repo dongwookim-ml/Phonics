@@ -263,6 +263,7 @@ function buildTown() {
   addTownFairyGate(sc);
   addTownMonsterGate(sc, addSideGate); // js/monster-village.js
   addNeighborhoodEntrances(sc);
+  addMathVillageGate(sc);
   placeTownVillagers(sc);
   renderGround(sc);
   return sc;

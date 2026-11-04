@@ -1,0 +1,700 @@
+{
+  "source": "https://phonics-production-5a6d.up.railway.app",
+  "engine": "Amazon Polly neural",
+  "language": "en",
+  "clips": [
+    {
+      "voice": "am_adam",
+      "text": "Welcome to my bakery! Let\u2019s count some cookies.",
+      "speed": 0.95,
+      "file": "audio/math/b895f17e02e4bb11507b.m4a",
+      "seconds": 2.842,
+      "rmsDb": -18.37,
+      "sha256": "908e1f199ff2e2ee48f2dd495f5a00b6ff43b9dd11f026a8d326eb83acf64b03"
+    },
+    {
+      "voice": "am_adam",
+      "text": "How many cookies are on the tray?",
+      "speed": 0.9,
+      "file": "audio/math/840981f8414e99ecaf55.m4a",
+      "seconds": 1.55,
+      "rmsDb": -17.77,
+      "sha256": "50fc3eeab720046d2d94ee3cf5013ad9781e60abc947d2ffb0cde65099e1d024"
+    },
+    {
+      "voice": "am_adam",
+      "text": "Each full tray holds 10 cookies. Count the full trays, then the extra cookies.",
+      "speed": 0.9,
+      "file": "audio/math/c040839f8b3801756d8d.m4a",
+      "seconds": 4.768,
+      "rmsDb": -19.03,
+      "sha256": "b68f1e25a16da81a85c62c6012b8fad61d64005cd04ce9dcfc9ec42dbbf893ba"
+    },
+    {
+      "voice": "am_adam",
+      "text": "Count the cookies for this order.",
+      "speed": 0.9,
+      "file": "audio/math/a1beb52c080851841c85.m4a",
+      "seconds": 1.438,
+      "rmsDb": -19.0,
+      "sha256": "94e3434bc0641bdae700f284ab2c18b6c6fa0fc3e2c0b54949a19f164c2665e9"
+    },
+    {
+      "voice": "am_adam",
+      "text": "Count the cookie trays, then the extra cookies.",
+      "speed": 0.9,
+      "file": "audio/math/adaca30e72609bfa7ed2.m4a",
+      "seconds": 2.487,
+      "rmsDb": -19.27,
+      "sha256": "b0c938cb147a255897379ccbb4120ade6a594a6d8cec90c25c6c702feede1572"
+    },
+    {
+      "voice": "af_bella",
+      "text": "Welcome! Let\u2019s make some yummy ice cream.",
+      "speed": 0.95,
+      "file": "audio/math/e34c9ad13cd3ffcf7cb0.m4a",
+      "seconds": 3.308,
+      "rmsDb": -17.33,
+      "sha256": "cbe89029be0cb32414e550b9cebe01efb2a9692591d7ac069366a930be294b70"
+    },
+    {
+      "voice": "af_bella",
+      "text": "Add the ice cream scoops. How many altogether?",
+      "speed": 0.9,
+      "file": "audio/math/1587e2acafb6b71b4de1.m4a",
+      "seconds": 3.571,
+      "rmsDb": -17.49,
+      "sha256": "22ff521f3c22b4c3ca2e5e40f7b833dcb8f2b974e8c092bea1a7398d343b46c4"
+    },
+    {
+      "voice": "af_bella",
+      "text": "Start with the first group and count on through the other group.",
+      "speed": 0.9,
+      "file": "audio/math/784ff9fe799adb4a57c8.m4a",
+      "seconds": 3.219,
+      "rmsDb": -17.3,
+      "sha256": "b50b711a149391bfab3064a1f8d4c66041ebfcbc741408a1b51f32451973b5f2"
+    },
+    {
+      "voice": "af_bella",
+      "text": "The crossed-out scoops were served. How many are left?",
+      "speed": 0.9,
+      "file": "audio/math/3905b195d10a52daed2c.m4a",
+      "seconds": 3.66,
+      "rmsDb": -17.82,
+      "sha256": "8b82c86e674e481e8e2a68edbfd049db07146859419066c78638f74b40371525"
+    },
+    {
+      "voice": "af_bella",
+      "text": "The crossed-out scoops are gone. Count only the scoops left.",
+      "speed": 0.9,
+      "file": "audio/math/4fe6df0f5fe3d736dbfd.m4a",
+      "seconds": 4.108,
+      "rmsDb": -17.87,
+      "sha256": "9d0f7830a9c79c49cf081313d52cf8b620a31e807b1c24d97becd2176d4c25ec"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Hello! Let\u2019s build and play with shapes.",
+      "speed": 0.95,
+      "file": "audio/math/99c238c7cd5bb522783a.m4a",
+      "seconds": 3.305,
+      "rmsDb": -18.01,
+      "sha256": "8d16b21d3b2413a8982a9edd39922eb97aa133b49d399786e0693c5c102c71d2"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the circle.",
+      "speed": 0.9,
+      "file": "audio/math/597352b245b152316bab.m4a",
+      "seconds": 1.188,
+      "rmsDb": -16.86,
+      "sha256": "6bf5c42e822ac19ce5c0914a0f130c8eb473165c0a53610e6b2a52c4179bba0c"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the triangle.",
+      "speed": 0.9,
+      "file": "audio/math/76b0891b37af83993508.m4a",
+      "seconds": 1.438,
+      "rmsDb": -16.38,
+      "sha256": "72592a38baf7906bacb508605da3ae40d98cc7124d196b205264acee5b53ad5d"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the square.",
+      "speed": 0.9,
+      "file": "audio/math/f4816df69b504266c8b4.m4a",
+      "seconds": 1.225,
+      "rmsDb": -16.71,
+      "sha256": "001184f5182a3c3fd11cbf02108fbbb3339c81306f5b82d3ec19f27b74cfbbc8"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the rectangle.",
+      "speed": 0.9,
+      "file": "audio/math/d5fc5843929275ef2e13.m4a",
+      "seconds": 1.5,
+      "rmsDb": -16.49,
+      "sha256": "c2422bccfdd838ba07fe4f0ebb7667e5dd6f96cfeb930e89d2470b05d52456be"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the oval.",
+      "speed": 0.9,
+      "file": "audio/math/6170bd2f3b375cf05c67.m4a",
+      "seconds": 1.188,
+      "rmsDb": -16.01,
+      "sha256": "9836102998f2198322294bfa32e46ac36007280d168137a4613a7644d8090ce8"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the star.",
+      "speed": 0.9,
+      "file": "audio/math/4064a354c45f0e1ae8f3.m4a",
+      "seconds": 1.212,
+      "rmsDb": -16.66,
+      "sha256": "7e762e06a4e163a2715496bc175a435f4d389ac86db2e66a0b239376337c33f4"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Look at curved lines, straight sides and corners.",
+      "speed": 0.9,
+      "file": "audio/math/14daa1d13d27ae12e485.m4a",
+      "seconds": 3.288,
+      "rmsDb": -17.09,
+      "sha256": "3d12f42e428d8cdf942fd5b3b1febb65cdf0e40fe68a61be3885da2bbea53e54"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the same shape. Its color may be different.",
+      "speed": 0.9,
+      "file": "audio/math/cf14853c0c654c3b29b3.m4a",
+      "seconds": 3.655,
+      "rmsDb": -18.41,
+      "sha256": "7051cd0a829588c1184edb37aecc805296b441231b9c1ba631529c8c374253c7"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Focus on the outline. Turning it or changing its color does not change the shape.",
+      "speed": 0.9,
+      "file": "audio/math/5acac3d20fdbb9976197.m4a",
+      "seconds": 5.38,
+      "rmsDb": -16.98,
+      "sha256": "be60dac5a69ff53f3699fa639a6d6788f5fb72c0fff57c998e36c3c46599cb75"
+    },
+    {
+      "voice": "am_liam",
+      "text": "How many straight sides does this shape have?",
+      "speed": 0.9,
+      "file": "audio/math/95ec30760f8778ef55ce.m4a",
+      "seconds": 2.65,
+      "rmsDb": -17.11,
+      "sha256": "789f1a7608c62aebf753b140c834bf4d98f49176ac4c1a2f2f7c8273d526ac73"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Follow the outline and count each straight side once.",
+      "speed": 0.9,
+      "file": "audio/math/b0d496d3d5c9dcdc56e0.m4a",
+      "seconds": 3.337,
+      "rmsDb": -17.35,
+      "sha256": "7548657304ac7b09966e334a665a91f553c0b2cba567132c45eb5a7918468f65"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Look at the repeating shapes. What comes next?",
+      "speed": 0.9,
+      "file": "audio/math/ed7f3d82d45330f7768c.m4a",
+      "seconds": 3.467,
+      "rmsDb": -16.97,
+      "sha256": "478f43943bd819734dd395bb7806d69478e102113017dede4e9ae51281025ff6"
+    },
+    {
+      "voice": "am_liam",
+      "text": "Find the small group that repeats.",
+      "speed": 0.9,
+      "file": "audio/math/e8b200d95d9d14cc1b95.m4a",
+      "seconds": 2.288,
+      "rmsDb": -16.67,
+      "sha256": "e58474d2eac83d4bdaf169c025b553a7f43d7b6c7d1f158f3e1537a4d493737e"
+    },
+    {
+      "voice": "af_sky",
+      "text": "Welcome to the toy shop! Let\u2019s compare the prices.",
+      "speed": 0.95,
+      "file": "audio/math/c8fdb00cf4c498d7e9e9.m4a",
+      "seconds": 3.433,
+      "rmsDb": -17.5,
+      "sha256": "8fe1413319f61a68e6531e95d1cb50177cfb3f2475b032a8f86a2499ae08d5d4"
+    },
+    {
+      "voice": "af_sky",
+      "text": "Which toy costs more coins?",
+      "speed": 0.9,
+      "file": "audio/math/4dacc9d1b319b584f41d.m4a",
+      "seconds": 1.895,
+      "rmsDb": -16.31,
+      "sha256": "33fe7c1972ba39b5bd8237cb621d6d854510039a67abb6454beee83bc6726a78"
+    },
+    {
+      "voice": "af_sky",
+      "text": "Which toy costs fewer coins?",
+      "speed": 0.9,
+      "file": "audio/math/ce5dda6afe53147ef322.m4a",
+      "seconds": 2.078,
+      "rmsDb": -16.57,
+      "sha256": "91e7b31a2a5e139cb1ed00a5719dd9e18647f1883e9ac0417f81ed498153cd9c"
+    },
+    {
+      "voice": "af_sky",
+      "text": "Each full frame is 10 coins. Compare the full frames, then the extra coins.",
+      "speed": 0.9,
+      "file": "audio/math/26fb87047f3624beac30.m4a",
+      "seconds": 5.538,
+      "rmsDb": -16.35,
+      "sha256": "a2d239c86866b9157f9ddbeb82ab932d21ef8a644d83bb4efd4430c0566e8e28"
+    },
+    {
+      "voice": "bm_fable",
+      "text": "All aboard! Let\u2019s play with numbers on the train.",
+      "speed": 0.95,
+      "file": "audio/math/6a333bda998244e6d962.m4a",
+      "seconds": 4.293,
+      "rmsDb": -17.79,
+      "sha256": "9822070e6f6fe4e1ed4d2c4bcf3890af1d43a6db045d57368a7f68b3f40105ab"
+    },
+    {
+      "voice": "bm_fable",
+      "text": "Number the carriages by twos. Which number is missing?",
+      "speed": 0.9,
+      "file": "audio/math/f79cdd02d331a569d0f7.m4a",
+      "seconds": 4.543,
+      "rmsDb": -18.26,
+      "sha256": "8d334b8dc57370f75aec47968a5a03bb642ce808ff17edda1d950f4c89f6b7b3"
+    },
+    {
+      "voice": "bm_fable",
+      "text": "Say two more each time: 2, 4, 6, 8\u2026",
+      "speed": 0.9,
+      "file": "audio/math/9c8ccf8f82c44ae9fcc8.m4a",
+      "seconds": 5.237,
+      "rmsDb": -18.88,
+      "sha256": "456411161f5dee4ef18ba7d2243f463cf31b19c5fab32604680431da5fe0a922"
+    },
+    {
+      "voice": "bm_fable",
+      "text": "Put the carriages in order. Which number is missing?",
+      "speed": 0.9,
+      "file": "audio/math/adf7247c1157adc3a5e2.m4a",
+      "seconds": 4.105,
+      "rmsDb": -18.4,
+      "sha256": "83565b185c8e3151d051593f790396be447509593ab1e5efb02b4487072d3439"
+    },
+    {
+      "voice": "bm_fable",
+      "text": "Move one step at a time along the numbers.",
+      "speed": 0.9,
+      "file": "audio/math/8436c5e592d2af4985a5.m4a",
+      "seconds": 2.987,
+      "rmsDb": -16.74,
+      "sha256": "3aa7835ca3f99256fdd0bc04a7171ee2eec9005605ca246ad2873f0717488d61"
+    },
+    {
+      "voice": "af_heart",
+      "text": "0",
+      "speed": 0.8,
+      "file": "audio/math/1c44592c449d66080f13.m4a",
+      "seconds": 0.7,
+      "rmsDb": -16.85,
+      "sha256": "a4dd69b9d2435adeb169ecb5d142c7fc833e72f4695cbe3c987249d243c71a25"
+    },
+    {
+      "voice": "af_heart",
+      "text": "1",
+      "speed": 0.8,
+      "file": "audio/math/64321225947f9ac523d8.m4a",
+      "seconds": 0.588,
+      "rmsDb": -16.55,
+      "sha256": "0c3ca496618c80c420b4cd86f01926d431357fe65c4bf57f3eca2dc96982120a"
+    },
+    {
+      "voice": "af_heart",
+      "text": "2",
+      "speed": 0.8,
+      "file": "audio/math/430000d8ceaaa7972335.m4a",
+      "seconds": 0.473,
+      "rmsDb": -18.24,
+      "sha256": "0d81210b56627823053902286f35dfce67b9465a08641f18adbdb1d1b3d21019"
+    },
+    {
+      "voice": "af_heart",
+      "text": "3",
+      "speed": 0.8,
+      "file": "audio/math/c0362241b863ccaf6c39.m4a",
+      "seconds": 0.538,
+      "rmsDb": -15.94,
+      "sha256": "2dcf693d4ac0d96ede7e9312cea33949ed8e87c26dfc892fde1975de98cf987a"
+    },
+    {
+      "voice": "af_heart",
+      "text": "4",
+      "speed": 0.8,
+      "file": "audio/math/85570e0f437e8bb0ec3c.m4a",
+      "seconds": 0.551,
+      "rmsDb": -17.19,
+      "sha256": "0ecc1d11eb0908ec634f057fb6ff54337954807d72bf6923f7058e8076852222"
+    },
+    {
+      "voice": "af_heart",
+      "text": "5",
+      "speed": 0.8,
+      "file": "audio/math/81e524b6b42f77a40217.m4a",
+      "seconds": 0.574,
+      "rmsDb": -18.39,
+      "sha256": "4b81c2cbb4b1af4287c9251b20855d16a323eb8948f724c4b064d777d31b3f58"
+    },
+    {
+      "voice": "af_heart",
+      "text": "6",
+      "speed": 0.8,
+      "file": "audio/math/d8cce56e0175d765970f.m4a",
+      "seconds": 0.645,
+      "rmsDb": -20.42,
+      "sha256": "6f66755ec3a4fe853fbde1eb1249dbd090d50be671b4b0510c968c095bb819d4"
+    },
+    {
+      "voice": "af_heart",
+      "text": "7",
+      "speed": 0.8,
+      "file": "audio/math/74c260d7c5dc4247407b.m4a",
+      "seconds": 0.715,
+      "rmsDb": -17.33,
+      "sha256": "599c1fc38d992dc0afbab30c8daa1e147dedb66afe4578bef0dcf992513d85c9"
+    },
+    {
+      "voice": "af_heart",
+      "text": "8",
+      "speed": 0.8,
+      "file": "audio/math/df911ceb42835e624ce6.m4a",
+      "seconds": 0.564,
+      "rmsDb": -19.81,
+      "sha256": "85d82e255fe43afd7d06b3b473212cbab856775e0623bc431c6a1fedeb99e263"
+    },
+    {
+      "voice": "af_heart",
+      "text": "9",
+      "speed": 0.8,
+      "file": "audio/math/fdc330d3d71904533e48.m4a",
+      "seconds": 0.631,
+      "rmsDb": -16.03,
+      "sha256": "4a2c1b57a374986b03d6ca6b9bb69b7dd4cf058034e01017437f79a9ee6fa11f"
+    },
+    {
+      "voice": "af_heart",
+      "text": "10",
+      "speed": 0.8,
+      "file": "audio/math/eea0e9983f36736bcee1.m4a",
+      "seconds": 0.578,
+      "rmsDb": -16.94,
+      "sha256": "c1741ae0fe96cb1039fc87b52c8634836a52db82d11240faa625ecab6e3f0e7c"
+    },
+    {
+      "voice": "af_heart",
+      "text": "11",
+      "speed": 0.8,
+      "file": "audio/math/1182f3a9880b01653b5e.m4a",
+      "seconds": 0.703,
+      "rmsDb": -18.01,
+      "sha256": "f30d1a6896d44707029048838bc94e8bf371c392d9d31bd8648bf631d49a8c7b"
+    },
+    {
+      "voice": "af_heart",
+      "text": "12",
+      "speed": 0.8,
+      "file": "audio/math/89184438e3b918936976.m4a",
+      "seconds": 0.661,
+      "rmsDb": -17.71,
+      "sha256": "fcc53082aad21f5d232f8f91013a2ddf6dd7198a62337ef7a8e863877093ec78"
+    },
+    {
+      "voice": "af_heart",
+      "text": "13",
+      "speed": 0.8,
+      "file": "audio/math/80c3d9a4d946fb636347.m4a",
+      "seconds": 0.756,
+      "rmsDb": -17.24,
+      "sha256": "79b96e97fc8bf0ab64c589f5936e1233c783b60c94e5da52e835faabfcc936c2"
+    },
+    {
+      "voice": "af_heart",
+      "text": "14",
+      "speed": 0.8,
+      "file": "audio/math/ead39359e4212eca37be.m4a",
+      "seconds": 0.801,
+      "rmsDb": -17.2,
+      "sha256": "5b956363cce6b1d16f9c4a8160fdfd41e6bd887053a11b7331ae96ed573ead66"
+    },
+    {
+      "voice": "af_heart",
+      "text": "15",
+      "speed": 0.8,
+      "file": "audio/math/2543f757ee562a5257e2.m4a",
+      "seconds": 0.767,
+      "rmsDb": -17.56,
+      "sha256": "015b3f894c2ef438e71ab2e4afa9591c56c0fe2c44028c859964e386c1753bea"
+    },
+    {
+      "voice": "af_heart",
+      "text": "16",
+      "speed": 0.8,
+      "file": "audio/math/5a4886526bd77b94643a.m4a",
+      "seconds": 0.889,
+      "rmsDb": -19.86,
+      "sha256": "b42f633a58f107f46fcadb36ac752fe2ecc59ad84bf0d55580e5a171a31e6828"
+    },
+    {
+      "voice": "af_heart",
+      "text": "17",
+      "speed": 0.8,
+      "file": "audio/math/7212c39770d4389d925a.m4a",
+      "seconds": 0.889,
+      "rmsDb": -17.42,
+      "sha256": "2e5b19345da118ccaa8cd67b65a12a65e8ec914adf86b221923b390475d5d399"
+    },
+    {
+      "voice": "af_heart",
+      "text": "18",
+      "speed": 0.8,
+      "file": "audio/math/16c5b5f58973806efdfa.m4a",
+      "seconds": 0.732,
+      "rmsDb": -20.2,
+      "sha256": "ded701f16ba337369d8bbe370c10b2f35ecba202e6c185ca70c7df8878aea2d2"
+    },
+    {
+      "voice": "af_heart",
+      "text": "19",
+      "speed": 0.8,
+      "file": "audio/math/ae502a32e0a066e31f3c.m4a",
+      "seconds": 0.804,
+      "rmsDb": -16.57,
+      "sha256": "dc6355a9b29a0501a05a25908316ef4fd7395c229bf8621b762bf6018b17aeaa"
+    },
+    {
+      "voice": "af_heart",
+      "text": "20",
+      "speed": 0.8,
+      "file": "audio/math/9f9f8e849fc54d4e62ca.m4a",
+      "seconds": 0.64,
+      "rmsDb": -17.67,
+      "sha256": "47fc2bf1434679765b50add210e5586a5bc0d870e1fb9458d2aa001f60238378"
+    },
+    {
+      "voice": "af_heart",
+      "text": "21",
+      "speed": 0.8,
+      "file": "audio/math/56b31efdc97439c27e22.m4a",
+      "seconds": 0.857,
+      "rmsDb": -16.8,
+      "sha256": "b0f8d04c217b53b09dfe2d51074985c18da170255c7066be0d27cb684b8ee1c3"
+    },
+    {
+      "voice": "af_heart",
+      "text": "22",
+      "speed": 0.8,
+      "file": "audio/math/93b96e38459428e623b2.m4a",
+      "seconds": 0.882,
+      "rmsDb": -16.95,
+      "sha256": "36f76208c945f2179dc5ef28e0ca65e25e392fa83c34e9231f3a13db95775b2d"
+    },
+    {
+      "voice": "af_heart",
+      "text": "23",
+      "speed": 0.8,
+      "file": "audio/math/f0b92c76d4c4a226c6ed.m4a",
+      "seconds": 0.871,
+      "rmsDb": -16.06,
+      "sha256": "d95d9d9c9ddb4c500b96a92f59bdfa07c64987d78ceae1a323d6918f27ebf4df"
+    },
+    {
+      "voice": "af_heart",
+      "text": "24",
+      "speed": 0.8,
+      "file": "audio/math/e658ddf4231637602e42.m4a",
+      "seconds": 0.841,
+      "rmsDb": -17.35,
+      "sha256": "45286f7bc8bcc5542914588fb463d4f0318892aa8b424919edf9fbedbefe015f"
+    },
+    {
+      "voice": "af_heart",
+      "text": "25",
+      "speed": 0.8,
+      "file": "audio/math/a8642772e0350afbac64.m4a",
+      "seconds": 0.856,
+      "rmsDb": -16.65,
+      "sha256": "2802205513a86aafc7ce2455feb0a4bfe81bf17cf5046b7c0c54d63654ef8ab4"
+    },
+    {
+      "voice": "af_heart",
+      "text": "26",
+      "speed": 0.8,
+      "file": "audio/math/1f3047e97e1e95320b1c.m4a",
+      "seconds": 0.958,
+      "rmsDb": -18.45,
+      "sha256": "eb8168afaeda781d2e409f09c9a6c4fb9eed50b3d20bb532f3709efdb232a235"
+    },
+    {
+      "voice": "af_heart",
+      "text": "27",
+      "speed": 0.8,
+      "file": "audio/math/9e7f43f3945414b4c1db.m4a",
+      "seconds": 0.995,
+      "rmsDb": -17.66,
+      "sha256": "d6e941a975de5f25ebcc6e746c3880e6c58f0dde05c91042e791ed06915f5ca5"
+    },
+    {
+      "voice": "af_heart",
+      "text": "28",
+      "speed": 0.8,
+      "file": "audio/math/e6f7ae55b20f0cde6ca5.m4a",
+      "seconds": 0.828,
+      "rmsDb": -18.22,
+      "sha256": "fb1879fa3481765fa1e5bed772060b2d38c97c649917b8dddf39d4415f385735"
+    },
+    {
+      "voice": "af_heart",
+      "text": "29",
+      "speed": 0.8,
+      "file": "audio/math/26aec55e2330dd451e08.m4a",
+      "seconds": 0.866,
+      "rmsDb": -16.04,
+      "sha256": "6a1db2b604b35bf7e6c722aeb20ad4a744df22cdf15d09b0e1914fb33dea2afc"
+    },
+    {
+      "voice": "af_heart",
+      "text": "30",
+      "speed": 0.8,
+      "file": "audio/math/d28a566aa1e8a644ea9e.m4a",
+      "seconds": 0.556,
+      "rmsDb": -17.55,
+      "sha256": "35aac0cff2a6c2a229e47ecfa641766bb80bd88c8183030fa9647113972f18e8"
+    },
+    {
+      "voice": "af_heart",
+      "text": "plus",
+      "speed": 0.8,
+      "file": "audio/math/b64dca876d1008231943.m4a",
+      "seconds": 0.656,
+      "rmsDb": -19.09,
+      "sha256": "959d97ce422143412f15bcf2de7ad390dc27f557ad6fec0c53354b201a5eddb8"
+    },
+    {
+      "voice": "af_heart",
+      "text": "minus",
+      "speed": 0.8,
+      "file": "audio/math/a153fb8fb3ff6103b5e0.m4a",
+      "seconds": 0.801,
+      "rmsDb": -17.21,
+      "sha256": "cf75a5752e0d9b673e6ec223bf9658da8b4671ddbbfb541758ba652f87ec4738"
+    },
+    {
+      "voice": "af_heart",
+      "text": "equals",
+      "speed": 0.8,
+      "file": "audio/math/2507ea26e0d54f342246.m4a",
+      "seconds": 0.773,
+      "rmsDb": -18.45,
+      "sha256": "77ce617fb4c6363ad1a204dbf34831c47c2e5b82a64e37b922d56e0e326312bc"
+    },
+    {
+      "voice": "af_heart",
+      "text": "blank",
+      "speed": 0.8,
+      "file": "audio/math/6068b8ef2c6f2806f37b.m4a",
+      "seconds": 0.599,
+      "rmsDb": -18.21,
+      "sha256": "caa7ad6faeaa9605865a0805af4e2139d884dfc341c6d6b9f973000bcea5fada"
+    },
+    {
+      "voice": "af_heart",
+      "text": "The answer is",
+      "speed": 0.8,
+      "file": "audio/math/e17c182c51853852623b.m4a",
+      "seconds": 1.087,
+      "rmsDb": -18.17,
+      "sha256": "70c04434dc5dc946cbfa53e41cce9a4b2a3f8fde10b531cf2e1fb7b32cd0e91a"
+    },
+    {
+      "voice": "af_heart",
+      "text": "circle",
+      "speed": 0.8,
+      "file": "audio/math/7cd6f479df95beb89266.m4a",
+      "seconds": 0.738,
+      "rmsDb": -19.0,
+      "sha256": "42ba753f950bca4f9a2f938bc721c2a624e92d029c0e7adc1bf87639a6aba058"
+    },
+    {
+      "voice": "af_heart",
+      "text": "triangle",
+      "speed": 0.8,
+      "file": "audio/math/8a8ce096fa34cb9863d3.m4a",
+      "seconds": 0.81,
+      "rmsDb": -17.41,
+      "sha256": "09dd4835bf06870ab1b046c90c984c384dcda410af64a3b09cc387a4e319f91e"
+    },
+    {
+      "voice": "af_heart",
+      "text": "square",
+      "speed": 0.8,
+      "file": "audio/math/3d53f592e4f667b5aa15.m4a",
+      "seconds": 0.739,
+      "rmsDb": -17.73,
+      "sha256": "dc524346cb1faec4c6294850dd047fc4c2b2711b1ec787ad32119a6cc6344e31"
+    },
+    {
+      "voice": "af_heart",
+      "text": "rectangle",
+      "speed": 0.8,
+      "file": "audio/math/8febea9e8b27ba34f0cc.m4a",
+      "seconds": 0.903,
+      "rmsDb": -17.39,
+      "sha256": "0c52d768de38beb76d0432e28f9f7d98151de6af4104925c363f1f238ac8fcf7"
+    },
+    {
+      "voice": "af_heart",
+      "text": "oval",
+      "speed": 0.8,
+      "file": "audio/math/04a759b57c23e2544e1f.m4a",
+      "seconds": 0.599,
+      "rmsDb": -18.6,
+      "sha256": "51543daac98143a03ae5f76268103f8d6254de7068b39e4841b6085440563f8a"
+    },
+    {
+      "voice": "af_heart",
+      "text": "star",
+      "speed": 0.8,
+      "file": "audio/math/45a85807e17167c44026.m4a",
+      "seconds": 0.686,
+      "rmsDb": -19.47,
+      "sha256": "6ac16f0863cb0b360ee5b89ae22b46538bbfb31096c0ff0bb2e3e88e304f0033"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Toy car",
+      "speed": 0.8,
+      "file": "audio/math/6a4f37bc49a0197aed54.m4a",
+      "seconds": 0.822,
+      "rmsDb": -17.68,
+      "sha256": "72392daf538e0ea0b2734529fc7e69790feebd4ff0ca905f39b99baa873bb4b8"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Teddy bear",
+      "speed": 0.8,
+      "file": "audio/math/2ab1991578d4e1df1a1b.m4a",
+      "seconds": 0.877,
+      "rmsDb": -17.83,
+      "sha256": "f6240d5d9cb1c387f641c402c5fd6145a537a02d50078a2d04eb12e6e2ed0b86"
+    }
+  ]
+}

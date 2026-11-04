@@ -514,6 +514,7 @@ const Quiz = (() => {
   // stays a miss: the question that comes back after it (q.retry) adds a
   // try but not a right, so it is asked again later; it doesn't move her tier.
   function record(q, right) {
+    if(q?.math){MathQuiz.record(q,right);return;}
     if (!q || !q.id || q.recorded || typeof state === 'undefined') return;
     q.recorded = true;
     if (!state.history) state.history = {};
@@ -1314,6 +1315,7 @@ const Quiz = (() => {
   // `cfg` changes that tier's settings (more cards); a forced question
   // never moves her tier.
   function make(npc, force) {
+    if(npc.mathTopic)return MathQuiz.make(npc,force);
     const place = placeOf(npc);
     let kind = force && force.kind;
     let home = place;
@@ -1337,6 +1339,7 @@ const Quiz = (() => {
   // doesn't count as solved yet. `cfg` changes the tier's settings, as for
   // a forced question (a village's game).
   function again(old, npc, cfg) {
+    if(old.math)return MathQuiz.again(old);
     want = old.id;
     try {
       const kind = old.ladder || old.kind;
@@ -1398,6 +1401,6 @@ const Quiz = (() => {
 
 // Every question id a kind can ask here. House pools are per letter, so
 // pass the house's npc (or { letter: 'C' }); without one it is the town pool.
-function reviewPool(kind, npc) { return Quiz.pool(kind, npc || {}); }
+function reviewPool(kind, npc) { return MathQuiz.isKind(kind) ? MathQuiz.pool(kind) : Quiz.pool(kind, npc || {}); }
 // Called from choose() for her first answer to a question.
 function reviewRecord(q, right) { Quiz.record(q, right); }

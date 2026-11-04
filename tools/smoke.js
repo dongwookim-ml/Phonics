@@ -42,7 +42,7 @@ for (const s of scripts) {
       document.querySelector(`[data-title="${title}"]`).click();
       document.querySelector('.start').classList.add('hidden');
       state.stars = 99;
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`), ...(!isCaptain()?Object.keys(NEIGHBORHOODS):[]),
+      const names = ['town', 'math', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`), ...(!isCaptain()?Object.keys(NEIGHBORHOODS):[]),
         ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
       const bad = [];
       for (const n of names) {

@@ -506,7 +506,9 @@ const Progress = (() => {
     if (!isObj(h)) return out;
     const kinds = typeof Quiz !== 'undefined' ? Quiz.kinds : null;
     for (const [id, x] of Object.entries(h)) {
-      if (!isObj(x) || typeof x.kind !== 'string' || (kinds && !kinds.includes(x.kind))) continue;
+      if (!isObj(x) || typeof x.kind !== 'string') continue;
+      const math = typeof MATH_TOPICS !== 'undefined' && MATH_TOPICS.some(t => t.kind === x.kind);
+      if (kinds && !kinds.includes(x.kind) && !math) continue;
       const nums = ['tries', 'right', 'wrong', 'last'].map(f => (x[f] === undefined ? 0 : x[f]));
       if (nums.some(v => typeof v !== 'number' || !Number.isFinite(v) || v < 0)) continue;
       out[id] = x;

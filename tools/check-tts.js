@@ -63,6 +63,9 @@ function staticCheck() {
   const fresh = listed.filter(p => !savedKeys.has(key(p)));
   if (fresh.length) toRecord(`tools/tts-phrases.json is missing ${fresh.length} line(s), e.g. ${fresh[0].voice} "${fresh[0].text}": run node tools/tts-phrases.js`);
   console.log(`static: ${entries} recordings, ${listed.length} lines listed, ${now.length} not recorded`);
+  const math=JSON.parse(fs.readFileSync(path.join(root,'audio/math/manifest.json'),'utf8'));
+  for(const clip of math.clips)if(!fs.existsSync(path.join(root,clip.file)))fail(`no math recording: ${clip.file}`);
+  console.log(`math: ${math.clips.length} local English recordings`);
 }
 
 // Plays through everything in one edition, noting each line said that has no
@@ -95,7 +98,7 @@ async function play(browser, edition, halloween = 1) {
         if (!p || !p.text) continue;
         spoken++;
         const v = p.narrator || !(who && who.tts) ? TTS_NARRATOR : who.tts;
-        if (!(TTS_INDEX[v] && TTS_INDEX[v][norm(p.text)])) missing[`${v} "${norm(p.text)}"`] = (missing[`${v} "${norm(p.text)}"`] || 0) + 1;
+        if (!Sound.hasClip(norm(p.text),{tts:v})) missing[`${v} "${norm(p.text)}"`] = (missing[`${v} "${norm(p.text)}"`] || 0) + 1;
       }
       return say(parts, who);
     };
@@ -120,7 +123,7 @@ async function play(browser, edition, halloween = 1) {
         choose(i, ui.choices.children[i]);
       }
     };
-    const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+    const names = ['town', 'math', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
     // The Monster Village and its tower (level 6, the long vowels), wherever
     // the ways out of town and the doors lead.
     const seen = new Set();
