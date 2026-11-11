@@ -376,7 +376,7 @@ async function quests(browser, edition) {
 
     // The card never opens over a question; the chest stays shut until all
     // three are done.
-    const npc = sceneFor('town').npcs.find(n => !n.mount && !n.shop);
+    const npc = sceneFor('town').npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon);
     openDialog(npc);
     openQuests();
     out.overQuestion = cardOpen();
@@ -394,7 +394,7 @@ async function quests(browser, edition) {
     const answer = () => {
       changeScene('town');
       settle();
-      const who = sceneFor('town').npcs.filter(n => !n.mount && !n.shop)[state.answered % 4];
+      const who = sceneFor('town').npcs.filter(n => !n.mount && !n.shop && !n.salon && !n.nailSalon)[state.answered % 4];
       Object.assign(who, { waitUntil: 0, missed: null });
       openDialog(who);
       const i = state.question.options.findIndex(o => o.right);

@@ -721,22 +721,26 @@ Custom names in this audit use live speech fallback rather than requiring record
   and calls "Princess Yuna, over here!", at most once a minute and three
   times in a row. Code in `js/guide.js`.
 - **Today's adventures and the treasure chest**: a little chest at the top
-  right (three dots under it) opens a card with three picture quests for
+  right (three dots under it) opens a card with three illustrated task rows for
   the day, one of each kind: answering (⭐ ●●●●● stars, 🎁 a full gift
   meter, 📒 new stickers, ✨ fairy dust), playing (🎮 rounds won in the
   little games, fishing or a village's, 📖 a book read to her or one she
   reads herself, her own friend fed once) and going somewhere (🏠 a letter
   house, or a village by its picture). Only what she can do is picked:
-  nothing behind a shut gate, no feeding without a friend. What she does
-  that day fills the dots;
+  nothing behind a shut gate, no feeding without a friend. Each row shows
+  what to do, where to do it and a numeric progress count.
+  What she does that day fills the dots;
   a finished quest gets a tick and a chime once she is free, and when all
   three are done the chest glows ("All done! Open the treasure chest!").
   Tapping it opens it (about 2 seconds, a tap skips) and 5 🪙 coins
   (`QUEST_CHEST`) fly into the purse, once a day (counted under the day's
   own entry, `chest:<day>` in `earned`, so opening it on two tablets
-  before they sync pays once). Tapping a picture says
-  its word. A day she doesn't play changes nothing: no streak, nothing
-  lost. The robot edition has missions, boxes, batteries and a blue chest.
+  before they sync pays once). Tapping a task reads its full goal and
+  instructions in English; visible
+  text follows the language setting. Instructions for both editions are cached
+  in `audio/quests/` with `python3 tools/record-math.py --lesson quests`.
+  The chest shows its five-coin reward before it is opened. A day she doesn't
+  play changes nothing: no streak, nothing lost. The robot edition has missions, boxes, batteries and a blue chest.
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
   "📖 책 읽어주세요" button, for fifteen illustrated fairy tales and fables
@@ -970,7 +974,7 @@ every word fits its answer card, the person talking stays visible above the
 dialog, the buttons a child taps are big enough (64 px), ▶ and the guest
 button show without scrolling, the HUD stays on one row with every counter
 and button showing, the sticker album and a celebration fit the screen
-with every word fitting its sticker, today's adventures fit on one row
+with every word fitting its sticker, today's adventures show readable goals and progress
 without scrolling, every page of the books she reads herself fits its
 word tiles in two rows at most, every little game (the pond's and each
 village's) fits the screen with its top row on one line, its buttons and

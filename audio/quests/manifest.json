@@ -1,0 +1,187 @@
+{
+  "source": "https://phonics-production-5a6d.up.railway.app",
+  "engine": "Amazon Polly neural",
+  "language": "en",
+  "clips": [
+    {
+      "voice": "af_heart",
+      "text": "Earn 5 stars. Talk to villagers and answer their questions correctly.",
+      "speed": 0.9,
+      "file": "audio/quests/f63467239ee0fea0eb93.m4a",
+      "seconds": 4.547,
+      "rmsDb": -20.68,
+      "sha256": "698b922b5dd734fd5437dac7861e16d79e7991847d75e4dfb6dab1061150cc49"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Fill the gift meter. Fill the gift dots at the top with first-try correct answers.",
+      "speed": 0.9,
+      "file": "audio/quests/080b2b68b4c05abb4894.m4a",
+      "seconds": 4.77,
+      "rmsDb": -18.37,
+      "sha256": "0e69911cdd96edd94e039c6844fc9159bc1837c24781e93f71aead0c2681846a"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Find 2 new word stickers. Answer word questions to add new stickers to your album.",
+      "speed": 0.9,
+      "file": "audio/quests/e577d617f7833379c513.m4a",
+      "seconds": 5.218,
+      "rmsDb": -19.26,
+      "sha256": "0316ae9239b68cba4bf5b7a0896b8ef545c5380785136f7e47e1be4018755f4e"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Collect 5 fairy dust. Get first-try answers right in Fairy Village.",
+      "speed": 0.9,
+      "file": "audio/quests/65878c3bf94618a7a426.m4a",
+      "seconds": 4.579,
+      "rmsDb": -18.22,
+      "sha256": "13d613753cbdf53645eca523e6aff18b8c2871677a6d080aff903baa96c8f207"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Win 3 mini-game rounds. Play fishing at the pond or any village mini-game.",
+      "speed": 0.9,
+      "file": "audio/quests/b56c1ed8ad99986d887b.m4a",
+      "seconds": 4.886,
+      "rmsDb": -16.98,
+      "sha256": "26175bbbabb1030c85791cd04d51903007d275d79b5502ef2013e75e2b5a0c41"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Finish 1 book. In the library, listen to a story or read a book to the last page.",
+      "speed": 0.9,
+      "file": "audio/quests/7ab3a5525693f84161b9.m4a",
+      "seconds": 5.276,
+      "rmsDb": -17.25,
+      "sha256": "e2b560a837d810674c5ed80a7c57982c6e8b0f471fc2fba1029bc6d6cc7586c7"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Feed your fairy friend. Tap your friend in your room, then give it fairy dust.",
+      "speed": 0.9,
+      "file": "audio/quests/a5a59a258b450fa23831.m4a",
+      "seconds": 4.868,
+      "rmsDb": -17.69,
+      "sha256": "09d6266769daf8f009c20f9f94983122b4d1a9edd1d5c72afd1698a4ad391acb"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit an alphabet house. Tap a house marked with a letter and go inside.",
+      "speed": 0.9,
+      "file": "audio/quests/be5d5d6c814c9c747d0e.m4a",
+      "seconds": 4.525,
+      "rmsDb": -19.74,
+      "sha256": "56457526d869d7957db287ad82a112972f02d89bda71b72dd789134ce8210e59"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Starlight Forest Village. Go through its gate in Phonics Town.",
+      "speed": 0.9,
+      "file": "audio/quests/6b78297263ccc36c0793.m4a",
+      "seconds": 4.284,
+      "rmsDb": -18.12,
+      "sha256": "b92ad9e8af4489cceb1561a587ad13db1bf0df35b2fd93ea468f8abad831eae4"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Fairy Village. Go through its gate in Phonics Town.",
+      "speed": 0.9,
+      "file": "audio/quests/76ea99cedd100f14d873.m4a",
+      "seconds": 3.668,
+      "rmsDb": -17.62,
+      "sha256": "c033e3cf183bb1588721017a8c6d0d832f20147f59c4d2677e1b37d0e5055c73"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Unicorn Village. Go through its gate in Starlight Forest Village.",
+      "speed": 0.9,
+      "file": "audio/quests/ae24e7ce0e45c197ae82.m4a",
+      "seconds": 4.541,
+      "rmsDb": -17.99,
+      "sha256": "8e0f486ecff291005b09af7c3107e11ddb1ad2b1075c7c8d3ea81b265ec228db"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Crystal Cave. Go through its gate in Starlight Forest Village.",
+      "speed": 0.9,
+      "file": "audio/quests/7351d099c31898e9e879.m4a",
+      "seconds": 4.265,
+      "rmsDb": -18.38,
+      "sha256": "550833a4aca150f76a87d4ce5a992ada0ec43824008281103e3dd7b5adcdaab8"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Collect 5 batteries. Get first-try answers right in Drone Village.",
+      "speed": 0.9,
+      "file": "audio/quests/e176449890eba7a050bc.m4a",
+      "seconds": 4.318,
+      "rmsDb": -18.28,
+      "sha256": "8fda3078185e54ac58cb2b989154bc289d1a8ca5426509b6e569ce4216fc2678"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Win 3 mini-game rounds. Play the magnet crane or any village mini-game.",
+      "speed": 0.9,
+      "file": "audio/quests/cf48e1f2289b0e6b4a3f.m4a",
+      "seconds": 4.771,
+      "rmsDb": -17.21,
+      "sha256": "59ced0cf9a6d9100f9337306d0c031959940612bf5b733b0634c8407f74850b2"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Feed your robot buddy. Tap your buddy in your room, then give it a battery.",
+      "speed": 0.9,
+      "file": "audio/quests/380e3840bb630f086c19.m4a",
+      "seconds": 4.568,
+      "rmsDb": -18.47,
+      "sha256": "58b248d3e26f5ac9fb76b1e0cad1450c247c44126be50f4e0004e0242b5cf636"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit an alphabet workshop. Tap a workshop marked with a letter and go inside.",
+      "speed": 0.9,
+      "file": "audio/quests/31d9982880918c4b62ba.m4a",
+      "seconds": 4.901,
+      "rmsDb": -19.75,
+      "sha256": "086dd11237179e307ccd4001caf5149ca0dc81378f5ca082793c247a239dfadf"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Dinosaur Village. Go through its gate in Robot Town.",
+      "speed": 0.9,
+      "file": "audio/quests/2dec311b831a2b731dd3.m4a",
+      "seconds": 3.771,
+      "rmsDb": -17.79,
+      "sha256": "0a7ed3dffcb927f0a1d9d736bf6066a821c2c6963c8c95b84431808f8fb76881"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Drone Village. Go through its gate in Robot Town.",
+      "speed": 0.9,
+      "file": "audio/quests/7ffea1733179d0e76a83.m4a",
+      "seconds": 3.565,
+      "rmsDb": -17.65,
+      "sha256": "30cc9d8498fa72d91760672342681b3a82082aef856eceabe6cae2811850d63d"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Car Village. Go through its gate in Dinosaur Village.",
+      "speed": 0.9,
+      "file": "audio/quests/a4919fcd5013ce05ac51.m4a",
+      "seconds": 3.659,
+      "rmsDb": -17.84,
+      "sha256": "3dbea8db012862160cea3bd4f83fe787e14e0ecc0d8e7ed2de454a5f71320df8"
+    },
+    {
+      "voice": "af_heart",
+      "text": "Visit Villain Cave. Go through its gate in Dinosaur Village.",
+      "speed": 0.9,
+      "file": "audio/quests/1edcbb30c5680e3ec3fb.m4a",
+      "seconds": 3.755,
+      "rmsDb": -17.88,
+      "sha256": "0c272ed6cf8a490234f490deb05a41eb63173d0203b80d8fc98661e42d6abe7d"
+    }
+  ]
+}

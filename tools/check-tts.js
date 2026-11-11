@@ -63,9 +63,11 @@ function staticCheck() {
   const fresh = listed.filter(p => !savedKeys.has(key(p)));
   if (fresh.length) toRecord(`tools/tts-phrases.json is missing ${fresh.length} line(s), e.g. ${fresh[0].voice} "${fresh[0].text}": run node tools/tts-phrases.js`);
   console.log(`static: ${entries} recordings, ${listed.length} lines listed, ${now.length} not recorded`);
-  const math=JSON.parse(fs.readFileSync(path.join(root,'audio/math/manifest.json'),'utf8'));
-  for(const clip of math.clips)if(!fs.existsSync(path.join(root,clip.file)))fail(`no math recording: ${clip.file}`);
-  console.log(`math: ${math.clips.length} local English recordings`);
+  for(const lesson of['math','quests']){
+    const audio=JSON.parse(fs.readFileSync(path.join(root,`audio/${lesson}/manifest.json`),'utf8'));
+    for(const clip of audio.clips)if(!fs.existsSync(path.join(root,clip.file)))fail(`no ${lesson} recording: ${clip.file}`);
+    console.log(`${lesson}: ${audio.clips.length} local English recordings`);
+  }
 }
 
 // Plays through everything in one edition, noting each line said that has no
@@ -234,7 +236,7 @@ async function play(browser, edition, halloween = 1) {
         for (const tab of [...new Set(albumAll().map(x => x.L)), 'medals']) { albumTab = tab; renderAlbum(); }
         closeAlbum();
       });
-      step('daily quests', () => { state.busy = false; openQuests(); closeQuests(); });
+      step('daily quests', () => { state.busy = false; openQuests();questUi.list.querySelectorAll('.qs-quest').forEach(b=>b.click());closeQuests(); });
       step('all read-aloud stories and summaries', () => {
         for (const book of BOOKS) {
           openBook(book); bookHush();

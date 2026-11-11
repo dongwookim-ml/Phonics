@@ -30,7 +30,7 @@
 //   screen with big tabs and stickers and every word fits its sticker; a
 //   celebration banner fits across the screen;
 // - today's adventures (js/quest.js): the card fits without scrolling, its
-//   pictures, arrow and chest on one row, big enough to tap, nothing runs
+//   task labels, instructions, progress and chest readable, big enough to tap, nothing runs
 //   over, and the tick under the HUD chest stays on screen;
 // - on every page of the books she reads herself the picture and the word
 //   tiles fit the page, in two rows at most, the tiles 64 px tall (52 on a
@@ -451,7 +451,7 @@ function ask(kind, scene) {
         show.stop();
 
         // Today's adventures, one of them done: the card on screen without
-        // scrolling, one row, big pictures, chest and 👋, nothing running
+        // scrolling, readable task rows, chest and 👋, nothing running
         // over, the title clear of 👋.
         state.busy = false;
         state.quests = null;
@@ -462,9 +462,7 @@ function ask(kind, scene) {
         const cr = card.getBoundingClientRect();
         if (cr.top < 0 || cr.left < 0 || cr.bottom > innerHeight + 0.5 || cr.right > innerWidth + 0.5) out.push(`quests: ${Math.round(cr.left)},${Math.round(cr.top)} to ${Math.round(cr.right)},${Math.round(cr.bottom)} is off the screen`);
         if (card.scrollHeight > card.clientHeight + 1) out.push(`quests: the card scrolls (${card.scrollHeight} > ${card.clientHeight})`);
-        const row = [...card.querySelectorAll('.qs-quest, .qs-chest')].map(e => e.getBoundingClientRect());
-        if (Math.max(...row.map(x => x.top)) - Math.min(...row.map(x => x.top)) > 12) out.push('quests: the pictures and the chest are not on one row');
-        small('#quests .qs-quest', phone ? 96 : 120);
+        small('#quests .qs-quest', 64);
         small('#quests .qs-chest', big);
         small('#quests .qs-done', big);
         for (const el of card.querySelectorAll('.qs-head, .qs-title, .qs-row')) {
@@ -473,7 +471,7 @@ function ask(kind, scene) {
         // The tick on a done one may stick out of its corner; nothing else.
         for (const t of card.querySelectorAll('.qs-quest')) {
           const tb = t.getBoundingClientRect();
-          for (const el of t.querySelectorAll('.ic, .pips')) {
+          for (const el of t.querySelectorAll('.ic, .qs-name, .qs-help, .qs-status, .pips')) {
             const b = el.getBoundingClientRect();
             if (b.left < tb.left || b.right > tb.right || b.top < tb.top || b.bottom > tb.bottom) out.push(`quests: the ${el.className} runs out of its picture`);
           }

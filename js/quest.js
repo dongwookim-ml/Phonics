@@ -2,7 +2,7 @@
 // editions. Every day three little quests are picked from QUESTS in
 // js/data.js, one from each group, among the ones she can do with what is
 // open: nothing from the Fairy Village before its gate opens, no feeding
-// without a friend. Each is a big picture with dots to fill (⭐ ●●●○○),
+// without a friend. Each shows an action, instructions and progress dots,
 // counted from what she does that day. A quest she finishes gets a tick and
 // a chime once she is free; when all three are done the chest glows, and
 // tapping it opens it (about 2 s, a tap skips it) for QUEST_CHEST.coins
@@ -146,7 +146,7 @@ const questUi = (() => {
   document.body.append(box);
   return {
     button, chip: button.querySelector('canvas'), pips: [...button.querySelectorAll('.pips i')], chipOpen: null,
-    box, title: box.querySelector('.qs-title'), list: box.querySelector('.qs-list'), done: box.querySelector('.qs-done'),
+    box, intro:box.querySelector('.qs-intro'),listenHint:box.querySelector('.qs-listen-hint'),chestAction:box.querySelector('.qs-chest-action'),title: box.querySelector('.qs-title'), list: box.querySelector('.qs-list'), done: box.querySelector('.qs-done'),
     chest: box.querySelector('.qs-chest'), chestArt: box.querySelector('.qs-chest canvas'), prize: box.querySelector('.prize'),
     party: 0, // when the chest last opened
     checked: null, // the quests questRecheck last looked at
@@ -231,37 +231,52 @@ function questBump() {
 function renderQuests() {
   const q = questsToday();
   questUi.title.textContent = isCaptain() ? I18n.t('quest.todaySMissions2') : I18n.t('quest.todaySAdventures2');
+  questUi.intro.textContent=I18n.t('quest.intro');
+  questUi.listenHint.textContent=I18n.t('quest.listenHint');
   questUi.list.innerHTML = '';
   questUi.list.dataset.day = q.day; // the day the card shows (questChestTap)
   for (const kind of q.picks) {
     const need = QUESTS[kind].n;
     const have = Math.min(need, questCount(kind));
     const b = document.createElement('button');
+    b.type='button';b.dataset.quest=kind;
     b.className = 'qs-quest';
+    const detail=QuestSpeech.details(kind),progress=I18n.t('quest.progress',have,need);
+    b.setAttribute('aria-label',`${detail.title}. ${detail.help} ${progress}`);
+    const copy=document.createElement('span');copy.className='qs-copy';
+    const title=document.createElement('span');title.className='qs-name';title.textContent=detail.title;
+    const help=document.createElement('span');help.className='qs-help';help.textContent=detail.help;
+    copy.append(title,help);
+    const status=document.createElement('span');status.className='qs-status';
+    const count=document.createElement('span');count.className='qs-count';count.textContent=have>=need?I18n.t('quest.completed'):progress;
     b.classList.toggle('done', have >= need);
     const pips = document.createElement('span');
-    pips.className = 'pips';
+    pips.className = 'pips';pips.setAttribute('aria-hidden','true');
     pips.innerHTML = '<i class="on"></i>'.repeat(have) + '<i></i>'.repeat(need - have);
     const tick = document.createElement('span');
     tick.className = 'qs-tick';
-    b.append(questPicture(kind), pips, tick);
+    const picture=questPicture(kind);picture.setAttribute('aria-hidden','true');
+    status.append(count,pips);
+    b.append(picture,copy,status,tick);
     b.addEventListener('click', () => questTapPicture(b, kind));
     questUi.list.append(b);
   }
   questUi.chest.classList.toggle('ready', questReady());
   questUi.chest.classList.toggle('opened', q.chest);
   drawQuestChest(questUi.chestArt, q.chest);
-  questUi.prize.textContent = q.chest ? `🪙 +${QUEST_CHEST.coins}` : '';
+  questUi.prize.textContent=I18n.t('quest.reward',QUEST_CHEST.coins);
+  questUi.chestAction.textContent=q.chest?I18n.t('quest.chestClaimed'):questReady()?I18n.t('quest.chestReady'):I18n.t('quest.chestLocked',q.picks.length);
+  questUi.chest.setAttribute('aria-label',`${questUi.chestAction.textContent}. ${questUi.prize.textContent}`);
 }
 
-// A quest's picture says its word, when that is recorded ("fish!").
+// Tapping anywhere on a quest reads its complete goal and instructions.
 function questTapPicture(b, kind) {
   b.classList.remove('wiggle');
   void b.offsetWidth;
   b.classList.add('wiggle');
   Sound.tap();
-  const w = QUESTS[kind].word;
-  if (w && Sound.hasClip(`${w}!`)) Sound.say([{ text: `${w}!`, narrator: true }]);
+  Sound.unlock();
+  Sound.say([{text:QuestSpeech.instruction(kind),narrator:true,plain:true,slow:.9}]);
 }
 
 function openQuests() {
@@ -413,7 +428,7 @@ function questTick(kind) {
 // For the parent panel (js/parent.js): today's three and the chest.
 function questParentLine() {
   const q = questsToday();
-  const each = q.picks.map(k => `${QUESTS[k].place ? albumIcon(k) : QUESTS[k].icon} ${Math.min(questCount(k), QUESTS[k].n)}/${QUESTS[k].n}`);
+  const each = q.picks.map(k => `${QuestSpeech.details(k).title} ${Math.min(questCount(k), QUESTS[k].n)}/${QUESTS[k].n}`);
   const chest = q.chest ? I18n.t('quest.opened') : questAllDone() ? I18n.t('quest.readyToOpen') : I18n.t('quest.stillLocked');
   return I18n.t('quest.todaySTreasureChest', isCaptain() ? I18n.t('quest.missions') : I18n.t('quest.adventures'), each.join(' · '), chest);
 }

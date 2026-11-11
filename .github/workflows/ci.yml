@@ -45,6 +45,7 @@ jobs:
       - run: node tools/check-riverside.js
       - run: node tools/check-math.js
       - run: node tools/check-math-audio.js
+      - run: node tools/check-quests.js
       - run: node tools/smoke.js
       - run: node tools/check-heroes.js
       - run: node tools/check-levels.js
