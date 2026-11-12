@@ -225,7 +225,7 @@ Custom names in this audit use live speech fallback rather than requiring record
   people ask the next village's questions instead (`NEXT_STAGE`: the town
   and the letter houses the forest's, the forest the Unicorn Village's, the
   Unicorn Village and the cave the fairies', the fairies the Monster
-  Village's), at her tier there, capped like that village, and in the
+  Village's, the Monster Village the Cloud Village's), at her tier there, capped like that village, and in the
   asker's own voice. A letter house keeps asking its own kinds until its
   questions (its medal) are all solved too. A miss brings a kind back as
   usual (`nextKind` in `js/quiz.js`; `node tools/check-levels.js` checks
@@ -648,6 +648,47 @@ Custom names in this audit use live speech fallback rather than requiring record
   drawing, kept in one place (`KID_MONSTERS` in `js/kid-monsters.js`) so a
   parent's own drawings can replace them later. Built in
   `js/monster-village.js`.
+- **Cloud Village (level 7)**: a gate at the west end of the Monster
+  Village opens at 50 stars (`CLOUD_STARS`), the same village in both
+  editions: cloud underfoot, a rainbow over its square, a moon, stars and
+  cloud puffs to tap. Its five people (☁️ bubble, `CLOUD_NPCS`: the town's
+  kinds of people, or the robots with the same voices) ask the next step
+  after long vowels: letters that team up for a sound of their own, oo
+  (moon, and the short one of book), ou and ow (cloud, cow), oi and oy
+  (coin, boy), or (fork), er, ir and ur (her, bird, nurse), and the pairs
+  th and wh (`SOUND_TEAMS` in `js/data.js`, `QUIZ_TYPES.cloud`):
+  - read the word, its team coloured at the first tiers, and pick its
+    picture (`teamRead`);
+  - hear a word and find it written, no pictures (`teamWord`), with a card
+    that starts the same at the top tier (boy, bird);
+  - hear a word and pick the letters missing from it (`teamFill`: cl ? d,
+    with ou, ee, or). The other cards are teams that say another sound:
+    never ow beside ou, oy beside oi, or er, ir and ur together, which she
+    would hear the same, and never letters that would spell a rude word.
+  The first tiers ask only oo, ou, ow, oi, oy and or (`first`). The word in
+  `teamWord` and `teamFill` is the narrator's, so every asker shares one
+  recording. After a miss the narrator names the team and a word she knows
+  it from ("O U, like in house!", `LINES.teamLike`), never the word she has
+  to find nor one on a card. Once she has mastered the Monster Village's
+  long vowels, its monsters ask these too (`NEXT_STAGE.monster`). Built in
+  `js/word-villages.js`.
+- **Word Camp (sight words)**: a gate at the east end of town's upper road,
+  open from the start in both editions, leads to a campsite: three tents
+  round a campfire, logs and pines. Its four campers (⛺ bubble,
+  `SIGHT_NPCS`, with their `place` so they give presents as the town's
+  people do) ask the little words every book is full of, most of which
+  can't be sounded out (the, said, was, you), in three sets, the most
+  common first (`CAMP_WORDS`, `QUIZ_TYPES.sight`):
+  - hear a word and find it written (`sightHear`); shown after a second
+    miss, it is spelled, not sounded out ("T, H, E… the!");
+  - hear a sentence and pick the word missing from it (`sightFill`, one
+    sentence a word in `CAMP_SENTENCES`; the blank is never the first word,
+    but for I, so no card needs a capital).
+  The other cards never rhyme with the answer (he, she, we, me) below the
+  top tier, where one looks as much like it as can be (this, that). Words
+  and sentences are the narrator's. A sight word is no sticker, and neither
+  is a written-only team word. The parent panel has a row for each of the
+  five new kinds, and each village has its medal.
 - **Fairy friends**: presents in the Fairy Village (a full gift meter) are
   its six little fairies and its treasures first (a petal dress, a leaf
   tunic for a boy, butterfly wings, a fairy teapot and a tulip; each fairy
@@ -1163,5 +1204,6 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/album.js`: the sticker album, the gift and next-gate meters, medals, cheers and their celebrations
 - `js/cave-magic.js`: the Crystal Cave monsters' idle moves and their magic, and hers (princess edition)
 - `js/monster-village.js`: the Monster Village, its tower and the gate to it in town (both editions)
+- `js/word-villages.js`: the Cloud Village (letter teams) and the Word Camp (sight words), with the gates to them (both editions)
 - `js/kid-monsters.js`: the monsters she drew herself: their pixel art, voices and hellos, how they move, and her drawing in their dialog
 - `img/monsters/`: photos of her drawings, made by `tools/kid-drawings.py`

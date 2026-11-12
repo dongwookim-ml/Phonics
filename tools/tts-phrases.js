@@ -19,7 +19,8 @@ const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
   'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
-  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', 'WEAK_PICTURES', 'LONG_RHYME_UNSURE', 'NEXT_STAGE', ...MONSTER_TABLES];
+  'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', 'WEAK_PICTURES', 'LONG_RHYME_UNSURE', 'NEXT_STAGE',
+  'SOUND_TEAMS', 'CLOUD_NPCS', 'CLOUD_STARS', 'CAMP_WORDS', 'CAMP_SENTENCES', 'SIGHT_NPCS', ...MONSTER_TABLES];
 function loadData(edition) {
   const files = ['js/locales/ko.js', 'js/locales/en.js', 'js/i18n.js', 'js/data.js'];
   if (edition === 'captain') {
@@ -75,10 +76,13 @@ function collect(D) {
   // The Monster Village and its tower, and any home there.
   const monsterVillage = new Set([...MONSTER_TABLES.flatMap(k => D[k] || []),
     ...D.VILLAGE_HOMES.filter(h => (D.HOME_LEVEL || {})[h.scene] === 6)].map(n => n.look));
+  // The Cloud Village (letter teams) and the Word Camp (sight words).
+  const cloud = new Set(D.CLOUD_NPCS.map(n => n.look));
+  const camp = new Set(D.SIGHT_NPCS.map(n => n.look));
   const asked = place => D.QUIZ_TYPES[place].concat(D.NEXT_STAGE[place] ? D.QUIZ_TYPES[D.NEXT_STAGE[place]] : []);
   const kindsOf = look => new Set([].concat(town.has(look) ? asked('town').concat(asked('house')) : [],
     forest.has(look) ? asked('forest') : [], unicorn.has(look) ? asked('unicorn').concat(asked('dungeon')) : [], fairies.has(look) ? asked('fairy') : [],
-    monsterVillage.has(look) ? asked('monster') : []));
+    monsterVillage.has(look) ? asked('monster') : [], cloud.has(look) ? asked('cloud') : [], camp.has(look) ? asked('sight') : []));
   const first = list => list.map(([w]) => w);
   const cvc = first(D.CVC_A1.concat(D.CVC_A2));
   const sentences = D.SENTENCES.concat(D.SENTENCES_L1, D.SENTENCES_L2);
@@ -92,7 +96,9 @@ function collect(D) {
   const kindLines = { word: ['ask'], start: ['firstSound'], findStart: [], rhyme: ['rhyme', 'rhymeEnd'], sameStart: ['sameStart'],
     oddRhyme: ['oddRhyme', 'rhymeEnd'], family: ['ask2'], vowel: ['vowel'],
     ending: ['ending'], read: ['read'], blend: ['blend'], sentence: ['sentence'], meaning: ['meaning', 'silly'], spell: ['spell'],
-    longBlend: ['longBlend'], longRead: ['read'], longWord: ['ask'], longRhyme: ['rhyme', 'rhymeEnd'] };
+    longBlend: ['longBlend'], longRead: ['read'], longWord: ['ask'], longRhyme: ['rhyme', 'rhymeEnd'],
+    // The words and sentences of these are the narrator's (below).
+    teamRead: ['read'], teamWord: ['ask'], teamFill: ['teamFill'], sightHear: ['ask'], sightFill: ['sentence'] };
   const kindWords = {
     word: D.LETTERS.flatMap(l => first(l.words)),
     start: D.LETTERS.flatMap(l => first(l.words)),
@@ -141,13 +147,13 @@ function collect(D) {
     }
     // A unicorn (car) given as a present: the cave's and the Monster Village's
     // people give them too (rewardChoices in js/game.js, from level 3).
-    if (unicorn.has(look) || monsterVillage.has(look)) lines(v, ['newUnicorn']);
+    if (unicorn.has(look) || monsterVillage.has(look) || cloud.has(look)) lines(v, ['newUnicorn']);
     if (monsters.has(look)) lines(v, ['caught'].concat(D.CAVE_LINES ? D.CAVE_LINES.villain : []));
     if (fairies.has(look)) lines(v, ['newFairy']);
     if (look === 'merchant') lines(v, ['shop', 'bought', 'poor', 'poorPond', 'soldOut']);
     if (look === 'stylist') lines(v, ['salon', 'salonDone', 'salonPoor']);
     // Anyone who gives presents (not the cave villains), and the shop.
-    const gives = town.has(look) || forest.has(look) || fairies.has(look) || monsterVillage.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
+    const gives = town.has(look) || forest.has(look) || fairies.has(look) || monsterVillage.has(look) || cloud.has(look) || camp.has(look) || D.UNICORN_NPCS.some(n => n.look === look) || look === 'merchant';
     if (gives) for (const t of partShow) add(v, t);
   }
   const robots = D.TITLES.captain.look === 'robot';
@@ -182,6 +188,16 @@ function collect(D) {
   // Blending's first steps: the one-sound pictures (what she picked, "dog…",
   // and the answer, "sun!") and the two-sound words.
   for (const w of D.ONE_SOUND.flatMap(x => first(x.words)).concat(first(D.TWO_SOUNDS))) words.add(w);
+  // Letter teams (the Cloud Village): every word, and the team's hint after
+  // a miss, "O U, like in house!" (teamRule in js/quiz.js).
+  for (const g of D.SOUND_TEAMS) {
+    for (const [w] of g.words) words.add(w);
+    for (const k of g.keys) lines(N, ['teamLike'], { team: g.team.toUpperCase().split('').join(' '), key: k });
+  }
+  // Sight words (the Word Camp): each as she picked it ("the"; "the!" is the
+  // answer) and its sentence.
+  for (const w of D.CAMP_WORDS.flat()) words.add(w);
+  for (const x of D.CAMP_SENTENCES) add(N, x.s.replace('{}', x.w), 0.85);
   // Words said when she taps a thing on the map (js/touch.js).
   for (const w of D.PROP_WORDS) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
@@ -213,7 +229,7 @@ function collect(D) {
     if (g.team.includes('_')) lines(N, ['magicE'], { letter: g.says });
     else lines(N, ['vowelTeam'], { team: g.team.toUpperCase().split('').join(' '), letter: g.says });
   }
-  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower', 'tower2', 'halloween', 'halloweenHi']);
+  lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower', 'tower2', 'cloud', 'sight', 'halloween', 'halloweenHi']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));
   // The villages' little games (js/village-games.js): the narrator says
@@ -232,13 +248,13 @@ function collect(D) {
   // Gates opening, medals and the sticker album (js/album.js). A sticker says
   // what its word starts with, unless it starts with two letters that make
   // one sound (chair, ship, three) or one that sounds like another (one).
-  lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'openMonster', 'medalVillage', 'album']);
+  lines(N, ['openForest', 'openFairy', 'openUnicorn', 'openDungeon', 'openMonster', 'openCloud', 'medalVillage', 'album']);
   for (const l of D.TOWN_HOUSES.filter(h=>!h.simpleSound)) lines(N, ['medalHouse'], { letter: l.letter });
   const stickers = [...D.WORD_FAMILIES.flat(), ...D.RHYME_SETS.flatMap(r => r.set), ...sentences.map(x => x.w),
     ...[D.CVC_A1, D.CVC_A2, D.CCVC, D.CVCC, D.LONG, D.DIGRAPH].flat(), ...D.LONG_VOWELS.flatMap(g => g.words), ...D.LONG_RHYMES.flatMap(r => r.set),
     ...D.ONE_SOUND.flatMap(x => x.words), ...D.TWO_SOUNDS].map(([w]) => w);
   for (const w of stickers) if (/^[a-z]+$/.test(w) && !/^(ch|sh|th|wh|ph|gh|kn|wr)/.test(w) && w !== 'one') add(N, `${w} starts with ${w[0].toUpperCase()}.`);
-  for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS, D.MONSTER_STARS]) lines(N, ['locked'], { stars });
+  for (const stars of [D.FOREST_STARS, D.UNICORN_STARS, D.DUNGEON_STARS, D.FAIRY_STARS, D.MONSTER_STARS, D.CLOUD_STARS]) lines(N, ['locked'], { stars });
   for (const t of robots ? [D.TITLES.captain] : Object.values(D.TITLES)) add(N, `${t.en} ${D.PLAYER.spoken}!`);
 
   // The royal library: the librarian's welcome, then the narrator reads each

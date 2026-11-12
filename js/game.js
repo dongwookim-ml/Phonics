@@ -356,6 +356,8 @@ function sceneFor(target) {
     else if (target === 'monster') state.scenes[target] = buildMonsterVillage(); // js/monster-village.js
     else if (target === 'tower') state.scenes[target] = buildMonsterTower();
     else if (target === 'tower2') state.scenes[target] = buildMonsterTower2();
+    else if (target === 'cloud') state.scenes[target] = buildCloudVillage(); // js/word-villages.js
+    else if (target === 'sight') state.scenes[target] = buildWordCamp();
     else if (home) state.scenes[target] = buildHomeInterior(home);
     else if (house) state.scenes[target] = buildHouseInterior(house);
     // A place that doesn't exist takes her to the town instead of breaking.
@@ -1214,6 +1216,10 @@ function followLink(link) {
   } else if (link.target === 'monster') {
     changeScene('monster', link.at, place('monster'));
     Sound.say([{ text: line('monster'), pitch: 1.3 }]);
+  } else if (link.target === 'cloud' || link.target === 'sight') {
+    // The Cloud Village and the Word Camp (js/word-villages.js).
+    changeScene(link.target, link.at, place(link.target));
+    Sound.say([{ text: line(link.target), pitch: 1.3 }]);
   } else if (link.target==='math' || NEIGHBORHOODS[link.target]) {
     changeScene(link.target, link.at, place(link.target));
   } else if (link.target === 'town') {

@@ -140,19 +140,28 @@ const check = (name, ok, detail) => {
       master(QUIZ_TYPES.town, 'town');
       master(QUIZ_TYPES.forest, 'forest');
       out.both = tally(town());
-      // The Monster Village has none after it.
+      // The Monster Village, mastered: the Cloud Village's letter teams.
       fresh();
       master(QUIZ_TYPES.monster, 'monster');
       out.monster = tally({ name: 'monster', level: 6 });
+      // The Cloud Village and the Word Camp have none after them.
+      fresh();
+      master(QUIZ_TYPES.cloud, 'cloud');
+      out.cloud = tally({ name: 'cloud', level: 7 });
+      fresh();
+      master(QUIZ_TYPES.sight, 'sight');
+      out.sight = tally({ name: 'camper', level: 1, place: 'sight' });
       // A miss on a mastered kind: it is asked again as usual.
       fresh();
       master(QUIZ_TYPES.town, 'town');
       Quiz.skill('word').w = [1, 1, 1, 1, 0];
       out.slip = tally(town());
       out.townKinds = QUIZ_TYPES.town;
+      out.quiz = { cloud: QUIZ_TYPES.cloud, sight: QUIZ_TYPES.sight };
       return out;
     });
     const tag = edition;
+    const QUIZ = r.quiz;
     check(`${tag}: her first 3 at a tier right move her up; after a miss there, 5 of 6 (${r.streak.join(' ')})`, r.streak.join() === '1,1,2,2,2,2,2,2,3,3', r.streak);
     check(`${tag}: right answers asked below her tier (a place's cap) don't count towards her tier there; a miss does`, r.capped.right === '' && r.capped.wrong === '0', r.capped);
     check(`${tag}: 2 misses in a row at her tier, one tier down (${r.down.join(' ')})`, r.down.join() === '3,2', r.down);
@@ -168,7 +177,10 @@ const check = (name, ok, detail) => {
     check(`${tag}: then the forest's there too (${JSON.stringify(r.house.stages)})`, r.house.stages.forest > 200 && !r.house.bad.length, r.house);
     check(`${tag}: the forest mastered: the Unicorn Village's sentences (${JSON.stringify(r.forest.kinds)})`, r.forest.stages.unicorn > 200 && r.forest.kinds.sentence > 0 && r.forest.kinds.meaning > 0 && !r.forest.bad.length, r.forest);
     check(`${tag}: mastered there too: still the next village's, all of them`, r.both.stages.forest > 200 && !r.both.bad.length, r.both);
-    check(`${tag}: the Monster Village, mastered, asks its own`, !Object.keys(r.monster.stages).some(s => s !== 'here'), r.monster);
+    check(`${tag}: the Monster Village mastered: the Cloud Village's letter teams (${JSON.stringify(r.monster.stages)})`,
+      r.monster.stages.cloud > 200 && !r.monster.bad.length && QUIZ.cloud.every(k => r.monster.kinds[k] > 0), r.monster);
+    check(`${tag}: the Cloud Village, mastered, asks its own`, !Object.keys(r.cloud.stages).some(s => s !== 'here') && Object.keys(r.cloud.kinds).every(k => QUIZ.cloud.includes(k)), r.cloud);
+    check(`${tag}: the Word Camp asks only sight words, also once mastered`, !Object.keys(r.sight.stages).some(s => s !== 'here') && Object.keys(r.sight.kinds).every(k => QUIZ.sight.includes(k)), r.sight);
     check(`${tag}: a miss on a mastered kind brings it back as usual`, r.slip.kinds.word > 50 && !r.slip.stages.forest, r.slip);
 
     // A letter house she has finished (every question of its medal right):

@@ -2799,11 +2799,111 @@ async function lateGate(browser) {
     seen.length = 0;
     gateCheck(39);
     gateCheck(40);
-    return { first, again, crossing: seen.slice() };
+    const crossing = seen.slice();
+    // The Cloud Village's gate (50 stars), new in a later update.
+    state.stars = 50;
+    seen.length = 0;
+    gateCheck(49);
+    gateCheck(50);
+    return { first, again, crossing, cloud: seen.slice() };
   });
-  check('a gate new in an update: its party once for a child already past it', r.first.join() === 'monster' && r.again === 1, r);
-  check('... and once as she crosses it, not again after', r.crossing.join() === 'monster', r);
+  check('a gate new in an update: its party once for a child already past it', r.first.join() === 'monster,cloud' && r.again === 2, r);
+  check('... and once as she crosses it, not again after', r.crossing.join() === 'monster' && r.cloud.join() === 'cloud', r);
   check('late gate: no page errors', !errors.length, errors);
+  await ctx.close();
+}
+
+// The Cloud Village and the Word Camp (js/word-villages.js), in both
+// editions: the cloud gate in the Monster Village is shut below its stars
+// and walks her through at them, the camp's gate in town is open from the
+// start; everyone there asks only that place's kinds, each with as many
+// cards as its first tier says; a right answer gives a star, a sticker for
+// a picture word and none for a sight word; and each gate leads back.
+async function wordVillages(browser, edition) {
+  const { page, ctx, errors } = await game(browser, { edition });
+  const r = await page.evaluate(async () => {
+    const wait = ok => new Promise(res => { const t0 = performance.now(); const go = () => (ok() || performance.now() - t0 > 15000 ? res() : setTimeout(go, 50)); go(); });
+    const settled = () => !ui.fade.classList.contains('on') && !state.hero.path.length;
+    const at = () => [state.hero.c, state.hero.r].join();
+    if (!Sound.muted) Sound.toggleMute();
+    const out = {};
+    // One question of each of a place's kinds from its first villager, answered right.
+    const askAll = async key => {
+      const res = [];
+      for (const kind of QUIZ_TYPES[key]) {
+        const npc = state.scene.npcs.find(n => !n.mount);
+        const kinds = QUIZ_TYPES[key];
+        QUIZ_TYPES[key] = [kind];
+        Object.assign(npc, { lastQuiz: null, waitUntil: 0, missed: null });
+        state.busy = false;
+        const stars = state.stars;
+        const stickers = Object.keys(state.stickers).length;
+        openDialog(npc);
+        QUIZ_TYPES[key] = kinds;
+        const q = state.question;
+        const cards = q ? q.options.length : 0;
+        const i = q ? q.options.findIndex(o => o.right) : -1;
+        if (q) choose(i, ui.choices.children[i]);
+        res.push({ kind, asked: q && q.kind, cards, want: TIERS[kind][0].n, star: state.stars - stars, sticker: Object.keys(state.stickers).length - stickers, stage: q && q.stage });
+        await new Promise(res2 => setTimeout(res2, 50));
+        // A full gift meter brings a present: put it away.
+        if (state.gift) acceptReward(false);
+        closeDialog();
+        state.timers.forEach(clearTimeout);
+        state.timers = [];
+        state.busy = false;
+      }
+      return res;
+    };
+    // The cloud gate: shut below its stars.
+    state.stars = CLOUD_STARS - 1;
+    changeScene('monster');
+    await wait(() => state.scene === sceneFor('monster') && settled());
+    const toCloud = state.scene.links.filter(l => l.target === 'cloud');
+    goLink(toCloud);
+    await new Promise(res => setTimeout(res, 300));
+    out.shut = { links: toCloud.length, need: toCloud.every(l => l.needStars === CLOUD_STARS), stayed: state.scene === sceneFor('monster') };
+    state.stars = CLOUD_STARS + 10;
+    placeHero(3, 11);
+    goLink(toCloud);
+    await wait(() => state.scene === sceneFor('cloud') && settled());
+    out.cloud = { there: state.scene === sceneFor('cloud'), at: at(), label: ui.place.textContent, name: place('cloud'),
+      people: state.scene.npcs.filter(n => !n.mount).map(n => `${n.level}${n.place || ''}`).join(), count: CLOUD_NPCS.length };
+    out.cloudAsks = await askAll('cloud');
+    goLink(state.scene.links.filter(l => l.target === 'monster'));
+    await wait(() => state.scene === sceneFor('monster') && settled());
+    out.cloudBack = { there: state.scene === sceneFor('monster'), at: at() };
+    // The Word Camp: open from the start.
+    state.stars = 0;
+    changeScene('town');
+    await wait(() => state.scene === sceneFor('town') && settled());
+    const toCamp = state.scene.links.filter(l => l.target === 'sight');
+    placeHero(37, 14);
+    goLink(toCamp);
+    await wait(() => state.scene === sceneFor('sight') && settled());
+    out.camp = { there: state.scene === sceneFor('sight'), links: toCamp.length, free: toCamp.every(l => !l.needStars), at: at(), label: ui.place.textContent, name: place('sight'),
+      people: state.scene.npcs.filter(n => !n.mount).map(n => `${n.level || 1}${n.place || ''}`).join(), count: SIGHT_NPCS.length };
+    out.campAsks = await askAll('sight');
+    goLink(state.scene.links.filter(l => l.target === 'town'));
+    await wait(() => state.scene === sceneFor('town') && settled());
+    out.campBack = { there: state.scene === sceneFor('town'), at: at() };
+    return out;
+  });
+  const tag = `word villages (${edition})`;
+  check(`${tag}: the cloud gate in the Monster Village is shut below its stars`, r.shut.links === 2 && r.shut.need && r.shut.stayed, r.shut);
+  check(`${tag}: at its stars she walks through to the Cloud Village, where everyone asks its questions`, r.cloud.there && r.cloud.label === r.cloud.name
+    && r.cloud.people === Array(r.cloud.count).fill('7').join(), r.cloud);
+  check(`${tag}: each of the Cloud Village's kinds is asked with its first tier's cards, and a right answer gives a star`,
+    r.cloudAsks.length === 3 && r.cloudAsks.every(a => a.asked === a.kind && a.cards === a.want && a.star === 1 && !a.stage), r.cloudAsks);
+  // (A written-only word of teamWord is none, and a word she has already isn't new.)
+  check(`${tag}: a picture word is a sticker`, r.cloudAsks[0].sticker === 1 && r.cloudAsks.every(a => a.sticker <= 1), r.cloudAsks);
+  check(`${tag}: its gate leads back to the Monster Village`, r.cloudBack.there && ['2,11', '2,12'].includes(r.cloudBack.at), r.cloudBack);
+  check(`${tag}: the Word Camp's gate in town is open from the start`, r.camp.links === 2 && r.camp.free && r.camp.there && r.camp.label === r.camp.name
+    && r.camp.people === Array(r.camp.count).fill('1sight').join(), r.camp);
+  check(`${tag}: each of the Word Camp's kinds is asked with its first tier's cards; a right answer gives a star and no sticker`,
+    r.campAsks.length === 2 && r.campAsks.every(a => a.asked === a.kind && a.cards === a.want && a.star === 1 && a.sticker === 0 && !a.stage), r.campAsks);
+  check(`${tag}: its gate leads back to town`, r.campBack.there && ['37,14', '37,15'].includes(r.campBack.at), r.campBack);
+  check(`${tag}: no page errors`, !errors.length, errors);
   await ctx.close();
 }
 
@@ -2828,6 +2928,7 @@ async function lateGate(browser) {
     gameSpots: b => gameSpots(b, 'princess'), gameSpotsCaptain: b => gameSpots(b, 'captain'),
     kidMonsters: b => kidMonsters(b, 'princess'), kidMonstersCaptain: b => kidMonsters(b, 'captain'), lateGate,
     monsterTower: b => monsterTower(b, 'princess'), monsterTowerCaptain: b => monsterTower(b, 'captain'),
+    wordVillages: b => wordVillages(b, 'princess'), wordVillagesCaptain: b => wordVillages(b, 'captain'),
     halloween: b => halloween(b, 'princess'), halloweenCaptain: b => halloween(b, 'captain'),
     salon: b => hairSalon(b, 'princess', 'girl'), salonBoy: b => hairSalon(b, 'princess', 'boy'), salonCaptain: b => hairSalon(b, 'captain'),
     blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };

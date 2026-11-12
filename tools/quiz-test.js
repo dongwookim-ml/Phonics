@@ -120,6 +120,8 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
         const six = sc.npcs.filter(p => p.level === 6 && !p.mount && !p.shop);
         if (six.length) monsterScenes.push(n);
         for (const p of six) askers.push({ name: p.name, look: p.look, level: 6, monster: p.monster, unicorn: p.unicorn });
+        // The Cloud Village (level 7) and the Word Camp (its campers have their `place`).
+        for (const p of sc.npcs.filter(p => p.level === 7 || p.place)) askers.push({ name: p.name, look: p.look, level: p.level, place: p.place });
       }
       if (!monsterScenes.length) askers.push({ name: 'Monster Village (stand-in)', level: 6, standIn: true });
       // The rules every set of cards keeps (HARD_PAIRS, ALIAS in js/data.js).
@@ -212,7 +214,7 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
       const W = Quiz.words();
       const div = document.createElement('div');
       const picOf = o => { div.innerHTML = o.html; const p = div.querySelector('.pic, .bigpic'); return p && p.textContent; };
-      const placeOf = npc => (npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
+      const placeOf = npc => npc.place || (npc.level === 7 ? 'cloud' : npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
       // How she hears a word: a long one by its sounds with the vowel's
       // letter name (c-A-k), a short one by its letters; c and k alike, a
       // doubled letter as one (as js/quiz.js).
@@ -552,10 +554,11 @@ const u13 = '[\\u{1F6D6}\\u{1F6D7}\\u{1F90C}\\u{1F972}\\u{1F977}\\u{1F978}\\u{1F
           // A word whose vowel says its name is never sounded out letter by letter (cake).
           if (said && sw && sw.long) problems.push(`${where}: ${sw.w} sounded out letter by letter`);
           // The cards wait for the word, except in silent reading.
-          if (!['read', 'longRead'].includes(q.kind) && !q.ask.includes(Quiz.READY)) problems.push(`${where}: no READY in ask`);
+          if (!['read', 'longRead', 'teamRead'].includes(q.kind) && !q.ask.includes(Quiz.READY)) problems.push(`${where}: no READY in ask`);
           if (!q.tiles && !(q.model && q.model.length)) problems.push(`${where}: no answer to show`);
           // No "a" or "the" right before a quiz word (a letter's name, "A", is not one).
-          for (const p of after) if (p.text && !/^[A-Z]$/.test(p.text) && /(^|\s)(a|an|the|A|An|The)$/.test(p.text)) problems.push(`${where}: "${p.text}" ends with an article`);
+          // (The Word Camp asks for "a" and "the" themselves.)
+          for (const p of after) if (p.text && !/^sight/.test(q.kind) && !/^[A-Z]$/.test(p.text) && /(^|\s)(a|an|the|A|An|The)$/.test(p.text)) problems.push(`${where}: "${p.text}" ends with an article`);
           for (const p of [].concat(q.ask, q.replay, q.answer, after)) heard(p, who);
         }
       }

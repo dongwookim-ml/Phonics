@@ -150,6 +150,8 @@ function albumBump() {
 // rhyme she found, the word in a sentence), else the question's target (for
 // letter cards and spelling).
 function stickerOf(q) {
+  // A word with no picture (a sight word, a written-only team word) is no sticker.
+  if (q.sticker === false) return null;
   if (q.sticker) return q.sticker;
   const o = (q.options || []).find(x => x.right);
   const w = o && typeof o.wrong === 'string' && /^[a-z]{2,}$/.test(o.wrong) ? o.wrong : q.target;
@@ -268,10 +270,10 @@ function renderGiftMeter(pop) {
 
 // The gates in the order they open: { key (the scene behind it), stars }.
 function albumGates() {
-  return [['forest', FOREST_STARS], ['fairy', FAIRY_STARS], ['unicorn', UNICORN_STARS], ['dungeon', DUNGEON_STARS], ['monster', MONSTER_STARS]]
+  return [['forest', FOREST_STARS], ['fairy', FAIRY_STARS], ['unicorn', UNICORN_STARS], ['dungeon', DUNGEON_STARS], ['monster', MONSTER_STARS], ['cloud', CLOUD_STARS]]
     .map(([key, stars]) => ({ key, stars })).sort((a, b) => a.stars - b.stars);
 }
-const GATE_LINES = { forest: 'openForest', fairy: 'openFairy', unicorn: 'openUnicorn', dungeon: 'openDungeon', monster: 'openMonster' };
+const GATE_LINES = { forest: 'openForest', fairy: 'openFairy', unicorn: 'openUnicorn', dungeon: 'openDungeon', monster: 'openMonster', cloud: 'openCloud' };
 
 // ⭐ 7/10 🌲: the stars needed for the next gate that is still shut, with a
 // bar that fills from the last gate that opened. Hidden once all are open.
@@ -297,7 +299,7 @@ function renderGateMeter() {
 // A gate added in an update (the Monster Village) also opens with a party,
 // once, for a child already past its stars, after her first answer since
 // (state.guide.opened, saved).
-const LATE_GATES = ['monster'];
+const LATE_GATES = ['monster', 'cloud'];
 // `before`: the stars she had earned before this one (starsEarned).
 function gateCheck(before) {
   const opened = state.guide && (state.guide.opened = state.guide.opened || {});
@@ -325,7 +327,7 @@ function gateFanfare(g) {
 // party would make it stutter).
 let gateTrail = null;
 const TRAIL_MS = 90000;
-const GATE_HOME = { forest: 'town', fairy: 'town', unicorn: 'forest', dungeon: 'forest' };
+const GATE_HOME = { forest: 'town', fairy: 'town', unicorn: 'forest', dungeon: 'forest', cloud: 'monster' };
 function startGateTrail(g) {
   const built = Object.keys(state.scenes).find(n => (state.scenes[n].links || []).some(l => l.needStars === g.stars));
   const home = built || GATE_HOME[g.key];
@@ -413,7 +415,7 @@ function medalList() {
     out.push({ id: `house:${h.letter}`, letter: h.letter, ids: h.simpleSound ? [...ids] : [...ids].filter(medalKeeps) });
   }
   const seen = new Set();
-  for (const key of ['town', 'forest', 'unicorn', 'fairy', 'dungeon', 'monster']) {
+  for (const key of ['town', 'forest', 'unicorn', 'fairy', 'dungeon', 'monster', 'cloud', 'sight']) {
     const kinds = QUIZ_TYPES[key] && QUIZ_TYPES[key].filter(k => !MEDAL_SKIP.includes(k));
     const sig = kinds && kinds.slice().sort().join();
     if (!kinds || seen.has(sig)) continue;

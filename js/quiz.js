@@ -59,6 +59,9 @@ const Quiz = (() => {
     // Blending's first steps: the one-sound step's pictures, the two-sound words.
     for (const s of ONE_SOUND) for (const [w, e] of s.words) add(w, e);
     for (const [w, e, two] of TWO_SOUNDS) { add(w, e); index[w].two = two; }
+    // The Cloud Village's letter teams: `tm` is the word's team (SOUND_TEAMS).
+    // A word the lists above have keeps the picture it has there.
+    for (const g of SOUND_TEAMS) for (const [w, e, pic] of g.words) { if (!index[w]) add(w, e, pic); index[w].tm = g; }
     return index;
   }
   const entry = ([w]) => words()[w];
@@ -85,6 +88,9 @@ const Quiz = (() => {
     NAME1: () => longWords().filter(x => clear(x) && x.says !== 'R' && x.long.indexOf(x.says) === 1),
     NAME: () => longWords().filter(clear),
   };
+  // Every letter team word (the Cloud Village), with or without a picture;
+  // at a `first` tier only the first teams'.
+  const teamWords = cfg => SOUND_TEAMS.filter(g => !(cfg && cfg.first) || g.first).flatMap(g => g.words.map(entry));
   // Every word whose vowel says its name, with or without a picture.
   const longWords = () => LONG_VOWELS.flatMap(g => g.words.map(entry));
   // The first spellings: magic e, and ee (cake, kite, bee).
@@ -189,6 +195,14 @@ const Quiz = (() => {
     longRead: (npc, cfg) => withId('longRead', BANK[cfg.words]()),
     longWord: (npc, cfg) => withId('longWord', longWords().filter(x => (!cfg.easy || EASY_TEAMS.has(x.team)) && (!cfg.twin || twinOf(x.w)))),
     longRhyme: () => withId('longRhyme', longRhymes().filter(r => rhymePairs(r).length).map(r => ({ r, w: r.set[0][0] }))),
+    // The Cloud Village's letter teams: pictures she names for sure to read
+    // and, at a `pictured` tier, to fill in; any word to find written.
+    teamRead: (npc, cfg) => withId('teamRead', teamWords(cfg).filter(clear)),
+    teamWord: (npc, cfg) => withId('teamWord', teamWords(cfg)),
+    teamFill: (npc, cfg) => withId('teamFill', teamWords(cfg).filter(x => !cfg.pictured || clear(x))),
+    // The Word Camp's sight words: a tier's own set of them.
+    sightHear: (npc, cfg) => withId('sightHear', CAMP_WORDS[cfg.set - 1].map(w => ({ w }))),
+    sightFill: (npc, cfg) => withId('sightFill', CAMP_SENTENCES.filter(x => x.lv === cfg.set).map(x => ({ x, w: x.w })), y => y.x.s),
     // Blending's first steps (TIERS.blend tiers with a `step`): a letter's
     // pure sound, one question per letter whatever its picture, and the
     // two-sound words.
@@ -335,8 +349,9 @@ const Quiz = (() => {
   }
 
   // ---- Tiers -----------------------------------------------------------------
-  // Level 6 is the Monster Village and its tower.
-  const placeOf = npc => (npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
+  // Level 6 is the Monster Village and its tower, 7 the Cloud Village; the
+  // Word Camp's campers have their `place` (they give presents as the town does).
+  const placeOf = npc => npc.place || (npc.level === 7 ? 'cloud' : npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 4 ? 'dungeon' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town');
   const kindsFor = npc => npc.simpleSound ? ['word'] : QUIZ_TYPES[placeOf(npc)];
   const settings = () => (typeof state !== 'undefined' && state.settings) || {};
   // Tiers a kind has; a tier with a `setting` only once a parent turns it on.
@@ -1308,6 +1323,183 @@ const Quiz = (() => {
     },
 
     longRhyme: (npc, cfg) => rhymeQuestion('longRhyme', npc, cfg, longRhymes(), RHYME_SETS.filter(r => SHORT[r.v])),
+  });
+
+  // ---- Letter teams (the Cloud Village) -----------------------------------------
+  // The word with its team in colour (m oo n, b ir d), or a blank for it.
+  const teamAt = x => x.w.indexOf(x.tm.team);
+  const teamMarked = x => x.w.replace(x.tm.team, s => `<span class="first">${s}</span>`);
+  const teamBlank = x => `${x.w.slice(0, teamAt(x))}<span class="blank">?</span>${x.w.slice(teamAt(x) + x.tm.team.length)}`;
+  // "O U, like in house!": a word she knows the team from, never the one
+  // she has to find nor one on a card.
+  function teamRule(t, cards = []) {
+    const shown = new Set([t.w].concat(cards.map(o => o.w)));
+    const key = t.tm.keys.find(k => !shown.has(k)) || t.tm.keys.find(k => k !== t.w);
+    return { text: line('teamLike', { team: t.tm.team.toUpperCase().split('').join(' '), key }), narrator: true };
+  }
+  // What comes before a word's team, as she hears it (c and k alike).
+  const teamOnset = x => { const s = x.w.slice(0, teamAt(x)); return s === 'c' ? 'k' : s; };
+  // Other team words for a card: never the same picture or one she may call
+  // by the target's name (owl, bird), nor a word that only differs from it
+  // in a sound she can't hear apart yet. `far`: another first letter and
+  // another sound. `near`: first one that starts the same with another
+  // sound (boy, bird). Then ones that start the same, then any.
+  function teamOthers(t, cfg, list, picture) {
+    const n = cfg.n - 1;
+    const twin = (a, b) => a.length === b.length && nearWords(a, b);
+    const ok = (x, out) => x.w !== t.w && (!picture || (clear(x) && !alike(x, t))) && !twin(x.w, t.w) &&
+      !out.some(o => o.w === x.w || (picture && (o.e === x.e || alike(o, x))) || twin(o.w, x.w));
+    const out = [];
+    const add = cands => { for (const x of shuffle(cands.slice())) if (out.length < n && ok(x, out)) out.push(x); };
+    const first = (x, y) => sameSound(x.w[0], y.w[0]);
+    if (cfg.far) add(list.filter(x => !first(x, t) && !nearPair(x.w[0], t.w[0]) && x.tm.says !== t.tm.says));
+    if (cfg.near) { const close = shuffle(list.filter(x => ok(x, out) && first(x, t) && x.tm.says !== t.tm.says))[0]; if (close) out.push(close); }
+    if (!cfg.far) add(list.filter(x => first(x, t)));
+    add(list);
+    return out;
+  }
+  const TEAM_NO = new Set(['fart', 'coon', 'shite', 'shit']);
+  // The rival teams of a teamFill card: letters that say another sound, a
+  // vowel team for a vowel team and a pair for a pair (th: sh, ch, wh).
+  function teamRivals(t, n) {
+    const g = t.tm;
+    const pool = g.pair ? TEAM_PAIRS.filter(p => p !== g.team)
+      : [...new Set(SOUND_TEAMS.filter(o => !o.pair && o.says !== g.says && o.team !== g.team).map(o => o.team).concat('ar', 'ee'))];
+    // Never letters that would spell a rude word in the blank (f ar t).
+    const made = l => t.w.slice(0, teamAt(t)) + l + t.w.slice(teamAt(t) + g.team.length);
+    return shuffle(pool.filter(l => !TEAM_NO.has(made(l)))).slice(0, n);
+  }
+
+  Object.assign(builders, {
+    // Read a letter team word and pick its picture. She reads it herself, so
+    // a hint names the team and a word she knows it from, never this one.
+    teamRead(npc, cfg) {
+      const t = take('teamRead', npc, cfg);
+      const list = teamOthers(t, cfg, teamWords(cfg).filter(clear), true);
+      const ask = line('read');
+      return {
+        id: t.id, target: t.w, clue: `<span class="clue-word big">${cfg.mark ? teamMarked(t) : t.w}</span>`,
+        ask: [{ text: ask }],
+        replay: [{ text: ask }],
+        options: deal(t, list, o => ({ html: picCard(o.w, o.e), wrong: o.w })),
+        answer: [say(`${t.w}!`)],
+        solved: `<span class="clue-word big">${teamMarked(t)}</span>`,
+        teach: o => [named(o.wrong), { pause: 300 }, teamRule(t, list)],
+        picked: o => [named(o.wrong)],
+        model: [teamRule(t, list), { pause: 300 }, say(`${t.w}!`)],
+      };
+    },
+
+    // Hear a letter team word (the narrator's, so every asker shares one
+    // recording) and find it written among others.
+    teamWord(npc, cfg) {
+      const t = take('teamWord', npc, cfg);
+      const list = teamOthers(t, cfg, teamWords(cfg), false);
+      const word = Object.assign(say(t.w), { rate: 0.85 });
+      return {
+        id: t.id, target: t.w, clue: '',
+        ask: [{ text: line('ask') }, { pause: 750 }, word, READY],
+        replay: [word],
+        options: deal(t, list, o => ({ html: plainCard(o.w), wrong: o.w })),
+        answer: [say(`${t.w}!`)],
+        sticker: clear(t) ? { w: t.w, e: t.e } : false,
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), Object.assign({ slow: 0.85 }, word)],
+        picked: o => [named(o.wrong)],
+        model: [teamRule(t, list), { pause: 300 }, say(`${t.w}!`)],
+      };
+    },
+
+    // Hear a word and pick the letters missing from it: its team, among
+    // teams that say another sound.
+    teamFill(npc, cfg) {
+      const t = take('teamFill', npc, cfg);
+      const teams = [t.tm.team].concat(teamRivals(t, cfg.n - 1));
+      const word = Object.assign(say(t.w), { rate: 0.85 });
+      const pic = clear(t) ? `<span class="clue-pic">${t.e}</span>` : '';
+      const ask = line('teamFill');
+      return {
+        id: t.id, target: t.w, clue: `${pic}<span class="clue-word big">${teamBlank(t)}</span>`,
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 600 }, word, READY],
+        replay: [word],
+        options: shuffle(teams).map(l => ({ html: letterCard(l), right: l === t.tm.team, wrong: l.toUpperCase(), letter: l })),
+        answer: [say(`${t.w}!`)],
+        solved: `${pic}<span class="clue-word big">${teamMarked(t)}</span>`,
+        sticker: clear(t) ? { w: t.w, e: t.e } : false,
+        // The word again, slowly; the team itself only with the answer.
+        teach: () => [lead('listen'), Object.assign({ slow: 0.8 }, word)],
+        picked: () => [],
+        model: [teamRule(t), { pause: 300 }, say(`${t.w}!`)],
+      };
+    },
+  });
+
+  // ---- Sight words (the Word Camp) ---------------------------------------------
+  // Every sight word up to a set, as cards: { w }.
+  const sightUpTo = set => CAMP_WORDS.slice(0, set).flat().map(w => ({ w }));
+  // How a sight word ends, to keep rhymes apart (he, she, we, me, see).
+  const sightRime = w => (/[aeiouy]+[^aeiouy]*$/i.exec(w) || [w])[0].toLowerCase().replace('ee', 'e');
+  const sightFirst = w => w[0].toLowerCase();
+  // The other cards beside a sight word: never one that rhymes with it,
+  // but at a `near` tier. `far`: another first letter and another length.
+  // `near`: first the one that looks most like it (this, that; he, she).
+  function sightOthers(w, cfg) {
+    const n = cfg.n - 1;
+    const pool = sightUpTo(cfg.set).map(x => x.w).filter(x => x !== w);
+    const rhyme = (a, b) => sightRime(a) === sightRime(b);
+    const ok = (x, out) => (cfg.near || !rhyme(x, w)) && !out.includes(x) && !out.some(o => !cfg.near && rhyme(o, x));
+    const out = [];
+    const add = cands => { for (const x of shuffle(cands.slice())) if (out.length < n && ok(x, out)) out.push(x); };
+    const shared = x => [...new Set(x.toLowerCase())].filter(l => w.toLowerCase().includes(l)).length - Math.abs(x.length - w.length);
+    if (cfg.far) add(pool.filter(x => sightFirst(x) !== sightFirst(w) && x.length !== w.length));
+    if (cfg.near) { const close = pool.filter(x => ok(x, out)).sort((a, b) => shared(b) - shared(a))[0]; if (close) out.push(close); }
+    if (!cfg.far) add(pool.filter(x => sightFirst(x) === sightFirst(w)));
+    add(pool);
+    return out;
+  }
+  // A sight word is spelled, not sounded out: "T, H, E… the!"
+  const spelled = w => [...w].flatMap(l => [letterName(l.toUpperCase()), { pause: 200 }]).concat({ pause: 150 }, say(`${w}!`));
+  const sightSentence = x => { const [before, after] = x.s.split('{}'); return { before, after, full: before + x.w + after }; };
+
+  Object.assign(builders, {
+    // Hear a sight word (the narrator's) and find it written.
+    sightHear(npc, cfg) {
+      const t = take('sightHear', npc, cfg);
+      const word = Object.assign(say(t.w), { rate: 0.85 });
+      return {
+        id: t.id, target: t.w, clue: '',
+        ask: [{ text: line('ask') }, { pause: 750 }, word, READY],
+        replay: [word],
+        options: deal(t.w, sightOthers(t.w, cfg), w => ({ html: plainCard(w), wrong: w })),
+        answer: [say(`${t.w}!`)],
+        sticker: false,
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), Object.assign({ slow: 0.85 }, word)],
+        picked: o => [named(o.wrong)],
+        model: spelled(t.w),
+      };
+    },
+
+    // Hear a sentence (the narrator's) and pick the sight word missing from it.
+    sightFill(npc, cfg) {
+      const { x, id } = take('sightFill', npc, cfg);
+      const p = sightSentence(x);
+      const full = { text: p.full, rate: 0.8, narrator: true };
+      const blank = `<span class="clue-sentence">${p.before}<span class="blank wide">?</span>${p.after}</span>`;
+      const ask = line('sentence');
+      return {
+        id, target: x.w, clue: blank,
+        prompt: ask,
+        ask: [{ text: ask }, { pause: 700 }, full, READY],
+        replay: [full],
+        options: deal(x.w, sightOthers(x.w, cfg), w => ({ html: plainCard(w), wrong: w })),
+        answer: [full],
+        solved: `<span class="clue-sentence">${p.before}<span class="first">${x.w}</span>${p.after}</span>`,
+        sticker: false,
+        teach: o => [named(o.wrong), { pause: 300 }, lead('listen'), Object.assign({ slow: 0.9 }, full)],
+        picked: o => [named(o.wrong)],
+        model: [full],
+      };
+    },
   });
 
   // Picks a kind of question (nextKind), at her tier. `force` ({ kind,

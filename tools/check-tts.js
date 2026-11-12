@@ -136,7 +136,8 @@ async function play(browser, edition, halloween = 1) {
       seen.add(n);
       const sc = sceneFor(n);
       for (const x of (sc.links || []).concat(sc.doors || [])) if (x.target) todo.push(x.target);
-      if ((window.languageAudit || sc.npcs.some(p => p.level === 6)) && !names.includes(n)) names.push(n);
+      // And the Cloud Village (level 7) and the Word Camp (its campers have their `place`).
+      if ((window.languageAudit || sc.npcs.some(p => p.level >= 6 || p.place)) && !names.includes(n)) names.push(n);
     }
     for (const n of names) {
       step(`go to ${n}`, () => { changeScene(n); if (window.languageAudit) { drawScene(performance.now()); drawOverlay(performance.now()); } });

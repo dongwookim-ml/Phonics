@@ -26,6 +26,11 @@ const PARENT_KINDS = [
   ['longRead', I18n.t('parent.readLongVowels'), parentMonster],
   ['longWord', I18n.t('parent.hearLongVowelsMagicE'), parentMonster],
   ['longRhyme', I18n.t('parent.longVowelRhymes'), parentMonster],
+  ['teamRead', I18n.t('parent.readLetterTeams'), placeName('cloud')],
+  ['teamWord', I18n.t('parent.hearLetterTeams'), placeName('cloud')],
+  ['teamFill', I18n.t('parent.fillLetterTeams'), placeName('cloud')],
+  ['sightHear', I18n.t('parent.hearSightWords'), placeName('sight')],
+  ['sightFill', I18n.t('parent.sightWordSentences'), placeName('sight')],
   ...MATH_TOPICS.map(t=>[t.kind,I18n.t(`math.topic.${t.key}`),placeName('math')]),
 ];
 const PARENT_PASSWORD = '0000'; // only when js/account.js is missing
@@ -145,6 +150,11 @@ function parentLabel(id) {
   if (kind === 'sentence' || kind === 'meaning') {
     const x = SENTENCES.concat(SENTENCES_L1, SENTENCES_L2).find(s => s.s === key);
     return `${key.replace('{}', '___')}${x ? ` (${x.w[0]})` : ''}`;
+  }
+  // A sight word's sentence (the Word Camp): "The sun ___ hot. (is)".
+  if (kind === 'sightFill') {
+    const x = CAMP_SENTENCES.find(s => s.s === key);
+    return `${key.replace('{}', '___')}${x ? ` (${x.w})` : ''}`;
   }
   // A letter of blending's one-sound step: its sound.
   if (kind === 'oneSound') return `/${key}/`;

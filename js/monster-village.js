@@ -28,6 +28,8 @@ function buildMonsterVillage() {
     if ((c - mid.c) ** 2 + (r - mid.r) ** 2 <= 22) setTile(sc, c, r, 'plaza');
   }
   for (let c = 15; c < N; c++) for (const r of [11, 12]) setTile(sc, c, r, 'plaza');
+  // And a path west, to the gate up to the Cloud Village (js/word-villages.js).
+  for (let c = 0; c <= 8; c++) for (const r of [11, 12]) setTile(sc, c, r, 'plaza');
   // A little pond in the south-west corner.
   for (let r = 17; r <= 23; r++) for (let c = 2; c <= 9; c++) {
     if (((c - 5.5) / 3.4) ** 2 + ((r - 20) / 2.6) ** 2 <= 1) setTile(sc, c, r, 'water');
@@ -57,7 +59,7 @@ function buildMonsterVillage() {
     return p;
   };
   const shroom = { word: 'mushroom', fx: 'boing' };
-  [[4, 4, '#ff9cf0'], [21, 4, '#7fe8ff'], [16, 20, '#fff6a8'], [22, 17, '#c8a0ff'], [9, 15, '#7fe8ff'], [3, 12, '#c8a0ff']].forEach(([c, r, col]) => {
+  [[4, 4, '#ff9cf0'], [21, 4, '#7fe8ff'], [16, 20, '#fff6a8'], [22, 17, '#c8a0ff'], [9, 15, '#7fe8ff'], [3, 14, '#c8a0ff']].forEach(([c, r, col]) => {
     const p = prop(c, r, 26, (ctx, x, y) => drawBigShroom(ctx, x, y, col), shroom);
     sc.lamps.push({ x: p.x, y: p.y - 18 });
   });
@@ -79,6 +81,7 @@ function buildMonsterVillage() {
   }
   for (const n of MONSTER_NPCS) reserve(n.c, n.r);
   for (let r = 10; r <= 13; r++) for (let c = N - 4; c < N; c++) reserve(c, r);
+  for (let r = 10; r <= 13; r++) for (let c = 0; c < 4; c++) reserve(c, r);
 
   // The lawn: lavender grass with glowing dots, and the tower's shadow.
   sc.paintGround = g => {
@@ -123,10 +126,12 @@ function buildMonsterVillage() {
   for (const n of MONSTER_NPCS) sc.npcs.push(kidVillager(n));
   // Gate back to town on the east edge.
   // She comes out in town just past the gate's mat (a tap there goes back).
-  sc.links = [11, 12].map(r => ({ c: N - 1, r, target: 'town', at: { c: 2, r: r + 3 }, icon: isCaptain() ? '🤖' : '🌸', style: 'gate' }));
-  addSideGate(sc, N - 2, [10, 13], '#c8b8ff', [N - 2, N - 1], sc.links);
+  const toTown = [11, 12].map(r => ({ c: N - 1, r, target: 'town', at: { c: 2, r: r + 3 }, icon: isCaptain() ? '🤖' : '🌸', style: 'gate' }));
+  sc.links = [...toTown];
+  addSideGate(sc, N - 2, [10, 13], '#c8b8ff', [N - 2, N - 1], toTown);
   const tg = tileCenter(sc, N - 2, 11.5);
-  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: isCaptain() ? '#3f8fd8' : '#ff8fc0', links: sc.links });
+  sc.signs.push({ x: tg.x, y: tg.y - 64, text: place('town'), color: isCaptain() ? '#3f8fd8' : '#ff8fc0', links: toTown });
+  addCloudGate(sc); // js/word-villages.js
   sc.start = { c: N - 3, r: 11 };
   renderGround(sc);
   return sc;

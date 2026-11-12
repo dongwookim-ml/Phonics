@@ -104,7 +104,7 @@ function ask(kind, scene) {
   const sc = sceneFor(scene);
   state.scene = sc;
   const npc = sc.npcs.find(n => !n.mount && !n.shop && !n.caught && !n.monster);
-  const key = npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town';
+  const key = npc.place ? npc.place : npc.level === 7 ? 'cloud' : npc.level === 6 ? 'monster' : npc.level === 5 ? 'fairy' : npc.level === 3 ? 'unicorn' : npc.level === 2 ? 'forest' : npc.letter ? 'house' : 'town';
   const kinds = QUIZ_TYPES[key];
   QUIZ_TYPES[key] = [kind];
   Object.assign(npc, { lastQuiz: null, waitUntil: 0, missed: null });

@@ -1356,6 +1356,7 @@ function buildRobotTown() {
   const dp = tileCenter(sc, 39, 25.5);
   sc.signs.push({ x: dp.x, y: dp.y - 64, text: place('fairy'), color: '#3f8fd8', needStars: FAIRY_STARS, links: toDrones });
   addTownMonsterGate(sc, rtAddSideGate); // js/monster-village.js, the same in both editions
+  addTownCampGate(sc, rtAddSideGate); // js/word-villages.js
   addMathVillageGate(sc);
   renderGround(sc);
   return sc;

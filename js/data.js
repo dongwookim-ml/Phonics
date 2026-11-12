@@ -1487,6 +1487,141 @@ LINES.tower = ['Welcome to the Monster Tower!', 'The monsters live up here. Say 
 LINES.tower2 = ['Up, up, up the stairs!', 'More monsters live up here. Say hello!'];
 LINES.openMonster = ['The Monster Village is open!'];
 
+// ---- Cloud Village (level 7, both editions): letter teams ----------------------
+
+// The Cloud Village opens from the west end of the Monster Village, in both
+// editions alike. Its people ask the next step after long vowels: letters
+// that team up for a sound of their own (moon, cloud, coin, fork, bird) and
+// the pairs th and wh. Built in js/word-villages.js.
+//
+// Words are [word, picture, pic] as in the banks above (pic 0: no picture,
+// so only ever written). `says` names the team's sound: teams that say the
+// same sound (ou and ow, oi and oy, er, ir and ur) are never rival cards,
+// since "cloud" and "clowd" sound alike. `id` tells the two sounds of oo
+// apart. `keys` are the words a hint names ("O O, like in moon!"), never
+// the word she has to find. `first`: the teams of the first tiers.
+const SOUND_TEAMS = [
+  { id: 'oo', team: 'oo', says: 'oo', first: true, keys: ['moon', 'spoon', 'boot'], words: [
+    ['moon', '🌙', 2], ['spoon', '🥄', 2], ['boot', '🥾', 2], ['broom', '🧹', 2], ['tooth', '🦷', 2],
+    ['roof', '', 0], ['food', '', 0], ['pool', '', 0], ['zoo', '', 0]] },
+  { id: 'oo2', team: 'oo', says: 'u', keys: ['book', 'foot', 'cook'], words: [
+    ['book', '📖', 2], ['foot', '🦶', 2], ['cook', '👨‍🍳', 1], ['hook', '', 0], ['wood', '', 0], ['good', '', 0]] },
+  { id: 'ou', team: 'ou', says: 'ow', first: true, keys: ['cloud', 'house', 'mouse'], words: [
+    ['cloud', '☁️', 2], ['house', '🏠', 2], ['mouse', '🐭', 2], ['mouth', '👄', 2], ['loud', '', 0], ['out', '', 0], ['round', '', 0]] },
+  { id: 'ow', team: 'ow', says: 'ow', first: true, keys: ['cow', 'owl', 'crown'], words: [
+    ['cow', '🐄', 2], ['owl', '🦉', 2], ['crown', '👑', 2], ['clown', '🤡', 2], ['town', '', 0], ['down', '', 0], ['brown', '', 0]] },
+  { id: 'oi', team: 'oi', says: 'oi', first: true, keys: ['coin', 'boil', 'oil'], words: [
+    ['coin', '🪙', 2], ['oil', '', 0], ['boil', '', 0], ['soil', '', 0], ['join', '', 0], ['point', '', 0]] },
+  { id: 'oy', team: 'oy', says: 'oi', first: true, keys: ['boy', 'toy', 'joy'], words: [
+    ['boy', '👦', 2], ['toy', '🧸', 2], ['joy', '', 0]] },
+  { id: 'or', team: 'or', says: 'or', first: true, keys: ['fork', 'corn', 'horse'], words: [
+    ['fork', '🍴', 2], ['corn', '🌽', 2], ['horse', '🐴', 2], ['storm', '', 0], ['horn', '', 0], ['fort', '', 0], ['short', '', 0], ['north', '', 0]] },
+  { id: 'er', team: 'er', says: 'er', keys: ['her', 'fern', 'herd'], words: [
+    ['her', '', 0], ['fern', '', 0], ['herd', '', 0], ['germ', '', 0]] },
+  { id: 'ir', team: 'ir', says: 'er', keys: ['bird', 'girl', 'shirt'], words: [
+    ['bird', '🐦', 2], ['girl', '👧', 2], ['shirt', '👕', 2], ['skirt', '', 0], ['dirt', '', 0], ['first', '', 0], ['stir', '', 0]] },
+  { id: 'ur', team: 'ur', says: 'er', keys: ['nurse', 'purse', 'turn'], words: [
+    ['nurse', '👩‍⚕️', 2], ['purse', '👛', 2], ['surf', '', 0], ['burn', '', 0], ['turn', '', 0], ['fur', '', 0], ['curl', '', 0]] },
+  { id: 'th', team: 'th', says: 'th', pair: true, keys: ['bath', 'thin', 'path'], words: [
+    ['bath', '🛁', 2], ['thin', '', 0], ['thick', '', 0], ['path', '', 0], ['math', '', 0], ['moth', '', 0]] },
+  { id: 'wh', team: 'wh', says: 'wh', pair: true, keys: ['whale', 'whip', 'when'], words: [
+    ['whale', '🐳', 2], ['whip', '', 0], ['when', '', 0], ['wheel', '', 0], ['white', '', 0]] },
+];
+// Other names she may use for their pictures, joined to the ones above.
+for (const [w, more] of Object.entries({
+  boot: ['shoe'], tooth: ['teeth'], foot: ['leg'], cook: ['chef'], mouse: ['rat'], mouth: ['lips'], owl: ['bird'],
+  coin: ['money'], toy: ['bear', 'teddy'], fork: ['knife'], nurse: ['doctor'], purse: ['bag'], bath: ['tub'],
+})) ALIAS[w] = [...new Set((ALIAS[w] || []).concat(more))];
+// Letter pairs that stand on a rival card of a th or wh question (ship, chick).
+const TEAM_PAIRS = ['th', 'wh', 'sh', 'ch'];
+
+// The Cloud Village's kinds (js/quiz.js):
+//   teamRead  read a word (its team coloured at first) and pick its picture
+//   teamWord  hear a word (the narrator's) and find it written
+//   teamFill  hear a word and pick the letters missing from it (m ? n: oo)
+QUIZ_TYPES.cloud = ['teamRead', 'teamWord', 'teamFill'];
+// `first`: only the first teams (oo, ou, ow, oi, oy, or); `far`: another
+// first letter and another sound; `near`: one card as close as can be (the
+// same first letter and another team; for teamFill, any team with another
+// sound); `mark` colours the team; `pictured`: only words with a picture.
+Object.assign(TIERS, {
+  teamRead: [{ n: 2, far: true, mark: true, first: true }, { n: 3, mark: true, first: true }, { n: 3, mark: true }, { n: 3, near: true }],
+  teamWord: [{ n: 2, far: true, first: true }, { n: 3, first: true }, { n: 3 }, { n: 3, near: true }],
+  teamFill: [{ n: 2, pictured: true, first: true }, { n: 3, pictured: true, first: true }, { n: 3, pictured: true }, { n: 3 }],
+});
+TIER_BAND.cloud = [1, 4];
+NEXT_STAGE.monster = 'cloud';
+// The asker, before the word (the narrator's).
+LINES.teamFill = ['Listen. Which letters are missing?', 'Which letters make the sound? Listen!'];
+// The narrator, after a miss: the team's letters one by one and a word she
+// knows it from ("O U, like in house!").
+LINES.teamLike = ['{team}, like in {key}!'];
+
+const CLOUD_STARS = 50;
+PLACES.cloud = I18n.t('data.cloudVillage');
+// Everyone there is one of the town's kinds of people (a robot of the same
+// voice in the robot edition), so their hellos are recorded already.
+const CLOUD_NPCS = [
+  { name: I18n.t('data.cloudSinger'),   look: isCaptain() ? 'botdj' : 'bard',       c: 7,  r: 12 },
+  { name: I18n.t('data.cloudKid'),      look: isCaptain() ? 'botkid' : 'kid',       c: 16, r: 6 },
+  { name: I18n.t('data.cloudGardener'), look: isCaptain() ? 'botgarden' : 'flower', c: 6,  r: 15 },
+  { name: I18n.t('data.cloudGranny'),   look: isCaptain() ? 'botgranny' : 'granny', c: 15, r: 17 },
+  { name: I18n.t('data.cloudGuard'),    look: isCaptain() ? 'botfire' : 'knight',   c: 17, r: 14 },
+];
+LINES.cloud = ['Welcome to the Cloud Village!', 'Up in the clouds! Look, a rainbow!'];
+LINES.openCloud = ['The Cloud Village is open!'];
+
+// ---- Word Camp (both editions, free): sight words ------------------------------
+
+// The Word Camp is through the gate at the east end of the town's upper
+// road, open from the start. Its campers ask the little words every book is
+// full of, most of which can't be sounded out (the, said, was, you): she
+// learns them by sight. Built in js/word-villages.js.
+// Three sets, the most common first.
+const CAMP_WORDS = [
+  ['the', 'a', 'I', 'is', 'to', 'you', 'it', 'in', 'my', 'we', 'he', 'she'],
+  ['and', 'go', 'no', 'me', 'see', 'like', 'can', 'at', 'on', 'up', 'look', 'do'],
+  ['are', 'was', 'said', 'of', 'have', 'come', 'here', 'they', 'what', 'with', 'for', 'this', 'that', 'play', 'want', 'little'],
+];
+// One sentence a word, {} for the blank (never the first word, but for I,
+// so no card needs a capital). `lv` is the word's set.
+const CAMP_SENTENCES = [
+  { s: 'Look at {} dog.', w: 'the', lv: 1 }, { s: 'I have {} red hat.', w: 'a', lv: 1 }, { s: '{} can hop.', w: 'I', lv: 1 },
+  { s: 'The sun {} hot.', w: 'is', lv: 1 }, { s: 'I go {} bed.', w: 'to', lv: 1 }, { s: 'I like {}.', w: 'you', lv: 1 },
+  { s: 'Is {} a big bug?', w: 'it', lv: 1 }, { s: 'The cat is {} the box.', w: 'in', lv: 1 }, { s: 'This is {} mom.', w: 'my', lv: 1 },
+  { s: 'Can {} go now?', w: 'we', lv: 1 }, { s: 'Can {} run fast?', w: 'he', lv: 1 }, { s: 'Can {} sing?', w: 'she', lv: 1 },
+  { s: 'Mom {} dad sat.', w: 'and', lv: 2 }, { s: 'We {} to the pond.', w: 'go', lv: 2 }, { s: 'I have {} pets.', w: 'no', lv: 2 },
+  { s: 'Give it to {}.', w: 'me', lv: 2 }, { s: 'I can {} a bat.', w: 'see', lv: 2 }, { s: 'I {} jam.', w: 'like', lv: 2 },
+  { s: 'A frog {} hop.', w: 'can', lv: 2 }, { s: 'Look {} the sun.', w: 'at', lv: 2 }, { s: 'The cup is {} the mat.', w: 'on', lv: 2 },
+  { s: 'Get {} and run.', w: 'up', lv: 2 }, { s: 'Come and {} at it.', w: 'look', lv: 2 }, { s: 'I {} not nap.', w: 'do', lv: 2 },
+  { s: 'You {} my pal.', w: 'are', lv: 3 }, { s: 'It {} a big fish.', w: 'was', lv: 3 }, { s: 'Mom {} yes.', w: 'said', lv: 3 },
+  { s: 'A cup {} milk.', w: 'of', lv: 3 }, { s: 'I {} a pet pig.', w: 'have', lv: 3 }, { s: 'Can you {} in?', w: 'come', lv: 3 },
+  { s: 'Sit {} with me.', w: 'here', lv: 3 }, { s: 'Can {} swim?', w: 'they', lv: 3 }, { s: 'Tell me {} it is.', w: 'what', lv: 3 },
+  { s: 'Run {} me.', w: 'with', lv: 3 }, { s: 'It is {} you.', w: 'for', lv: 3 }, { s: 'I like {} hat.', w: 'this', lv: 3 },
+  { s: 'Look at {} big ship.', w: 'that', lv: 3 }, { s: 'Let us {} tag.', w: 'play', lv: 3 }, { s: 'I {} a hug.', w: 'want', lv: 3 },
+  { s: 'A {} frog hops.', w: 'little', lv: 3 },
+];
+// The Word Camp's kinds (js/quiz.js):
+//   sightHear  hear a word (the narrator's) and find it written
+//   sightFill  hear a sentence and pick the word missing from it
+// `set`: the words asked (the cards beside them come from that set and the
+// ones before); `far`: a card that starts with another letter, is another
+// length and doesn't rhyme; `near`: one that looks most like it (this, that).
+QUIZ_TYPES.sight = ['sightHear', 'sightFill'];
+Object.assign(TIERS, {
+  sightHear: [{ n: 2, far: true, set: 1 }, { n: 3, set: 1 }, { n: 3, set: 2 }, { n: 3, set: 3 }, { n: 3, near: true, set: 3 }],
+  sightFill: [{ n: 2, far: true, set: 1 }, { n: 3, set: 1 }, { n: 3, set: 2 }, { n: 3, set: 3 }],
+});
+TIER_BAND.sight = [1, 5];
+PLACES.sight = I18n.t('data.wordCamp');
+const SIGHT_NPCS = [
+  { name: I18n.t('data.campLeader'), look: isCaptain() ? 'botfarm' : 'farmer',   c: 9,  r: 8 },
+  { name: I18n.t('data.campCook'),   look: isCaptain() ? 'botchef' : 'baker',    c: 14, r: 12 },
+  { name: I18n.t('data.campScout'),  look: isCaptain() ? 'botfisher' : 'fisher', c: 8,  r: 14 },
+  { name: I18n.t('data.campKid'),    look: isCaptain() ? 'botkid' : 'kid',       c: 12, r: 8 },
+];
+LINES.sight = ['Welcome to the Word Camp!', 'Little words are everywhere. Let us find some!'];
+
 // ---- Village homes -----------------------------------------------------------
 
 // Every home in the villages can be entered. c, r is the home's back corner
@@ -1529,7 +1664,7 @@ LINES.knock = ['Knock, knock! Hello?', 'Can I come in?', "Let's peek inside!"];
 
 // Tapping a thing says its English word (the narrator). Most of those words
 // are recorded already from the word lists above; these are the extra ones.
-const PROP_WORDS = ['fountain', 'flower', 'bush', 'plant', 'table', 'harp', 'chest', 'coin', 'crystal', 'unicorn', 'drone', 'gear', 'gate',
+const PROP_WORDS = ['tent', 'fire', 'log', 'star', 'moon', 'cloud', 'rainbow', 'fountain', 'flower', 'bush', 'plant', 'table', 'harp', 'chest', 'coin', 'crystal', 'unicorn', 'drone', 'gear', 'gate',
   // Halloween's things (js/halloween.js).
   'pumpkin', 'ghost', 'candy', 'hay', 'boo', 'cat', 'pot', 'skeleton', 'witch', 'coffin', 'spider', 'scarecrow'];
 // Halloween: the narrator's hello as the game starts, instead of LINES.start

@@ -21,7 +21,7 @@ const root = path.join(__dirname, '..');
     await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=${halloween}`);
     await page.click('#login-guest');
     const report = await page.evaluate(() => {
-      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
+      const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', 'cloud', 'sight', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
       for (let i=0;i<names.length;i++) for (const l of (sceneFor(names[i]).links||[])) {
         if (typeof l.target==='string'&&!names.includes(l.target)) names.push(l.target);
       }

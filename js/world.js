@@ -262,6 +262,7 @@ function buildTown() {
   sc.signs.push({ x: gp.x, y: gp.y - 64, text: place('forest'), color: '#8f70e0', needStars: FOREST_STARS, links: toForest });
   addTownFairyGate(sc);
   addTownMonsterGate(sc, addSideGate); // js/monster-village.js
+  addTownCampGate(sc, addSideGate); // js/word-villages.js
   addNeighborhoodEntrances(sc);
   addMathVillageGate(sc);
   placeTownVillagers(sc);
