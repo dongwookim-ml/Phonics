@@ -1,0 +1,48 @@
+{
+  "id": "frog-prince",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs.",
+  "reference": "Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown.",
+  "source": "https://www.gutenberg.org/ebooks/2591",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: The princess tosses her golden ball in the air beside the old stone well under a linden tree, smiling. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: The golden ball splashes down into the deep dark well; the princess leans over the edge, crying. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: A bright green frog pops up onto the edge of the well, speaking politely; the princess wipes her tears. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: The frog climbs out of the well holding the golden ball; the princess claps happily. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: The princess runs back to the castle with the ball; the frog sits alone by the well, looking sad. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: Night: the little frog hops up the castle steps toward the big door, moonlight. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: At the dinner table, the king points gently at the frog; the princess shares her plate with the frog beside her. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: A sparkle of light: the frog turns into a kind young prince; he and the princess smile and play with the golden ball. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

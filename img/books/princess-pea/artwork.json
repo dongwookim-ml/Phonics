@@ -1,0 +1,48 @@
+{
+  "id": "princess-pea",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs.",
+  "reference": "Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder.",
+  "source": "https://www.gutenberg.org/ebooks/1597",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The prince sits in a castle window seat looking hopeful, holding a small portrait frame with no picture in it, the queen beside him. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The prince rides a white horse past mountains, deserts and seaside towns, looking a little disappointed. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: A dark stormy night with rain and lightning; a small figure knocks at the big wooden castle door, lantern glow. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The princess stands dripping wet in the doorway, rain running from her braid, smiling bravely; the prince and queen look surprised. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The queen secretly places one tiny green pea on a bare bed frame while servants carry a tall stack of colourful mattresses. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The princess climbs the little ladder onto the very tall stack of twenty mattresses, candle in hand. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: Morning: the princess sits on top of the mattress tower, tired eyes, rubbing her back, yawning; the queen listens below. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The prince and princess hold hands and smile; the queen holds up the tiny pea proudly. Warm golden light. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

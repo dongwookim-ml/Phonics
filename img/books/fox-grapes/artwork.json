@@ -1,0 +1,48 @@
+{
+  "id": "fox-grapes",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs.",
+  "reference": "One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left.",
+  "source": "https://www.gutenberg.org/ebooks/53103",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The hungry fox trots through an open garden gate onto a sunny path, sniffing the air, tummy drawn in, hopeful eyes. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox stops and looks up, wide-eyed, at the big purple bunch of grapes hanging high on the vine above the wall. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox sits and licks its lips, dreamy smiling face, gazing up at the grapes far overhead. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox leaps straight up with paws stretched; the grapes are still far above its nose. Surprised face. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: A bigger, higher leap with a dust puff below; the grapes are still clearly out of reach. Determined face. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox, panting and sweaty, mid-hop for the third time, small motion lines showing many tries, grapes unmoved. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox walks away down the path with its tail low, glancing back over its shoulder at the vine. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox, nose in the air and arms folded in a huff, turns its back on the vine, but one eye peeks back longingly at the grapes. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

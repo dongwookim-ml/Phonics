@@ -1,0 +1,47 @@
+{
+  "id": "stone-soup",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs.",
+  "reference": "Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl.",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: The tired traveller walks into a little village at sunset, hand on his tummy, cottages with closed shutters. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: Villagers peek from doorways, shaking their heads with apologetic faces and empty hands. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: The traveller smiles and holds up one smooth grey stone; the villagers look curious and puzzled. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: The traveller drops the grey stone into a big black pot of water bubbling on a campfire in the square. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: The traveller stirs the pot and talks to a girl in a red jumper who runs back with a big orange carrot. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: A boy brings potatoes, a farmer brings onions, and a grandma sprinkles salt into the pot; villagers gather. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: The pot is full of colourful vegetables and steam; everyone sniffs the delicious smell with happy faces. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: Everyone sits together on benches in the square eating soup from bowls, laughing, lanterns glowing. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

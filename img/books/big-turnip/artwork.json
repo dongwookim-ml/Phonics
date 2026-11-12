@@ -1,0 +1,47 @@
+{
+  "id": "big-turnip",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs.",
+  "reference": "Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front.",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: The old man kneels in the garden pressing a tiny seed into dark soil, smiling. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: Time passes: the turnip leaves tower high and the turnip top is huge and bulging out of the ground; the old man stares amazed. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: The old man pulls the turnip leaves with all his strength, leaning back, red face, the turnip does not budge. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: The old woman holds the old man's waist and both pull hard, straining; the turnip stays put. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: The little girl holds the old woman, the old woman holds the old man; all three pull hard, the turnip stays put. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: The dog holds the girl's dress and the cat holds the dog's tail; the line of five pulls hard, puffing. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: The tiny mouse holds the cat's tail; the whole line of six pulls together, the turnip starting to wobble. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: Pop! The enormous turnip flies out of the ground and everyone tumbles over backwards in a heap, laughing. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

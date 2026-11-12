@@ -304,6 +304,163 @@ BOOKS.push(
   },
 );
 
+// More short tales for listening, told like the first ten: one or two short
+// sentences a page. They have no illustrations yet, so each page shows its
+// emoji picture; the art prompts wait in img/books/<id>/artwork.json.
+BOOKS.push(
+  {
+    id: 'fox-grapes', title: 'The Fox and the Grapes', label: I18n.t('books.theFoxAndTheGrapes'), cover: '🦊', color: '#c9a7e8',
+    source: 'https://www.gutenberg.org/ebooks/53103',
+    pages: [
+      { text: 'A hungry fox walked into a garden.', pic: '🦊🌿' },
+      { text: 'He saw big purple grapes, high up on a vine.', pic: '🍇⬆️' },
+      { text: '"Yum! Those grapes look so sweet," said the fox.', pic: '🦊🍇' },
+      { text: 'He jumped, but he could not reach them.', pic: '🦊⬆️' },
+      { text: 'He jumped higher. He still could not reach them!', pic: '🦊💨' },
+      { text: 'He tried again and again. Jump, jump, jump!', pic: '🦊💦' },
+      { text: 'At last, he gave up and walked away.', pic: '🦊🚶' },
+      { text: '"Those grapes are sour anyway," he said. But he still wanted them!', pic: '🦊😤🍇' },
+    ],
+    quiz: [
+      { q: 'What did the fox want to eat?', options: ['🍇 Grapes', '🍎 Apples', '🧀 Cheese'], answer: 0 },
+      { q: 'Why could the fox not eat them?', options: ['🐝 Bees were there', '⬆️ They were too high', '🌧️ It was raining'], answer: 1 },
+      { q: 'What did the fox say at the end?', options: ['😋 They are yummy', '🎁 They are a present', '🍋 They are sour'], answer: 2 },
+    ],
+  },
+  {
+    id: 'dog-bone', title: 'The Dog and His Bone', label: I18n.t('books.theDogAndHisBone'), cover: '🦴', color: '#b8d8f0',
+    source: 'https://www.gutenberg.org/ebooks/53103',
+    pages: [
+      { text: 'A dog found a big, juicy bone.', pic: '🐶🦴' },
+      { text: 'He carried it home in his mouth. On the way, he crossed a little bridge.', pic: '🐶🌉' },
+      { text: 'He looked down into the water. He saw another dog with a bone!', pic: '🐶💧🐶' },
+      { text: '"That bone is bigger than mine," he thought. "I want it too!"', pic: '🐶🤔' },
+      { text: 'He opened his mouth and barked at the other dog. Woof!', pic: '🐶💬' },
+      { text: 'Splash! His own bone fell into the water.', pic: '🦴💦' },
+      { text: 'The other dog was only his own picture in the water.', pic: '🪞🐶' },
+      { text: 'Now he had no bone at all. Wanting too much can make you lose what you have.', pic: '🐶😢' },
+    ],
+    quiz: [
+      { q: 'What did the dog find?', options: ['⚽ A ball', '🦴 A bone', '🧦 A sock'], answer: 1 },
+      { q: 'What did the dog see in the water?', options: ['🐶 Another dog with a bone', '🐟 A big fish', '🐸 A green frog'], answer: 0 },
+      { q: 'What happened when he barked?', options: ['🦴 He got two bones', '😴 He fell asleep', '💦 His bone fell into the water'], answer: 2 },
+    ],
+  },
+  {
+    id: 'princess-pea', title: 'The Princess and the Pea', label: I18n.t('books.thePrincessAndThePea'), cover: '👑', color: '#f7c6e0',
+    source: 'https://www.gutenberg.org/ebooks/1597',
+    pages: [
+      { text: 'A prince wanted to marry a real princess.', pic: '🤴👑' },
+      { text: 'He looked all over the world, but he could not find one.', pic: '🤴🌍' },
+      { text: 'One stormy night, someone knocked at the castle door.', pic: '🌧️🏰🚪' },
+      { text: 'It was a girl, all wet from the rain. "I am a real princess," she said.', pic: '👸💧' },
+      { text: 'The queen put one tiny pea on a bed. Then she piled twenty soft mattresses on top!', pic: '🟢🛏️' },
+      { text: 'The princess climbed up and slept on the tall, tall bed.', pic: '👸🛏️' },
+      { text: 'In the morning, she said, "I could not sleep at all! Something hard was in my bed."', pic: '👸😫' },
+      { text: 'Only a real princess could feel a tiny pea! The prince and the princess were very happy.', pic: '🤴💖👸' },
+    ],
+    quiz: [
+      { q: 'What did the queen put under the mattresses?', options: ['🪨 A big rock', '🧸 A teddy bear', '🟢 A tiny pea'], answer: 2 },
+      { q: 'How many mattresses were on the bed?', options: ['🛏️ Two', '🛏️ Twenty', '🛏️ One hundred'], answer: 1 },
+      { q: 'How did the princess sleep?', options: ['😫 She could not sleep', '😴 She slept very well', '🌙 She slept on the floor'], answer: 0 },
+    ],
+  },
+  {
+    id: 'big-turnip', title: 'The Enormous Turnip', label: I18n.t('books.theEnormousTurnip'), cover: '🌱', color: '#d6e9a8',
+    pages: [
+      { text: 'An old man planted a little turnip seed.', pic: '👴🌱' },
+      { text: 'The turnip grew big. Then it grew bigger and bigger!', pic: '🌱⬆️' },
+      { text: '"Time to pull it up!" said the old man. He pulled and pulled, but it did not come up.', pic: '👴💪' },
+      { text: 'The old woman came to help. They pulled and pulled, but it did not come up.', pic: '👵👴' },
+      { text: 'A little girl came to help. They pulled and pulled, but it did not come up!', pic: '👧👵👴' },
+      { text: 'A dog and a cat came to help. They pulled and pulled. It still did not come up!', pic: '🐶🐱' },
+      { text: 'Then a tiny mouse came to help. They all pulled together.', pic: '🐭💪' },
+      { text: 'Pop! Out came the enormous turnip! Everyone fell down and laughed.', pic: '🎉😂' },
+    ],
+    quiz: [
+      { q: 'Who planted the turnip?', options: ['👴 An old man', '👧 A little girl', '🐶 A dog'], answer: 0 },
+      { q: 'Who came to help last?', options: ['🐱 A cat', '👵 An old woman', '🐭 A tiny mouse'], answer: 2 },
+      { q: 'How did they get the turnip out?', options: ['🔨 With a hammer', '💪 They all pulled together', '💧 They gave it water'], answer: 1 },
+    ],
+  },
+  {
+    id: 'stone-soup', title: 'Stone Soup', label: I18n.t('books.stoneSoup'), cover: '🍲', color: '#f0c987',
+    pages: [
+      { text: 'A tired traveller came to a little village. He was very hungry.', pic: '🚶🏘️' },
+      { text: '"Sorry, we have no food to share," said the people.', pic: '🏘️🙅' },
+      { text: '"That\'s all right," he said. "I will make stone soup!"', pic: '🪨🍲' },
+      { text: 'He put a big pot of water on the fire. Then he dropped in a stone.', pic: '🍲🔥🪨' },
+      { text: '"Stone soup is even better with a carrot," he said. A girl ran home and brought one.', pic: '👧🥕' },
+      { text: 'A boy brought potatoes. A farmer brought onions. A grandma brought salt.', pic: '🥔🧅🧂' },
+      { text: 'Soon the pot was full of good things. It smelled delicious!', pic: '🍲😋' },
+      { text: 'Everyone ate the soup together. When we all share, there is plenty for everyone!', pic: '🥣😊' },
+    ],
+    quiz: [
+      { q: 'What did the traveller put in the pot first?', options: ['🥕 A carrot', '🪨 A stone', '🧂 Salt'], answer: 1 },
+      { q: 'What did the girl bring?', options: ['🥕 A carrot', '🧅 An onion', '🍞 Some bread'], answer: 0 },
+      { q: 'Why was there plenty of soup?', options: ['🪄 The stone was magic', '🛒 He went to a shop', '🤝 Everyone shared'], answer: 2 },
+    ],
+  },
+  {
+    id: 'porridge-pot', title: 'The Magic Porridge Pot', label: I18n.t('books.theMagicPorridgePot'), cover: '🥣', color: '#ffdca8',
+    source: 'https://www.gutenberg.org/ebooks/2591',
+    pages: [
+      { text: 'A little girl and her mother had no food to eat.', pic: '👧👩' },
+      { text: 'In the woods, a kind old woman gave the girl a little pot.', pic: '👵🍲' },
+      { text: '"Say, \'Cook, little pot, cook!\' and it will make porridge," said the old woman.', pic: '🍲✨' },
+      { text: '"Say, \'Stop, little pot!\' and it will stop."', pic: '🍲✋' },
+      { text: 'At home, the pot made sweet, yummy porridge. Now they were never hungry.', pic: '🥣😋' },
+      { text: 'One day, the girl went out. Her mother said, "Cook, little pot, cook!"', pic: '👩🍲' },
+      { text: 'The pot cooked and cooked. But Mother forgot the words to make it stop!', pic: '👩😮' },
+      { text: 'Porridge filled the kitchen. It filled the house. It ran out into the street!', pic: '🏠🥣🌊' },
+      { text: 'The girl came home and said, "Stop, little pot!" It stopped at last. Everyone had porridge for a week!', pic: '👧✋🥣' },
+    ],
+    quiz: [
+      { q: 'What did the little pot make?', options: ['🍕 Pizza', '🍦 Ice cream', '🥣 Porridge'], answer: 2 },
+      { q: 'What did Mother forget?', options: ['🗣️ The words to make it stop', '🔑 Her keys', '🥄 Her spoon'], answer: 0 },
+      { q: 'Who stopped the pot?', options: ['👵 The old woman', '👧 The little girl', '🐱 The cat'], answer: 1 },
+    ],
+  },
+  {
+    id: 'town-musicians', title: 'The Town Musicians', label: I18n.t('books.theTownMusicians'), cover: '🎺', color: '#a8d8c8',
+    source: 'https://www.gutenberg.org/ebooks/2591',
+    pages: [
+      { text: 'An old donkey wanted to play music. He set off for the town.', pic: '🐴🎵' },
+      { text: 'On the road, he met a tired dog, a sad cat and a noisy rooster.', pic: '🐶🐱🐓' },
+      { text: '"Come with me!" said the donkey. "We can make music together."', pic: '🐴🐶🐱🐓' },
+      { text: 'At night, they saw a little house in the woods. Robbers were inside, eating a big dinner.', pic: '🏠🍗' },
+      { text: 'The animals made a plan. The dog stood on the donkey, the cat stood on the dog, and the rooster stood on top!', pic: '🐓🐱🐶🐴' },
+      { text: 'Then they all sang at once. Hee-haw! Woof! Meow! Cock-a-doodle-doo!', pic: '🎶📢' },
+      { text: 'The robbers were so scared that they ran far away into the woods.', pic: '🏃💨🌲' },
+      { text: 'The four friends ate the dinner. They made music in their cosy house every day.', pic: '🏠🎵💖' },
+    ],
+    quiz: [
+      { q: 'How many animal friends were there?', options: ['🐾 Three', '🐾 Four', '🐾 Five'], answer: 1 },
+      { q: 'Who stood on the very top?', options: ['🐓 The rooster', '🐴 The donkey', '🐶 The dog'], answer: 0 },
+      { q: 'Why did the robbers run away?', options: ['🌧️ It started to rain', '🍗 Their dinner was gone', '📢 The loud song scared them'], answer: 2 },
+    ],
+  },
+  {
+    id: 'frog-prince', title: 'The Frog Prince', label: I18n.t('books.theFrogPrince'), cover: '🐸', color: '#9fdc9a',
+    source: 'https://www.gutenberg.org/ebooks/2591',
+    pages: [
+      { text: 'A princess was playing with her golden ball beside a well.', pic: '👸🟡' },
+      { text: 'Oops! The ball fell into the deep well. The princess began to cry.', pic: '🟡💧😢' },
+      { text: 'A frog popped up. "I will get your ball if you will be my friend," he said.', pic: '🐸💬' },
+      { text: '"Yes, yes!" said the princess. The frog dived down and brought back the ball.', pic: '🐸🟡' },
+      { text: 'But the princess took the ball and ran home. She forgot all about the frog!', pic: '👸🏃' },
+      { text: 'That night, the frog hopped to the castle. "You promised to be my friend," he said.', pic: '🐸🏰' },
+      { text: 'The king said, "A promise is a promise." So the princess shared her dinner with the frog.', pic: '🤴🍽️🐸' },
+      { text: 'She was kind to him, and pop! The frog turned into a prince. They became the best of friends.', pic: '🐸✨🤴' },
+    ],
+    quiz: [
+      { q: 'What fell into the well?', options: ['👑 A crown', '🟡 A golden ball', '👟 A shoe'], answer: 1 },
+      { q: 'What did the princess promise the frog?', options: ['🎂 A cake', '🏰 A castle', '🤝 To be his friend'], answer: 2 },
+      { q: 'What happened when the princess was kind?', options: ['🤴 The frog turned into a prince', '🐸 The frog hopped away', '🌧️ It began to rain'], answer: 0 },
+    ],
+  },
+);
+
 // ---- I can read! ---------------------------------------------------------
 // Little books she reads herself (their own shelf in the library, above the
 // stories): one short sentence per page with a big picture, every word one

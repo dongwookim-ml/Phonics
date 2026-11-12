@@ -67,8 +67,19 @@ The existing texts are simple retellings of traditional tales. No
 third-party modern book text or artwork was copied into this pilot. A public-domain
 Aesop edition for future reference is [The Aesop for Children (1919), Library of Congress](https://www.loc.gov/item/19014083/).
 
+Eight more tales are told in the same way for listeners aged 5–7, one or two
+short sentences a page with three questions each, but have no illustrations
+yet: each page shows its emoji picture (`pic`), as the cover does. They are
+The Fox and the Grapes, The Dog and His Bone, The Princess and the Pea, The
+Enormous Turnip, Stone Soup, The Magic Porridge Pot (9 pages), The Town
+Musicians and The Frog Prince (8 pages each). Their folders in `img/books/`
+hold only `artwork.json`, with a style, a character reference and one prompt
+per page; once the `page-NN.webp` files are made, add `image`, `imageAlt` and
+`coverImage` to the book in `js/books.js`.
+
 Run `node tools/check-book-art.js` for image loading, page navigation, quizzes,
-responsive layout and the missing-image fallback in both editions and languages.
+responsive layout, the emoji pages of the tales without art, and the
+missing-image fallback in both editions and languages.
 
 The eight **Books I can read** titles also have 42 original illustrated pages,
 with lithograph, graphic, clay, watercolor/ink, tissue-paper, crayon, woodblock
@@ -784,8 +795,9 @@ Custom names in this audit use live speech fallback rather than requiring record
   play changes nothing: no streak, nothing lost. The robot edition has missions, boxes, batteries and a blue chest.
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
-  "📖 책 읽어주세요" button, for fifteen illustrated fairy tales and fables
-  retold in simple English (8–12 pages). The reader reads each sentence aloud and highlights it,
+  "📖 책 읽어주세요" button, for twenty-three fairy tales and fables
+  retold in simple English (8–12 pages; fifteen illustrated, eight still
+  told with emoji pictures). The reader reads each sentence aloud and highlights it,
   turning pages on its own (⏸ pauses, ◀ ▶ turn pages, tap a sentence to hear
   it). After the last page come three questions; each right answer pays
   🪙 1 coin, but only the first time that question is answered right, so

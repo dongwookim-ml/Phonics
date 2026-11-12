@@ -1,0 +1,52 @@
+{
+  "id": "porridge-pot",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs.",
+  "reference": "Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street.",
+  "source": "https://www.gutenberg.org/ebooks/2591",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: The girl and her mother sit at an empty kitchen table with empty bowls, sad faces, an empty cupboard open. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: In the green woods, a kind old woman hands the girl a small round black pot; the girl looks surprised and grateful. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: The old woman points at the pot and speaks; the pot glows softly with a magical shimmer; the girl listens carefully. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: The old woman holds up a hand like a stop sign beside the pot; the girl nods, remembering. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: At home, the pot fills two bowls with creamy porridge; the girl and mother eat happily at the table. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: The girl waves goodbye at the door; the mother stands by the stove speaking to the pot, which starts to bubble. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: Porridge spills over the pot's rim; the mother, wide-eyed and flustered, waves her hands, trying to remember the words. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: A wave of porridge pours out of the cottage door and down the village street; neighbours stare in surprise. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-09.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 9 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: The girl stands in the porridge-filled street, hand raised, and the pot stops; neighbours with spoons and bowls happily eat. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

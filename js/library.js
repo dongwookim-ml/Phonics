@@ -153,11 +153,19 @@ function openBook(book) {
 
 const bookPageSentences = () => bookSentences(library.book.pages[library.page].text);
 
+// How many pictures an emoji line holds (a flag or a ⬆️ is one), so the
+// stylesheet can size them to stay on one line on a phone (--n, css/style.css).
+function emojiCount(text) {
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) return [...new Intl.Segmenter().segment(text)].length;
+  return Array.from(text.replace(/\uFE0F/g, '')).length;
+}
+
 function renderPageArt(book, page) {
   const illustration = libraryEl('rd-pic');
   const content = book.pages[page];
   illustration.replaceChildren();
   illustration.classList.toggle('has-art', !!content.image);
+  illustration.style.setProperty('--n', emojiCount(content.pic || ''));
   if (content.image) {
     const image = document.createElement('img');
     image.alt = content.imageAlt || '';

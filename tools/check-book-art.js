@@ -1,4 +1,5 @@
-// Verify illustrated books, their text/quiz flow and the existing emoji fallback.
+// Verify illustrated books, tales still told with emoji pictures, their text/quiz
+// flow and the emoji fallback when an image fails.
 // Run: node tools/check-book-art.js (Playwright + Chromium)
 const assert = require('node:assert/strict');
 const path = require('path');
@@ -21,8 +22,10 @@ const root = path.join(__dirname, '..');
         openLibrary();
       });
       const cover = page.locator('.lib-book:not(.self) .cover-art');
-      const stories = await page.evaluate(() => BOOKS.map(b => ({ id: b.id, pages: b.pages.length })));
-      assert.equal(await cover.count(), stories.length);
+      const stories = await page.evaluate(() => BOOKS.map(b => ({ id: b.id, pages: b.pages.length, art: !!b.coverImage })));
+      // A tale without art yet shows its emoji on the cover and on every page.
+      assert.equal(await cover.count(), stories.filter(b => b.art).length);
+      assert.equal(await page.locator('.lib-book:not(.self):not(.illustrated) .cv').count(), stories.filter(b => !b.art).length);
       for (const image of await cover.all()) {
         await image.scrollIntoViewIfNeeded();
         await image.evaluate(image => image.decode());
@@ -36,22 +39,22 @@ const root = path.join(__dirname, '..');
             if (!i) openBook(BOOKS.find(book => book.id === bookId));
             else bookTurn(1);
           }, { i, bookId });
-          const image = page.locator('#rd-pic img');
-          await image.evaluate(image => image.decode());
+          if (story.art) await page.locator('#rd-pic img').evaluate(image => image.decode());
           const metrics = await page.evaluate(() => {
-            const pic = document.querySelector('#rd-pic img');
+            const pic = document.querySelector('#rd-pic img') || document.querySelector('#rd-pic');
             const text = document.querySelector('#rd-text');
             const paper = document.querySelector('#rd-paper').getBoundingClientRect();
             const bounds = element => {
               const rect = element.getBoundingClientRect();
               return rect.width > 0 && rect.height > 0 && rect.top >= paper.top && rect.left >= paper.left && rect.right <= paper.right && rect.bottom <= paper.bottom;
             };
-            return { image: bounds(pic), text: bounds(text), fitsText: text.scrollHeight <= text.clientHeight + 1, alt: pic.alt, page: library.page };
+            const content = library.book.pages[library.page];
+            return { image: bounds(pic), text: bounds(text), fitsText: text.scrollHeight <= text.clientHeight + 1, alt: pic.alt, emoji: pic.tagName !== 'IMG' && pic.textContent === content.pic, page: library.page };
           });
           assert.equal(metrics.page, i);
-          assert.ok(metrics.image && metrics.text, `${edition}/${language} ${width}x${height} page ${i + 1}: content outside paper`);
-          assert.ok(metrics.fitsText, `${width}x${height} page ${i + 1}: story text needs scrolling`);
-          assert.ok(metrics.alt);
+          assert.ok(metrics.image && metrics.text, `${bookId} ${edition}/${language} ${width}x${height} page ${i + 1}: content outside paper`);
+          assert.ok(metrics.fitsText, `${bookId} ${width}x${height} page ${i + 1}: story text needs scrolling`);
+          assert.ok(story.art ? metrics.alt : metrics.emoji, `${bookId} page ${i + 1}: ${story.art ? 'picture has no alt text' : 'emoji picture missing'}`);
         }
         await page.evaluate(() => bookTurn(1));
         assert.equal(await page.evaluate(() => library.mode), 'quiz');
@@ -68,7 +71,8 @@ const root = path.join(__dirname, '..');
         assert.equal(completion.mode, 'summary');
         assert.equal(completion.answered, 3);
         assert.equal(completion.earned, width === 1024 ? 3 : 0, `${bookId}: quiz rewards must pay only once`);
-        await page.locator('.summary-art').evaluate(image => image.decode());
+        if (story.art) await page.locator('.summary-art').evaluate(image => image.decode());
+        else assert.equal(await page.locator('.summary-art').count(), 0);
       }
       }
       const selfBooks = await page.evaluate(() => DECODABLE_BOOKS.map(b => ({ id: b.id, pages: b.pages.length })));
@@ -106,7 +110,8 @@ const root = path.join(__dirname, '..');
       await page.waitForFunction(() => !document.querySelector('#rd-pic img'));
       assert.ok((await page.locator('#rd-pic').innerText()).length);
       assert.deepEqual(errors, []);
-      console.log(`PASS ${edition}/${language}: ${stories.length} covers, ${stories.reduce((n, b) => n + b.pages, 0)} illustrated story pages at 4 sizes, quiz/summary, 8 self-books (42 pages), failed-image fallback`);
+      const drawn = stories.filter(b => b.art), emoji = stories.filter(b => !b.art);
+      console.log(`PASS ${edition}/${language}: ${drawn.length} covers, ${drawn.reduce((n, b) => n + b.pages, 0)} illustrated story pages and ${emoji.length} emoji tales (${emoji.reduce((n, b) => n + b.pages, 0)} pages) at 4 sizes, quiz/summary, 8 self-books (42 pages), failed-image fallback`);
       await page.close();
     }
   } finally { await browser.close(); }

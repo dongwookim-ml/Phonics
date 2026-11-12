@@ -1,0 +1,48 @@
+{
+  "id": "dog-bone",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs.",
+  "reference": "One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below.",
+  "source": "https://www.gutenberg.org/ebooks/53103",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The terrier proudly finds a big cream bone beside a butcher's back step, tail wagging, delighted face. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The terrier trots onto the little wooden bridge with the bone held in its mouth, stream below. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The terrier peers over the edge of the bridge; in the smooth water below is its own reflection holding a bone. The reflection is clearly a mirror image. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The terrier frowns greedily at the reflection, eyebrows lowered, still holding its bone, thinking. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The terrier opens its mouth wide to bark down at the reflection; the bone is slipping out of its mouth. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: Splash! The bone drops into the stream with a big ring of ripples and droplets; the terrier's eyes go wide. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The ripples settle; the reflection now shows the dog with no bone. The terrier stares, understanding. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Dog and His Bone, ages 5-7. Style: Cut-paper collage with torn edges and simple shapes, fresh greens and sky blues, subtle paper shadows. Friendly picture-book animals, not realistic photographs. Recurring identity: One scruffy brown-and-white terrier with one floppy ear, a red collar and a stubby tail. One big cream bone with knobbly ends. One small wooden plank bridge over a calm clear stream with reeds; the water is smooth enough to mirror the dog. Fixed setting for pages 2-7: the bridge across the middle, the stream below. Scene: The terrier sits sadly on the bridge with drooping ear and empty mouth, the bone visible at the bottom of the stream. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}

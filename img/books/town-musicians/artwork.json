@@ -1,0 +1,48 @@
+{
+  "id": "town-musicians",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs.",
+  "reference": "Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window.",
+  "source": "https://www.gutenberg.org/ebooks/2591",
+  "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 1 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The old grey donkey sets off down a country road at dawn, ears up, humming happily, the town far away on a hill. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 2 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: On the road the donkey meets a tired shaggy dog, a sad tuxedo cat on a fence and a noisy rooster on a gate. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 3 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The four animals walk together down the road in a line, smiling, the donkey leading. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 4 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: Night in the woods: the animals peek at a cottage window; inside, three comic robbers eat a big dinner at a table. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The animals stack up by the window: dog on donkey's back, cat on dog, rooster on top, wobbling, determined faces. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 6 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The tower of animals sings all at once through the window, mouths wide, music notes swirling in the air. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-07.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 7 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The three comic robbers run away into the dark woods with hats flying off, startled faces, no weapons. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    },
+    {
+      "file": "page-08.webp",
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The four friends sit around the table in the cosy cottage, eating dinner and playing music, warm lamplight. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+    }
+  ]
+}
