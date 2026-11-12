@@ -3505,7 +3505,7 @@ const TTS_INDEX = {
 "mast": "ba71f2015f",
 "mast!": "5c83742448",
 "math": "b08cdb8452",
-"math!": "9bc996ff36",
+"math!": "bdc4c52b57",
 "me": "6fbc960ff7",
 "me!": "62c716cfe1",
 "meat": "f017d1972e",
@@ -3986,7 +3986,7 @@ const TTS_INDEX = {
 "socks": "d8ef11ddaa",
 "socks starts with S.": "d09df9024e",
 "socks!": "7165e8958a",
-"soil": "4e22990318",
+"soil": "1d4987934b",
 "soil!": "8ca1629dfe",
 "soup": "bfde49393f",
 "soup starts with S.": "3340671509",
@@ -4288,7 +4288,7 @@ const TTS_INDEX = {
 "zero!": "07e37f1fd5",
 "zipper": "3242cc86ac",
 "zipper!": "90197cc1a2",
-"zoo": "f23ef6a157",
+"zoo": "69d6db3dc9",
 "zoo!": "b81f856ee8"
 },
 "af_jessica": {
