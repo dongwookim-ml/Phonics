@@ -2942,7 +2942,7 @@ const TTS_INDEX = {
 "bell, shell!": "302dc361aa",
 "belt": "b8e3a6b5fe",
 "belt!": "b43aa4168b",
-"best!": "63bd2c6b23",
+"best!": "01e23ce4a2",
 "beth!": "f26c7238fa",
 "big": "7b5e4411b5",
 "big!": "2a65ff3da9",
