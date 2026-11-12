@@ -1,0 +1,38 @@
+{
+  "id": "gus-bus",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Cheerful retro screen-print style, limited red, mustard and teal inks",
+  "reference": "Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: Gus steps up onto the big red bus. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: A brown dog climbs onto the bus behind Gus. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: A pink pig squeezes onto the bus, Gus surprised. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: A hen flaps onto the crowded bus. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: The bus is packed full of animals, sagging, wheels stuck; the driver shrugs. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: Gus laughs and runs along the pavement next to the bus. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}

@@ -495,6 +495,26 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
+    id: 'pam-bag', level: 1, title: 'The Bag', label: I18n.t('books.theBag'), cover: '🎒', color: '#ffe0b8',
+    pages: [
+      { text: 'Pam had a bag.', pic: '👧🎒' },
+      { text: 'Pam had a cap.', pic: '👧🧢' },
+      { text: 'Pam had a map.', pic: '👧🗺️' },
+      { text: 'Pam had jam.', pic: '👧🍓' },
+      { text: 'The bag is fat!', pic: '🎒😮' },
+    ],
+  },
+  {
+    id: 'tan-van', level: 1, title: 'The Tan Van', label: I18n.t('books.theTanVan'), cover: '🚐', color: '#c8e6ff',
+    pages: [
+      { text: 'Dad had a tan van.', pic: '👨🚐' },
+      { text: 'Sam ran to the van.', pic: '👦🏃🚐' },
+      { text: 'The van had a cat!', pic: '🚐🐱' },
+      { text: 'Sam had to pat the cat.', pic: '👦✋🐱' },
+      { text: 'Sam can see the cat nap.', pic: '👦🐱💤' },
+    ],
+  },
+  {
     id: 'big-pig', level: 2, title: 'The Big Pig', label: I18n.t('books.theBigPig'), cover: '🐷', coverImage: 'img/books/big-pig/page-01.webp', color: '#ffc4dc',
     pages: [
       { text: 'A big pig sat in the mud.', pic: '🐷🟫', image: 'img/books/big-pig/page-01.webp' },
@@ -513,6 +533,28 @@ const DECODABLE_BOOKS = [
       { text: 'The bug hid in a cup.', pic: '🐛🥤', image: 'img/books/bug-cup/page-04.webp' },
       { text: 'The dog can not see the bug!', pic: '🐶❓', image: 'img/books/bug-cup/page-05.webp' },
       { text: 'The bug had fun.', pic: '🐛😄', image: 'img/books/bug-cup/page-06.webp' },
+    ],
+  },
+  {
+    id: 'fox-box', level: 2, title: 'The Fox in the Box', label: I18n.t('books.theFoxInTheBox'), cover: '🦊', color: '#ffd0a8',
+    pages: [
+      { text: 'A fox got in a box.', pic: '🦊📦' },
+      { text: 'The fox hid in the box.', pic: '🦊🙈📦' },
+      { text: 'A pup sat on the box.', pic: '🐶📦' },
+      { text: 'The box got up!', pic: '📦⬆️' },
+      { text: 'Run, pup, run!', pic: '🐶💨' },
+      { text: 'The fox had fun in the box.', pic: '🦊😄📦' },
+    ],
+  },
+  {
+    id: 'gus-bus', level: 2, title: 'Gus on the Bus', label: I18n.t('books.gusOnTheBus'), cover: '🚌', color: '#ffe680',
+    pages: [
+      { text: 'Gus got on a big red bus.', pic: '👦🚌' },
+      { text: 'A dog got on the bus.', pic: '🐶🚌' },
+      { text: 'A pig got on the bus.', pic: '🐷🚌' },
+      { text: 'A hen got on the bus.', pic: '🐔🚌' },
+      { text: 'The bus can not go!', pic: '🚌😮' },
+      { text: 'Gus had to run!', pic: '👦🏃' },
     ],
   },
   {
@@ -536,6 +578,28 @@ const DECODABLE_BOOKS = [
     ],
   },
   {
+    id: 'king-ring', level: 3, title: 'The Ring', label: I18n.t('books.theRing'), cover: '💍', color: '#e8d0ff',
+    pages: [
+      { text: 'The king had a ring.', pic: '🤴💍' },
+      { text: 'The ring fell in the mud.', pic: '💍🟫' },
+      { text: 'A duck got the ring.', pic: '🦆💍' },
+      { text: 'The duck sang to the king.', pic: '🦆🎵🤴' },
+      { text: 'The king got the ring back.', pic: '🤴💍😊' },
+      { text: 'The duck got a big kiss!', pic: '🦆😘' },
+    ],
+  },
+  {
+    id: 'ship-bath', level: 3, title: 'The Ship in the Bath', label: I18n.t('books.theShipInTheBath'), cover: '⛵', color: '#b8e4f0',
+    pages: [
+      { text: 'Josh had a red ship.', pic: '👦⛵' },
+      { text: 'The ship is in the bath.', pic: '⛵🛁' },
+      { text: 'A duck sat on the ship.', pic: '🦆⛵' },
+      { text: 'Rock, rock, rock!', pic: '⛵🌊' },
+      { text: 'The duck fell in the bath!', pic: '🦆💦' },
+      { text: 'Josh had fun with the duck.', pic: '👦🦆😄' },
+    ],
+  },
+  {
     id: 'frog-jump', level: 4, title: 'Jump, Frog, Jump!', label: I18n.t('books.hopFrog'), cover: '🐸', coverImage: 'img/books/frog-jump/page-01.webp', color: '#a8eb98',
     pages: [
       { text: 'A frog sat on a big rock.', pic: '🐸🪨', image: 'img/books/frog-jump/page-01.webp' },
@@ -555,6 +619,28 @@ const DECODABLE_BOOKS = [
       { text: 'It is a drum!', pic: '🥁', image: 'img/books/best-gift/page-04.webp' },
       { text: 'Brad can drum and drum.', pic: '👦🥁', image: 'img/books/best-gift/page-05.webp' },
       { text: 'Mom and Dad clap and clap!', pic: '👩👨👏', image: 'img/books/best-gift/page-06.webp' },
+    ],
+  },
+  {
+    id: 'fred-crab', level: 4, title: 'Fred the Crab', label: I18n.t('books.fredTheCrab'), cover: '🦀', color: '#ffc0b0',
+    pages: [
+      { text: 'Fred is a crab with a shell.', pic: '🦀🐚' },
+      { text: 'Fred got big, but the shell did not.', pic: '🦀🐚' },
+      { text: 'Fred is stuck!', pic: '🦀😣' },
+      { text: 'Fred spots a big shell in the sand.', pic: '🦀👀🐚' },
+      { text: 'Fred jumps in!', pic: '🦀💨🐚' },
+      { text: 'It is the best shell!', pic: '🦀🐚✨' },
+    ],
+  },
+  {
+    id: 'the-tent', level: 4, title: 'The Tent', label: I18n.t('books.theTent'), cover: '⛺', color: '#c8f0c0',
+    pages: [
+      { text: 'We went to camp.', pic: '⛺🌲' },
+      { text: 'Mom and Dad set up the tent.', pic: '👩👨⛺' },
+      { text: 'We had a snack in the tent.', pic: '🍪⛺' },
+      { text: 'A big wind hit the tent!', pic: '💨⛺' },
+      { text: 'The tent fell flat!', pic: '⛺😮' },
+      { text: 'Dad set it up, and we slept.', pic: '⛺😴' },
     ],
   },
 ];

@@ -797,6 +797,7 @@ async function selfRead(browser) {
     out.quest = [quest()];
     openLibrary();
     out.covers = document.querySelectorAll('#lib-books .lib-book.self').length;
+    out.books = DECODABLE_BOOKS.length;
     out.firstOpen = !cover(DECODABLE_BOOKS[0].id).classList.contains('locked');
     const hard = DECODABLE_BOOKS.find(b => b.level === 3);
     out.hardLocked = cover(hard.id).classList.contains('locked');
@@ -873,7 +874,7 @@ async function selfRead(browser) {
     out.said = said;
     return out;
   });
-  check('reading: 8 books on her shelf, the first open', r.covers === 8 && r.firstOpen, r);
+  check('reading: every book on her shelf, the first open', r.covers === r.books && r.books >= 16 && r.firstOpen, r);
   check('reading: higher-level books open immediately without a lock message', !r.hardLocked && !r.lockedSays && r.higherOpened, r);
   check('reading: the first book opens with a tile for every word', r.opened && r.tiles[0] === r.tiles[1] && r.tiles[0] > 1, r.tiles);
   check('reading: ▶ waits until she has tapped every word', r.playHidden && r.playHiddenBeforeLast && r.playAfterTaps, r);

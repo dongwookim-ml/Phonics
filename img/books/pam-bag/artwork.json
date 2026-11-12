@@ -1,0 +1,34 @@
+{
+  "id": "pam-bag",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Bright gouache picture-book with chunky shapes and warm yellow light",
+  "reference": "Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 5, The Bag. Style: Bright gouache picture-book with chunky shapes and warm yellow light. Recurring identities (include ONLY those in the scene): Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page. Scene: Pam holds up her empty red backpack, happy and excited, ready to pack. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 5, The Bag. Style: Bright gouache picture-book with chunky shapes and warm yellow light. Recurring identities (include ONLY those in the scene): Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page. Scene: Pam pushes a blue cap into the red backpack. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 5, The Bag. Style: Bright gouache picture-book with chunky shapes and warm yellow light. Recurring identities (include ONLY those in the scene): Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page. Scene: Pam folds a paper map into the backpack. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 5, The Bag. Style: Bright gouache picture-book with chunky shapes and warm yellow light. Recurring identities (include ONLY those in the scene): Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page. Scene: Pam squeezes a small jar of strawberry jam into the backpack, grinning. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 5, The Bag. Style: Bright gouache picture-book with chunky shapes and warm yellow light. Recurring identities (include ONLY those in the scene): Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page. Scene: The red backpack bulges hugely, round and overstuffed, Pam surprised with hands on cheeks. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}

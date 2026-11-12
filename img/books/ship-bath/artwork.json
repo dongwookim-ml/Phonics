@@ -1,0 +1,38 @@
+{
+  "id": "ship-bath",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Playful wax crayon and watercolour, bubbly blues",
+  "reference": "Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: Josh holds up his red toy sailboat, smiling. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: The red sailboat floats in the bubbly bath. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: The yellow rubber duck sits on top of the sailboat. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: Josh splashes waves; the boat rocks side to side. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: The rubber duck falls off the boat into the water with a splash. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: Josh laughs in the bath, holding the rubber duck and the boat. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}

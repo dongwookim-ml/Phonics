@@ -1,0 +1,38 @@
+{
+  "id": "king-ring",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Warm watercolour fairy-tale picture-book with soft ink lines",
+  "reference": "King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The king admires the gold ring on his finger in the castle garden. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The ring slips off and plops into a muddy patch; the king gasps. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The white duck pulls the ring out of the mud with its bill. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The duck sings to the king, ring in its bill, music in the air shown by the duck's open bill and happy pose. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The king happily holds the ring again, the duck beside him. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The king kisses the duck on the head, the duck blushing. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}

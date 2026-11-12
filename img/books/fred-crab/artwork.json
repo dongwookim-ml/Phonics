@@ -1,0 +1,38 @@
+{
+  "id": "fred-crab",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Bright seaside gouache with sandy textures",
+  "reference": "Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 6, Fred the Crab. Style: Bright seaside gouache with sandy textures. Recurring identities (include ONLY those in the scene): Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools. Scene: Fred the crab walks on the sand wearing a small shell on his back. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 6, Fred the Crab. Style: Bright seaside gouache with sandy textures. Recurring identities (include ONLY those in the scene): Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools. Scene: Fred has grown bigger; the small shell looks tiny on him. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 6, Fred the Crab. Style: Bright seaside gouache with sandy textures. Recurring identities (include ONLY those in the scene): Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools. Scene: Fred is stuck in the tight shell, legs wiggling, worried face. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 6, Fred the Crab. Style: Bright seaside gouache with sandy textures. Recurring identities (include ONLY those in the scene): Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools. Scene: Fred spots a big pink conch shell lying in the sand, eyes wide. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 6, Fred the Crab. Style: Bright seaside gouache with sandy textures. Recurring identities (include ONLY those in the scene): Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools. Scene: Fred leaps into the big conch shell. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, Fred the Crab. Style: Bright seaside gouache with sandy textures. Recurring identities (include ONLY those in the scene): Fred: a small red crab with big friendly eyes. One small spiral snail shell he wears on his back, later one larger pink-and-cream conch shell. A sunny beach with tide pools. Scene: Fred peeks out of the big shell, proud and happy, sparkles around. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}

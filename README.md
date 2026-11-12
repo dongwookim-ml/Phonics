@@ -81,10 +81,13 @@ Run `node tools/check-book-art.js` for image loading, page navigation, quizzes,
 responsive layout, the emoji pages of the tales without art, and the
 missing-image fallback in both editions and languages.
 
-The eight **Books I can read** titles also have 42 original illustrated pages,
+The first eight **Books I can read** titles also have 42 original illustrated pages,
 with lithograph, graphic, clay, watercolor/ink, tissue-paper, crayon, woodblock
 and digital-painting styles. Word tiles, narration and completion rewards are
 unchanged. Each title’s local asset folder includes its imagegen prompts.
+Eight more (The Bag, The Tan Van, The Fox in the Box, Gus on the Bus, The
+Ring, The Ship in the Bath, Fred the Crab, The Tent) have only their prompts
+so far and show emoji pictures.
 
 ## Interface languages
 
@@ -804,14 +807,17 @@ Custom names in this audit use live speech fallback rather than requiring record
   re-reading is free but can't farm coins. A wrong answer gets a second try,
   then the answer is shown. Books live in `BOOKS` in `js/books.js`; the
   reader is `js/library.js`.
-- **I can read! (the library's first shelf, ✏️ 내가 읽는 책)**: eight
+- **I can read! (the library's first shelf, ✏️ 내가 읽는 책)**: sixteen
   little books she reads herself, 4–6 pages of one short sentence under a
   big picture. Every word is one she can sound out at the book's level, or
   one of twelve sight words (`SIGHT_WORDS`: the, a, I, is, to, see, go, no,
-  my, we, said, you). Level 1 is short a (The Cat, I Can!), 2 any short
-  vowel (The Big Pig, The Bug in the Cup), 3 sh, ch, th, ck, ll, ss, ng
-  (The Fish Wish, Chuck the Duck), 4 blends (Jump, Frog, Jump!, The Best
-  Gift). Each word is a big tile: a tap says the whole word, the
+  my, we, said, you). Level 1 is short a (The Cat, I Can!, The Bag, The
+  Tan Van), 2 any short vowel (The Big Pig, The Bug in the Cup, The Fox in
+  the Box, Gus on the Bus), 3 sh, ch, th, ck, ll, ss, ng (The Fish Wish,
+  Chuck the Duck, The Ring, The Ship in the Bath), 4 blends (Jump, Frog,
+  Jump!, The Best Gift, Fred the Crab, The Tent). The first two of each
+  level are illustrated; the other eight show emoji pictures until their
+  art is made (prompts in `img/books/<id>/artwork.json`). Each word is a big tile: a tap says the whole word, the
   narrator's "cat!" (a sight word as it is, "the"), the tile and its word
   lit while it does; never letter by letter, as she sounds it out herself.
   ▶ reads the page slowly, but only shows once she has tapped every word

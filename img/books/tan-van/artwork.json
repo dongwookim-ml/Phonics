@@ -1,0 +1,34 @@
+{
+  "id": "tan-van",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Soft colored-pencil drawing on cream paper, gentle cross-hatching",
+  "reference": "Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 5, The Tan Van. Style: Soft colored-pencil drawing on cream paper, gentle cross-hatching. Recurring identities (include ONLY those in the scene): Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge. Scene: Dad stands proudly beside the tan van in the driveway. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 5, The Tan Van. Style: Soft colored-pencil drawing on cream paper, gentle cross-hatching. Recurring identities (include ONLY those in the scene): Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge. Scene: Sam runs happily toward the tan van, arms out. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 5, The Tan Van. Style: Soft colored-pencil drawing on cream paper, gentle cross-hatching. Recurring identities (include ONLY those in the scene): Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge. Scene: Through the open van door, a small black-and-white cat sits on the seat, surprising Sam. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 5, The Tan Van. Style: Soft colored-pencil drawing on cream paper, gentle cross-hatching. Recurring identities (include ONLY those in the scene): Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge. Scene: Sam gently pats the cat on the van seat, both happy. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 5, The Tan Van. Style: Soft colored-pencil drawing on cream paper, gentle cross-hatching. Recurring identities (include ONLY those in the scene): Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge. Scene: Sam watches, smiling, as the cat curls up asleep on the van seat. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}

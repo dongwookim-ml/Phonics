@@ -1,0 +1,38 @@
+{
+  "id": "the-tent",
+  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
+  "method": "OpenAI built-in imagegen (planned)",
+  "style": "Cosy storybook oil-pastel with dusk blues and campfire oranges",
+  "reference": "A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake.",
+  "encoding": {
+    "format": "WebP",
+    "maxWidth": 1280,
+    "quality": 82
+  },
+  "assets": [
+    {
+      "file": "page-01.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 1 of 6, The Tent. Style: Cosy storybook oil-pastel with dusk blues and campfire oranges. Recurring identities (include ONLY those in the scene): A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake. Scene: The family arrives at a pine-forest campsite with backpacks. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-02.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 2 of 6, The Tent. Style: Cosy storybook oil-pastel with dusk blues and campfire oranges. Recurring identities (include ONLY those in the scene): A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake. Scene: Mom and Dad set up the green tent while the child watches. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-03.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 3 of 6, The Tent. Style: Cosy storybook oil-pastel with dusk blues and campfire oranges. Recurring identities (include ONLY those in the scene): A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake. Scene: The family eats a snack of cookies sitting in the open tent. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-04.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 4 of 6, The Tent. Style: Cosy storybook oil-pastel with dusk blues and campfire oranges. Recurring identities (include ONLY those in the scene): A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake. Scene: A big gust of wind blows the tent sideways, leaves flying. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-05.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 6, The Tent. Style: Cosy storybook oil-pastel with dusk blues and campfire oranges. Recurring identities (include ONLY those in the scene): A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake. Scene: The tent lies flat on the ground; the family looks surprised. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    },
+    {
+      "file": "page-06.webp",
+      "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, The Tent. Style: Cosy storybook oil-pastel with dusk blues and campfire oranges. Recurring identities (include ONLY those in the scene): A family: Mom (ponytail, yellow raincoat), Dad (beard, red flannel shirt), a child about five (blue hoodie) who narrates. One green dome tent. A pine-forest campsite by a small lake. Scene: The tent stands again under the stars; the family sleeps cosily inside. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
+    }
+  ]
+}
