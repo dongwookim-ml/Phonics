@@ -1,7 +1,7 @@
 {
   "id": "stone-soup",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs.",
   "reference": "Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl.",
   "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
@@ -43,5 +43,6 @@
       "file": "page-08.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, Stone Soup, ages 5-7. Style: Cosy watercolor and ink line picture-book, warm autumn oranges and browns, loose wet edges, steam and firelight glow. Friendly diverse villagers, not realistic photographs. Recurring identity: Traveller: tall, kind, patched brown cloak, floppy green hat, walking stick, small backpack. Big black iron pot over a campfire in the middle of a small village square with cottages. One smooth grey stone. Girl: red jumper. Boy: yellow cap. Farmer: overalls. Grandma: glasses and shawl. Scene: Everyone sits together on benches in the square eating soup from bowls, laughing, lanterns glowing. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

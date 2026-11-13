@@ -1,7 +1,7 @@
 {
   "id": "frog-prince",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs.",
   "reference": "Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown.",
   "source": "https://www.gutenberg.org/ebooks/2591",
@@ -44,5 +44,6 @@
       "file": "page-08.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Frog Prince, ages 5-7. Style: Lush detailed watercolor fairy-tale illustration with soft greens and golds, gentle sunlight through leaves, delicate ink outlines. Friendly storybook characters, not realistic photographs. Recurring identity: Princess: about eight, red curly hair, pale blue dress, small silver tiara. Frog: bright green, big golden eyes, tiny gold crown. Golden ball. Old round stone well under a linden tree in the castle garden. King: grey beard, purple robe. Prince (after the change): about ten, kind face, green velvet coat, same tiny gold crown. Scene: A sparkle of light: the frog turns into a kind young prince; he and the princess smile and play with the golden ball. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

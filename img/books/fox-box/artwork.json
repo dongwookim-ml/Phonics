@@ -1,7 +1,7 @@
 {
   "id": "fox-box",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Bold flat cut-paper shapes with simple textures, orange and teal palette",
   "reference": "One small orange fox with a white-tipped tail. One big brown cardboard box with flaps. One fluffy cream puppy. A grassy yard with a fence.",
   "encoding": {
@@ -34,5 +34,6 @@
       "file": "page-06.webp",
       "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, The Fox in the Box. Style: Bold flat cut-paper shapes with simple textures, orange and teal palette. Recurring identities (include ONLY those in the scene): One small orange fox with a white-tipped tail. One big brown cardboard box with flaps. One fluffy cream puppy. A grassy yard with a fence. Scene: The fox pops out of the box laughing, the puppy peeking back, both now playing. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

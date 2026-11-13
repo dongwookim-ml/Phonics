@@ -1,7 +1,7 @@
 {
   "id": "ship-bath",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Playful wax crayon and watercolour, bubbly blues",
   "reference": "Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom.",
   "encoding": {
@@ -34,5 +34,6 @@
       "file": "page-06.webp",
       "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, The Ship in the Bath. Style: Playful wax crayon and watercolour, bubbly blues. Recurring identities (include ONLY those in the scene): Josh: about five, brown skin, short black hair. One red toy sailboat with a white sail. One yellow rubber duck. A white bathtub full of bubbles in a tiled bathroom. Scene: Josh laughs in the bath, holding the rubber duck and the boat. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

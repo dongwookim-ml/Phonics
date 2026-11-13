@@ -1,7 +1,7 @@
 {
   "id": "princess-pea",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs.",
   "reference": "Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder.",
   "source": "https://www.gutenberg.org/ebooks/1597",
@@ -30,7 +30,7 @@
     },
     {
       "file": "page-05.webp",
-      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The queen secretly places one tiny green pea on a bare bed frame while servants carry a tall stack of colourful mattresses. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
+      "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 5 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The queen places a tiny green pea on the bare bed platform while patterned mattresses wait beside the bed. This is before the mattresses are piled. No text, numbers, labels, panels or watermark."
     },
     {
       "file": "page-06.webp",
@@ -44,5 +44,6 @@
       "file": "page-08.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Princess and the Pea, ages 5-7. Style: Elegant gouache and gold-leaf fairy-tale miniature, deep teal and rose palette, patterned borders inside the scene only, soft candlelight. Friendly storybook people, not realistic photographs. Recurring identity: Prince: young, kind face, short dark curly hair, small gold crown, teal coat. Queen: plump, grey bun, tall crown, rose gown, clever smile. Princess: brown skin, long black braid, simple green travelling dress when wet, later a cream nightgown. One green pea. A very tall bed of twenty colourful stacked mattresses with a little ladder. Scene: The prince and princess hold hands and smile; the queen holds up the tiny pea proudly. Warm golden light. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

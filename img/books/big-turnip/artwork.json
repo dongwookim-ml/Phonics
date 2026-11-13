@@ -1,7 +1,7 @@
 {
   "id": "big-turnip",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs.",
   "reference": "Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front.",
   "adaptation": "Original English retelling for listeners aged 5-7, one or two short sentences a page.",
@@ -43,5 +43,6 @@
       "file": "page-08.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Enormous Turnip, ages 5-7. Style: Bold Russian folk-art painting with flat bright colours, red and gold ornament on clothes, simple sky, cheerful round faces. Friendly picture-book people and animals, not realistic photographs. Recurring identity: Old man: white beard, red shirt, black boots. Old woman: blue headscarf, yellow apron. Little girl: two blond plaits, red dress. Dog: black and white, fluffy. Cat: ginger tabby. Mouse: tiny grey mouse. One giant white-and-purple turnip with big green leaves in a vegetable garden by a wooden cottage. In every pulling scene they stand in a single line, each holding the one in front. Scene: Pop! The enormous turnip flies out of the ground and everyone tumbles over backwards in a heap, laughing. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

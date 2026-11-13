@@ -1,7 +1,7 @@
 {
   "id": "porridge-pot",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs.",
   "reference": "Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street.",
   "source": "https://www.gutenberg.org/ebooks/2591",
@@ -48,5 +48,6 @@
       "file": "page-09.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 9 of 9, The Magic Porridge Pot, ages 5-7. Style: Retro mid-century picture-book painting with simple shapes, flat mustard, teal and tomato colours, light dry-brush texture. Friendly storybook people, not realistic photographs. Recurring identity: Girl: about seven, short brown bob, mustard dress, teal shoes. Mother: tall, brown hair in a bun, tomato-red apron. Old woman: tiny, white hair, green shawl, walking stick. One small round black pot with three short legs and a little lid. Creamy pale-yellow porridge. Small whitewashed cottage kitchen in a village street. Scene: The girl stands in the porridge-filled street, hand raised, and the pot stops; neighbours with spoons and bowls happily eat. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

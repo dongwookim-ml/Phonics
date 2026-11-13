@@ -1,7 +1,7 @@
 {
   "id": "king-ring",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Warm watercolour fairy-tale picture-book with soft ink lines",
   "reference": "King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond.",
   "encoding": {
@@ -34,5 +34,6 @@
       "file": "page-06.webp",
       "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, The Ring. Style: Warm watercolour fairy-tale picture-book with soft ink lines. Recurring identities (include ONLY those in the scene): King: plump, white curly beard, red robe, gold crown. One gold ring with a blue gem. One white duck with an orange bill. Castle garden with a muddy patch by a pond. Scene: The king kisses the duck on the head, the duck blushing. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

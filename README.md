@@ -67,18 +67,18 @@ The existing texts are simple retellings of traditional tales. No
 third-party modern book text or artwork was copied into this pilot. A public-domain
 Aesop edition for future reference is [The Aesop for Children (1919), Library of Congress](https://www.loc.gov/item/19014083/).
 
-Eight more tales are told in the same way for listeners aged 5–7, one or two
-short sentences a page with three questions each, but have no illustrations
-yet: each page shows its emoji picture (`pic`), as the cover does. They are
+Eight more tales have 65 original illustrated pages for listeners aged 5–7,
+with one or two short sentences a page and three questions each. They are
 The Fox and the Grapes, The Dog and His Bone, The Princess and the Pea, The
 Enormous Turnip, Stone Soup, The Magic Porridge Pot (9 pages), The Town
-Musicians and The Frog Prince (8 pages each). Their folders in `img/books/`
-hold only `artwork.json`, with a style, a character reference and one prompt
-per page; once the `page-NN.webp` files are made, add `image`, `imageAlt` and
-`coverImage` to the book in `js/books.js`.
+Musicians and The Frog Prince (8 pages each). Their styles range from pastel
+and paper collage to folk art, watercolor and ink. Each book keeps consistent
+characters across its pages, uses its first illustration as the cover, and
+provides Korean and English picture descriptions. Local `page-NN.webp` files
+and the generation notes live in each book's `img/books/` folder.
 
 Run `node tools/check-book-art.js` for image loading, page navigation, quizzes,
-responsive layout, the emoji pages of the tales without art, and the
+responsive layout, emoji-only custom books, and the
 missing-image fallback in both editions and languages.
 
 The first eight **Books I can read** titles also have 42 original illustrated pages,
@@ -86,8 +86,11 @@ with lithograph, graphic, clay, watercolor/ink, tissue-paper, crayon, woodblock
 and digital-painting styles. Word tiles, narration and completion rewards are
 unchanged. Each title’s local asset folder includes its imagegen prompts.
 Eight more (The Bag, The Tan Van, The Fox in the Box, Gus on the Bus, The
-Ring, The Ship in the Bath, Fred the Crab, The Tent) have only their prompts
-so far and show emoji pictures.
+Ring, The Ship in the Bath, Fred the Crab, The Tent) have 46 new illustrated
+pages, with gouache, colored-pencil, cut-paper, screen-print, watercolor,
+crayon and oil-pastel styles. All 16 newly illustrated books retain their
+sentences, recorded speech, page order and rewards; emoji pictures remain
+the fallback if an image cannot load.
 
 ## Interface languages
 
@@ -799,8 +802,7 @@ Custom names in this audit use live speech fallback rather than requiring record
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
 - **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
   "📖 책 읽어주세요" button, for twenty-three fairy tales and fables
-  retold in simple English (8–12 pages; fifteen illustrated, eight still
-  told with emoji pictures). The reader reads each sentence aloud and highlights it,
+  retold in simple English (8–12 illustrated pages each). The reader reads each sentence aloud and highlights it,
   turning pages on its own (⏸ pauses, ◀ ▶ turn pages, tap a sentence to hear
   it). After the last page come three questions; each right answer pays
   🪙 1 coin, but only the first time that question is answered right, so
@@ -815,9 +817,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   Tan Van), 2 any short vowel (The Big Pig, The Bug in the Cup, The Fox in
   the Box, Gus on the Bus), 3 sh, ch, th, ck, ll, ss, ng (The Fish Wish,
   Chuck the Duck, The Ring, The Ship in the Bath), 4 blends (Jump, Frog,
-  Jump!, The Best Gift, Fred the Crab, The Tent). The first two of each
-  level are illustrated; the other eight show emoji pictures until their
-  art is made (prompts in `img/books/<id>/artwork.json`). Each word is a big tile: a tap says the whole word, the
+  Jump!, The Best Gift, Fred the Crab, The Tent). All sixteen books are
+  illustrated (prompts in `img/books/<id>/artwork.json`). Each word is a big tile: a tap says the whole word, the
   narrator's "cat!" (a sight word as it is, "the"), the tile and its word
   lit while it does; never letter by letter, as she sounds it out herself.
   ▶ reads the page slowly, but only shows once she has tapped every word

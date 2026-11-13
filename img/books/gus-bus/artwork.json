@@ -1,7 +1,7 @@
 {
   "id": "gus-bus",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Cheerful retro screen-print style, limited red, mustard and teal inks",
   "reference": "Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street.",
   "encoding": {
@@ -34,5 +34,6 @@
       "file": "page-06.webp",
       "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 6 of 6, Gus on the Bus. Style: Cheerful retro screen-print style, limited red, mustard and teal inks. Recurring identities (include ONLY those in the scene): Gus: about six, round glasses, green cap, orange backpack. One big red city bus with big windows. A brown dog, a pink pig, a red-brown hen. Same bus stop on a town street. Scene: Gus laughs and runs along the pavement next to the bus. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

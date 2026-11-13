@@ -1,7 +1,7 @@
 {
   "id": "fox-grapes",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs.",
   "reference": "One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left.",
   "source": "https://www.gutenberg.org/ebooks/53103",
@@ -44,5 +44,6 @@
       "file": "page-08.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Fox and the Grapes, ages 5-7. Style: Soft pastel chalk on toasted tan paper with visible grain, warm late-summer light, gentle rounded shapes. Expressive, friendly illustrated animals, not realistic photographs. Recurring identity: One slim young red fox with a cream chest, white tail tip, black socks and big amber eyes. No clothes. One old garden wall of honey-coloured stone with a wooden trellis; a twisting grapevine climbs it and hangs ONE big bunch of deep purple grapes high above the fox's reach. Fixed setting for pages 2-7: the wall and vine to the right, a path and green lawn to the left. Scene: The fox, nose in the air and arms folded in a huff, turns its back on the vine, but one eye peeks back longingly at the grapes. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

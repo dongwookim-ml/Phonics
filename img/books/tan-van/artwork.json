@@ -1,7 +1,7 @@
 {
   "id": "tan-van",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Soft colored-pencil drawing on cream paper, gentle cross-hatching",
   "reference": "Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge.",
   "encoding": {
@@ -30,5 +30,6 @@
       "file": "page-05.webp",
       "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 5, The Tan Van. Style: Soft colored-pencil drawing on cream paper, gentle cross-hatching. Recurring identities (include ONLY those in the scene): Dad: tall, short brown beard, green jumper. Sam: about six, short red hair, striped blue T-shirt. One tan (light brown) camper van with round headlights. A small black-and-white cat. Driveway beside a house with a hedge. Scene: Sam watches, smiling, as the cat curls up asleep on the van seat. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

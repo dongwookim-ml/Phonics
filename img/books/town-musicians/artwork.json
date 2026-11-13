@@ -1,7 +1,7 @@
 {
   "id": "town-musicians",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image, imageAlt and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs.",
   "reference": "Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window.",
   "source": "https://www.gutenberg.org/ebooks/2591",
@@ -44,5 +44,6 @@
       "file": "page-08.webp",
       "prompt": "Use case: illustration-story. Original landscape 3:2 children's reading book page 8 of 8, The Town Musicians, ages 5-7. Style: Lively ink and wash with crosshatching, moonlit blues and lamp-warm yellows, slightly comic exaggerated poses. Friendly expressive animals, not realistic photographs. Recurring identity: Donkey: grey, big ears, white muzzle. Dog: shaggy brown hound. Cat: black and white tuxedo cat. Rooster: red comb, rainbow tail. No clothes. Robbers: three comic bumbling men with striped shirts and floppy hats, never scary, no weapons. A little wooden cottage in dark woods with one glowing window. Scene: The four friends sit around the table in the cosy cottage, eating dinner and playing music, warm lamplight. Emotions explicit and readable at tablet size. One scene per image, no text, captions, letters, page numbers, watermark, logos, symbols, panels or diagrams."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }

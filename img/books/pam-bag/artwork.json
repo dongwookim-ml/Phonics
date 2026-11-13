@@ -1,7 +1,7 @@
 {
   "id": "pam-bag",
-  "status": "Prompts only. Until the page-NN.webp files are made, the book shows the emoji picture on each page; add image and coverImage in js/books.js when they arrive.",
-  "method": "OpenAI built-in imagegen (planned)",
+  "status": "Complete. Individual WebP illustrations are connected to every page and the cover in js/books.js.",
+  "method": "OpenAI built-in imagegen; individual illustrations and consistent scene sheets encoded as separate WebP page assets.",
   "style": "Bright gouache picture-book with chunky shapes and warm yellow light",
   "reference": "Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page.",
   "encoding": {
@@ -30,5 +30,6 @@
       "file": "page-05.webp",
       "prompt": "Use case: illustration-story. Landscape 3:2 preschool decodable reading book page 5 of 5, The Bag. Style: Bright gouache picture-book with chunky shapes and warm yellow light. Recurring identities (include ONLY those in the scene): Pam: about five, curly black hair in two puffs, yellow dress, red sneakers. One big red backpack. Same sunny bedroom with a blue rug and a window for every page. Scene: The red backpack bulges hugely, round and overstuffed, Pam surprised with hands on cheeks. Clear single action, visible facial emotion, uncluttered composition, the picture alone must show what the sentence says. NO text, letters, captions, symbols, panels or watermark."
     }
-  ]
+  ],
+  "generatedOn": "2026-11-13"
 }
