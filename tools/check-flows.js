@@ -167,7 +167,7 @@ async function parentPauses(browser) {
     const say = Sound.say;
     Sound.say = (parts, who) => { if ([].concat(parts).length) said.push(parts); return say(parts, who); };
     // She walks to someone far away; a parent opens the panel on the way.
-    const npc = state.scene.npcs.filter(n => !n.mount && !n.shop)
+    const npc = state.scene.npcs.filter(n => !n.mount && !n.shop && !n.salon && !n.nailSalon)
       .sort((a, b) => Math.hypot(b.c - state.hero.c, b.r - state.hero.r) - Math.hypot(a.c - state.hero.c, a.r - state.hero.r))[0];
     talkTo(npc);
     await sleep(300);
@@ -301,7 +301,7 @@ async function audioUnlock(browser) {
   await page.click('#start-btn', { force: true }); // it bobs, so never "stable"
   await page.waitForTimeout(600);
   // A villager talks; while the line plays she taps the scene.
-  await page.evaluate(() => { window.__log.length = 0; openDialog(state.scene.npcs.find(n => !n.mount && !n.shop)); });
+  await page.evaluate(() => { window.__log.length = 0; openDialog(state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon)); });
   await page.waitForTimeout(500);
   const before = await page.evaluate(() => window.__log.length);
   await page.mouse.click(500, 110);
@@ -1120,7 +1120,8 @@ async function littleGames(browser, edition) {
       openDialog(host);
       o.button = { shown: shown('dlg-mini'), text: document.getElementById('dlg-mini').textContent };
       closeDialog();
-      const someone = sc.npcs.find(n => n !== host && !n.mount && !n.shop && !n.caught);
+      // Service NPCs open their own cards instead of a question dialog.
+      const someone = sc.npcs.find(n => n !== host && !n.mount && !n.shop && !n.salon && !n.nailSalon && !n.caught);
       openDialog(someone);
       o.button.other = shown('dlg-mini');
       closeDialog();
@@ -1363,7 +1364,7 @@ function outsideSetup() {
       state.busy = busyNow();
     },
     now: () => ({ busy: state.busy, walking: hero.path.length, going: !!hero.onArrive, talking: !!state.talking, at: `${hero.c},${hero.r}` }),
-    ask: () => openDialog(state.scene.npcs.find(n => !n.mount && !n.shop && !n.caught)),
+    ask: () => openDialog(state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon && !n.caught)),
     // Something bought: the "wear it now?" card.
     buy() {
       openShop(names.map(sceneFor).flatMap(sc => sc.npcs).find(n => n.shop));
@@ -1627,7 +1628,7 @@ async function musicFlows(browser, edition) {
 
     // A question: down from the moment it opens until it closes, also while
     // nobody talks.
-    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon);
     openDialog(npc);
     out.q = { open: musicInfo.ducked };
     await sleep(300);
@@ -1770,7 +1771,7 @@ async function musicFlows(browser, edition) {
   await p2.click('#start-btn', { force: true });
   const none = await p2.evaluate(async () => {
     const sleep = ms => new Promise(res => setTimeout(res, ms));
-    openDialog(state.scene.npcs.find(n => !n.mount && !n.shop));
+    openDialog(state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon));
     await sleep(500);
     closeDialog();
     document.getElementById('mute').click();
@@ -2074,7 +2075,7 @@ async function kidMonsters(browser, edition) {
     await tick();
     out.closed = !seen(frame) && frame.classList.contains('hidden') && !seen(big) && !ui.dialog.classList.contains('drawn');
     // Another villager: the portrait, no drawing.
-    const other = state.scene.npcs.find(n => !KID_MONSTERS[n.look] && !n.mount && !n.shop && !n.unicorn);
+    const other = state.scene.npcs.find(n => !KID_MONSTERS[n.look] && !n.mount && !n.shop && !n.salon && !n.nailSalon && !n.unicorn);
     openDialog(other);
     out.other = { name: other.name, drawing: seen(frame), portrait: seen(document.querySelector('.portrait')) };
     closeDialog();
@@ -2202,7 +2203,7 @@ async function blendSteps(browser, edition) {
     T.until = async (ok, ms = 15000) => { for (let t = 0; t < ms && !ok(); t += 100) await T.sleep(100); return ok(); };
     T.shown = id => !document.getElementById(id).classList.contains('hidden');
     QUIZ_TYPES.forest = ['blend'];
-    T.npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    T.npc = state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon);
     T.ask = () => {
       if (state.talking) closeDialog();
       const k = Quiz.skill('blend');
@@ -2346,7 +2347,7 @@ async function blendSteps(browser, edition) {
   await page.waitForTimeout(800);
   r.reload = await page.evaluate(() => {
     QUIZ_TYPES.forest = ['blend'];
-    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon);
     Object.assign(Quiz.skill('blend'), { n: 0, easy: false });
     state.busy = false;
     openDialog(npc);
@@ -2358,7 +2359,7 @@ async function blendSteps(browser, edition) {
   r.short = await page.evaluate(async () => {
     window.T = window.T || {};
     const sleep = ms => new Promise(res => setTimeout(res, ms));
-    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon);
     Quiz.setTier('blend', 1);
     Object.assign(Quiz.skill('blend'), { n: 0, easy: false });
     state.busy = false;
@@ -2435,7 +2436,7 @@ async function blendSteps(browser, edition) {
     const sleep = ms => new Promise(res => setTimeout(res, ms));
     const until = async (ok, ms = 15000) => { for (let t = 0; t < ms && !ok(); t += 100) await sleep(100); return ok(); };
     QUIZ_TYPES.forest = ['blend'];
-    const npc = state.scene.npcs.find(n => !n.mount && !n.shop);
+    const npc = state.scene.npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon);
     Quiz.setTier('blend', 3);
     state.guide.magic = 3;
     Object.assign(Quiz.skill('blend'), { n: 0, easy: false });
@@ -2602,7 +2603,7 @@ async function hairSalon(browser, edition, look) {
     closeWardrobe();
     // Never a present nor in the shop, and not counted with the presents.
     out.never = { shop: shopItems().filter(it => it.slot === 'style').length };
-    const npc = sceneFor('forest').npcs.find(n => !n.mount && !n.shop && !n.monster);
+    const npc = sceneFor('forest').npcs.find(n => !n.mount && !n.shop && !n.salon && !n.nailSalon && !n.monster);
     const slots = new Set();
     for (let i = 0; i < 40 && hasNewGift(npc); i++) { offerReward(npc); slots.add(state.gift.slot); acceptReward(true); }
     out.never.presents = slots.has('style');
