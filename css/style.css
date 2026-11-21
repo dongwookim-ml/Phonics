@@ -867,7 +867,8 @@ body.captain .medal.got .disc .L { color: #fff; }
 .qs-list { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
 .qs-quest {
   position: relative; width: 100%; min-height: 98px; height: auto; padding: 11px 13px;
-  display: grid; grid-template-columns: 52px minmax(0,1fr); align-items: center; gap: 5px 12px;
+  /* Emoji fonts can draw glyphs wider than their declared font size. */
+  display: grid; grid-template-columns: 56px minmax(0,1fr); align-items: center; gap: 5px 12px;
   text-align: left; font-family: var(--ui-font); color: var(--ink); cursor: pointer;
   background: #fff; border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 4px 0 rgba(74,44,79,.2);
 }
@@ -942,7 +943,7 @@ body.captain .quests { background: radial-gradient(circle at 50% 30%, #fbfdff, #
   .qs-listen-hint { font-size: 12px; }
   .qs-row { display: flex; flex-direction: column; align-items: stretch; gap: 9px; }
   .qs-list { gap: 7px; }
-  .qs-quest { min-height: 82px; padding: 7px 9px; grid-template-columns: 36px minmax(0,1fr); gap: 4px 8px; border-radius: 16px; }
+  .qs-quest { min-height: 82px; padding: 7px 9px; grid-template-columns: 40px minmax(0,1fr); gap: 4px 8px; border-radius: 16px; }
   .qs-quest .ic { font-size: 32px; }
   .qs-quest canvas.ic { width: 36px; height: 36px; }
   .qs-name { font-size: 16px; }
