@@ -577,6 +577,8 @@ globalThis.PIXELTOWN_LOCALES.ko = {
   "library.readingLevel": "읽기 {0}단계",
   "library.youAlreadyEarnedTheStarFor": "<div class=\"rd-note\">⭐ 이 책의 별은 벌써 받았어요</div>",
   "library.readABook": "📖 책 읽기",
+  "library.readingShelfHint": "✏️ 혼자 읽기",
+  "library.listeningShelfHint": "🎧 동화 듣기",
   "minigame.craneGame": "🧲 크레인 놀이",
   "minigame.fishingGame": "🎣 낚시 놀이",
   "minigame.magnetCrane": "🧲 자석 크레인",

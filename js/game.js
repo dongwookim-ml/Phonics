@@ -2689,10 +2689,10 @@ function tapObject(o, wx, wy, front) {
     walkTo((c, r) => o.front.some(f => f.c === c && f.r === r), openAlbum);
     return true;
   }
-  // The library's bookcases open the book list, the wardrobe and mirror the wardrobe.
+  // Each bookcase opens its own collection; the wardrobe and mirror open clothes.
   if (o.kind === 'bookcase' || o.kind === 'wardrobe') {
     Sound.tap();
-    walkTo((c, r) => o.front.some(f => f.c === c && f.r === r), o.kind === 'bookcase' ? openLibrary : openWardrobe);
+    walkTo((c, r) => o.front.some(f => f.c === c && f.r === r), o.kind === 'bookcase' ? () => openLibrary(o.books) : openWardrobe);
     return true;
   }
   // Buildings with doors: walk to the door and go in.

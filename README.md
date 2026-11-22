@@ -800,7 +800,9 @@ Custom names in this audit use live speech fallback rather than requiring record
   The chest shows its five-coin reward before it is opened. A day she doesn't
   play changes nothing: no streak, nothing lost. The robot edition has missions, boxes, batteries and a blue chest.
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
-- **Royal library (castle 2nd floor)**: tap a bookcase, or the librarian's
+- **Royal library (castle 2nd floor)**: the two bookcases have separate
+  collections, labeled “I can read” and “Story time.” Tap the listening
+  bookcase, or the librarian's
   "📖 책 읽어주세요" button, for twenty-three fairy tales and fables
   retold in simple English (8–12 illustrated pages each). The reader reads each sentence aloud and highlights it,
   turning pages on its own (⏸ pauses, ◀ ▶ turn pages, tap a sentence to hear
@@ -808,8 +810,10 @@ Custom names in this audit use live speech fallback rather than requiring record
   🪙 1 coin, but only the first time that question is answered right, so
   re-reading is free but can't farm coins. A wrong answer gets a second try,
   then the answer is shown. Books live in `BOOKS` in `js/books.js`; the
-  reader is `js/library.js`.
-- **I can read! (the library's first shelf, ✏️ 내가 읽는 책)**: sixteen
+  reader is `js/library.js`. Each bookcase shows only its own books and
+  completion count; “Read another book” returns to the same collection.
+  The captain edition's HQ library uses the same arrangement.
+- **I can read! (the library's reading bookcase, ✏️ 내가 읽는 책)**: sixteen
   little books she reads herself, 4–6 pages of one short sentence under a
   big picture. Every word is one she can sound out at the book's level, or
   one of twelve sight words (`SIGHT_WORDS`: the, a, I, is, to, see, go, no,

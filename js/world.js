@@ -560,10 +560,10 @@ function buildCastleUpstairs() {
     block(sc, c, r, Math.ceil(w), Math.ceil(d));
     return addObject(sc, { c, r, w: Math.ceil(w), d: Math.ceil(d) }, footBounds(sc, c, r, w, d, up, 8), draw, extra);
   };
-  // Tapping a bookcase opens the story books (js/library.js).
-  const shelf = r => ({ kind: 'bookcase', front: [{ c: 1, r }, { c: 1, r: r + 1 }] });
-  furn(0, 1, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 1, 2), shelf(1));
-  furn(0, 4, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 4, 2), shelf(4));
+  // One bookcase for reading herself, one for listening to stories.
+  const shelf = (r, books) => ({ kind: 'bookcase', books, front: [{ c: 1, r }, { c: 1, r: r + 1 }] });
+  furn(0, 1, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 1, 2), shelf(1, 'self'));
+  furn(0, 4, 0.45, 2, 70, ctx => drawBookcase(ctx, sc, 0, 4, 2), shelf(4, 'stories'));
   furn(1, 0, 1, 1, 44, ctx => drawShelf(ctx, sc, 1, 0, '#b98cff'), { react: FURNITURE.shelf });
   furn(3, 7, 1, 1, 24, ctx => drawTable(ctx, sc, 3, 7), { react: FURNITURE.table });
   furn(7, 2, 1, 1, 44, ctx => drawHarp(ctx, sc, 7, 2), { react: FURNITURE.harp });

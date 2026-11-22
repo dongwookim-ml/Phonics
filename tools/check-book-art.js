@@ -113,6 +113,54 @@ const root = path.join(__dirname, '..');
       });
       await page.waitForFunction(() => !document.querySelector('#rd-pic img'));
       assert.ok((await page.locator('#rd-pic').innerText()).length);
+      // The two physical bookcases keep reading and listening separate,
+      // including refreshes and the return from a book's completion screen.
+      const shelves = await page.evaluate(() => sceneFor('castle2').objects.filter(o => o.kind === 'bookcase').map(o => o.books));
+      assert.deepEqual(shelves, ['self', 'stories']);
+      for (const shelf of shelves) {
+        const expected = await page.evaluate(shelf => {
+          closeLibrary();
+          state.scene = sceneFor('castle2');
+          const bookcase = state.scene.objects.find(o => o.kind === 'bookcase' && o.books === shelf);
+          placeHero(bookcase.front[0].c, bookcase.front[0].r);
+          tapObject(bookcase);
+          const books = shelf === 'self' ? DECODABLE_BOOKS : BOOKS;
+          const done = books.filter(b => shelf === 'self' ? selfDone(b) : (state.books[b.id]?.read || 0) > 0).length;
+          return { total: books.length, count: I18n.t('library.booksRead', done, books.length) };
+        }, shelf);
+        assert.equal(await page.locator('#library').isVisible(), true);
+        assert.equal(await page.locator('#lib-books .lib-book').count(), expected.total);
+        assert.equal(await page.locator('#lib-books .lib-book.self').count(), shelf === 'self' ? expected.total : 0);
+        assert.equal(await page.locator('#lib-count').innerText(), expected.count);
+        await page.evaluate(() => libraryRefresh());
+        assert.equal(await page.locator('#lib-books .lib-book').count(), expected.total);
+        await page.locator('#lib-books .lib-book').first().click();
+        assert.equal(await page.evaluate(() => library.mode), shelf === 'self' ? 'self' : 'read');
+        await page.evaluate(shelf => {
+          library.page = library.book.pages.length - 1;
+          bookTurn(1);
+          if (shelf === 'self') selfEndButtons(library.book);
+          else {
+            for (let i = 0; i < library.book.quiz.length; i++) {
+              bookQuestion(i);
+              const k = library.book.quiz[i].answer;
+              bookPick(k, document.querySelector(`#rd-options [data-k="${k}"]`));
+            }
+            bookNext();
+          }
+        }, shelf);
+        await page.locator('#rd-options .yes').click();
+        assert.equal(await page.evaluate(() => library.shelf), shelf);
+        assert.equal(await page.locator('#lib-books .lib-book').count(), expected.total);
+        assert.equal(await page.locator('#lib-books .lib-book.self').count(), shelf === 'self' ? expected.total : 0);
+      }
+      await page.evaluate(() => {
+        closeLibrary();
+        openDialog(libraryLibrarian());
+      });
+      await page.locator('#dlg-books').click();
+      assert.equal(await page.evaluate(() => library.shelf), 'stories');
+      assert.equal(await page.locator('#lib-books .lib-book.self').count(), 0);
       assert.deepEqual(errors, []);
       const drawn = stories.filter(b => b.art), emoji = stories.filter(b => !b.art);
       const selfPages = selfBooks.reduce((n, b) => n + b.pages, 0), selfDrawn = selfBooks.filter(b => b.art).length;

@@ -577,6 +577,8 @@ globalThis.PIXELTOWN_LOCALES.en = {
   "library.readingLevel": "Reading level {0}",
   "library.youAlreadyEarnedTheStarFor": "<div class=\"rd-note\">⭐ You already earned the star for this book</div>",
   "library.readABook": "📖 Read a book",
+  "library.readingShelfHint": "✏️ I can read",
+  "library.listeningShelfHint": "🎧 Story time",
   "minigame.craneGame": "🧲 Crane game",
   "minigame.fishingGame": "🎣 Fishing game",
   "minigame.magnetCrane": "🧲 Magnet crane",

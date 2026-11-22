@@ -1,10 +1,11 @@
 // The royal library on the castle's second floor: the shelf of story books
 // (BOOKS in js/books.js), a reader that reads each story aloud sentence by
 // sentence, and three questions at the end that pay a coin each, once.
-// Another shelf, above the stories, holds the little books she reads
-// herself (DECODABLE_BOOKS): the same reader shows each word as a tile.
+// A separate bookcase holds the little books she reads herself
+// (DECODABLE_BOOKS): the same reader shows each word as a tile.
 
 const library = {
+  shelf: 'all',     // 'self' or 'stories' when opened from a bookcase
   book: null,
   page: 0,
   sent: 0,           // the sentence being read on this page
@@ -63,10 +64,12 @@ const bookLine = (kind, vars) => line(`book-${kind}`, vars, BOOK_LINES[kind]);
 
 // ---- Book list -----------------------------------------------------------
 
-function openLibrary() {
+function openLibrary(shelf = 'all') {
   // Once today's play time is up (js/guide.js) the library closes instead,
   // so another book can't keep the town from going to sleep.
   if (guideTimeUp()) { closeLibrary(); return; }
+  if (library.shelf !== shelf) libraryEl('lib-books').scrollTop = 0;
+  library.shelf = shelf;
   state.busy = true;
   renderLibrary();
   libraryEl('library').classList.remove('hidden');
@@ -76,19 +79,20 @@ function openLibrary() {
 }
 
 function renderLibrary() {
-  // The captain edition's library has its own name ("본부 도서관").
-  libraryEl('library').querySelector('.wd-name').textContent = place('library');
-  const read = BOOKS.filter(b => state.books && state.books[b.id] && state.books[b.id].read > 0).length;
-  const mine = DECODABLE_BOOKS.filter(selfDone).length;
-  libraryEl('lib-count').textContent = I18n.t('library.booksRead', read + mine, BOOKS.length + DECODABLE_BOOKS.length);
+  const text = selfText();
+  const stories = library.shelf === 'self' ? [] : BOOKS;
+  const selfBooks = library.shelf === 'stories' ? [] : DECODABLE_BOOKS;
+  libraryEl('library').querySelector('.wd-name').textContent = library.shelf === 'self' ? text.shelf
+    : library.shelf === 'stories' ? text.stories : place('library');
+  const read = stories.filter(b => state.books && state.books[b.id] && state.books[b.id].read > 0).length;
+  const mine = selfBooks.filter(selfDone).length;
+  libraryEl('lib-count').textContent = I18n.t('library.booksRead', read + mine, stories.length + selfBooks.length);
   const list = libraryEl('lib-books');
   list.innerHTML = '';
-  // Her own books first, then the stories read to her.
-  const text = selfText();
-  list.append(libraryShelf(text.shelf, `${mine} / ${DECODABLE_BOOKS.length}`));
-  for (const book of DECODABLE_BOOKS) list.append(selfCover(book));
-  list.append(libraryShelf(text.stories, `${read} / ${BOOKS.length}`));
-  for (const book of BOOKS) {
+  if (selfBooks.length) list.append(libraryShelf(text.shelf, `${mine} / ${selfBooks.length}`));
+  for (const book of selfBooks) list.append(selfCover(book));
+  if (stories.length) list.append(libraryShelf(text.stories, `${read} / ${stories.length}`));
+  for (const book of stories) {
     const log = (state.books && state.books[book.id]) || {};
     const got = (log.got || []).length;
     const b = document.createElement('button');
@@ -390,7 +394,7 @@ function bookSummary() {
   const again = document.createElement('button');
   again.className = 'rd-wide yes';
   again.textContent = I18n.t('library.readAnotherBook');
-  again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(); });
+  again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(library.shelf); });
   const bye = document.createElement('button');
   bye.className = 'rd-wide no';
   bye.textContent = I18n.t('library.leave');
@@ -630,7 +634,7 @@ function selfEndButtons(book) {
   const again = document.createElement('button');
   again.className = 'rd-wide yes';
   again.textContent = I18n.t('library.readAnotherBook');
-  again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(); });
+  again.addEventListener('click', () => { Sound.tap(); bookHush(); libraryEl('reader').classList.add('hidden'); openLibrary(library.shelf); });
   const bye = document.createElement('button');
   bye.className = 'rd-wide no';
   bye.textContent = I18n.t('library.leave');
@@ -650,7 +654,7 @@ function libraryInvite() {
   });
 }
 
-// A bobbing "read a book" bubble and twinkles over each bookcase. They are
+// A bobbing reading/listening label and twinkles over each bookcase. They are
 // bigger right after the invite and until she has read her first book.
 function drawBookHints(now) {
   const sc = state.scene;
@@ -665,11 +669,12 @@ function drawBookHints(now) {
     ctx.font = `800 ${(loud ? 9 : 7) * s}px "Baloo 2", "Trebuchet MS", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const text = I18n.t('library.readABook');
+    const text = I18n.t(o.books === 'self' ? 'library.readingShelfHint' : 'library.listeningShelfHint');
+    const color = o.books === 'self' ? '#34885b' : '#4a6ab8';
     const bw = ctx.measureText(text).width + 8 * s;
     const bh = (loud ? 13 : 10) * s;
     ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#4a6ab8';
+    ctx.strokeStyle = color;
     ctx.lineWidth = s;
     roundRect(ctx, p.x - bw / 2, p.y - bh / 2, bw, bh, 4 * s);
     ctx.fill();
@@ -679,7 +684,7 @@ function drawBookHints(now) {
     ctx.lineTo(p.x, p.y + bh / 2 + 3.5 * s);
     ctx.lineTo(p.x + 2.5 * s, p.y + bh / 2 - 1);
     ctx.fill();
-    ctx.fillStyle = '#4a6ab8';
+    ctx.fillStyle = color;
     ctx.fillText(text, p.x, p.y + 0.5 * s);
     // Twinkles on the shelves.
     if (!loud) continue;
@@ -704,7 +709,7 @@ function libraryDialog(npc) {
   libraryEl('dlg-books').classList.toggle('hidden', !npc || npc.look !== 'librarian');
 }
 
-libraryEl('dlg-books').addEventListener('click', () => { Sound.tap(); closeDialog(); openLibrary(); });
+libraryEl('dlg-books').addEventListener('click', () => { Sound.tap(); closeDialog(); openLibrary('stories'); });
 libraryEl('lib-done').addEventListener('click', () => { Sound.tap(); closeLibrary(); });
 libraryEl('rd-close').addEventListener('click', () => { Sound.tap(); closeLibrary(); });
 libraryEl('rd-prev').addEventListener('click', () => { Sound.tap(); bookHush(); bookTurn(-1); });

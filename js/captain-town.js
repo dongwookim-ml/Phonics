@@ -2028,10 +2028,10 @@ function buildHQUpstairs() {
   });
   rtPaintFloor(sc, ['wood'], '#e4ebf7');
 
-  // Tapping a bookcase opens the story books (js/library.js).
-  const shelf = r => ({ kind: 'bookcase', front: [{ c: 1, r }, { c: 1, r: r + 1 }] });
-  rtFurn(sc, 0, 1, 0.45, 2, 70, ctx => rtBookcase(ctx, sc, 0, 1, 2), shelf(1));
-  rtFurn(sc, 0, 4, 0.45, 2, 70, ctx => rtBookcase(ctx, sc, 0, 4, 2), shelf(4));
+  // One bookcase for reading herself, one for listening to stories.
+  const shelf = (r, books) => ({ kind: 'bookcase', books, front: [{ c: 1, r }, { c: 1, r: r + 1 }] });
+  rtFurn(sc, 0, 1, 0.45, 2, 70, ctx => rtBookcase(ctx, sc, 0, 1, 2), shelf(1, 'self'));
+  rtFurn(sc, 0, 4, 0.45, 2, 70, ctx => rtBookcase(ctx, sc, 0, 4, 2), shelf(4, 'stories'));
   rtFurn(sc, 1, 0, 1, 1, 44, ctx => rtPartsShelf(ctx, sc, 1, 0, '#ff9a3a'), { react: RT_FURNITURE.shelf });
   rtFurn(sc, 3, 7, 1, 1, 26, ctx => rtWorkTable(ctx, sc, 3, 7, '#5a8af0'), { react: RT_FURNITURE.table });
   rtFurn(sc, 7, 2, 1, 1, 40, ctx => rtConsole(ctx, sc, 7, 2), { react: RT_FURNITURE.console });
