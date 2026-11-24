@@ -1,8 +1,8 @@
 // The royal library on the castle's second floor: the shelf of story books
 // (BOOKS in js/books.js), a reader that reads each story aloud sentence by
 // sentence, and three questions at the end that pay a coin each, once.
-// A separate bookcase holds the little books she reads herself
-// (DECODABLE_BOOKS): the same reader shows each word as a tile.
+// A separate bookcase holds SELF_BOOKS: little phonics books with word
+// tiles, and independent versions of the tales with sentence help.
 
 const library = {
   shelf: 'all',     // 'self' or 'stories' when opened from a bookcase
@@ -81,7 +81,7 @@ function openLibrary(shelf = 'all') {
 function renderLibrary() {
   const text = selfText();
   const stories = library.shelf === 'self' ? [] : BOOKS;
-  const selfBooks = library.shelf === 'stories' ? [] : DECODABLE_BOOKS;
+  const selfBooks = library.shelf === 'stories' ? [] : SELF_BOOKS;
   libraryEl('library').querySelector('.wd-name').textContent = library.shelf === 'self' ? text.shelf
     : library.shelf === 'stories' ? text.stories : place('library');
   const read = stories.filter(b => state.books && state.books[b.id] && state.books[b.id].read > 0).length;
@@ -89,8 +89,12 @@ function renderLibrary() {
   libraryEl('lib-count').textContent = I18n.t('library.booksRead', read + mine, stories.length + selfBooks.length);
   const list = libraryEl('lib-books');
   list.innerHTML = '';
-  if (selfBooks.length) list.append(libraryShelf(text.shelf, `${mine} / ${selfBooks.length}`));
-  for (const book of selfBooks) list.append(selfCover(book));
+  if (selfBooks.length) {
+    list.append(libraryShelf(I18n.t('library.firstReadingBooks'), `${DECODABLE_BOOKS.filter(selfDone).length} / ${DECODABLE_BOOKS.length}`));
+    for (const book of DECODABLE_BOOKS) list.append(selfCover(book));
+    list.append(libraryShelf(I18n.t('library.storiesICanRead'), `${SELF_STORY_BOOKS.filter(selfDone).length} / ${SELF_STORY_BOOKS.length}`));
+    for (const book of SELF_STORY_BOOKS) list.append(selfCover(book));
+  }
   if (stories.length) list.append(libraryShelf(text.stories, `${read} / ${stories.length}`));
   for (const book of stories) {
     const log = (state.books && state.books[book.id]) || {};
@@ -138,6 +142,7 @@ function libraryShelf(name, count) {
 // the words as tiles).
 function readerMode(self) {
   libraryEl('reader').classList.toggle('self', self);
+  libraryEl('reader').classList.toggle('self-story', self && !!library.book.independentStory);
   libraryEl('reader').classList.toggle('illustrated', library.book.pages.some(page => !!page.image));
   libraryEl('rd-prev').textContent = self ? '⬅' : '◀';
   libraryEl('rd-next').textContent = self ? '➡' : '▶';
@@ -406,7 +411,8 @@ function bookSummary() {
 }
 
 // ---- I can read! -----------------------------------------------------------
-// Her own books (DECODABLE_BOOKS in js/books.js). Each word is a tile:
+// Independent books (SELF_BOOKS in js/books.js). Each word is a tile;
+// longer stories use a whole sentence as the help target.
 // tapping one says the whole word ("cat!"), the tile lit while it does; no
 // letter by letter, she sounds it out herself. ▶ reads the whole sentence,
 // but only once she has tapped every word on the page or after a while, so
@@ -475,7 +481,8 @@ function openSelfBook(book) {
   readerMode(true);
   libraryEl('rd-title').textContent = `${book.cover} ${book.title}`;
   renderSelfPage();
-  bookSay([{ text: bookLine('selfStart'), narrator: true }], null);
+  if (book.independentStory) bookHush();
+  else bookSay([{ text: bookLine('selfStart'), narrator: true }], null);
 }
 
 function renderSelfPage() {
@@ -493,12 +500,21 @@ function renderSelfPage() {
   text.classList.remove('now');
   text.innerHTML = '';
   const heard = library.self.heard[page];
-  decodeTokens(book.pages[page].text).forEach((t, i) => {
+  const sentence = book.pages[page].text;
+  const tokens = book.independentStory ? [{ text: sentence, word: sentence, sentence: true }] : decodeTokens(sentence);
+  tokens.forEach((t, i) => {
     const b = document.createElement('button');
     b.className = 'rd-word';
+    b.classList.toggle('rd-sentence', !!t.sentence);
     b.classList.toggle('sight', t.sight);
     b.classList.toggle('heard', heard.has(i));
     b.innerHTML = selfTileHtml(t);
+    if (t.sentence) {
+      const hint = document.createElement('span');
+      hint.className = 'rd-sentence-hint';
+      hint.textContent = I18n.t('library.tapSentenceToHear');
+      b.append(hint);
+    }
     b.addEventListener('click', () => selfTap(i, b, t));
     text.append(b);
   });
@@ -507,10 +523,11 @@ function renderSelfPage() {
   renderSelfPlay(false);
   // ▶ comes anyway after a while on this page (game time: it waits under
   // the parent panel).
-  const visit = ++library.self.visit;
+  const session = library.self;
+  const visit = ++session.visit;
   if (!library.self.ready[page]) {
     later(SELF_PLAY_MS, () => {
-      if (library.mode !== 'self' || library.self.visit !== visit) return;
+      if (library.mode !== 'self' || library.self !== session || session.visit !== visit) return;
       library.self.ready[page] = true;
       renderSelfPlay(true);
     });
@@ -563,6 +580,7 @@ function selfTap(i, b, t) {
 // A word the way the narrator says one in a question: "cat!". A sight word
 // is said as it is ("the", "I").
 const selfWord = t => {
+  if (t.sentence) return { text: t.text, narrator: true, rate: 0.85 };
   const w = t.word === 'I' ? t.word : t.word.toLowerCase();
   return { text: t.sight || !t.level ? w : `${w}!`, narrator: true, rate: 0.8 };
 };

@@ -262,6 +262,7 @@ function collect(D) {
   for (const l of B.BOOK_LINES.welcome.concat(B.BOOK_LINES.invite)) for (const t of fills(l)) add(D.VOICES.librarian.tts, t);
   for (const k of ['quiz', 'right', 'tryAgain', 'reveal', 'done', 'theEnd']) for (const l of B.BOOK_LINES[k]) for (const t of fills(l)) add(N, t);
   for (const b of B.BOOKS) {
+    // Independent story pages and sentence help use these same clips.
     add(N, `${b.title}.`, 0.85);
     for (const p of b.pages) for (const s of B.bookSentences(p.text)) add(N, s, 0.85);
     for (const q of b.quiz) {

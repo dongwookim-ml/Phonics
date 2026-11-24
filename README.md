@@ -800,8 +800,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   The chest shows its five-coin reward before it is opened. A day she doesn't
   play changes nothing: no streak, nothing lost. The robot edition has missions, boxes, batteries and a blue chest.
   The quests are `QUESTS` in `js/data.js`; code in `js/quest.js`.
-- **Royal library (castle 2nd floor)**: the two bookcases have separate
-  collections, labeled “I can read” and “Story time.” Tap the listening
+- **Royal library (castle 2nd floor)**: the two bookcases offer independent
+  reading and listening, labeled “I can read” and “Story time.” Tap the listening
   bookcase, or the librarian's
   "📖 책 읽어주세요" button, for twenty-three fairy tales and fables
   retold in simple English (8–12 illustrated pages each). The reader reads each sentence aloud and highlights it,
@@ -840,6 +840,17 @@ Custom names in this audit use live speech fallback rather than requiring record
   every word against it, the rule against the word bank in `js/data.js`,
   that every sound in it is one the game teaches, and that every picture
   is an emoji an older iPad has (Unicode 13 or before).
+  The reading bookcase also offers all twenty-three tales as **Stories I
+  can read**, for thirty-nine independent books in total (`SELF_BOOKS`).
+  `SELF_STORY_BOOKS` derives these versions from `BOOKS`, keeping every
+  sentence and its original picture. Each page shows one sentence, starts
+  silently, and only turns when the child taps ➡. Tapping the sentence
+  plays its existing narration as help; ▶ offers the same help after the
+  tap or eight seconds. Finishing pays one star once and counts for the
+  reading quest. Its `self:<id>` log is separate from the listening book's
+  completion and quiz coins; both appear in their own shelf counts, and
+  the parent panel lists all thirty-nine independent books. The original
+  listening versions still narrate, turn pages and offer their quizzes.
 - **Village homes**: every home in the villages opens too: the forest's
   mushroom houses, the unicorn homes and stable, and the fairies' teacup
   and tulip cottages (🍄 🦄 🫖 🌷 over their doors). Tap one to walk to its

@@ -262,7 +262,7 @@ function parentStats() {
 // often), open, or waiting for her reading tier (🔒 읽기 3단계).
 function parentSelfBooks(body) {
   const box = document.createElement('section');
-  const chips = DECODABLE_BOOKS.map(b => {
+  const chips = SELF_BOOKS.map(b => {
     const n = ((state.books || {})[selfKey(b)] || {}).read | 0;
     const what = n ? I18n.t('parent.times', n) : selfOpen(b) ? I18n.t('parent.open') : I18n.t('parent.readingLevel', b.level);
     return `<span class="l-chip${n ? ' good' : ''}">${b.cover} ${parentEsc(b.title)} <b>${what}</b></span>`;

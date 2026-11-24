@@ -168,7 +168,7 @@ async function play(browser, edition, halloween = 1) {
         openLibrary();
         selfLocked(document.createElement('button'));
         state.skill.read = Object.assign(Quiz.skill('read'), { t: 4 });
-        for (const book of DECODABLE_BOOKS) {
+        for (const book of SELF_BOOKS) {
           openSelfBook(book);
           for (let i = 0; i < book.pages.length; i++) {
             document.querySelectorAll('#rd-text .rd-word').forEach(b => b.click());

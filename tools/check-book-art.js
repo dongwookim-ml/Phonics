@@ -75,10 +75,10 @@ const root = path.join(__dirname, '..');
         else assert.equal(await page.locator('.summary-art').count(), 0);
       }
       }
-      const selfBooks = await page.evaluate(() => DECODABLE_BOOKS.map(b => ({ id: b.id, pages: b.pages.length, art: !!b.coverImage })));
+      const selfBooks = await page.evaluate(() => SELF_BOOKS.map(b => ({ id: b.id, pages: b.pages.length, art: !!b.coverImage, story: !!b.independentStory })));
       assert.equal(await page.locator('.lib-book.self .cover-art').count(), selfBooks.filter(b => b.art).length);
       assert.equal(await page.locator('.lib-book.self:not(.illustrated) .cv').count(), selfBooks.filter(b => !b.art).length);
-      for (const book of selfBooks) {
+      for (const book of selfBooks.filter(b => !b.story)) {
         for (const [width, height] of [[1024, 768], [768, 1024], [844, 390], [390, 844]]) {
           await page.setViewportSize({ width, height });
           for (let i = 0; i < book.pages; i++) {
@@ -103,6 +103,51 @@ const root = path.join(__dirname, '..');
           assert.equal(await page.evaluate(() => library.mode), 'selfEnd');
         }
       }
+      // Every independent story preserves all sentences and illustrations,
+      // fits at tablet/phone sizes, and stays on the page after spoken help.
+      // Sweep inside the browser to avoid a round trip for every sentence.
+      for (const [width, height] of [[1024, 768], [768, 1024], [844, 390], [390, 844], [375, 667]]) {
+        await page.setViewportSize({ width, height });
+        const problems = await page.evaluate(async () => {
+          const problems = [];
+          const check = (ok, where) => { if (!ok) problems.push(where); };
+          const say = bookSay;
+          const spoken = [];
+          bookSay = (parts, done) => { spoken.push(...parts.filter(p => p.text).map(p => p.text)); if (done) done(); };
+          for (const story of SELF_STORY_BOOKS) {
+            const original = BOOKS.find(b => b.id === story.id);
+            const expected = original.pages.flatMap(p => bookSentences(p.text).map(text => ({ text, image: p.image })));
+            check(JSON.stringify(story.pages.map(p => ({ text: p.text, image: p.image }))) === JSON.stringify(expected), `${story.id}: story text/art changed`);
+            spoken.length = 0;
+            openSelfBook(story);
+            check(!spoken.length && !library.playing && library.mode === 'self', `${story.id}: must start silently in independent mode`);
+            for (let i = 0; i < story.pages.length; i++) {
+              if (i) selfTurn(1);
+              const img = document.querySelector('#rd-pic img');
+              await img.decode();
+              const paper = document.querySelector('#rd-paper').getBoundingClientRect();
+              const button = document.querySelector('#rd-text .rd-sentence');
+              const r = button.getBoundingClientRect(), art = img.getBoundingClientRect();
+              check(r.height >= 52 && r.top >= paper.top && r.bottom <= paper.bottom + 1 && r.left >= paper.left && r.right <= paper.right && art.width > 0 && art.height > 0 && art.top >= paper.top && art.bottom <= paper.bottom + 1 && button.scrollWidth <= button.clientWidth + 1, `${story.id} page ${i + 1}: sentence/art overflow`);
+              check(button.querySelector('.g').textContent === expected[i].text, `${story.id} page ${i + 1}: sentence missing`);
+              check(document.querySelector('#rd-play').classList.contains('wait'), `${story.id} page ${i + 1}: help should wait`);
+              spoken.length = 0;
+              button.click();
+              selfPlay();
+              check(spoken.length === 2 && spoken.every(s => s === expected[i].text) && library.page === i && !library.playing, `${story.id} page ${i + 1}: help must say this sentence without advancing`);
+            }
+            // Listening and reading have independent completion and rewards.
+            const listening = JSON.stringify(state.books[story.id]);
+            const before = state.stars, coins = state.coins, read = selfLog(story).read;
+            selfTurn(1);
+            check(library.mode === 'selfEnd' && selfLog(story).read === read + 1 && state.stars === before + (read ? 0 : 1), `${story.id}: completion/star`);
+            check(state.coins === coins && JSON.stringify(state.books[story.id]) === listening, `${story.id}: listening record/rewards changed`);
+          }
+          bookSay = say;
+          return problems;
+        });
+        assert.deepEqual(problems, [], `${edition}/${language} ${width}x${height}: independent stories`);
+      }
       // Unillustrated imported/custom books still use emoji.
       await page.evaluate(() => openSelfBook({ ...DECODABLE_BOOKS[0], pages: DECODABLE_BOOKS[0].pages.map(p => ({...p, image: null})) }));
       assert.equal(await page.locator('#rd-pic img').count(), 0);
@@ -124,7 +169,7 @@ const root = path.join(__dirname, '..');
           const bookcase = state.scene.objects.find(o => o.kind === 'bookcase' && o.books === shelf);
           placeHero(bookcase.front[0].c, bookcase.front[0].r);
           tapObject(bookcase);
-          const books = shelf === 'self' ? DECODABLE_BOOKS : BOOKS;
+          const books = shelf === 'self' ? SELF_BOOKS : BOOKS;
           const done = books.filter(b => shelf === 'self' ? selfDone(b) : (state.books[b.id]?.read || 0) > 0).length;
           return { total: books.length, count: I18n.t('library.booksRead', done, books.length) };
         }, shelf);
@@ -161,6 +206,24 @@ const root = path.join(__dirname, '..');
       await page.locator('#dlg-books').click();
       assert.equal(await page.evaluate(() => library.shelf), 'stories');
       assert.equal(await page.locator('#lib-books .lib-book.self').count(), 0);
+      // Reading a tale returns to the independent shelf and updates the
+      // parent panel; reopening it for listening still uses the old reader.
+      await page.evaluate(() => { closeLibrary(); openLibrary('self'); });
+      const storyId = stories[0].id;
+      await page.locator(`.lib-book.self[data-id="${storyId}"]`).click();
+      assert.equal(await page.evaluate(() => library.mode), 'self');
+      await page.evaluate(() => { library.page = library.book.pages.length - 1; selfTurn(1); selfEndButtons(library.book); });
+      await page.locator('#rd-options .yes').click();
+      assert.equal(await page.evaluate(() => library.shelf), 'self');
+      assert.equal(await page.locator(`.lib-book.self[data-id="${storyId}"] .tick`).count(), 1);
+      assert.equal(await page.evaluate(() => {
+        const body = document.createElement('div');
+        parentSelfBooks(body);
+        return body.querySelectorAll('.l-chip').length;
+      }), selfBooks.length);
+      await page.evaluate(id => { closeLibrary(); openLibrary('stories'); openBook(BOOKS.find(b => b.id === id)); }, storyId);
+      assert.equal(await page.evaluate(() => library.mode), 'read');
+      assert.equal(await page.locator('#reader.self-story').count(), 0);
       assert.deepEqual(errors, []);
       const drawn = stories.filter(b => b.art), emoji = stories.filter(b => !b.art);
       const selfPages = selfBooks.reduce((n, b) => n + b.pages, 0), selfDrawn = selfBooks.filter(b => b.art).length;

@@ -651,6 +651,16 @@ for (const book of DECODABLE_BOOKS) {
   });
 }
 
+// The same tales can be read independently, one sentence at a time with
+// its original illustration. Sentence help reuses the read-aloud clips.
+// Keep these separate from phonics-level books: stories include harder words.
+const SELF_STORY_BOOKS = BOOKS.map(book => ({
+  ...book,
+  independentStory: true,
+  pages: book.pages.flatMap(page => bookSentences(page.text).map(text => ({ ...page, text }))),
+}));
+const SELF_BOOKS = [...DECODABLE_BOOKS, ...SELF_STORY_BOOKS];
+
 // What each level can sound out. A word is one short vowel closed by its
 // last sounds; letter pairs that say one sound (PART_SOUNDS) come at 3.
 const DECODE = {

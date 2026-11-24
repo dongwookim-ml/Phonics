@@ -797,7 +797,7 @@ async function selfRead(browser) {
     out.quest = [quest()];
     openLibrary();
     out.covers = document.querySelectorAll('#lib-books .lib-book.self').length;
-    out.books = DECODABLE_BOOKS.length;
+    out.books = SELF_BOOKS.length;
     out.firstOpen = !cover(DECODABLE_BOOKS[0].id).classList.contains('locked');
     const hard = DECODABLE_BOOKS.find(b => b.level === 3);
     out.hardLocked = cover(hard.id).classList.contains('locked');

@@ -2317,6 +2317,22 @@ body.captain .start.hw { background: radial-gradient(circle at 50% 38%, #f4f6ff,
   .reader.illustrated .rd-text { font-size: 22px; line-height: 1.25; }
 }
 
+/* Longer tales offer one sentence to read, with optional spoken help. */
+.reader.self-story .rd-sentence {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  white-space: normal;
+  font-size: clamp(24px, 3.8vh, 34px);
+  line-height: 1.35;
+  text-align: left;
+}
+.rd-sentence-hint { display: block; margin-top: 8px; color: #4a6ab8; font-size: 16px; font-weight: 600; }
+@media (max-height: 520px) {
+  .reader.self-story .rd-sentence { min-height: 52px; padding: 8px; font-size: 22px; line-height: 1.25; }
+  .rd-sentence-hint { margin-top: 6px; font-size: 14px; }
+}
+
 /* Math uses generous picture space and fixed groups of ten. */
 .dialog.math-dialog { width: min(860px, calc(100vw - 24px)); max-height: calc(100dvh - 110px); overflow-y: auto; background: #f9fcf4; }
 .math-dialog .portrait { background: #e3f0df; }
