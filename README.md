@@ -686,6 +686,35 @@ Custom names in this audit use live speech fallback rather than requiring record
   goes back to the dates. The smoke and reach checks run with it on too, the
   other checks turn it off, and `ONLY=christmas node tools/check-flows.js`
   checks it.
+- **Christmas play** (`js/christmas-play.js`, both editions, only while it is
+  Christmas). **Santa** (look `santa`, his own sprite and deep voice,
+  `VOICES.santa`) stands by the town tree with **Rudolph** (twice the size of
+  the garden reindeer) and asks town questions like any villager. Rudolph
+  has lost his red nose and Santa's presents fell out of the sleigh: the
+  nose and five gold presents (`XM_HUNT`) lie round the town, sparkling,
+  apart from each other. Each one found is cheered and counted
+  (🎁 3/5 · 🔴 1/1); with all six found Santa says thank you and gives his
+  own treasure (`santaGift`: a Santa doll, the captain's Rudolph robot),
+  which nobody else gives, once a Christmas, and Rudolph's nose shines.
+  In the town square a heap of snow becomes a snowman in three taps, and
+  outdoors a **sled** waits at the top of five clear tiles: tapped, she
+  walks to it and rides down ("Wheee!"), and the next time back up. She
+  leaves **footprints** in the snow (the sled two lines), which fade.
+  **Her room** (the captain's room too) gets her own tree, where every
+  right answer at Christmas hangs an ornament (`christmasRight`, up to
+  `XM_ORNAMENTS` = 30); an **Advent calendar** with 24 doors, one to open a
+  day ("Door 3! Snow!", `ADVENT_WORDS`, 3 coins); and a **fireplace**: she
+  hangs her stocking, and the next day Santa has put a present in it (or 5
+  coins when there is nothing new). In the **evening** (17:00 to 6:00 on
+  the tablet's clock, `xmNightNow`; `?night=1` or `?night=0` for a visit)
+  the villages turn dark blue, house windows light up and the northern
+  lights wave across the top. The math village's train is a red and green
+  **Christmas train** with snowy roofs, a wreath, lights and presents.
+  What she has done is `xmas` in the save (per edition): lists of strings
+  only (`found`, `done`, `orn`, `advent`, `hung`, `got`), so two copies join
+  as sets and older versions keep it. The coins for a door or a stocking
+  are counted once per day across tablets (keyed like the daily chest).
+  `ONLY=christmasPlay node tools/check-flows.js` checks it all.
 - **Fairy Village (level 5)**: a gate at the east end of town's lower road
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
@@ -1280,6 +1309,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
 - `js/halloween.js`: Halloween, laid over every village and room from 1 to 31 October (`?halloween=0/1`)
 - `js/christmas.js`: Christmas, laid over every village and room from 26 November to 31 December, and the Christmas presents (`?christmas=0/1`)
+- `js/christmas-play.js`: Santa, Rudolph and the present hunt, her room's tree, Advent calendar and stocking, snow play and Christmas evenings (`?night=0/1`)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)

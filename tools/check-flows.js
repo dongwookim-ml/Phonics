@@ -2841,7 +2841,7 @@ async function christmas(browser, edition) {
       if (hello) { said.length = 0; hello.click(); out.screens.said = said.slice(); }
       // The presents.
       const xmas = r => WARDROBE.find(w => w.slot === r.slot).items[r.value].christmas;
-      const all = WARDROBE.flatMap(w => Object.entries(w.items).filter(([v, it]) => it.christmas && suits(it)).map(([v]) => `${w.slot}:${v}`));
+      const all = WARDROBE.flatMap(w => Object.entries(w.items).filter(([v, it]) => it.christmas && !it.santaGift && suits(it)).map(([v]) => `${w.slot}:${v}`)); // Santa's own is his alone (js/christmas-play.js)
       let picks = 0;
       for (let i = 0; i < 40; i++) if (rewardChoices(1).every(xmas)) picks++;
       // Everything else hers: then only Christmas things are new.
