@@ -1302,7 +1302,8 @@ async function presents(browser, edition, look, title = look === 'boy' ? 'prince
       wdTab = w.slot;
       renderWardrobe();
       const shown = document.querySelectorAll('#wd-slots .wd-item').length;
-      const fit = Object.values(w.items).filter(item => suits(item)).length;
+      // (Christmas things she doesn't have wait for December, js/christmas.js.)
+      const fit = Object.entries(w.items).filter(([v, item]) => suits(item) && xmasShown(w.slot, v, item)).length;
       if (shown !== fit) out.wardrobeWrong.push(`${w.slot}: ${shown} pictures for ${fit} things`);
     }
     closeWardrobe();
