@@ -33,7 +33,7 @@
 // ?christmas=0 turns it off for good on this device, ?christmas=1 shows it
 // for that visit only, ?christmas=auto goes back to the dates.
 
-const CHRISTMAS_DAYS = { from: [12, 1], until: [12, 31] }; // [month, day]: December, put away on 1 January
+const CHRISTMAS_DAYS = { from: [11, 26], until: [12, 31] }; // [month, day]: 26 November to the end of December, put away on 1 January
 const CHRISTMAS_ON = (() => {
   let ask = null;
   try { ask = new URLSearchParams(location.search).get('christmas'); } catch (e) { /* no address */ }

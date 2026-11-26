@@ -639,7 +639,7 @@ Custom names in this audit use live speech fallback rather than requiring record
   `?halloween=auto` goes back to the dates. The smoke and reach checks run
   both ways, the visual and voice checks with it on, the other flows
   without it, and `ONLY=halloween node tools/check-flows.js` checks it.
-- **Christmas** (both editions, 1 to 31 December every year by the tablet's
+- **Christmas** (both editions, 26 November to 31 December every year by the tablet's
   clock, `CHRISTMAS_DAYS`; put away on 1 January, and never on at the same
   time as Halloween): snow lies on the ground, on every roof and on the tops
   of the trees, fences and lamps, and snowflakes fall. In front of each house
@@ -678,7 +678,7 @@ Custom names in this audit use live speech fallback rather than requiring record
   snowman, Santa's sleigh, a present, a jingle bell and a Christmas star).
   They are never sold in the shop. After Christmas the ones she got stay
   hers to wear; the ones she didn't are out of sight in the wardrobe (and
-  not counted in "gifts collected") until next December (`xmasShown`).
+  not counted in "gifts collected") until next Christmas (`xmasShown`).
   Like Halloween it is only laid on top (`js/christmas.js` dresses each scene
   once it is built and borrows Halloween's placing helpers). Opening the game
   once with `?christmas=0` turns it off on that tablet for good,
@@ -1279,7 +1279,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/heroes.js`: every title its own character (princess edition): how a hero kit is made and drawn; `js/heroes/<title>.js` each title's body and things to wear
 - `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
 - `js/halloween.js`: Halloween, laid over every village and room from 1 to 31 October (`?halloween=0/1`)
-- `js/christmas.js`: Christmas, laid over every village and room from 1 to 31 December, and the Christmas presents (`?christmas=0/1`)
+- `js/christmas.js`: Christmas, laid over every village and room from 26 November to 31 December, and the Christmas presents (`?christmas=0/1`)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)

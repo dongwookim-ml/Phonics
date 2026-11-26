@@ -2918,10 +2918,10 @@ async function christmas(browser, edition) {
   const left = names.filter(n => off.r.scenes[n].any || off.r.scenes[n].flakes);
   check(`${tag}: with ?christmas=0 there is none of it, and the hello is the usual one`, !off.r.on && !left.length && !/Christmas/.test(off.r.hello.join(' ')), left);
   check(`${tag}: no page errors`, !on.errors.length && !off.errors.length, [...on.errors, ...off.errors]);
-  // By the tablet's clock: December only, never with Halloween, and a
+  // By the tablet's clock: 26 November to 31 December, never with Halloween, and a
   // ?christmas=1 isn't kept.
   const when = {};
-  for (const [day, ask] of [['2026-11-30', ''], ['2026-12-01', ''], ['2026-12-25', ''], ['2026-12-31', ''], ['2027-01-01', ''], ['2026-11-15', '&christmas=1'], ['2026-11-16', ''], ['2026-10-20', '&christmas=1']]) {
+  for (const [day, ask] of [['2026-11-25', ''], ['2026-11-26', ''], ['2026-12-25', ''], ['2026-12-31', ''], ['2027-01-01', ''], ['2026-11-15', '&christmas=1'], ['2026-11-16', ''], ['2026-10-20', '&christmas=1']]) {
     const ctx = await browser.newContext();
     await ctx.addInitScript(d => {
       const now = new Date(`${d}T12:00:00`).getTime();
@@ -2933,7 +2933,7 @@ async function christmas(browser, edition) {
     when[`${day}${ask}`] = await p.evaluate(() => CHRISTMAS_ON);
     await ctx.close();
   }
-  check(`${tag}: on in December by the clock, off from 1 January, ?christmas=1 isn't kept, and never at Halloween`,
+  check(`${tag}: on from 26 November to the end of December by the clock, off from 1 January, ?christmas=1 isn't kept, and never at Halloween`,
     JSON.stringify(Object.values(when)) === JSON.stringify([false, true, true, true, false, true, false, false]), when);
 }
 
