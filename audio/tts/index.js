@@ -2356,7 +2356,7 @@ const TTS_INDEX = {
 "Roll, roll, roll!": "ea9cbc0ad8",
 "Rub, rub, rub!": "3a79c0c0ae",
 "Rudolph": "1c443c19fe",
-"Rudolph!": "17b7920961",
+"Rudolph!": "1620d81687",
 "Rudolph's nose is shining bright!": "e24b4dd732",
 "Rumble, rumble! Tank treads!": "91f2419d74",
 "Run with me.": "59c3bfb659",
