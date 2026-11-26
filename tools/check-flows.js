@@ -2811,7 +2811,7 @@ async function christmas(browser, edition) {
       const out = { on: CHRISTMAS_ON, start: LINES.start[0], scenes: {}, cut: [] };
       for (const n of eval(names)()) {
         const sc = sceneFor(n);
-        const props = sc.objects.filter(o => o.christmas && o.react);
+        const props = sc.objects.filter(o => o.christmas && o.react && !o.xmTree); // the big tree stands where the fountain did
         const from = sc.start || (sc.exitTiles || [sc.exit])[0] || (sc.links || [])[0] || sc.doors[0];
         if (from && props.length) {
           const now = hwReach(sc, from);
@@ -2826,6 +2826,8 @@ async function christmas(browser, edition) {
       const town0 = sceneFor('town');
       const houses = [...new Set(town0.doors.map(d => d.obj).filter(Boolean))];
       const props = town0.objects.filter(o => o.christmas && o.react);
+      out.square = { tree: town0.objects.some(o => o.xmTree && o.c0 === 19 && o.r0 === 19), fountain: town0.objects.some(o => o.react && o.react.word === 'fountain' && o.c0 === 19 && o.r0 === 19),
+        canes: props.filter(o => o.react.word === 'candy cane').length };
       out.town = { kinds: [...new Set(props.map(o => o.react.word))].sort().join(), houses: houses.length, painted: houses.filter(o => o.xmDone).length,
         big: houses.filter(h => props.some(o => o.canvas.height > 24 && town0.doors.some(d => d.obj === h && Math.max(Math.abs(o.c0 - d.c), Math.abs(o.r0 - d.r)) <= 3))).length };
       out.drawn = [];
@@ -2903,6 +2905,8 @@ async function christmas(browser, edition) {
   if (edition === 'princess') check(`${tag}: villagers wear a Santa hat, an elf hat or antlers, the king keeps his crown`, on.r.hat.fisher !== off.r.hat.fisher && on.r.hat.king === off.r.hat.king);
   check(`${tag}: the town has many kinds of things (${on.r.town.kinds}), a big one by most houses, and every house decorated`,
     on.r.town.kinds.split(',').length >= 5 && on.r.town.big >= on.r.town.houses * 0.6 && on.r.town.painted === on.r.town.houses, on.r.town);
+  check(`${tag}: a big Christmas tree stands in the town square instead of the fountain, with candy canes round it; the fountain is back with ?christmas=0`,
+    on.r.square.tree && !on.r.square.fountain && on.r.square.canes >= 3 && off.r.square.fountain && !off.r.square.tree, { on: on.r.square, off: off.r.square });
   check(`${tag}: the little games draw with snow falling`, on.r.drawn.every(d => !d.includes(':')), on.r.drawn);
   check(`${tag}: carols: the town, the villages, the caves and the rooms each have theirs, and each tune is whole`,
     on.r.music.town === 'jingle' && on.r.music.forest === 'deck' && on.r.music.cave === 'silent' && on.r.music.room === 'wish' && !on.r.tunes.length

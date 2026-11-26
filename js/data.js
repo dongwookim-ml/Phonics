@@ -1668,7 +1668,7 @@ const PROP_WORDS = ['tent', 'fire', 'log', 'star', 'moon', 'cloud', 'rainbow', '
   // Halloween's things (js/halloween.js).
   'pumpkin', 'ghost', 'candy', 'hay', 'boo', 'cat', 'pot', 'skeleton', 'witch', 'coffin', 'spider', 'scarecrow',
   // Christmas's things (js/christmas.js).
-  'tree', 'snowman', 'present', 'sled', 'penguin', 'reindeer', 'gingerbread'];
+  'tree', 'snowman', 'present', 'sled', 'penguin', 'reindeer', 'gingerbread', 'Christmas tree', 'candy cane'];
 // Halloween: the narrator's hello as the game starts, instead of LINES.start
 // (js/halloween.js), in both editions.
 LINES.halloween = ['Happy Halloween, {title} {name}! Look, the whole town is dressed up!', 'Trick or treat, {title} {name}! Shall we go and find the pumpkins?'];

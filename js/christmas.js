@@ -583,17 +583,112 @@ const XM_BIG = [
 ];
 
 function xmOutdoors(sc) {
-  const base = (sc.W * sc.D) / 110;
+  // The town gets more of everything: a busier, snowier Christmas town.
+  const town = sc.kind === 'town';
+  const base = ((sc.W * sc.D) / 110) * (town ? 1.7 : 1);
+  if (town) xmTownTree(sc);
   xmHouses(sc);
   const spots = hwSpots(sc, () => true);
   for (const [rows, pal, react, glow, share] of XM_SMALL) {
     hwPlace(sc, spots, Math.max(1, Math.round(base * share)), 3, s => xmProp(sc, s, hwSprite(rows, pal), react, glow));
   }
   hwLights(sc, ['#ff4a5a', '#5fd06a', '#ffd34d', '#ffffff', '#6fb7ff'], { christmas: true }, '#2a5a3a');
-  xmSnowGround(sc);
+  xmSnowGround(sc, town ? 0.45 : 0.3);
   xmSnowTops(sc);
-  sc.xmFlakes = xmFlakes(70);
+  sc.xmFlakes = xmFlakes(town ? 110 : 70);
   sc.xmSleigh = { y: sc.height * (0.15 + 0.2 * hash(sc.W, sc.D, 2401)), phase: hash(sc.W, sc.D, 2402) * 30 };
+}
+
+// The town square: the fountain makes way for a big Christmas tree (in
+// both editions it stands on the same 2 x 2 tiles), with snow on its
+// branches, a gold garland, baubles, twinkling lights, a shining star and
+// presents underneath; tapped, it says "Christmas tree!". Big candy canes
+// stand at the four corners round it.
+function xmTownTree(sc) {
+  const f = sc.objects.find(o => o.react && o.react.word === 'fountain' && o.c0 === 19 && o.r0 === 19);
+  if (!f) return;
+  const fc = tileCenter(sc, 19.5, 19.5);
+  const cx = Math.round(fc.x);
+  const cy = Math.round(fc.y);
+  Object.assign(f, { x: cx - 42, y: cy - 128, w: 84, h: 144, christmas: true, xmTree: true,
+    animated: (ctx, t) => xmBigTree(ctx, cx, cy, t), react: { word: 'Christmas tree', fx: 'xmtree' } });
+  stillFrame(f);
+  // The star shines far; some of the lights glow.
+  sc.lamps.push({ x: cx, y: cy - 118, big: true, christmas: true });
+  for (const [dx, dy] of [[-20, -30], [16, -44], [-10, -62], [8, -80], [-22, -14], [24, -18]]) sc.lamps.push({ x: cx + dx, y: cy + dy, small: true, christmas: true });
+  const corners = [[17, 17], [22, 17], [17, 22], [22, 22]].map(([c, r]) => ({ c, r }));
+  hwPlace(sc, corners, 4, 1, s => xmProp(sc, s, hwSprite(XM_CANE, XM_PAL, true, 2), { word: 'candy cane', fx: 'candy' }));
+}
+
+// The big tree, drawn every frame (its lights twinkle and its star pulses).
+const XM_TIERS = [[-12, 36, 30], [-32, 31, 28], [-52, 25, 25], [-70, 19, 22], [-86, 13, 20], [-100, 8, 16]]; // [base y, half width, height]
+function xmBigTree(ctx, cx, cy, t) {
+  ctx.fillStyle = 'rgba(40,30,70,0.18)';
+  ctx.beginPath();
+  ctx.ellipse(cx + 3, cy + 2, 36, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  px(ctx, cx - 5, cy - 16, 10, 14, '#7a4a2e');
+  px(ctx, cx - 5, cy - 16, 3, 14, '#9a6a3e');
+  let n = 0;
+  for (const [by, hw, h] of XM_TIERS) {
+    const y0 = cy + by;
+    const tip = { x: cx, y: y0 - h };
+    fillPoly(ctx, [{ x: cx - hw, y: y0 }, tip, { x: cx + hw, y: y0 }], (x, y) => (x < cx - hw * 0.3 ? '#2a7a44' : x < cx + hw * 0.2 ? '#3f9f58' : '#57b866'));
+    // The outline on its two sides and snow along its scalloped edge.
+    for (let i = 0; i <= h; i++) {
+      const w = (hw * i) / h;
+      px(ctx, Math.round(cx - w) - 1, y0 - h + i, 1, 1, '#1e4a2e');
+      px(ctx, Math.round(cx + w), y0 - h + i, 1, 1, '#1e4a2e');
+    }
+    for (let x = cx - hw; x < cx + hw; x++) {
+      const k = Math.abs(((x - cx) % 6 + 6) % 6 - 3);
+      px(ctx, x, y0 - 2 + Math.round(k / 2), 1, 2, k < 2 ? '#ffffff' : '#dce8f8');
+      px(ctx, x, y0 + Math.round(k / 2), 1, 1, '#1e4a2e');
+    }
+    // A gold garland across it.
+    for (let x = -hw + 4; x < hw - 4; x++) {
+      const y = y0 - h * 0.45 + (x / hw) * 5 + Math.sin(x / 3) * 0.6;
+      if (Math.abs(x) < hw * (1 - (y0 - y) / h) - 1) px(ctx, cx + x, Math.round(y), 1, 1, x % 2 ? '#ffd34d' : '#e0a52a');
+    }
+    // Baubles and lights.
+    const BAUBLE = ['#ff4a5a', '#ffd34d', '#6fb7ff', '#ff9ab8', '#ffffff'];
+    for (let i = 0; i < 4 + Math.round(hw / 8); i++, n++) {
+      const v = 0.25 + 0.65 * hash(n, 3, 2701);
+      const w = hw * v * 0.85;
+      const x = Math.round(cx - w + 2 * w * hash(n, 4, 2702));
+      const y = Math.round(y0 - h * (1 - v) - 2);
+      if (i % 2) {
+        const col = BAUBLE[n % BAUBLE.length];
+        px(ctx, x - 1, y - 1, 3, 3, col);
+        px(ctx, x - 1, y - 1, 1, 1, '#ffffff');
+      } else {
+        const on = Math.sin(t * 3 + n * 1.7) > -0.2;
+        px(ctx, x, y, 2, 2, on ? ['#fff27a', '#ff6a7a', '#7affb0', '#9fd4ff'][n % 4] : '#4a6a50');
+      }
+    }
+  }
+  // The star.
+  const sy = cy - 116;
+  const glow = 0.25 + 0.15 * Math.sin(t * 2.5);
+  ctx.fillStyle = `rgba(255,240,150,${glow})`;
+  ctx.beginPath();
+  ctx.arc(cx, sy + 3, 10, 0, Math.PI * 2);
+  ctx.fill();
+  drawBitmap(ctx, ['....y....', '....y....', '...yyy...', 'yyyyzyyyy', '.yyzzzyy.', '..yyzyy..', '..yy.yy..', '.yy...yy.', '.y.....y.'], XM_PAL, cx - 4, sy - 2);
+  // Presents round its foot.
+  const gift = (x, y, w, h, col, rib) => {
+    px(ctx, x - 1, y - 1, w + 2, h + 2, '#3a2a44');
+    px(ctx, x, y, w, h, col);
+    px(ctx, x, y + h - 2, w, 2, shade(col, -40));
+    px(ctx, x + Math.floor(w / 2) - 1, y, 2, h, rib);
+    px(ctx, x, y + 2, w, 2, rib);
+    px(ctx, x + Math.floor(w / 2) - 3, y - 3, 2, 3, rib);
+    px(ctx, x + Math.floor(w / 2) + 1, y - 3, 2, 3, rib);
+  };
+  gift(cx - 30, cy - 10, 12, 9, '#ff4a5a', '#ffd34d');
+  gift(cx - 16, cy - 4, 10, 8, '#5aa6f0', '#ffffff');
+  gift(cx + 10, cy - 6, 12, 10, '#5fc46a', '#ff4a5a');
+  gift(cx + 24, cy - 12, 9, 8, '#ffd34d', '#c02a3a');
 }
 
 // Every house (anything with a door) gets a big thing in its front garden,
@@ -679,7 +774,7 @@ function xmDecorate(sc, o, i) {
 
 // Snow on the ground: the grass white, the roads and paths dusted and
 // trodden, sparkles here and there (painted on the ground).
-function xmSnowGround(sc) {
+function xmSnowGround(sc, onWays = 0.3) {
   const g = sc.ground.getContext('2d');
   for (let r = 0; r < sc.D; r++) for (let c = 0; c < sc.W; c++) {
     const t = tileAt(sc, c, r);
@@ -687,7 +782,7 @@ function xmSnowGround(sc) {
     const o = tileOrigin(sc, c, r);
     const way = hwWay(t);
     const diamond = [{ x: o.x + 16, y: o.y }, { x: o.x + 32, y: o.y + 8 }, { x: o.x + 16, y: o.y + 16 }, { x: o.x, y: o.y + 8 }];
-    g.globalAlpha = way ? 0.3 : 0.8;
+    g.globalAlpha = way ? onWays : 0.8;
     fillPoly(g, diamond, '#f4f8ff');
     g.globalAlpha = 1;
     // Drifts and sparkles.

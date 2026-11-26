@@ -234,6 +234,7 @@ async function play(browser, edition, halloween = 1) {
       Sound.say([{ text: line('christmasHi'), narrator: true }]);
       Sound.say([{ text: line('christmasHo'), narrator: true }]);
       for (const [, , react] of XM_SMALL.concat(XM_BIG)) touchReact({}, react, { x: 0, y: 0 }, { x: 0, y: 0 });
+      for (const word of ['Christmas tree', 'candy cane']) touchReact({}, { word, fx: 'xmtree' }, { x: 0, y: 0 }, { x: 0, y: 0 }); // the town square
     });
     if (window.languageAudit) {
       step('all wardrobe tabs', () => {

@@ -648,7 +648,12 @@ Custom names in this audit use live speech fallback rather than requiring record
   trees, snowmen, presents, gingerbread men and penguins twice the size, like
   garden inflatables); each house has lights down its roof's edges, Santa's
   boots sticking out of its roof (or a gold star or a bell on top) and a
-  wreath on its wall. Little trees, snowmen, presents, candy canes, sleds and
+  wreath on its wall. In the town square the fountain makes way for a big
+  Christmas tree (both editions) with snow on its branches, a gold garland,
+  baubles, twinkling lights, a shining star and presents underneath (tap it:
+  "Christmas tree!"), with big candy canes at its four corners; the town has
+  more of everything than the other villages, snow on the square too and
+  heavier snowfall (`xmTownTree`). Little trees, snowmen, presents, candy canes, sleds and
   penguins stand beside the roads and say their word when tapped ("tree!",
   "snowman!", "present!", "reindeer!", "gingerbread!"...). Red, green and
   gold lights hang between the lamp posts, and every 28 seconds Santa flies
