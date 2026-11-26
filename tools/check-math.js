@@ -9,7 +9,7 @@ const {hiddenVillagers}=require('./scene-visibility');
     for(const language of ['en','ko'])for(const edition of ['princess','captain']){
       const page=await browser.newPage({viewport:{width:1180,height:820}}),errors=[];
       page.on('pageerror',e=>errors.push(e.message));await page.route(/^https?:/,r=>r.abort());
-      const url=`file://${path.join(__dirname,'..','index.html')}?guest&language=${language}&edition=${edition}&halloween=0`;
+      const url=`file://${path.join(__dirname,'..','index.html')}?guest&language=${language}&edition=${edition}&halloween=0&christmas=0`;
       await page.goto(url);await page.evaluate(()=>{Sound.say=parts=>{for(const p of parts)if(p.call&&!state.question?.done)p.call();};ui.startBtn.click();state.guide={step:3};});
       const bank=await page.evaluate(()=>{
         const errors=[],ids=new Set(),counts={};let questions=0;

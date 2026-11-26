@@ -28,13 +28,14 @@ for (const s of scripts) {
 
 (async () => {
   const browser = await launch();
-  // Each of them the rest of the year and at Halloween (js/halloween.js).
-  for (const [edition, look, title, halloween] of [['princess', 'girl', 'princess', 0], ['princess', 'boy', 'prince', 0], ['captain', 'robot', 'captain', 0],
-    ['princess', 'girl', 'princess', 1], ['captain', 'robot', 'captain', 1]]) {
+  // Each of them the rest of the year, at Halloween (js/halloween.js) and
+  // at Christmas (js/christmas.js).
+  for (const [edition, look, title, halloween, christmas = 0] of [['princess', 'girl', 'princess', 0], ['princess', 'boy', 'prince', 0], ['captain', 'robot', 'captain', 0],
+    ['princess', 'girl', 'princess', 1], ['captain', 'robot', 'captain', 1], ['princess', 'girl', 'princess', 0, 1], ['princess', 'boy', 'prince', 0, 1], ['captain', 'robot', 'captain', 0, 1]]) {
     const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&halloween=${halloween}&language=${process.env.UI_LANGUAGE || 'ko'}`);
+    await page.goto('file://' + path.join(root, 'index.html') + `?edition=${edition}&halloween=${halloween}&christmas=${christmas}&language=${process.env.UI_LANGUAGE || 'ko'}`);
     await page.waitForTimeout(300);
     // Play without an account, so the login screen doesn't block the test.
     await page.click('#login-guest');
@@ -104,7 +105,7 @@ for (const s of scripts) {
       return { bad, n };
     });
     if (!items.n) items.bad.push('no wardrobe items');
-    for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}${halloween ? ' (Halloween)' : ''}: ${e}`); failed++; }
+    for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}${halloween ? ' (Halloween)' : ''}${christmas ? ' (Christmas)' : ''}: ${e}`); failed++; }
     await page.close();
   }
   // Every title of the princess edition is its own character (js/heroes.js):
@@ -114,7 +115,7 @@ for (const s of scripts) {
     const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
-    await page.goto('file://' + path.join(root, 'index.html') + `?edition=princess&halloween=0&language=${process.env.UI_LANGUAGE || 'ko'}`);
+    await page.goto('file://' + path.join(root, 'index.html') + `?edition=princess&halloween=0&christmas=0&language=${process.env.UI_LANGUAGE || 'ko'}`);
     await page.click('#login-guest');
     const bad = await page.evaluate(() => {
       const bad = [];

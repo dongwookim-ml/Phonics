@@ -34,7 +34,7 @@ const check = (name, ok, detail) => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.route(/^https?:/, r => r.abort());
-    await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=0`);
+    await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=0&christmas=0`);
     await page.click('#login-guest');
     const r = await page.evaluate(() => {
       const out = {};

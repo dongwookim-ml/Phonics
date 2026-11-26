@@ -17,7 +17,7 @@ const out = process.argv[3] || path.join(process.cwd(), `hero-${title}.png`);
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/^https?:/, r => r.abort());
-  await page.goto(`file://${path.join(root, 'index.html')}?edition=princess&halloween=0`);
+  await page.goto(`file://${path.join(root, 'index.html')}?edition=princess&halloween=0&christmas=0`);
   await page.click('#login-guest');
   const size = await page.evaluate(title => {
     const S = 5;

@@ -10,7 +10,7 @@ const { hiddenVillagers } = require('./scene-visibility');
       const page = await browser.newPage({ viewport: { width: 1180, height: 820 } }), errors=[];
       page.on('pageerror', e=>errors.push(e.message));
       await page.route(/^https?:/,r=>r.abort());
-      await page.goto(`file://${path.join(__dirname,'..','index.html')}?guest&language=${language}&halloween=0`);
+      await page.goto(`file://${path.join(__dirname,'..','index.html')}?guest&language=${language}&halloween=0&christmas=0`);
       const layout=await page.evaluate(()=>{
         Sound.say=()=>{}; ui.startBtn.click(); state.guide={step:3};
         const town=sceneFor('town'), stores=town.objects.filter(o=>o.market);

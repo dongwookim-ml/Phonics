@@ -2297,6 +2297,49 @@ body.captain .start.hw { background: radial-gradient(circle at 50% 38%, #f4f6ff,
   .hw-deco .web { font-size: 40px; }
 }
 
+/* ---- Christmas (js/christmas.js) ---- */
+
+/* The login and start screens: a snowy winter sky, "🎄 Merry Christmas! 🎅"
+   under the game's name (tap it to hear it), snowflakes falling, trees, a
+   snowman and a present at the bottom and Santa's sleigh flying over, never
+   in the way of a tap. */
+.start.xm { isolation: isolate; background: radial-gradient(circle at 50% 38%, #ffffff, #d8ecff 55%, #8ab4f0); }
+body.captain .start.xm { background: radial-gradient(circle at 50% 38%, #ffffff, #d4e8ff 55%, #7a9ae8); }
+.start h1 .xm-hello {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 0.5em;
+  color: #ff4a5a;
+  cursor: pointer;
+  text-shadow: 0 2px 0 #ffffff, 2px 0 0 #ffffff, -2px 0 0 #ffffff, 0 -2px 0 #ffffff, 0 4px 0 var(--ink);
+  animation: float 2.4s ease-in-out infinite;
+}
+.xm-deco { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.xm-deco i { position: absolute; font-style: normal; font-size: 44px; line-height: 1; }
+.xm-deco .flake { top: -40px; font-size: 22px; opacity: 0.85; animation: xm-fall 11s linear infinite; }
+.xm-deco .flake:nth-child(1) { left: 6%; }
+.xm-deco .flake:nth-child(2) { left: 18%; font-size: 30px; animation-duration: 14s; animation-delay: -5s; }
+.xm-deco .flake:nth-child(3) { left: 31%; animation-duration: 9s; animation-delay: -2s; }
+.xm-deco .flake:nth-child(4) { left: 44%; font-size: 16px; animation-duration: 12s; animation-delay: -8s; }
+.xm-deco .flake:nth-child(5) { left: 57%; font-size: 28px; animation-delay: -3s; }
+.xm-deco .flake:nth-child(6) { left: 70%; animation-duration: 13s; animation-delay: -10s; }
+.xm-deco .flake:nth-child(7) { left: 82%; font-size: 18px; animation-duration: 10s; animation-delay: -6s; }
+.xm-deco .flake:nth-child(8) { left: 93%; font-size: 26px; animation-duration: 15s; animation-delay: -1s; }
+.xm-deco .tree { bottom: 8px; left: 10px; font-size: 64px; }
+.xm-deco .tree + .tree { left: auto; right: 10px; }
+.xm-deco .snowman { bottom: 10px; left: 84px; font-size: 46px; animation: float 3s ease-in-out infinite; }
+.xm-deco .gift { bottom: 10px; right: 84px; font-size: 40px; }
+.xm-deco .sleigh { top: 8%; left: -80px; font-size: 40px; animation: xm-fly 18s linear infinite; }
+@keyframes xm-fall { 0% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(18px, 55vh) rotate(180deg); } 100% { transform: translate(-6px, calc(100vh + 60px)) rotate(360deg); } }
+@keyframes xm-fly { 0% { transform: translate(0, 0); } 50% { transform: translate(55vw, -10px); } 100% { transform: translate(calc(100vw + 160px), 12px); } }
+@media (max-height: 520px) {
+  .start h1 .xm-hello { font-size: 0.6em; text-shadow: 0 1px 0 #ffffff, 1px 0 0 #ffffff, -1px 0 0 #ffffff, 0 -1px 0 #ffffff, 0 2px 0 var(--ink); }
+  .xm-deco i { font-size: 30px; }
+  .xm-deco .tree { font-size: 40px; }
+  .xm-deco .snowman { left: 56px; font-size: 30px; }
+  .xm-deco .gift { right: 56px; font-size: 28px; }
+}
+
 /* Illustrated read-aloud books: a full scene beside the spoken sentences. */
 .lib-book .cover-art { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 5px 10px 3px 3px; display: block; }
 .lib-book.illustrated { background: #fffaf0; }

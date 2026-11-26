@@ -9,7 +9,7 @@ const {hiddenVillagers}=require('./scene-visibility');
     for(const language of ['en','ko']){
       const page=await browser.newPage({viewport:{width:1180,height:820}}),errors=[];
       page.on('pageerror',e=>errors.push(e.message));await page.route(/^https?:/,r=>r.abort());
-      await page.goto(`file://${path.join(__dirname,'..','index.html')}?guest&language=${language}&halloween=0`);
+      await page.goto(`file://${path.join(__dirname,'..','index.html')}?guest&language=${language}&halloween=0&christmas=0`);
       await page.evaluate(()=>{Sound.say=()=>{};ui.startBtn.click();state.guide={step:3};state.scene=sceneFor('riverside');placeHero(8,7);snapCamera();});
       const click=await page.evaluate(()=>{
         const sc=state.scene,o=sc.objects.find(o=>o.parkProp==='swing');

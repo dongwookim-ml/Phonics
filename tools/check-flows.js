@@ -153,7 +153,7 @@ async function game(browser, { seed, user, server, edition, days, start = true, 
     });
   }
   // The game as it is the rest of the year (Halloween has its own check).
-  await page.goto(`${URL}?halloween=0${edition ? `&edition=${edition}` : ''}`);
+  await page.goto(`${URL}?halloween=0&christmas=0${edition ? `&edition=${edition}` : ''}`);
   await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
   if (start) await page.evaluate(() => document.getElementById('start-btn').click());
   return { page, ctx, errors };
@@ -294,7 +294,7 @@ async function audioUnlock(browser) {
       get() { return desc.get.call(this); },
     });
   });
-  await page.goto(`${URL}?halloween=0`);
+  await page.goto(`${URL}?halloween=0&christmas=0`);
   await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
   await page.click('#title-chips .chip');
   await page.waitForTimeout(800);
@@ -1766,7 +1766,7 @@ async function musicFlows(browser, edition) {
   p2.on('pageerror', e => errs.push(e.message));
   await p2.route(/^https?:/, rt => (own(rt) ? rt.continue() : rt.abort()));
   await p2.addInitScript(() => { localStorage.setItem('pixeltown-guest', '1'); delete window.AudioContext; delete window.webkitAudioContext; });
-  await p2.goto(`${URL}?edition=${edition}&halloween=0`);
+  await p2.goto(`${URL}?edition=${edition}&halloween=0&christmas=0`);
   await p2.waitForFunction(() => typeof Account !== 'undefined' && Account._started);
   await p2.click('#start-btn', { force: true });
   const none = await p2.evaluate(async () => {
@@ -2655,7 +2655,7 @@ async function halloween(browser, edition) {
     page.on('pageerror', e => errors.push(e.message));
     await page.route(/^https?:/, r => (own(r) ? r.continue() : r.abort()));
     await page.addInitScript(() => localStorage.setItem('pixeltown-guest', '1'));
-    await page.goto(`${URL}?edition=${edition}&halloween=${on}`);
+    await page.goto(`${URL}?edition=${edition}&halloween=${on}&christmas=0`);
     await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
     const r = await page.evaluate(async names => {
       if (!Sound.muted) Sound.toggleMute();
@@ -2779,6 +2779,157 @@ async function halloween(browser, edition) {
   }
   check(`${tag}: on in October by the clock, off from 1 November, and ?halloween=1 isn't kept (an old kept one goes)`,
     JSON.stringify(Object.values(when)) === JSON.stringify([[true, null], [true, null], [false, null], [false, null], [true, null], [false, null]]), when);
+}
+
+// Christmas (js/christmas.js), in each edition: with ?christmas=1 every
+// village has its trees, snowmen and presents and every room its little
+// tree or garland, none of them cutting off a tile she could reach; snow
+// lies on the ground and falls; a tree says "tree!" and Santa's sleigh "Ho,
+// ho, ho!" when tapped; villagers wear Santa hats (the king keeps his
+// crown); the game starts with "Merry Christmas" and plays carols; and the
+// presents are Christmas things more often than not while some are left.
+// With ?christmas=0 there is none of it: no Christmas present is given, the
+// ones not had are out of sight, and the shop never sells them.
+async function christmas(browser, edition) {
+  const SCENES = () => ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2',
+    ...TOWN_HOUSES.map(h => `house-${h.letter}`), ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
+  const look = async on => {
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.route(/^https?:/, r => (own(r) ? r.continue() : r.abort()));
+    await page.addInitScript(() => localStorage.setItem('pixeltown-guest', '1'));
+    await page.goto(`${URL}?edition=${edition}&halloween=0&christmas=${on}`);
+    await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+    const r = await page.evaluate(async names => {
+      if (!Sound.muted) Sound.toggleMute();
+      const said = [];
+      const say = Sound.say;
+      Sound.say = (parts, who) => { for (const p of [].concat(parts)) if (p && p.text) said.push(p.text); return say(parts, who); };
+      const out = { on: CHRISTMAS_ON, start: LINES.start[0], scenes: {}, cut: [] };
+      for (const n of eval(names)()) {
+        const sc = sceneFor(n);
+        const props = sc.objects.filter(o => o.christmas && o.react);
+        const from = sc.start || (sc.exitTiles || [sc.exit])[0] || (sc.links || [])[0] || sc.doors[0];
+        if (from && props.length) {
+          const now = hwReach(sc, from);
+          props.forEach(o => { tileAt(sc, o.c0, o.r0).blocked = false; });
+          const free = hwReach(sc, from);
+          props.forEach(o => { tileAt(sc, o.c0, o.r0).blocked = true; });
+          if (free - now !== props.length) out.cut.push(`${n}: ${free - now} tiles for ${props.length} things`);
+        }
+        out.scenes[n] = { outdoor: !!sc.outdoor, props: props.length, garland: sc.objects.some(o => o.christmas && o.background), flakes: (sc.xmFlakes || []).length, any: sc.objects.some(o => o.christmas) || sc.lamps.some(l => l.christmas) };
+      }
+      out.hat = { fisher: villagerSprite('fisher', 0).canvas.toDataURL(), king: villagerSprite('king', 0).canvas.toDataURL() };
+      const town0 = sceneFor('town');
+      const houses = [...new Set(town0.doors.map(d => d.obj).filter(Boolean))];
+      const props = town0.objects.filter(o => o.christmas && o.react);
+      out.town = { kinds: [...new Set(props.map(o => o.react.word))].sort().join(), houses: houses.length, painted: houses.filter(o => o.xmDone).length,
+        big: houses.filter(h => props.some(o => o.canvas.height > 24 && town0.doors.some(d => d.obj === h && Math.max(Math.abs(o.c0 - d.c), Math.abs(o.r0 - d.r)) <= 3))).length };
+      out.drawn = [];
+      for (const [k, g] of Object.entries(MINI_GAMES)) {
+        try { g.draw.backdrop(document.createElement('canvas').getContext('2d'), 260, 160, 26, 16, 1.5); out.drawn.push(k); } catch (e) { out.drawn.push(`${k}: ${e.message}`); }
+      }
+      out.music = { town: musicPlaceOf(town0), forest: musicPlaceOf(sceneFor('forest')), room: musicPlaceOf(sceneFor('yuna')), cave: musicPlaceOf(sceneFor('dungeon')) };
+      out.tunes = Object.keys(XM_TUNES).map(k => { const b = musicBuild(XM_TUNES[k], 0, 1); const mel = XM_TUNES[k].melody.split(/[\s|]+/).filter(Boolean).length; return mel === b.steps ? null : `${k}: ${mel} notes for ${b.steps} steps`; }).filter(Boolean);
+      out.screens = { hello: document.querySelectorAll('#login h1 .xm-hello, #start h1 .xm-hello').length, deco: document.querySelectorAll('.xm-deco').length };
+      const hello = document.querySelector('#start .xm-hello');
+      if (hello) { said.length = 0; hello.click(); out.screens.said = said.slice(); }
+      // The presents.
+      const xmas = r => WARDROBE.find(w => w.slot === r.slot).items[r.value].christmas;
+      const all = WARDROBE.flatMap(w => Object.entries(w.items).filter(([v, it]) => it.christmas && suits(it)).map(([v]) => `${w.slot}:${v}`));
+      let picks = 0;
+      for (let i = 0; i < 40; i++) if (rewardChoices(1).every(xmas)) picks++;
+      // Everything else hers: then only Christmas things are new.
+      const keep = JSON.stringify(state.owned);
+      for (const w of WARDROBE) if (!w.salon) for (const [v, it] of Object.entries(w.items)) if (!it.christmas && v !== 'none' && !state.owned[w.slot].includes(v)) state.owned[w.slot].push(v);
+      const lastOnes = rewardChoices(1).filter(r => r.isNew).map(r => `${r.slot}:${r.value}`);
+      state.owned = JSON.parse(keep);
+      const shop = shopItems().filter(x => x.item.christmas).length;
+      // The wardrobe: a Christmas thing she has shows all year; one she hasn't only at Christmas.
+      const head = WARDROBE.find(w => w.slot === 'head');
+      const [had, notHad] = Object.keys(head.items).filter(v => head.items[v].christmas && suits(head.items[v]));
+      state.owned.head.push(had);
+      wdTab = 'head';
+      renderWardrobe();
+      const shown = [...ui.wdSlots.querySelectorAll('button')].length;
+      out.wardrobe = { had: xmasShown('head', had, head.items[had]), notHad: xmasShown('head', notHad, head.items[notHad]), shown };
+      out.presents = { all: all.length, picks, lastOnes: lastOnes.length, allLast: lastOnes.every(k => all.includes(k)), shop };
+      // Tapping a tree and Santa's sleigh in town.
+      document.getElementById('start-btn').click();
+      out.hello = said.slice();
+      const town = sceneFor('town');
+      const tree = town.objects.find(o => o.christmas && o.react && o.react.word === 'tree');
+      if (tree) {
+        const box = screen.getBoundingClientRect();
+        const at = (wx, wy) => ({ clientX: box.left + ((wx - Math.round(state.cam.x)) * state.scale) * box.width / screen.width, clientY: box.top + ((wy - Math.round(state.cam.y)) * state.scale) * box.height / screen.height, bubbles: true });
+        state.cam.x = tree.x + tree.w / 2 - view.width / 2;
+        state.cam.y = tree.y + tree.h / 2 - view.height / 2;
+        state.busy = false;
+        said.length = 0;
+        screen.dispatchEvent(new PointerEvent('pointerdown', at(tree.x + tree.w / 2, tree.y + tree.h - 6)));
+        // Wait for the sleigh to fly over, then tap it.
+        let s = null;
+        for (let i = 0; i < 300 && !(s = xmSleighAt(town, performance.now())); i++) await new Promise(res => setTimeout(res, 100));
+        if (s) {
+          s = xmSleighAt(town, performance.now());
+          state.cam.x = s.x - view.width / 2;
+          state.cam.y = s.y - view.height / 2;
+          screen.dispatchEvent(new PointerEvent('pointerdown', at(s.x + 6, s.y - 6)));
+        }
+        await new Promise(res => setTimeout(res, 400));
+        out.taps = { said: said.filter(t => /^tree!$|Ho, ho, ho/.test(t)), walking: state.hero.path.length > 0 };
+      }
+      Sound.say = say;
+      return out;
+    }, SCENES.toString());
+    await ctx.close();
+    return { r, errors };
+  };
+  const on = await look(1);
+  const off = await look(0);
+  const tag = `Christmas (${edition})`;
+  const names = Object.keys(on.r.scenes);
+  const outdoors = names.filter(n => on.r.scenes[n].outdoor);
+  const bare = names.filter(n => on.r.scenes[n].outdoor ? !on.r.scenes[n].props || !on.r.scenes[n].flakes : !on.r.scenes[n].props && !on.r.scenes[n].garland);
+  check(`${tag}: every village has trees, snowmen and presents and falling snow, every room a little tree or a garland (${outdoors.length} villages, ${names.length - outdoors.length} rooms)`, on.r.on && outdoors.length >= 5 && !bare.length, bare);
+  check(`${tag}: nothing cuts off a tile she could walk to`, !on.r.cut.length, on.r.cut);
+  check(`${tag}: a tapped tree says "tree!" and Santa's sleigh "Ho, ho, ho!", and she stays put`, !!on.r.taps && on.r.taps.said.length === 2 && on.r.taps.said.includes('tree!') && !on.r.taps.walking, on.r.taps);
+  check(`${tag}: the login and start screens say "Merry Christmas!" (tap it to hear it), with snow and trees behind; none of it with ?christmas=0`,
+    on.r.screens.hello === 2 && on.r.screens.deco === 2 && (on.r.screens.said || []).join() === 'Merry Christmas!' && !off.r.screens.hello && !off.r.screens.deco, { on: on.r.screens, off: off.r.screens });
+  check(`${tag}: the game starts with "Merry Christmas"`, /Merry Christmas/.test(on.r.hello.join(' ')) && on.r.start !== off.r.start, { on: on.r.hello, off: off.r.start });
+  if (edition === 'princess') check(`${tag}: villagers wear a Santa hat, an elf hat or antlers, the king keeps his crown`, on.r.hat.fisher !== off.r.hat.fisher && on.r.hat.king === off.r.hat.king);
+  check(`${tag}: the town has many kinds of things (${on.r.town.kinds}), a big one by most houses, and every house decorated`,
+    on.r.town.kinds.split(',').length >= 5 && on.r.town.big >= on.r.town.houses * 0.6 && on.r.town.painted === on.r.town.houses, on.r.town);
+  check(`${tag}: the little games draw with snow falling`, on.r.drawn.every(d => !d.includes(':')), on.r.drawn);
+  check(`${tag}: carols: the town, the villages, the caves and the rooms each have theirs, and each tune is whole`,
+    on.r.music.town === 'jingle' && on.r.music.forest === 'deck' && on.r.music.cave === 'silent' && on.r.music.room === 'wish' && !on.r.tunes.length
+    && off.r.music.town === 'town' && off.r.music.room === 'home', { on: on.r.music, off: off.r.music, tunes: on.r.tunes });
+  check(`${tag}: at Christmas most presents are Christmas things (${on.r.presents.picks}/40), the last new ones are all Christmas things, and the shop sells none`,
+    on.r.presents.all >= 8 && on.r.presents.picks >= 12 && on.r.presents.picks < 40 && on.r.presents.lastOnes === on.r.presents.all && on.r.presents.allLast && !on.r.presents.shop, on.r.presents);
+  check(`${tag}: after Christmas no Christmas present is given or sold, and only the ones she has show in the wardrobe`,
+    !off.r.presents.picks && !off.r.presents.lastOnes && !off.r.presents.shop && off.r.wardrobe.had && !off.r.wardrobe.notHad && on.r.wardrobe.notHad && on.r.wardrobe.shown > off.r.wardrobe.shown, { off: off.r.presents, wardrobe: [on.r.wardrobe, off.r.wardrobe] });
+  const left = names.filter(n => off.r.scenes[n].any || off.r.scenes[n].flakes);
+  check(`${tag}: with ?christmas=0 there is none of it, and the hello is the usual one`, !off.r.on && !left.length && !/Christmas/.test(off.r.hello.join(' ')), left);
+  check(`${tag}: no page errors`, !on.errors.length && !off.errors.length, [...on.errors, ...off.errors]);
+  // By the tablet's clock: December only, never with Halloween, and a
+  // ?christmas=1 isn't kept.
+  const when = {};
+  for (const [day, ask] of [['2026-11-30', ''], ['2026-12-01', ''], ['2026-12-25', ''], ['2026-12-31', ''], ['2027-01-01', ''], ['2026-11-15', '&christmas=1'], ['2026-11-16', ''], ['2026-10-20', '&christmas=1']]) {
+    const ctx = await browser.newContext();
+    await ctx.addInitScript(d => {
+      const now = new Date(`${d}T12:00:00`).getTime();
+      const Real = Date;
+      Date = class extends Real { constructor(...a) { super(...(a.length ? a : [now])); } static now() { return now; } };
+    }, day);
+    const p = await ctx.newPage();
+    await p.goto(`${URL}?edition=${edition}${ask}`);
+    when[`${day}${ask}`] = await p.evaluate(() => CHRISTMAS_ON);
+    await ctx.close();
+  }
+  check(`${tag}: on in December by the clock, off from 1 January, ?christmas=1 isn't kept, and never at Halloween`,
+    JSON.stringify(Object.values(when)) === JSON.stringify([false, true, true, true, false, true, false, false]), when);
 }
 
 // A gate added in an update (the Monster Village): a child already past its
@@ -2932,6 +3083,7 @@ async function wordVillages(browser, edition) {
     monsterTower: b => monsterTower(b, 'princess'), monsterTowerCaptain: b => monsterTower(b, 'captain'),
     wordVillages: b => wordVillages(b, 'princess'), wordVillagesCaptain: b => wordVillages(b, 'captain'),
     halloween: b => halloween(b, 'princess'), halloweenCaptain: b => halloween(b, 'captain'),
+    christmas: b => christmas(b, 'princess'), christmasCaptain: b => christmas(b, 'captain'),
     salon: b => hairSalon(b, 'princess', 'girl'), salonBoy: b => hairSalon(b, 'princess', 'boy'), salonCaptain: b => hairSalon(b, 'captain'),
     blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };
   try {

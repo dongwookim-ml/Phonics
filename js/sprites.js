@@ -2818,8 +2818,9 @@ function villagerSprite(lookKey, frame) {
     drawBitmap(ctx, WING, wp, cv.width - WING[0].length, OYv + 10, true);
   }
   drawBitmap(ctx, rows, pal, OXv, OYv);
-  // At Halloween most wear a hat for the night instead (js/halloween.js).
-  const hat = halloweenHat(lookKey, look) || HATS[look.hat];
+  // At Halloween most wear a hat for the night instead (js/halloween.js),
+  // at Christmas a Santa hat, an elf hat or antlers (js/christmas.js).
+  const hat = halloweenHat(lookKey, look) || christmasHat(lookKey, look) || HATS[look.hat];
   if (hat) drawBitmap(ctx, hat.rows, hat.pal ? Object.assign({}, pal, hat.pal) : pal, OXv + hat.x, OYv + hat.y);
   const sprite = { canvas: cv, ax: OXv + 8, ay: OYv + rows.length - 1 };
   villagerCache.set(key, sprite);

@@ -943,10 +943,10 @@ function hwLeaves(sc) {
 
 // Strings of lights from each lamp post (a lamp or a torch on a pole) to
 // the post nearest it (across the road), when that one is near enough.
-function hwLights(sc) {
+// Christmas (js/christmas.js) hangs its own colours with its own mark.
+function hwLights(sc, COLORS = ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d'], mark = { halloween: true }, wire = '#4a3450') {
   const posts = sc.objects.filter(o => o.canvas && o.canvas.width === 12 && o.canvas.height === 34);
   const lamps = sc.lamps.filter(l => !l.small && !l.big && posts.some(o => Math.abs(l.x - (o.x + 6)) <= 1 && l.y >= o.y && l.y <= o.y + 16));
-  const COLORS = ['#ff9a3a', '#b77aff', '#7affb0', '#ffd34d'];
   const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
   const pairs = new Set();
   lamps.forEach((a, i) => {
@@ -965,22 +965,22 @@ function hwLights(sc) {
       const u = k / n;
       const p = { x: a.x + (b.x - a.x) * u, y: a.y + 3 + (b.y - a.y) * u + Math.sin(u * Math.PI) * 6, col: COLORS[k % COLORS.length] };
       bulbs.push(p);
-      if (k % 2) sc.lamps.push({ x: p.x, y: p.y, small: true, halloween: true });
+      if (k % 2) sc.lamps.push(Object.assign({ x: p.x, y: p.y, small: true }, mark));
     }
     // Drawn in its place among the things (behind a house in front of
     // it), as deep as the two posts; there is nothing on it to tap.
-    const s = { a, b, bulbs };
+    const s = { a, b, bulbs, wire };
     const [pa, pb] = [postOf(a), postOf(b)];
-    sc.hwLights.push(s);
-    sc.objects.push({ c0: Math.min(pa.c0, pb.c0), r0: Math.min(pa.r0, pb.r0), c1: Math.max(pa.c1, pb.c1), r1: Math.max(pa.r1, pb.r1),
+    if (sc.hwLights) sc.hwLights.push(s);
+    sc.objects.push(Object.assign({ c0: Math.min(pa.c0, pb.c0), r0: Math.min(pa.r0, pb.r0), c1: Math.max(pa.c1, pb.c1), r1: Math.max(pa.r1, pb.r1),
       x: Math.min(a.x, b.x) - 2, y: Math.min(a.y, b.y) - 2, w: Math.abs(b.x - a.x) + 4, h: Math.abs(b.y - a.y) + 14,
-      halloween: true, animated: (ctx, t) => hwDrawLights(ctx, s, t) });
+      animated: (ctx, t) => hwDrawLights(ctx, s, t) }, mark));
   }
 }
 
 // One string: its wire and its bulbs, twinkling.
 function hwDrawLights(ctx, s, t) {
-  ctx.fillStyle = '#4a3450';
+  ctx.fillStyle = s.wire || '#4a3450';
   const pts = [s.a, ...s.bulbs, s.b];
   for (let i = 1; i < pts.length; i++) {
     const p = pts[i - 1];
@@ -1088,7 +1088,7 @@ function hwWalls(sc, H, flags) {
 // Drawn over the scene (drawScene in js/game.js, in world pixels): a dusk
 // outdoors, the ghosts and the bats (the lights are drawn with the things).
 function halloweenDraw(ctx, sc, now, view) {
-  if (!sc.hwUsed) return;
+  if (!sc.hwGhosts) return; // not dressed for Halloween (js/christmas.js keeps hwUsed too)
   const t = now / 1000;
   if (sc.outdoor && sc.kind !== 'forest' && sc.kind !== 'monster') {
     ctx.save();

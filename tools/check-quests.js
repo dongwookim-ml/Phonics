@@ -22,7 +22,7 @@ const root=path.join(__dirname,'..');
         window.questPlayed=[];const play=HTMLMediaElement.prototype.play;
         HTMLMediaElement.prototype.play=function(){const src=this.src;this.playbackRate=8;this.addEventListener('playing',()=>window.questPlayed.push(src),{once:true});return play.call(this);};
       });
-      await page.goto(`file://${path.join(root,'index.html')}?guest&language=${language}&edition=${edition}&halloween=0`);
+      await page.goto(`file://${path.join(root,'index.html')}?guest&language=${language}&edition=${edition}&halloween=0&christmas=0`);
       await page.locator('#start-btn').click({force:true});
       await page.evaluate(()=>{
         state.guide={step:3};state.stars=40;state.dust=12;

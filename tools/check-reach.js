@@ -1,8 +1,9 @@
 // Every scene in both editions can be walked: the tiles she arrives on are
 // free, and from each of them every villager, door, link, way out, bookcase
 // and wardrobe can be reached, also with the unicorn (or car) parked next
-// to her. All of it the rest of the year and at Halloween (js/halloween.js),
-// whose pumpkins take tiles away and can move where the ride is parked.
+// to her. All of it the rest of the year, at Halloween (js/halloween.js)
+// and at Christmas (js/christmas.js), whose pumpkins and snowmen take tiles
+// away and can move where the ride is parked.
 // Run: node tools/check-reach.js  (needs the playwright package and Chromium)
 
 const path = require('path');
@@ -13,12 +14,12 @@ const root = path.join(__dirname, '..');
 (async () => {
   const browser = await launch();
   let failed = 0;
-  for (const [edition, halloween] of [['princess', 0], ['captain', 0], ['princess', 1], ['captain', 1]]) {
+  for (const [edition, halloween, christmas = 0] of [['princess', 0], ['captain', 0], ['princess', 1], ['captain', 1], ['princess', 0, 1], ['captain', 0, 1]]) {
     const page = await browser.newPage();
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.route(/^https?:/, r => r.abort());
-    await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=${halloween}`);
+    await page.goto(`file://${path.join(root, 'index.html')}?edition=${edition}&halloween=${halloween}&christmas=${christmas}`);
     await page.click('#login-guest');
     const report = await page.evaluate(() => {
       const names = ['town', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', 'cloud', 'sight', ...TOWN_HOUSES.map(h => `house-${h.letter}`)];
@@ -72,7 +73,7 @@ const root = path.join(__dirname, '..');
       }
       return { problems, checked };
     });
-    console.log(`${edition}${halloween ? " at Halloween" : ""}: ${report.checked} ways checked`);
+    console.log(`${edition}${halloween ? " at Halloween" : ""}${christmas ? " at Christmas" : ""}: ${report.checked} ways checked`);
     for (const p of report.problems) console.log(`  ${p}`);
     for (const e of errors) console.log(`  page error: ${e}`);
     failed += report.problems.length + errors.length;

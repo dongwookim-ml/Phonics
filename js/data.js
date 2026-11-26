@@ -1666,9 +1666,16 @@ LINES.knock = ['Knock, knock! Hello?', 'Can I come in?', "Let's peek inside!"];
 // are recorded already from the word lists above; these are the extra ones.
 const PROP_WORDS = ['tent', 'fire', 'log', 'star', 'moon', 'cloud', 'rainbow', 'fountain', 'flower', 'bush', 'plant', 'table', 'harp', 'chest', 'coin', 'crystal', 'unicorn', 'drone', 'gear', 'gate',
   // Halloween's things (js/halloween.js).
-  'pumpkin', 'ghost', 'candy', 'hay', 'boo', 'cat', 'pot', 'skeleton', 'witch', 'coffin', 'spider', 'scarecrow'];
+  'pumpkin', 'ghost', 'candy', 'hay', 'boo', 'cat', 'pot', 'skeleton', 'witch', 'coffin', 'spider', 'scarecrow',
+  // Christmas's things (js/christmas.js).
+  'tree', 'snowman', 'present', 'sled', 'penguin', 'reindeer', 'gingerbread'];
 // Halloween: the narrator's hello as the game starts, instead of LINES.start
 // (js/halloween.js), in both editions.
 LINES.halloween = ['Happy Halloween, {title} {name}! Look, the whole town is dressed up!', 'Trick or treat, {title} {name}! Shall we go and find the pumpkins?'];
 // The greeting on the login and start screens, said when tapped.
 LINES.halloweenHi = ['Happy Halloween!'];
+// Christmas: the narrator's hello as the game starts (js/christmas.js), the
+// greeting on the first screens, and Santa when his sleigh is tapped.
+LINES.christmas = ['Merry Christmas, {title} {name}! Look, it is snowing, and the whole town is dressed up!', 'Merry Christmas, {title} {name}! Answer well, and you may get a Christmas present!'];
+LINES.christmasHi = ['Merry Christmas!'];
+LINES.christmasHo = ['Ho, ho, ho! Merry Christmas!'];

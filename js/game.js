@@ -363,6 +363,7 @@ function sceneFor(target) {
     // A place that doesn't exist takes her to the town instead of breaking.
     else return sceneFor('town');
     halloweenDress(state.scenes[target]); // js/halloween.js: only while it is Halloween
+    christmasDress(state.scenes[target]); // js/christmas.js: only while it is Christmas
     // Back-to-front order for static objects; room walls go first.
     state.scenes[target].objects.sort((a, b) => (a.background ? -1 : 0) - (b.background ? -1 : 0) || (a.c0 + a.c1 + a.r0 + a.r1) - (b.c0 + b.c1 + b.r0 + b.r1));
   }
@@ -1035,10 +1036,14 @@ function rewardChoices(level) {
       if (items[value].forest && (level < 2 || level === 5)) continue;
       if (items[value].unicorn && (level < 3 || level === 5)) continue;
       if (items[value].shop) continue;
+      if (items[value].christmas && !CHRISTMAS_ON) continue; // js/christmas.js
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
       (r.isNew ? fresh : worn).push(r);
     }
   }
+  // At Christmas, a Christmas present more often than not while any are left.
+  const xmas = fresh.filter(r => WARDROBE.find(w => w.slot === r.slot).items[r.value].christmas);
+  if (xmas.length && (xmas.length === fresh.length || Math.random() < XMAS_SHARE)) return xmas;
   // Forest folk, unicorns and fairies hand out their own treasures before anything else.
   const mark = level === 5 ? 'fairy' : level === 3 ? 'unicorn' : 'forest';
   const special = fresh.filter(r => WARDROBE.find(w => w.slot === r.slot).items[r.value][mark]);
@@ -1052,7 +1057,7 @@ function collected() {
   for (const { slot, items, salon } of WARDROBE) {
     if (salon) continue;
     for (const value of Object.keys(items)) {
-      if (value === 'none' || items[value].shop || !suits(items[value])) continue;
+      if (value === 'none' || items[value].shop || !suits(items[value]) || !xmasShown(slot, value, items[value])) continue;
       total++;
       if (state.owned[slot].includes(value)) have++;
     }
@@ -1274,7 +1279,7 @@ function renderWardrobe() {
   wdTab = w.slot;
   renderTabs(ui.wdTabs, tabs, w.slot, slot => { wdTab = slot; renderWardrobe(); });
   const grid = tabGrid(ui.wdSlots, w);
-  for (const [value, item] of Object.entries(w.items)) if (suits(item)) grid.append(wardrobeItem(w, value, item));
+  for (const [value, item] of Object.entries(w.items)) if (suits(item) && xmasShown(w.slot, value, item)) grid.append(wardrobeItem(w, value, item));
   // Her fairy friend's ✨ feeding chip (js/friend.js).
   if (w.slot === 'fairy') friendChip(grid);
 }
@@ -1629,7 +1634,7 @@ function shopItems() {
   for (const { slot, items, salon } of WARDROBE) {
     if (salon) continue;
     for (const [value, item] of Object.entries(items)) {
-      if (value === 'none' || !suits(item) || notYet(item) || state.owned[slot].includes(value)) continue;
+      if (value === 'none' || !suits(item) || notYet(item) || item.christmas || state.owned[slot].includes(value)) continue;
       list.push({ slot, value, item, label: itemLabel(slot, value), price: shopPrice(slot, item) });
     }
   }
@@ -2136,9 +2141,11 @@ function drawScene(now) {
     vctx.fillStyle = sc.kind === 'dungeon' ? 'rgba(40,30,120,0.16)' : 'rgba(50,40,130,0.22)';
     vctx.fillRect(0, 0, view.width, view.height);
   }
-  // Halloween's ghosts, bats and lights (js/halloween.js).
+  // Halloween's ghosts, bats and lights (js/halloween.js), Christmas's
+  // snow and Santa's sleigh (js/christmas.js).
   vctx.setTransform(1, 0, 0, 1, -cx, -cy);
   halloweenDraw(vctx, sc, now, view);
+  christmasDraw(vctx, sc, now, view);
 }
 
 function drawCharacter(ch, now) {
@@ -2598,9 +2605,9 @@ function onPointer(e) {
   const wy = sy / state.scale + Math.round(state.cam.y);
   state.ripples.push({ x: sx, y: sy, t0: performance.now() });
 
-  // Her fairy friend, the games' bubbles (🎣 over the pond) and Halloween's
-  // ghosts fly over everything.
-  if (friendTap(wx, wy) || miniTap(wx, wy) || halloweenTap(wx, wy)) return;
+  // Her fairy friend, the games' bubbles (🎣 over the pond), Halloween's
+  // ghosts and Santa's sleigh fly over everything.
+  if (friendTap(wx, wy) || miniTap(wx, wy) || halloweenTap(wx, wy) || christmasTap(wx, wy)) return;
 
   // Villagers first: they are small and stand in front of things. The
   // front-most one takes a tap where two overlap; a monster she drew is

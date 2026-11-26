@@ -243,6 +243,8 @@ function robotPalette(outfit) {
     // fist, spring, and the magnet's spark.
     c: '#ff8a2a', C: '#c8501a', z: '#e8eef8', Z: '#46507a', v: '#3fc4d8', V: '#1f80a8',
     q: '#4fe07a', Q: '#1f9a50', s: '#7ff4ff',
+    // Antler browns (the Christmas reindeer head, js/christmas.js).
+    h: '#c08850', H: '#7a4a2e',
   };
 }
 

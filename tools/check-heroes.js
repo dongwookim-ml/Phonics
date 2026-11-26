@@ -26,7 +26,7 @@ const NEED = { shape: 8, head: 8, hand: 7, back: 6, style: 6 };
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route(/^https?:/, r => r.abort());
-  await page.goto(`file://${path.join(root, 'index.html')}?edition=princess&halloween=0`);
+  await page.goto(`file://${path.join(root, 'index.html')}?edition=princess&halloween=0&christmas=0`);
   await page.click('#login-guest');
   const r = await page.evaluate(async ({ only, NEED }) => {
     const out = [];

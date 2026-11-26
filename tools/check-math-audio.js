@@ -25,7 +25,7 @@ const root=path.join(__dirname,'..');
         return play.call(this);
       };
     });
-    await page.goto(`file://${path.join(root,'index.html')}?guest&language=ko&halloween=0`);
+    await page.goto(`file://${path.join(root,'index.html')}?guest&language=ko&halloween=0&christmas=0`);
     await page.locator('#start-btn').click({force:true});
     const decoded=await page.evaluate(async clips=>{
       const ac=new AudioContext(),bad=[];

@@ -639,6 +639,48 @@ Custom names in this audit use live speech fallback rather than requiring record
   `?halloween=auto` goes back to the dates. The smoke and reach checks run
   both ways, the visual and voice checks with it on, the other flows
   without it, and `ONLY=halloween node tools/check-flows.js` checks it.
+- **Christmas** (both editions, 1 to 31 December every year by the tablet's
+  clock, `CHRISTMAS_DAYS`; put away on 1 January, and never on at the same
+  time as Halloween): snow lies on the ground, on every roof and on the tops
+  of the trees, fences and lamps, and snowflakes fall. In front of each house
+  stands something big: a Christmas tree with a star, a snowman, a reindeer
+  with a red nose, a pile of presents, a gingerbread man or a penguin (the
+  trees, snowmen, presents, gingerbread men and penguins twice the size, like
+  garden inflatables); each house has lights down its roof's edges, Santa's
+  boots sticking out of its roof (or a gold star or a bell on top) and a
+  wreath on its wall. Little trees, snowmen, presents, candy canes, sleds and
+  penguins stand beside the roads and say their word when tapped ("tree!",
+  "snowman!", "present!", "reindeer!", "gingerbread!"...). Red, green and
+  gold lights hang between the lamp posts, and every 28 seconds Santa flies
+  across the sky in his sleigh (tap him: "Ho, ho, ho! Merry Christmas!").
+  The villagers wear Santa hats, elf hats or reindeer antlers (the royals
+  keep their crowns), the rooms get a green garland with baubles, a wreath, a
+  little tree and a present, the caves get snow, the music plays carols
+  (Jingle Bells in town, Deck the Halls in the villages, Silent Night in the
+  caves, We Wish You a Merry Christmas in the rooms, `XM_TUNES`), the little
+  games have snow falling, and the game starts with "Merry Christmas,
+  Princess Yuna!". The login and start screens show "🎄 Merry Christmas! 🎅"
+  under the game's name (tap it to hear it) over a winter sky, with
+  snowflakes, trees, a snowman, a present and a flying sleigh behind.
+  **Christmas presents** (`XMAS_ITEMS`, marked `christmas`): while it is
+  Christmas, a present from anyone is a Christmas thing more often than not
+  (`XMAS_SHARE`, 60%) while she still lacks one. The princess edition has a
+  Santa hat, reindeer antlers and a candy cane (worn by every title's
+  character), Santa red for her dress, and six treasures for the shelf (a
+  little Christmas tree, a snowman, a stocking, a gingerbread cookie, a
+  reindeer toy and a present); the robot has a Santa head, a reindeer head
+  with a red nose light, Santa red paint and six treasures (a little tree, a
+  snowman, Santa's sleigh, a present, a jingle bell and a Christmas star).
+  They are never sold in the shop. After Christmas the ones she got stay
+  hers to wear; the ones she didn't are out of sight in the wardrobe (and
+  not counted in "gifts collected") until next December (`xmasShown`).
+  Like Halloween it is only laid on top (`js/christmas.js` dresses each scene
+  once it is built and borrows Halloween's placing helpers). Opening the game
+  once with `?christmas=0` turns it off on that tablet for good,
+  `?christmas=1` shows it on any day for that visit, and `?christmas=auto`
+  goes back to the dates. The smoke and reach checks run with it on too, the
+  other checks turn it off, and `ONLY=christmas node tools/check-flows.js`
+  checks it.
 - **Fairy Village (level 5)**: a gate at the east end of town's lower road
   opens at 15 stars (`FAIRY_STARS`). Giant flowers and toadstools, teacup
   and tulip cottages and a lily pond. The fairies (✨ bubble) ask spelling
@@ -1232,6 +1274,7 @@ These win over the Polly recordings; any missing file falls back to them.
 - `js/heroes.js`: every title its own character (princess edition): how a hero kit is made and drawn; `js/heroes/<title>.js` each title's body and things to wear
 - `js/salon.js`: the hair salon in town (princess edition): hairstyles and hair colours for stars
 - `js/halloween.js`: Halloween, laid over every village and room from 1 to 31 October (`?halloween=0/1`)
+- `js/christmas.js`: Christmas, laid over every village and room from 1 to 31 December, and the Christmas presents (`?christmas=0/1`)
 - `js/guide.js`: first-steps pointer, idle nudge, play-time limit and sleep
 - `js/quest.js`: today's adventures (missions) and the treasure chest
 - `js/game.js`: game loop, camera, input, dialogs, presents, the wardrobe and the shop (tabs and pictures)
