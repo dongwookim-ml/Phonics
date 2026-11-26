@@ -177,6 +177,9 @@ const XMAS_ITEMS = {
       gingerbread: { name: I18n.t('christmas.gingerbread'), icon: '🍪' },
       reindeer: { name: I18n.t('christmas.reindeerToy'), icon: '🦌' },
       giftbox: { name: I18n.t('christmas.present'), icon: '🎁' },
+      // Santa's special present for finding Rudolph's nose and his presents
+      // (js/christmas-play.js); never a present from anyone else.
+      santadoll: { name: I18n.t('christmas.santaDoll'), icon: '🎅', santaGift: true },
     },
   },
   captain: {
@@ -194,6 +197,7 @@ const XMAS_ITEMS = {
       robotgift: { name: I18n.t('christmas.present'), icon: '🎁' },
       xmasbell: { name: I18n.t('christmas.jingleBell'), icon: '🔔' },
       xmasstar: { name: I18n.t('christmas.christmasStar'), icon: '🌟' },
+      rudolphbot: { name: I18n.t('christmas.rudolphBot'), icon: '🦌', santaGift: true },
     },
   },
 };
@@ -549,6 +553,7 @@ function christmasDress(sc) {
   sc.hwUsed = sc.hwUsed || []; // the tiles taken (hwPlace in js/halloween.js)
   if (sc.outdoor) xmOutdoors(sc);
   else xmIndoors(sc);
+  xmPlay(sc); // Santa, the hunt, her room's tree and the snow (js/christmas-play.js)
 }
 
 // One thing standing on a tile, saying `react` when tapped; a lit one
@@ -761,6 +766,14 @@ function xmDecorate(sc, o, i) {
   const k = boxCorners(sc, o.c0, o.r0, o.c1 - o.c0 + 1, o.r1 - o.r0 + 1);
   const at = P => ({ x: P.x - o.x, y: P.y - o.y });
   const walls = [wall(at(k.L), at(k.B)), wall(at(k.B), at(k.R))];
+  // Two windows that light up in the evening (xmNightDraw in js/christmas-play.js).
+  sc.xmWindows = sc.xmWindows || [];
+  walls.forEach(W => {
+    const p = wallPt(W, W.len * 0.5, 22);
+    if (!fits(['wwww', 'wwww', 'wwww', 'wwww', 'wwww'], Math.round(p.x) - 2, Math.round(p.y) - 3)) return;
+    sc.xmWindows.push({ x: Math.round(o.x + p.x), y: Math.round(o.y + p.y) });
+    sc.lamps.push({ x: o.x + p.x, y: o.y + p.y, night: true, christmas: true });
+  });
   let done = false;
   walls.forEach(W => {
     for (const [u, v] of [[0.2, 26], [0.78, 26], [0.25, 20], [0.75, 20]]) {
@@ -835,6 +848,7 @@ function xmCap(src) {
 function xmIndoors(sc) {
   const cave = sc.kind === 'dungeon' || sc.caveWalls;
   if (sc.wallH && !cave) xmWalls(sc, sc.wallH);
+  if (sc.kind === 'room') return; // her own tree instead (xmRoom in js/christmas-play.js)
   const spots = hwSpots(sc, (t, c, r) => c <= 1 || r <= 1);
   hwPlace(sc, spots, 1, 3, s => xmProp(sc, s, hwSprite(XM_TREE, XM_PAL), { word: 'tree', fx: 'xmtree' }, 1));
   if (sc.W * sc.D >= 70) hwPlace(sc, spots, 1, 3, s => xmProp(sc, s, hwSprite(XM_GIFTS, XM_PAL), { word: 'present', fx: 'gift' }));
@@ -886,13 +900,16 @@ function xmFlakes(n) {
 function christmasDraw(ctx, sc, now, view) {
   if (!sc.xmDone) return;
   const t = now / 1000;
-  if (sc.outdoor && sc.kind !== 'forest' && sc.kind !== 'monster') {
+  const night = sc.outdoor && xmNightNow();
+  if (sc.outdoor && (night || (sc.kind !== 'forest' && sc.kind !== 'monster'))) {
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = 'rgba(40,70,150,0.08)';
+    // In the evening it is dark blue (the lamps and windows glow over it).
+    ctx.fillStyle = night ? (sc.kind === 'forest' || sc.kind === 'monster' ? 'rgba(20,24,80,0.18)' : 'rgba(12,18,70,0.52)') : 'rgba(40,70,150,0.08)';
     ctx.fillRect(0, 0, view.width, view.height);
     ctx.restore();
   }
+  if (night) xmNightDraw(ctx, sc, now, view);
   const s = xmSleighAt(sc, now);
   if (s) {
     const deer = hwSprite(XM_FLYING_DEER[Math.floor(t * 6) % 2], XM_DEER_PAL, false);
@@ -933,6 +950,7 @@ function xmSleighAt(sc, now) {
 // snow and stars. True when it took the tap.
 function christmasTap(wx, wy) {
   const sc = state.scene;
+  if (CHRISTMAS_ON && xmPlayTap(wx, wy)) return true; // the sled (js/christmas-play.js)
   if (!sc.xmSleigh) return false;
   const now = performance.now();
   const s = xmSleighAt(sc, now);

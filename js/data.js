@@ -1668,7 +1668,9 @@ const PROP_WORDS = ['tent', 'fire', 'log', 'star', 'moon', 'cloud', 'rainbow', '
   // Halloween's things (js/halloween.js).
   'pumpkin', 'ghost', 'candy', 'hay', 'boo', 'cat', 'pot', 'skeleton', 'witch', 'coffin', 'spider', 'scarecrow',
   // Christmas's things (js/christmas.js).
-  'tree', 'snowman', 'present', 'sled', 'penguin', 'reindeer', 'gingerbread', 'Christmas tree', 'candy cane'];
+  'tree', 'snowman', 'present', 'sled', 'penguin', 'reindeer', 'gingerbread', 'Christmas tree', 'candy cane',
+  // Christmas play (js/christmas-play.js).
+  'Rudolph', 'stocking', 'fireplace', 'calendar', 'snowball'];
 // Halloween: the narrator's hello as the game starts, instead of LINES.start
 // (js/halloween.js), in both editions.
 LINES.halloween = ['Happy Halloween, {title} {name}! Look, the whole town is dressed up!', 'Trick or treat, {title} {name}! Shall we go and find the pumpkins?'];
@@ -1679,3 +1681,35 @@ LINES.halloweenHi = ['Happy Halloween!'];
 LINES.christmas = ['Merry Christmas, {title} {name}! Look, it is snowing, and the whole town is dressed up!', 'Merry Christmas, {title} {name}! Answer well, and you may get a Christmas present!'];
 LINES.christmasHi = ['Merry Christmas!'];
 LINES.christmasHo = ['Ho, ho, ho! Merry Christmas!'];
+// Santa in the town at Christmas (js/christmas-play.js): he asks town
+// questions in his own deep voice, like any villager, and tells her about
+// Rudolph's lost nose and the presents that fell out of his sleigh.
+LOOKS.santa = { hair: '#ffffff', shirt: '#e8404a', pants: '#e8404a', hat: 'none' };
+VOICES.santa = { gender: 'male', tts: 'bm_george', lift: 0.86, pitch: 0.55, rate: 0.85, voice: ['Arthur', 'Daniel', 'Google UK English Male', 'Microsoft George'] };
+PERSONA.santa = [
+  "Ho, ho, ho! Merry Christmas, {title} {name}! Oh dear, Rudolph lost his red nose, and my presents fell out of the sleigh. Can you find them?",
+  'Ho, ho, ho! Have you been good this year, {title} {name}? I think so!',
+  'Ho, ho, ho! Hello, {title} {name}! Rudolph and I love your town.',
+];
+// Santa, in his voice: thanks for finding everything (with his special
+// present), and what is in her stocking the next morning.
+LINES.santaThanks = ["Ho, ho, ho! You found Rudolph's nose and all my presents! Thank you, {title} {name}! This special present is for you."];
+LINES.santaStocking = ['Ho, ho, ho! I filled your stocking last night. Merry Christmas!'];
+// The narrator: the hunt round the town, Rudolph, her room's tree, the
+// stocking, the Advent calendar and the snow.
+LINES.xmFoundGift = ['You found a present!', 'Another present for Santa!'];
+LINES.xmFoundNose = ["You found Rudolph's red nose!"];
+LINES.xmRudolphSad = ['Oh no! Rudolph lost his red nose. Can you find it?'];
+LINES.xmRudolph = ["Rudolph's nose is shining bright!"];
+LINES.xmTree = ['Look at all your ornaments!', 'Your tree is so pretty!'];
+LINES.xmTreeEmpty = ['Answer questions to get ornaments for your tree!'];
+LINES.xmHang = ["Let's hang your stocking! Santa will fill it tonight."];
+LINES.xmWait = ['Santa comes tonight. Come back tomorrow!'];
+LINES.xmDoor = ['Door {n}!'];
+LINES.xmAdventDone = ['Come back tomorrow for the next door!'];
+LINES.xmRoll = ['Roll, roll, roll!'];
+LINES.xmWhee = ['Wheee!'];
+// The Advent calendar's doors, one a day: each has a Christmas word.
+const ADVENT_WORDS = [['bell', '🔔'], ['star', '⭐'], ['snow', '❄️'], ['tree', '🎄'], ['gift', '🎁'], ['sock', '🧦'], ['sled', '🛷'], ['hat', '🎩'],
+  ['cake', '🍰'], ['deer', '🦌'], ['elf', '🧝'], ['cookie', '🍪'], ['candle', '🕯️'], ['angel', '👼'], ['ribbon', '🎀'], ['mitten', '🧤'],
+  ['scarf', '🧣'], ['toy', '🧸'], ['drum', '🥁'], ['moon', '🌙'], ['candy', '🍬'], ['card', '💌'], ['snowman', '⛄'], ['Santa', '🎅']];

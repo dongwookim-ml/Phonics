@@ -18,7 +18,7 @@ const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS', 'TOWER2_NPCS'];
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES', 'HOUSE_LETTERS', 'ALBUM_EXTRA_WORDS',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
-  'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
+  'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'ADVENT_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
   'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', 'WEAK_PICTURES', 'LONG_RHYME_UNSURE', 'NEXT_STAGE',
   'SOUND_TEAMS', 'CLOUD_NPCS', 'CLOUD_STARS', 'CAMP_WORDS', 'CAMP_SENTENCES', 'SIGHT_NPCS', ...MONSTER_TABLES];
 function loadData(edition) {
@@ -200,6 +200,8 @@ function collect(D) {
   for (const x of D.CAMP_SENTENCES) add(N, x.s.replace('{}', x.w), 0.85);
   // Words said when she taps a thing on the map (js/touch.js).
   for (const w of D.PROP_WORDS) words.add(w);
+  // The Advent calendar's words, one behind each door (js/christmas-play.js).
+  for (const [w] of D.ADVENT_WORDS || []) words.add(w);
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
   for (const l of D.LETTERS) for (const [w] of l.words) add(N, `${w} starts with ${l.letter}.`);
   // Letter names: spelled-out answers.
@@ -229,6 +231,11 @@ function collect(D) {
     if (g.team.includes('_')) lines(N, ['magicE'], { letter: g.says });
     else lines(N, ['vowelTeam'], { team: g.team.toUpperCase().split('').join(' '), letter: g.says });
   }
+  // Christmas play (js/christmas-play.js): Santa's own lines in his voice,
+  // the narrator's for the hunt, the room's tree, stocking and calendar.
+  if (D.VOICES.santa) lines(D.VOICES.santa.tts, ['santaThanks', 'santaStocking']);
+  lines(N, ['xmFoundGift', 'xmFoundNose', 'xmRudolphSad', 'xmRudolph', 'xmTree', 'xmTreeEmpty', 'xmHang', 'xmWait', 'xmAdventDone', 'xmRoll', 'xmWhee'].filter(k => D.LINES[k]));
+  if (D.LINES.xmDoor) for (let n = 1; n <= D.ADVENT_WORDS.length; n++) lines(N, ['xmDoor'], { n });
   lines(N, ['start', 'castle', 'room', 'dressup', 'yes', 'forest', 'unicorn', 'dungeon', 'mount', 'dismount', 'upstairs', 'fairyland', 'knock', 'monster', 'tower', 'tower2', 'cloud', 'sight', 'halloween', 'halloweenHi', 'christmas', 'christmasHi', 'christmasHo']);
   // Her growing fairy friend (js/friend.js) and the town going to sleep (js/guide.js).
   lines(N, ['friendHello', 'friendEmpty', 'friendGrow', 'sleep'].filter(k => D.LINES[k]));

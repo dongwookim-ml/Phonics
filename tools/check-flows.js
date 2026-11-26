@@ -2937,6 +2937,134 @@ async function christmas(browser, edition) {
     JSON.stringify(Object.values(when)) === JSON.stringify([false, true, true, true, false, true, false, false]), when);
 }
 
+// Christmas play (js/christmas-play.js), in each edition: Santa and Rudolph
+// in the town square, Rudolph's nose and five presents to find (then
+// Santa's own present, once), a snowman to roll and a sled to ride; her
+// room's tree (an ornament for each right answer), the Advent calendar
+// (one door and its coins a day) and the stocking (full the next day); the
+// windows and the northern lights in the evening; the Christmas train.
+async function christmasPlay(browser, edition) {
+  const tag = `Christmas play (${edition})`;
+  const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+  await ctx.addInitScript(() => {
+    window.__shift = 0;
+    const base = new Date('2026-12-10T10:00:00').getTime();
+    const start = performance.now();
+    const Real = Date;
+    const now = () => base + (performance.now() - start) + window.__shift;
+    Date = class extends Real { constructor(...a) { super(...(a.length ? a : [now()])); } static now() { return now(); } };
+    localStorage.setItem('pixeltown-guest', '1');
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/^https?:/, r => (own(r) ? r.continue() : r.abort()));
+  await page.goto(`${URL}?edition=${edition}&halloween=0&night=1`);
+  await page.waitForFunction(() => typeof Account !== 'undefined' && Account._started && typeof state !== 'undefined');
+  const r = await page.evaluate(async () => {
+    if (!Sound.muted) Sound.toggleMute();
+    const wait = ms => new Promise(res => setTimeout(res, ms));
+    const said = [];
+    const say = Sound.say;
+    Sound.say = (parts, who) => { for (const p of [].concat(parts)) if (p && p.text) said.push(p.text); return say(parts, who); };
+    ui.start.classList.add('hidden');
+    state.busy = false;
+    const out = { on: CHRISTMAS_ON };
+    const go = async n => { changeScene(n); await wait(1400); state.busy = false; };
+    await go('town');
+    let sc = state.scene;
+    out.santa = sc.npcs.filter(n => n.look === 'santa').length;
+    out.rudolph = sc.objects.filter(o => o.rudolph).length;
+    out.hunt = sc.objects.filter(o => o.xmHunt).map(o => o.xmHunt).sort().join();
+    out.noseLitBefore = sc.lamps.some(l => l.x === sc.xmNoseAt.x && l.y === sc.xmNoseAt.y);
+    out.rudolphSad = (tapObject(sc.objects.find(o => o.rudolph)), said.includes(LINES.xmRudolphSad[0]));
+    out.santaName = sc.xmSanta.name;
+    for (const o of sc.objects.filter(o => o.xmHunt)) { tapObject(o); await wait(50); }
+    out.left = sc.objects.filter(o => o.xmHunt).length;
+    out.noseLit = sc.lamps.some(l => l.x === sc.xmNoseAt.x && l.y === sc.xmNoseAt.y);
+    out.foundSaid = said.includes(LINES.xmFoundNose[0]) && said.includes(LINES.xmFoundGift[0]) || said.includes(LINES.xmFoundGift[1]);
+    await wait(2600);
+    out.gift = state.gift && { slot: state.gift.slot, special: !!TREASURES[state.gift.value].santaGift, from: state.giver && state.giver.look };
+    out.thanks = said.some(t => t.startsWith("Ho, ho, ho! You found Rudolph's nose"));
+    acceptReward(true);
+    out.owned = state.owned.treasure.filter(v => TREASURES[v].santaGift).length;
+    out.choices = rewardChoices(1).some(r2 => r2.slot === 'treasure' && TREASURES[r2.value].santaGift);
+    // Snow play: a snowman in three taps, then a ride on the sled.
+    const snowman = sc.objects.find(o => o.xmSnowman);
+    for (let i = 0; i < 3; i++) tapObject(snowman);
+    out.snowman = snowman.stage();
+    const sled = sc.xmSled;
+    const from = Object.assign({}, sled.at);
+    const to = Object.assign({}, sled.end);
+    Object.assign(state.hero, { c: from.c, r: from.r, path: [] });
+    await wait(100);
+    xmPlayTap(sled.x, sled.y - 2);
+    out.riding = !!sled.ride && state.busy;
+    await wait(2200);
+    out.rode = state.hero.c === to.c && state.hero.r === to.r && !sled.ride && !state.busy && sled.at.c === to.c && sled.at.r === to.r;
+    out.prints = (sc.xmPrints || []).filter(f => f.sled).length;
+    out.whee = said.includes('Wheee!');
+    // The evening.
+    out.night = xmNightNow() && (sc.xmWindows || []).length > 0 && sc.lamps.some(l => l.night);
+    // Her room.
+    await go('yuna');
+    sc = state.scene;
+    const tree = sc.objects.find(o => o.xmRoomTree);
+    const cal = sc.objects.find(o => o.xmCalendar);
+    const fire = sc.objects.find(o => o.xmFireplace);
+    out.room = [!!tree, !!cal, !!fire];
+    out.smallTree = sc.objects.some(o => o.christmas && o.react && o.react.word === 'tree');
+    const orn = xmThis(state.xmas.orn).length;
+    for (let i = 0; i < 3; i++) christmasRight();
+    out.ornaments = xmThis(state.xmas.orn).length - orn;
+    for (let i = 0; i < 40; i++) christmasRight();
+    out.ornamentCap = xmThis(state.xmas.orn).length;
+    const coins = state.coins;
+    tapObject(cal);
+    out.door = [state.coins - coins, said.includes('Door 1!'), said.includes('bell!')];
+    tapObject(cal);
+    out.doorAgain = [state.coins - coins, said.includes(LINES.xmAdventDone[0])];
+    tapObject(fire);
+    out.hung = xmHungToday() && said.includes(LINES.xmHang[0]) && !xmStockingFull();
+    tapObject(fire);
+    out.wait = said.includes(LINES.xmWait[0]);
+    window.__shift = 24 * 3600 * 1000;
+    out.full = xmStockingFull();
+    tapObject(fire);
+    await wait(100);
+    out.stocking = state.gift ? state.gift.slot : state.coins > coins + 3 ? 'coins' : null;
+    out.stockingFrom = state.giver && state.giver.look;
+    if (state.gift) acceptReward(true);
+    out.emptied = !xmStockingFull();
+    tapObject(cal);
+    out.door2 = said.includes('Door 2!') && xmThis(state.xmas.advent).length === 2;
+    out.saved = JSON.parse(localStorage.getItem(SAVE_KEY)).xmas;
+    // The Christmas train.
+    await go('math');
+    out.train = !!state.scene.mathTrain;
+    return out;
+  });
+  check(`${tag}: Santa stands in the town square with Rudolph, whose nose is missing; tapped, Rudolph is sad`,
+    r.on && r.santa === 1 && r.rudolph === 1 && !r.noseLitBefore && r.rudolphSad, r);
+  check(`${tag}: Rudolph's nose and five presents lie round the town; each one found is cheered and counted, and his nose shines`,
+    r.hunt === 'g1,g2,g3,g4,g5,nose' && r.left === 0 && r.noseLit && r.foundSaid, r);
+  check(`${tag}: with all six found Santa thanks her and gives his special present, which nobody else gives`,
+    r.gift && r.gift.special && r.gift.from === 'santa' && r.thanks && r.owned === 1 && !r.choices, r);
+  check(`${tag}: three taps roll a snowman; the sled rides five tiles down with her on it, leaving tracks`,
+    r.snowman === 3 && r.riding && r.rode && r.prints > 0 && r.whee, r);
+  check(`${tag}: in the evening the windows light up`, r.night, r);
+  check(`${tag}: her room has her own tree, the Advent calendar and the fireplace (no little tree)`, r.room.every(Boolean) && !r.smallTree, r);
+  check(`${tag}: each right answer hangs an ornament, up to ${30}`, r.ornaments === 3 && r.ornamentCap === 30, r);
+  check(`${tag}: a calendar door a day, with its word and 3 coins; not twice on one day`,
+    r.door[0] === 3 && r.door[1] && r.door[2] && r.doorAgain[0] === 3 && r.doorAgain[1] && r.door2, r);
+  check(`${tag}: the stocking hangs one day and holds Santa's present the next`,
+    r.hung && r.wait && r.full && !!r.stocking && (r.stocking === 'coins' || r.stockingFrom === 'santa') && r.emptied, r);
+  check(`${tag}: it is all saved`, r.saved && r.saved.done.length === 1 && r.saved.found.length === 6 && r.saved.advent.length === 2 && r.saved.hung.length === 1 && r.saved.got.length === 1, r.saved);
+  check(`${tag}: the train runs at Christmas`, r.train, r);
+  check(`${tag}: no page errors`, !errors.length, errors);
+  await ctx.close();
+}
+
 // A gate added in an update (the Monster Village): a child already past its
 // stars gets its party once, after her next answer; one who reaches it
 // later gets it as she crosses, and not again.
@@ -3089,6 +3217,7 @@ async function wordVillages(browser, edition) {
     wordVillages: b => wordVillages(b, 'princess'), wordVillagesCaptain: b => wordVillages(b, 'captain'),
     halloween: b => halloween(b, 'princess'), halloweenCaptain: b => halloween(b, 'captain'),
     christmas: b => christmas(b, 'princess'), christmasCaptain: b => christmas(b, 'captain'),
+    christmasPlay: b => christmasPlay(b, 'princess'), christmasPlayCaptain: b => christmasPlay(b, 'captain'),
     salon: b => hairSalon(b, 'princess', 'girl'), salonBoy: b => hairSalon(b, 'princess', 'boy'), salonCaptain: b => hairSalon(b, 'captain'),
     blendSteps: b => blendSteps(b, 'princess'), blendStepsCaptain: b => blendSteps(b, 'captain') };
   try {

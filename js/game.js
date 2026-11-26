@@ -188,10 +188,10 @@ function load(raw) {
     // Stars, coins and dust are also counted per device (js/progress.js).
     return { outfit, owned: ownedFrom(s.owned, outfit, s.shelf), stars: s.stars | 0, coins: s.coins | 0, dust: s.dust | 0, tally: Progress.tally(s), pictures, stamps: s.stamps, looks, history: Progress.history(s.history), books: s.books || {},
       skill, settings, friends: s.friends || {}, guide: firstSteps, playtime, nails: nailSaved(s.nails),
-      stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests) };
+      stickers: albumSaved(s.stickers), medals: albumSaved(s.medals), gifts: s.gifts | 0, quests: questSaved(s.quests), xmas: xmSaved(s.xmas) };
   } catch (e) {
     return { looks: {}, outfit: Object.assign({}, DEFAULT_OUTFIT), owned: ownedFrom(null, DEFAULT_OUTFIT), stars: 0, coins: 0, dust: 0, tally: Progress.tally({}), pictures: true, history: {}, books: {},
-      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0, quests: null, nails: nailSaved(null) };
+      skill: {}, settings: { playLimit: 0, hideMute: false }, friends: {}, guide: { step: 0 }, playtime: {}, stickers: {}, medals: {}, gifts: 0, quests: null, nails: nailSaved(null), xmas: xmSaved(null) };
   }
 }
 
@@ -230,7 +230,7 @@ function save() {
   // version this was written on (js/account.js), the server's clock, so
   // another device can tell which copy is newer.
   const data = Object.assign({}, savedRest, { fmt: Progress.FMT, kits: 1, outfit: state.outfit, looks: state.looks, owned: state.owned, stars: state.stars, coins: state.coins, dust: state.dust, pictures: state.pictures, stamps: state.stamps, recent: Quiz.recent, history: state.history, skill: state.skill, settings: state.settings, books: state.books, player: PLAYER, edition: EDITION, other: otherEditions, ver: typeof Account !== 'undefined' ? Account.base : 0, at: Date.now(),
-    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests, nails: state.nails, shelf: state.owned.treasure || [] }, Progress.count(state));
+    friends: state.friends, guide: state.guide, playtime: state.playtime, stickers: state.stickers, medals: state.medals, gifts: state.gifts, quests: state.quests, nails: state.nails, xmas: state.xmas, shelf: state.owned.treasure || [] }, Progress.count(state));
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) { /* private mode */ }
   if (typeof Account !== 'undefined') Account.push(data);
 }
@@ -242,7 +242,7 @@ function save() {
 function applyProgress(s) {
   const p = load(s || { edition: EDITION, player: PLAYER_START }); // null: start fresh
   Object.assign(state, { owned: p.owned, stars: p.stars, coins: p.coins, dust: p.dust, tally: p.tally, history: p.history, books: p.books, looks: p.looks, pictures: p.pictures, stamps: p.stamps,
-    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests, nails: p.nails });
+    skill: p.skill, settings: p.settings, friends: p.friends, guide: p.guide, playtime: p.playtime, stickers: p.stickers, medals: p.medals, gifts: p.gifts, quests: p.quests, nails: p.nails, xmas: p.xmas });
   const ride = state.outfit.ride;
   state.worn = isCaptain() ? PLAYER.look : heroKey();
   state.outfit = p.outfit;
@@ -274,6 +274,7 @@ const state = {
   worn: isCaptain() ? PLAYER.look : heroKey(), // which of those state.outfit is (js/heroes.js)
   owned: saved.owned,
   nails: saved.nails,
+  xmas: saved.xmas, // Christmas: the hunt, her tree, stocking and calendar (js/christmas-play.js)
   stars: saved.stars,
   coins: saved.coins,
   dust: saved.dust,  // fairy dust from the Fairy Village
@@ -855,6 +856,7 @@ function answeredRight(q, btn) {
   if (npc.level === 5 && !q.misses) addDust();
   const before = starsEarned();
   state.stars++;
+  christmasRight(); // an ornament for her tree at Christmas (js/christmas-play.js)
   questAdd('stars');
   state.answered++;
   save();
@@ -1037,6 +1039,7 @@ function rewardChoices(level) {
       if (items[value].unicorn && (level < 3 || level === 5)) continue;
       if (items[value].shop) continue;
       if (items[value].christmas && !CHRISTMAS_ON) continue; // js/christmas.js
+      if (items[value].santaGift) continue; // only Santa gives it (js/christmas-play.js)
       const r = { slot, value, label: itemLabel(slot, value), isNew: !state.owned[slot].includes(value) };
       (r.isNew ? fresh : worn).push(r);
     }
@@ -1065,7 +1068,9 @@ function collected() {
   return { have, total };
 }
 
-function offerReward(npc) {
+// `chosen`: a particular present instead (Santa's, js/christmas-play.js);
+// `said`: what the giver says instead of the present line.
+function offerReward(npc, chosen, said) {
   // Pick a slot first so dress colours don't crowd out everything else.
   const all = rewardChoices((npc && npc.level) || 1);
   const slot = pick([...new Set(all.map(r => r.slot))]);
@@ -1073,7 +1078,7 @@ function offerReward(npc) {
   const self = npc && npc.unicorn && all.find(r => r.slot === 'ride' && r.value === npc.unicorn && r.isNew);
   // Each fairy villager has a favourite little fairy to give first.
   const own = npc && npc.gives && all.find(r => r.slot === 'fairy' && r.value === npc.gives && r.isNew);
-  const gift = self || own || pick(all.filter(r => r.slot === slot));
+  const gift = chosen || self || own || pick(all.filter(r => r.slot === slot));
   state.gift = gift;
   if (gift.isNew) {
     state.owned[gift.slot].push(gift.value);
@@ -1086,7 +1091,7 @@ function offerReward(npc) {
   state.busy = true;
   Sound.party();
   state.giver = npc;
-  Sound.say([{ pause: 600 }, { text: giftLine(gift.slot, npc) }], voiceOf(npc));
+  Sound.say([{ pause: 600 }, { text: said || giftLine(gift.slot, npc) }], voiceOf(npc));
 }
 
 // The outfit with a present on (a treasure isn't worn).
@@ -2074,6 +2079,7 @@ function drawScene(now) {
     }
     vctx.drawImage(sc.waterLayer, 0, 0);
   }
+  christmasGround(vctx, sc, now); // footprints and the sled in the snow (js/christmas-play.js)
 
   // Drifting cloud shadows outdoors.
   if (sc.kind === 'town') {
@@ -2331,13 +2337,15 @@ function drawOverlay(now) {
   const ctx = sctx;
   const font = '"Baloo 2", "Trebuchet MS", sans-serif';
 
-  // Lamp and window glows.
+  // Lamp and window glows (brighter on a Christmas evening, js/christmas-play.js).
+  const night = sc.outdoor && xmNightNow();
   ctx.globalCompositeOperation = 'lighter';
   for (const l of sc.lamps) {
+    if (l.night && !xmNightNow()) continue; // windows lit in the evening (js/christmas-play.js)
     const p = toScreen(l.x, l.y);
     if (p.x < -60 || p.y < -60 || p.x > screen.width + 60 || p.y > screen.height + 60) continue;
     const r = ((l.small ? 7 : l.big ? 46 : 18) + Math.sin(now / 300 + l.x) * 1.5) * s;
-    ctx.globalAlpha = l.small ? 0.3 + 0.15 * Math.sin(now / 600 + l.x * 3) : 0.35;
+    ctx.globalAlpha = (l.small ? 0.3 + 0.15 * Math.sin(now / 600 + l.x * 3) : 0.35) * (night ? 1.7 : 1);
     ctx.drawImage(glow(), p.x - r, p.y - r, r * 2, r * 2);
   }
   ctx.globalAlpha = 1;
@@ -2678,6 +2686,7 @@ function onPointer(e) {
 function tapObject(o, wx, wy, front) {
   const sc = state.scene;
   if(o.mathTrain){MathTrain.requestRide();return true;}
+  if (o.xmTap) { Sound.tap(); o.xmTap(o); return true; } // Christmas things to play with (js/christmas-play.js)
   if(o.mathHost){Sound.tap();talkTo(o.mathHost);return true;}
   // A staircase walks her to its foot and up (or down); any part of a
   // gate or the cave goes through it.

@@ -26,15 +26,23 @@ const MathTrain=(()=>{
     for(const x of[-12,12])for(const y of[-11,11]){
       const p=point(x,y);mathShopOval(g,p.x,p.y,5,6,'#6c7373');mathShopOval(g,p.x,p.y,2,3,'#ddb888');
     }
-    const col=['#91bfb3','#e9b6bd','#e5c789','#b5bedb'][i];
+    // At Christmas (js/christmas.js) it is a red and green Christmas train:
+    // snow on its roofs, a wreath on the engine, lights and a present in each car.
+    const xm=typeof CHRISTMAS_ON!=='undefined'&&CHRISTMAS_ON;
+    const col=xm?['#d8404a','#3f9f58','#d8404a','#3f9f58'][i]:['#91bfb3','#e9b6bd','#e5c789','#b5bedb'][i];
     box(0,0,33,22,3,8,col);
     if(i===0){
-      box(-8,0,15,22,11,24,'#75a99f');box(-8,0,21,27,35,4,'#e7c18c');
-      box(9,0,18,18,11,13,'#a7cdc0');box(11,0,7,8,24,15,'#788d91');box(11,0,11,12,39,3,'#d8ac76');
+      box(-8,0,15,22,11,24,xm?'#c8303f':'#75a99f');box(-8,0,21,27,35,4,xm?'#ffffff':'#e7c18c');
+      box(9,0,18,18,11,13,xm?'#e8404a':'#a7cdc0');box(11,0,7,8,24,15,xm?'#2e2a3a':'#788d91');box(11,0,11,12,39,3,xm?'#ffffff':'#d8ac76');
       const w=point(-8,12,24);mathShopOval(g,w.x,w.y,5,6,'#f4e7ba');
+      if(xm){const f=point(17,0,18);mathShopOval(g,f.x,f.y,6,6,'#2a6e40');mathShopOval(g,f.x,f.y,3,3,'#d8404a');mathShopOval(g,f.x,f.y+4,2,2,'#ffd34d');}
     }else{
       box(0,0,31,21,12,10,col);box(-12,0,4,21,22,6,col);box(12,0,4,21,22,6,col);
-      const n=point(0,13,15);g.fillStyle='#786c7e';g.font='bold 12px sans-serif';g.textAlign='center';g.fillText(String(i*2),n.x,n.y+4);
+      if(xm){
+        box(0,0,10,10,12,9,['#ffd34d','#6fb7ff','#ff9ad8'][i-1]);box(0,0,2,10.5,12,9.5,'#ffffff');box(0,0,10.5,2,12,9.5,'#ffffff');
+        for(let k=-3;k<=3;k++){const b=point(k*5,11,21);g.fillStyle=['#ff4a5a','#ffd34d','#5fd06a','#6fb7ff'][(k+3+i)%4];g.fillRect(Math.round(b.x)-1,Math.round(b.y)-1,2,2);}
+      }
+      const n=point(0,13,15);g.fillStyle=xm?'#ffffff':'#786c7e';g.font='bold 12px sans-serif';g.textAlign='center';g.fillText(String(i*2),n.x,n.y+4);
     }
     const sprite={canvas:cv,alpha:g.getImageData(0,0,cv.width,cv.height).data};sprites.set(key,sprite);return sprite;
   }
