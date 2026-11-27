@@ -1713,3 +1713,24 @@ LINES.xmWhee = ['Wheee!'];
 const ADVENT_WORDS = [['bell', '🔔'], ['star', '⭐'], ['snow', '❄️'], ['tree', '🎄'], ['gift', '🎁'], ['sock', '🧦'], ['sled', '🛷'], ['hat', '🎩'],
   ['cake', '🍰'], ['deer', '🦌'], ['elf', '🧝'], ['cookie', '🍪'], ['candle', '🕯️'], ['angel', '👼'], ['ribbon', '🎀'], ['mitten', '🧤'],
   ['scarf', '🧣'], ['toy', '🧸'], ['drum', '🥁'], ['moon', '🌙'], ['candy', '🍬'], ['card', '💌'], ['snowman', '⛄'], ['Santa', '🎅']];
+// Christmas decorations (js/christmas-decor.js): at Christmas a right answer
+// gives one she doesn't have yet, and it goes up in her room. Five kinds of
+// ten; a toy marked with an edition is that edition's only. Each is
+// [id, its English word (said when she taps it in the box), edition].
+const XMAS_DECOR = [
+  { kind: 'ornament', word: 'ornaments', icon: '🎄', items: [['redball', 'red ball'], ['goldball', 'gold ball'], ['blueball', 'blue ball'],
+    ['ornstar', 'star'], ['ornbell', 'bell'], ['snowflake', 'snowflake'], ['ornheart', 'heart'], ['icicle', 'icicle'], ['pinecone', 'pinecone'], ['angel', 'angel']] },
+  { kind: 'toy', word: 'toys', icon: '🧸', items: [['teddy', 'teddy bear'], ['train', 'toy train'], ['drum', 'drum'], ['top', 'spinning top'],
+    ['ball', 'ball'], ['blocks', 'blocks'], ['doll', 'doll', 'princess'], ['rockinghorse', 'rocking horse', 'princess'],
+    ['unicorntoy', 'unicorn', 'princess'], ['musicbox', 'music box', 'princess'], ['robot', 'robot', 'captain'], ['rocket', 'rocket', 'captain'],
+    ['racecar', 'race car', 'captain'], ['dino', 'dinosaur', 'captain']] },
+  { kind: 'sweet', word: 'sweets', icon: '🍪', items: [['gingerman', 'gingerbread man'], ['cane', 'candy cane'], ['cookie', 'cookie'],
+    ['cupcake', 'cupcake'], ['lollipop', 'lollipop'], ['cocoa', 'hot cocoa'], ['cake', 'cake'], ['peppermint', 'peppermint'],
+    ['gingerhouse', 'gingerbread house'], ['milk', 'milk']] },
+  { kind: 'light', word: 'lights', icon: '🕯️', items: [['candle', 'candle'], ['lantern', 'lantern'], ['starlamp', 'star lamp'], ['moonlamp', 'moon lamp'],
+    ['fairylights', 'fairy lights'], ['fireflies', 'firefly jar'], ['lamp', 'lamp'], ['treelamp', 'tree lamp'], ['heartlamp', 'heart lamp'],
+    ['snowlamp', 'snowman lamp']] },
+  { kind: 'decor', word: 'decorations', icon: '🎀', items: [['wreath', 'wreath'], ['snowglobe', 'snow globe'], ['poinsettia', 'poinsettia'],
+    ['nutcracker', 'nutcracker'], ['elf', 'elf'], ['polarbear', 'polar bear'], ['holly', 'holly'], ['penguin', 'penguin'], ['mittens', 'mittens'],
+    ['bow', 'bow']] },
+];

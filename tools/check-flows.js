@@ -3014,11 +3014,32 @@ async function christmasPlay(browser, edition) {
     const fire = sc.objects.find(o => o.xmFireplace);
     out.room = [!!tree, !!cal, !!fire];
     out.smallTree = sc.objects.some(o => o.christmas && o.react && o.react.word === 'tree');
-    const orn = xmThis(state.xmas.orn).length;
-    for (let i = 0; i < 3; i++) christmasRight();
-    out.ornaments = xmThis(state.xmas.orn).length - orn;
-    for (let i = 0; i < 40; i++) christmasRight();
-    out.ornamentCap = xmThis(state.xmas.orn).length;
+    // Decorations (js/christmas-decor.js): ornaments an older version hung
+    // become her first ones; each right answer gives one more, up to
+    // XD_PER_DAY a day, never one she has; a stand opens the box.
+    out.stands = ['sweet', 'light', 'decor'].map(k => sc.objects.some(o => o.xdStand === k));
+    state.xmas.orn.push(`${xmYear()}:old1`, `${xmYear()}:old2`);
+    out.legacy = xdOwned().has('redball') && xdOwned().has('goldball') && xdOwned().size === 2;
+    const got = [];
+    for (let i = 0; i < 3; i++) got.push(christmasRight(document.body));
+    out.decor = [xdOwned().size, got.every(Boolean), new Set(got.map(g => g && g.id)).size, document.querySelectorAll('.xd-fly').length > 0];
+    for (let i = 0; i < 20; i++) christmasRight();
+    out.dayCap = [xdGivenToday(), xdOwned().size];
+    out.kinds = xdKinds().map(k => k.items.length).join();
+    out.toys = xdKind('toy').items.map(it => it.id).join();
+    out.art = xdAll().every(it => XD_ART[it.id]);
+    tapObject(sc.objects.find(o => o.xdStand === 'sweet'));
+    const box = document.getElementById('xmas-box');
+    out.box = [!box.classList.contains('hidden'), state.busy, box.querySelectorAll('.xd-card').length, said.includes('sweets!')];
+    const card = [...box.querySelectorAll('.xd-card.got')][0];
+    const one = xdKind('sweet').items.find(it => xdOwned().has(it.id));
+    if (card) card.click();
+    out.word = !one || said.includes(`${one.word}!`);
+    box.querySelector('.wd-done').click();
+    out.closed = box.classList.contains('hidden') && !state.busy;
+    tapObject(tree);
+    out.treeBox = !box.classList.contains('hidden') && box.querySelector('.al-tab.on') === box.querySelectorAll('.al-tab')[0];
+    box.querySelector('.wd-done').click();
     const coins = state.coins;
     tapObject(cal);
     out.door = [state.coins - coins, said.includes('Door 1!'), said.includes('bell!')];
@@ -3054,7 +3075,14 @@ async function christmasPlay(browser, edition) {
     r.snowman === 3 && r.riding && r.rode && r.prints > 0 && r.whee, r);
   check(`${tag}: in the evening the windows light up`, r.night, r);
   check(`${tag}: her room has her own tree, the Advent calendar and the fireplace (no little tree)`, r.room.every(Boolean) && !r.smallTree, r);
-  check(`${tag}: each right answer hangs an ornament, up to ${30}`, r.ornaments === 3 && r.ornamentCap === 30, r);
+  check(`${tag}: a sweets table, a stand of lights and a shelf stand in her room`, r.stands.every(Boolean), r);
+  check(`${tag}: ornaments an older version hung become her first ornaments`, r.legacy, r);
+  check(`${tag}: each right answer gives a new decoration and its card pops up, up to 8 a day`,
+    r.decor[0] === 5 && r.decor[1] && r.decor[2] === 3 && r.decor[3] && r.dayCap[0] === 8 && r.dayCap[1] === 10, r);
+  check(`${tag}: five kinds of ten decorations, each drawn, the toys this edition's own`,
+    r.kinds === '10,10,10,10,10' && r.art && (edition === 'captain' ? /robot/.test(r.toys) && !/doll/.test(r.toys) : /doll/.test(r.toys) && !/robot/.test(r.toys)), r);
+  check(`${tag}: a stand opens the decoration box at its kind; a card she has says its word; the tree opens the ornaments`,
+    r.box[0] && r.box[1] && r.box[2] === 10 && r.box[3] && r.word && r.closed && r.treeBox, r);
   check(`${tag}: a calendar door a day, with its word and 3 coins; not twice on one day`,
     r.door[0] === 3 && r.door[1] && r.door[2] && r.doorAgain[0] === 3 && r.doorAgain[1] && r.door2, r);
   check(`${tag}: the stocking hangs one day and holds Santa's present the next`,

@@ -7,8 +7,9 @@
 //   sparkling. Once she has found all six, Santa thanks her and gives his
 //   special present (a treasure that only he gives, `santaGift`), and
 //   Rudolph's nose shines again.
-// - Her room (the captain's room too) has a tree of her own: every right
-//   answer at Christmas hangs an ornament on it (up to XM_ORNAMENTS).
+// - Her room (the captain's room too) has a tree of her own: the
+//   decorations her right answers give her go up on it, under it and round
+//   the room (js/christmas-decor.js).
 // - An Advent calendar on her room's floor: one door a day, each with a
 //   Christmas word and a few coins.
 // - A fireplace with her stocking: she hangs it, and the next day Santa
@@ -24,7 +25,6 @@
 
 // ---- The save -----------------------------------------------------------------------
 
-const XM_ORNAMENTS = 30;
 const XM_HUNT = ['nose', 'g1', 'g2', 'g3', 'g4', 'g5'];
 const XM_LISTS = ['found', 'done', 'orn', 'advent', 'hung', 'got'];
 function xmSaved(x) {
@@ -378,53 +378,21 @@ function xmRoom(sc) {
   place(s => s.c + s.r, s => xmRoomTree(sc, s));
   place(s => -(s.r === 0 ? 100 + s.c : s.r), s => xmFireplace(sc, s));
   place(s => Math.abs(s.r - sc.D / 2) + (s.c === 0 ? 0 : 50), s => xmCalendar(sc, s));
+  xdRoom(sc); // her sweets, lights and decorations (js/christmas-decor.js)
 }
 
-// Where her ornaments hang on the tree (XM_TREE three times bigger).
-const XM_ORN_AT = (() => {
-  const out = [];
-  for (let i = 0; out.length < XM_ORNAMENTS && i < 400; i++) {
-    const j = 4 + hash(i, 1, 2901) * 8.5; // the tree's rows 4 to 12
-    const half = 1 + (j - 3) * 0.55;
-    const x = 6.5 + (hash(i, 2, 2902) * 2 - 1) * half;
-    if (out.some(p => Math.hypot(p.x - x, p.y - j) < 1.1)) continue;
-    out.push({ x, y: j });
-  }
-  return out.sort((a, b) => a.y - b.y);
-})();
-const XM_ORN_COLORS = ['#ff4a5a', '#ffd34d', '#6fb7ff', '#ff9ad8', '#b98cff', '#ffffff'];
+// Her tree, three times as big as the little ones, with the ornaments and
+// toys her answers gave her (xdTree, js/christmas-decor.js); a tap opens
+// the decoration box.
 function xmRoomTree(sc, s) {
   const scale = 3;
-  const w = XM_TREE[0].length * scale + 4;
-  const h = XM_TREE.length * scale + 8;
-  xmThing(sc, s, w, h, (ctx, x, y, t) => {
-    xmPut(ctx, XM_TREE, XM_PAL, x, y + 8, scale, true);
-    const n = Math.min(XM_ORNAMENTS, xmThis(xmState().orn).length);
-    for (let i = 0; i < n; i++) {
-      const p = XM_ORN_AT[i];
-      const ox = Math.round(x + 2 + p.x * scale - 1);
-      const oy = Math.round(y + 8 + p.y * scale - 1);
-      ctx.fillStyle = '#3a2a44';
-      ctx.fillRect(ox - 1, oy - 1, 4, 4);
-      ctx.fillStyle = XM_ORN_COLORS[i % XM_ORN_COLORS.length];
-      ctx.fillRect(ox, oy, 2, 2);
-      if (Math.sin(t * 3 + i * 1.7) > 0.7) { ctx.fillStyle = '#ffffff'; ctx.fillRect(ox, oy, 1, 1); }
-    }
-  }, o => {
-    const n = Math.min(XM_ORNAMENTS, xmThis(xmState().orn).length);
+  const w = 92;
+  const h = XM_TREE.length * scale + 16;
+  xmThing(sc, s, w, h, (ctx, x, y, t) => xdTree(ctx, x, y, w, h, t, scale), o => {
     xmPop(o, 'xmtree');
-    if (n) showPlace(I18n.t('christmas.ornaments', n, XM_ORNAMENTS));
-    xmSay(line(n ? 'xmTree' : 'xmTreeEmpty'));
+    xdOpen('ornament');
   }, { xmRoomTree: true });
-  sc.lamps.push(Object.assign({}, { x: tileCenter(sc, s.c, s.r).x, y: tileCenter(sc, s.c, s.r).y - h + 9, small: true, christmas: true }));
-}
-
-// A right answer hangs one more ornament on her tree (from js/game.js).
-function christmasRight() {
-  if (!CHRISTMAS_ON) return;
-  const x = xmState();
-  if (xmThis(x.orn).length >= XM_ORNAMENTS) return;
-  x.orn.push(`${xmYear()}:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`);
+  sc.lamps.push(Object.assign({}, { x: tileCenter(sc, s.c, s.r).x, y: tileCenter(sc, s.c, s.r).y - h + 17, small: true, christmas: true }));
 }
 
 // Her stocking: hung one day, full the next.
@@ -632,4 +600,5 @@ function xmEveryLine() {
   }
   ADVENT_WORDS.forEach(([word], i) => { xmSay(line('xmDoor', { n: i + 1 })); xmSay(`${word}!`); });
   xmSay('snowman!');
+  xdEveryLine(); // js/christmas-decor.js
 }

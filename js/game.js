@@ -856,7 +856,7 @@ function answeredRight(q, btn) {
   if (npc.level === 5 && !q.misses) addDust();
   const before = starsEarned();
   state.stars++;
-  christmasRight(); // an ornament for her tree at Christmas (js/christmas-play.js)
+  christmasRight(btn); // a decoration for her room at Christmas (js/christmas-decor.js)
   questAdd('stars');
   state.answered++;
   save();

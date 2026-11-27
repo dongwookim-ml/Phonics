@@ -700,9 +700,8 @@ Custom names in this audit use live speech fallback rather than requiring record
   outdoors a **sled** waits at the top of five clear tiles: tapped, she
   walks to it and rides down ("Wheee!"), and the next time back up. She
   leaves **footprints** in the snow (the sled two lines), which fade.
-  **Her room** (the captain's room too) gets her own tree, where every
-  right answer at Christmas hangs an ornament (`christmasRight`, up to
-  `XM_ORNAMENTS` = 30); an **Advent calendar** with 24 doors, one to open a
+  **Her room** (the captain's room too) gets her own tree, dressed with the
+  Christmas decorations her answers give her (below); an **Advent calendar** with 24 doors, one to open a
   day ("Door 3! Snow!", `ADVENT_WORDS`, 3 coins); and a **fireplace**: she
   hangs her stocking, and the next day Santa has put a present in it (or 5
   coins when there is nothing new). In the **evening** (17:00 to 6:00 on
@@ -710,6 +709,23 @@ Custom names in this audit use live speech fallback rather than requiring record
   the villages turn dark blue, house windows light up and the northern
   lights wave across the top. The math village's train is a red and green
   **Christmas train** with snowy roofs, a wreath, lights and presents.
+  **Christmas decorations** (`js/christmas-decor.js`): at Christmas every
+  right answer (`christmasRight`, from `answeredRight`) gives a decoration
+  she doesn't have yet, up to `XD_PER_DAY` = 8 a day: a card with its
+  picture and name pops up from the card she tapped. There are five kinds
+  of ten (`XMAS_DECOR` in `js/data.js`: ornaments, toys, sweets, lights,
+  decorations; four of the toys are each edition's own: doll, rocking
+  horse, unicorn and music box, or robot, rocket, race car and dinosaur),
+  drawn in code with an outline (`XD_ART`). In her room the ornaments hang
+  on her tree and the toys pile up at its foot (`xdTree`), the sweets
+  stand on a table with a cake stand, the lights on a stepped stand (they
+  glow, more in the evening) and the rest on a shelf (`xdRoom`, against
+  the back walls). Tapping the tree or a stand opens the **decoration
+  box** (`xdOpen`): a tab per kind, the ten things in colour once she has
+  them (tap one to hear its English word, recorded like the Advent
+  words) and grey until then. They are saved in `xmas.orn` as
+  `year:d:id:day`; ornaments an older version hung (`year:xxxx`) become
+  her first ornaments.
   What she has done is `xmas` in the save (per edition): lists of strings
   only (`found`, `done`, `orn`, `advent`, `hung`, `got`), so two copies join
   as sets and older versions keep it. The coins for a door or a stocking

@@ -18,7 +18,7 @@ const MONSTER_TABLES = ['MONSTER_NPCS', 'TOWER_NPCS', 'TOWER2_NPCS'];
 const NAMES = ['PLAYER', 'TITLES', 'LETTERS', 'LINES', 'PERSONA', 'VOICES', 'TTS_NARRATOR', 'TOWN_NPCS', 'TOWN_HOUSES', 'HOUSE_LETTERS', 'ALBUM_EXTRA_WORDS',
   'FOREST_NPCS', 'UNICORN_NPCS', 'CASTLE_UP_NPCS', 'WORD_FAMILIES', 'RHYME_SETS', 'SENTENCES', 'FOREST_STARS',
   'UNICORN_STARS', 'DUNGEON_NPCS', 'DUNGEON_STARS', 'FAIRY_NPCS', 'FAIRY_STARS', 'CAPTAIN_LINES', 'CAVE_LINES', 'CAPTAIN_HQ_NPCS',
-  'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'ADVENT_WORDS', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
+  'VILLAGE_HOMES', 'HOME_HELLO', 'HOME_LEVEL', 'PROP_WORDS', 'ADVENT_WORDS', 'XMAS_DECOR', 'PART_SOUNDS', 'QUIZ_TYPES', 'SENTENCES_L1', 'SENTENCES_L2', 'CVC_A1', 'CVC_A2', 'CCVC', 'CVCC', 'LONG', 'DIGRAPH', 'MINIMAL_SETS',
   'LONG_VOWELS', 'LONG_TWINS', 'LONG_RHYMES', 'MONSTER_STARS', 'ONE_SOUND', 'TWO_SOUNDS', 'WEAK_PICTURES', 'LONG_RHYME_UNSURE', 'NEXT_STAGE',
   'SOUND_TEAMS', 'CLOUD_NPCS', 'CLOUD_STARS', 'CAMP_WORDS', 'CAMP_SENTENCES', 'SIGHT_NPCS', ...MONSTER_TABLES];
 function loadData(edition) {
@@ -202,6 +202,8 @@ function collect(D) {
   for (const w of D.PROP_WORDS) words.add(w);
   // The Advent calendar's words, one behind each door (js/christmas-play.js).
   for (const [w] of D.ADVENT_WORDS || []) words.add(w);
+  // The Christmas decorations and their kinds, said in the decoration box (js/christmas-decor.js).
+  for (const k of D.XMAS_DECOR || []) { words.add(k.word); for (const [, w] of k.items) words.add(w); }
   for (const w of words) { add(N, w, 0.8); add(N, `${w}!`, 0.8); }
   for (const l of D.LETTERS) for (const [w] of l.words) add(N, `${w} starts with ${l.letter}.`);
   // Letter names: spelled-out answers.

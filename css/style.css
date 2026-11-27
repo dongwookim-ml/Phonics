@@ -2490,3 +2490,32 @@ body.captain .start.xm { background: radial-gradient(circle at 50% 38%, #ffffff,
 #dlg-math-hint.hidden { display: none; }
 .math-dialog .side { justify-content: flex-start; }
 @media (max-width: 560px) { .math-dialog .side { flex-direction: row; } }
+
+/* Christmas decorations (js/christmas-decor.js): the box of what she has,
+   a page for each kind, and the card that pops up when one is given. */
+.xd-page { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.xd-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; padding: 6px 4px; }
+.xd-card { min-height: 112px; cursor: pointer; font: inherit; }
+.xd-card canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+.xd-card .w { font-size: 17px; white-space: normal; text-align: center; }
+@media (max-width: 640px) { .xd-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.xd-fly { position: fixed; z-index: 31; width: 0; height: 0; pointer-events: none; }
+.xd-fly .card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 140px;
+  padding: 8px 14px 10px;
+  background: linear-gradient(160deg, #fffdf6, #ffe0e6);
+  border: 4px solid #c02a3a;
+  border-radius: 20px;
+  box-shadow: 0 0 0 4px #3f9f58 inset, 0 6px 0 rgba(74, 44, 79, 0.25);
+}
+.xd-fly .tag { font-size: 15px; font-weight: 800; color: #c02a3a; white-space: nowrap; }
+.xd-fly canvas { width: 70px; height: 70px; image-rendering: pixelated; }
+.xd-fly .w { font-family: "Baloo 2", sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); white-space: nowrap; }
