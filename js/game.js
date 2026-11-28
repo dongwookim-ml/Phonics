@@ -2331,11 +2331,23 @@ function inkColors() {
   return overlayInk;
 }
 
+// What a sign says: a locked gate's sign adds how many stars are still needed.
+function signText(sg) {
+  return sg.needStars && starsEarned() < sg.needStars ? `${sg.text} 🔒 ⭐${starsEarned()}/${sg.needStars}` : sg.text;
+}
+
+// How a sign looks at scale s (drawLabel options): a board on two posts, or
+// the letters alone for a plain one (a poster's big letters).
+function signLook(sg, s) {
+  const ink = shade(sg.color, -60);
+  if (sg.plain) return { size: (sg.big ? 22 : 11) * s, ink, box: false, padX: 0, padY: 0 };
+  return { size: (sg.big ? 22 : 11) * s, ink, fill: '#fff4e0', stroke: sg.color, line: 1.5 * s, radius: 3 * s, posts: '#6f4430', padX: 4 * s, padY: 1 * s, minH: 14 * s };
+}
+
 function drawOverlay(now) {
   const sc = state.scene;
   const s = state.scale;
   const ctx = sctx;
-  const font = '"Baloo 2", "Trebuchet MS", sans-serif';
 
   // Lamp and window glows (brighter on a Christmas evening, js/christmas-play.js).
   const night = sc.outdoor && xmNightNow();
@@ -2357,39 +2369,17 @@ function drawOverlay(now) {
     const p = toScreen(sg.x, sg.y + (m ? m.y : 0));
     sg.shown = null;
     if (p.x < -200 || p.y < -200 || p.x > screen.width + 200 || p.y > screen.height + 200) continue;
-    const fs = (sg.big ? 22 : 11) * s;
-    ctx.font = `800 ${fs}px ${font}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    if (!sg.plain) {
-      const text = sg.needStars && starsEarned() < sg.needStars ? `${sg.text} 🔒 ⭐${starsEarned()}/${sg.needStars}` : sg.text;
-      const w = ctx.measureText(text).width + 8 * s;
-      const h = 14 * s;
-      // A room's name sign stays on screen and below the HUD, so the door
-      // it names is never labelled "-아의 방".
-      if (!sc.outdoor) {
-        p.x = Math.max(w / 2 + 4 * s, Math.min(screen.width - w / 2 - 4 * s, p.x));
-        p.y = Math.max(screenBox.hud + h / 2 + 6 * s, Math.min(screen.height - h / 2 - 4 * s, p.y));
-      }
-      // Where it is drawn, so a tap on it is checked there (tapOverlay).
-      sg.shown = { x: p.x, y: p.y, w, h };
-      ctx.strokeStyle = '#6f4430';
-      ctx.lineWidth = s;
-      ctx.beginPath();
-      ctx.moveTo(p.x - w / 3, p.y - h / 2);
-      ctx.lineTo(p.x - w / 3, p.y - h / 2 - 4 * s);
-      ctx.moveTo(p.x + w / 3, p.y - h / 2);
-      ctx.lineTo(p.x + w / 3, p.y - h / 2 - 4 * s);
-      ctx.stroke();
-      ctx.fillStyle = '#fff4e0';
-      ctx.strokeStyle = sg.color;
-      ctx.lineWidth = 1.5 * s;
-      roundRect(ctx, p.x - w / 2, p.y - h / 2, w, h, 3 * s);
-      ctx.fill();
-      ctx.stroke();
+    const text = signText(sg);
+    const look = signLook(sg, s);
+    const box = labelBox(text, look);
+    // A room's name sign stays on screen and below the HUD, so the door
+    // it names is never labelled "-아의 방".
+    if (!sg.plain && !sc.outdoor) {
+      p.x = Math.max(box.w / 2 + 4 * s, Math.min(screen.width - box.w / 2 - 4 * s, p.x));
+      p.y = Math.max(screenBox.hud + box.h / 2 + 6 * s, Math.min(screen.height - box.h / 2 - 4 * s, p.y));
     }
-    ctx.fillStyle = shade(sg.color, -60);
-    ctx.fillText(sg.needStars && starsEarned() < sg.needStars ? `${sg.text} 🔒 ⭐${starsEarned()}/${sg.needStars}` : sg.text, p.x, p.y + 0.5 * s);
+    // Where it is drawn, so a tap on it is checked there (tapOverlay).
+    sg.shown = drawLabel(ctx, p.x, p.y, text, Object.assign({ layout: box }, look));
   }
   for (const d of sc.decor) {
     const m = d.touchFx && touchMove(d, now);
@@ -2398,10 +2388,8 @@ function drawOverlay(now) {
     ctx.fillRect(p.x - 9 * s, p.y - 9 * s, 18 * s, 18 * s);
     ctx.fillStyle = '#fffaf0';
     ctx.fillRect(p.x - 7.5 * s, p.y - 7.5 * s, 15 * s, 15 * s);
-    ctx.font = `${10 * s}px ${font}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(d.emoji, p.x, p.y + s);
+    // The picture centred in its frame by where it is really painted.
+    drawLabel(ctx, p.x, p.y, d.emoji, { size: 10 * s, weight: '400', box: false });
   }
 
   // Speech bubbles over villagers so she knows who to visit.
@@ -2413,22 +2401,11 @@ function drawOverlay(now) {
       const p = toScreen(w.x + kidBubbleShift(n), w.y - 40 - kidBubbleLift(n) + Math.sin(now / 300 + n.phase) * 1.5);
       // A gold "!" when a question she missed is ready to try again.
       const back = comeBack(n);
-      ctx.fillStyle = back ? '#fff4b8' : '#ffffff';
-      ctx.strokeStyle = inkColors().ink;
-      ctx.lineWidth = s * 0.8;
-      roundRect(ctx, p.x - 7 * s, p.y - 5 * s, 14 * s, 10 * s, 4 * s);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(p.x - 2 * s, p.y + 5 * s - 1);
-      ctx.lineTo(p.x, p.y + 8 * s);
-      ctx.lineTo(p.x + 2 * s, p.y + 5 * s - 1);
-      ctx.fill();
-      ctx.fillStyle = back ? '#e0a52a' : inkColors().accent;
-      ctx.font = `800 ${7 * s}px ${font}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(back ? '!' : n.badge ? n.badge : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪', p.x, p.y + 0.5 * s);
+      const mark = back ? '!' : n.badge ? n.badge : n.letter ? n.letter : n.level === 3 ? '♥' : n.level === 2 ? '★' : '♪';
+      drawLabel(ctx, p.x, p.y, mark, {
+        size: 7 * s, ink: back ? '#e0a52a' : inkColors().accent, fill: back ? '#fff4b8' : '#ffffff', stroke: inkColors().ink,
+        line: s * 0.8, radius: 4 * s, minW: 14 * s, minH: 10 * s, padX: 2 * s, padY: 1 * s, tail: { w: 4 * s, h: 3 * s },
+      });
     }
   }
 
@@ -2734,7 +2711,6 @@ function tapOverlay(sc, wx, wy) {
     touchPicture(d);
     return true;
   }
-  const font = '"Baloo 2", "Trebuchet MS", sans-serif';
   for (const sg of sc.signs) {
     if (!sg.links && !sg.poster && !sg.react && !sg.shop && !sg.mathHost) continue;
     if (sg.shown) {
@@ -2744,9 +2720,8 @@ function tapOverlay(sc, wx, wy) {
       const pad = 4 * state.scale;
       if (Math.abs(t.x - sg.shown.x) > sg.shown.w / 2 + pad || Math.abs(t.y - sg.shown.y) > sg.shown.h / 2 + pad) continue;
     } else {
-      sctx.font = `800 ${sg.big ? 22 : 11}px ${font}`;
-      const half = sctx.measureText(sg.text).width / 2 + 4;
-      if (Math.abs(wx - sg.x) > half || Math.abs(wy - sg.y) > (sg.big ? 13 : 8)) continue;
+      const box = labelBox(signText(sg), signLook(sg, 1));
+      if (Math.abs(wx - sg.x) > box.w / 2 + 4 || Math.abs(wy - sg.y) > Math.max(box.h / 2, sg.big ? 13 : 8)) continue;
     }
     if (sg.mathHost) talkTo(sg.mathHost);
     else if (sg.shop) talkTo(sg.shop.keeper);

@@ -1126,6 +1126,11 @@ that every door can be reached and leads back out where it was; and that
 everything in the wardrobe that suits the hero draws walking, riding, in a
 portrait and as its wardrobe picture, and shows on the hero (a thing that
 looked the same as the next one in its slot would fail), for every title.
+It also checks that the text of every sign, bubble and wall picture stays
+inside its box, both as Chromium draws it and when text is measured and
+centred the way Safari on an iPad did (the text starting at the middle of
+its box), and that no script sizes a box with `measureText` or draws text in
+a box by hand.
 `node tools/check-heroes.js` checks each title's character: its kit, its
 starting clothes, enough things of its own in each slot (some given in each
 village), each changing how it looks, drawing on a unicorn and named in
@@ -1157,6 +1162,16 @@ phone held upright (390 x 844, 375 x 667, 360 x 640) every word tile of
 her books and the end card's buttons are on the page and take a tap; on a
 very small one (320 x 568) the page may scroll, as long as each comes into
 reach.
+
+Text in a box on the canvas (house and room signs, the bubbles over
+villagers, the library's shelf hints, the cave's speech bubbles, the 🎣
+bubble, wall pictures) is drawn by `drawLabel` in `js/label.js`. It draws the
+text off screen once, scans the painted pixels (`labelInk`, cached per text
+and cleared when a web font loads) and sizes the box around them, then draws
+the text left-aligned from that measured start. Sizing a box with
+`measureText` and drawing the text with `textAlign = 'center'` came apart on
+an iPad, where Safari measures and centres a line mixing a colour emoji,
+Korean and Latin letters differently from how it paints it.
 
 The HD-2D finish (tilt-shift, bloom and vignette) is drawn in the canvas
 under the signs and bubbles. On a slow tablet it turns itself down; add

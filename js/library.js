@@ -684,26 +684,12 @@ function drawBookHints(now) {
     const f = o.front[0];
     const w = tileCenter(sc, 0.2, f.r + 0.5);
     const p = toScreen(w.x, w.y - 52 + Math.sin(now / 280 + f.r) * (loud ? 3 : 1.5));
-    ctx.font = `800 ${(loud ? 9 : 7) * s}px "Baloo 2", "Trebuchet MS", sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
     const text = I18n.t(o.books === 'self' ? 'library.readingShelfHint' : 'library.listeningShelfHint');
     const color = o.books === 'self' ? '#34885b' : '#4a6ab8';
-    const bw = ctx.measureText(text).width + 8 * s;
-    const bh = (loud ? 13 : 10) * s;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = color;
-    ctx.lineWidth = s;
-    roundRect(ctx, p.x - bw / 2, p.y - bh / 2, bw, bh, 4 * s);
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x - 2.5 * s, p.y + bh / 2 - 1);
-    ctx.lineTo(p.x, p.y + bh / 2 + 3.5 * s);
-    ctx.lineTo(p.x + 2.5 * s, p.y + bh / 2 - 1);
-    ctx.fill();
-    ctx.fillStyle = color;
-    ctx.fillText(text, p.x, p.y + 0.5 * s);
+    drawLabel(ctx, p.x, p.y, text, {
+      size: (loud ? 9 : 7) * s, ink: color, fill: '#ffffff', stroke: color, line: s, radius: 4 * s,
+      padX: 4 * s, padY: 1 * s, minH: (loud ? 13 : 10) * s, tail: { w: 5 * s, h: 3.5 * s },
+    });
     // Twinkles on the shelves.
     if (!loud) continue;
     ctx.fillStyle = '#fff2a8';

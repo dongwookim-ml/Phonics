@@ -945,22 +945,10 @@ function drawMiniHint(now) {
       ctx.ellipse(feet.x, feet.y, (6 + pulse * 8) * s, (3 + pulse * 4) * s, 0, 0, Math.PI * 2);
       ctx.stroke();
     }
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#3f88d8';
-    ctx.lineWidth = s;
-    roundRect(ctx, p.x - 9 * k, p.y - 7 * k, 18 * k, 14 * k, 5 * k);
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x - 2.5 * k, p.y + 7 * k - 1);
-    ctx.lineTo(p.x, p.y + 10.5 * k);
-    ctx.lineTo(p.x + 2.5 * k, p.y + 7 * k - 1);
-    ctx.fill();
-    ctx.font = `${10 * k}px ${MINI_EMOJI}`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000000';
-    ctx.fillText(spot.icon, p.x, p.y + 0.5 * k);
+    drawLabel(ctx, p.x, p.y, spot.icon, {
+      size: 10 * k, weight: '400', family: MINI_EMOJI, fill: '#ffffff', stroke: '#3f88d8', line: s, radius: 5 * k,
+      minW: 18 * k, minH: 14 * k, padX: 2 * k, padY: 1 * k, tail: { w: 5 * k, h: 3.5 * k },
+    });
   }
 }
 

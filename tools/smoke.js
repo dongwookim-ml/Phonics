@@ -4,7 +4,8 @@
 // door must be reachable and lead back out where it was. Every wardrobe
 // thing that suits the hero draws (walking, riding, in a portrait and as its
 // wardrobe picture) and shows on the hero, and so does every other title's
-// own (js/heroes.js). Also with Halloween on.
+// own (js/heroes.js). Also with Halloween on. Every sign and bubble keeps
+// its text inside its box (js/label.js).
 // Run: node tools/smoke.js  (needs the playwright package and Chromium)
 
 const fs = require('fs');
@@ -24,6 +25,22 @@ for (const s of scripts) {
     if (seen[m[1]]) { console.log(`duplicate global ${m[1]}: ${seen[m[1]]} and ${s}`); failed++; }
     else seen[m[1]] = s;
   }
+}
+
+// Text in a box on the canvas goes through drawLabel (js/label.js), which
+// sizes the box from the pixels the browser really paints. A box sized with
+// measureText and text drawn with textAlign 'center' come apart on an iPad
+// (Safari, Apple's wider emoji) even when they line up here in Chromium.
+const LABEL_OK = new Set(['js/label.js', 'js/touch.js']); // touch.js: English words with no box
+for (const s of scripts.filter(s => s.startsWith('js/'))) {
+  const lines = fs.readFileSync(path.join(root, s), 'utf8').split('\n');
+  lines.forEach((l, i) => {
+    if (/measureText\(/.test(l) && !LABEL_OK.has(s)) { console.log(`${s}:${i + 1}: measureText sizes a box; use drawLabel / labelBox (js/label.js)`); failed++; }
+    if (/roundRect\(/.test(l) && !/^function/.test(l) && s !== 'js/label.js') {
+      const j = lines.slice(i, i + 20).findIndex(x => /fillText\(/.test(x));
+      if (j >= 0) { console.log(`${s}:${i + j + 1}: text drawn in a box by hand; use drawLabel (js/label.js)`); failed++; }
+    }
+  });
 }
 
 (async () => {
@@ -104,6 +121,55 @@ for (const s of scripts) {
       for (const [k, [rows]] of Object.entries(HERO_WINGS)) width(k, rows, rows[0].length);
       return { bad, n };
     });
+    // Every sign, bubble and picture frame's text sits inside its box, also
+    // when the browser measures text wrongly and centres it the way Safari
+    // on an iPad did (the text starting at the middle of the box).
+    const labels = await page.evaluate(async () => {
+      const bad = [];
+      const texts = new Map();
+      const add = (text, o, where) => { if (text) texts.set(`${JSON.stringify(o)}|${text}`, { text, o, where }); };
+      const names = ['town', 'math', 'castle', 'castle2', 'yuna', 'forest', 'unicorn', 'dungeon', 'fairy', 'monster', 'tower', 'tower2', 'cloud', 'sight', ...TOWN_HOUSES.map(h => `house-${h.letter}`), ...(!isCaptain() ? Object.keys(NEIGHBORHOODS) : []), ...VILLAGE_HOMES.map(h => `home-${h.id}`)];
+      for (const n of names) {
+        let sc;
+        try { sc = sceneFor(n); } catch (e) { continue; }
+        for (const sg of sc.signs) {
+          add(sg.text, signLook(sg, 3), `${n} sign`);
+          if (sg.needStars) add(`${sg.text} 🔒 ⭐12/${sg.needStars}`, signLook(sg, 3), `${n} locked sign`);
+        }
+        for (const d of sc.decor) add(d.emoji, { size: 30, weight: '400', box: false, minW: 45, minH: 45 }, `${n} picture`);
+        for (const npc of sc.npcs) add(npc.badge, { size: 21, weight: '400', minW: 42, minH: 30, padX: 6, padY: 3 }, `${n} bubble`);
+      }
+      for (const k of ['library.readingShelfHint', 'library.listeningShelfHint']) add(I18n.t(k), { size: 27, padX: 12, padY: 3, minH: 39 }, 'library shelf');
+      await document.fonts.ready;
+      labelInkCache.clear();
+      const proto = CanvasRenderingContext2D.prototype;
+      const real = { measure: proto.measureText, fill: proto.fillText };
+      const check = mode => {
+        labelInkCache.clear();
+        for (const { text, o, where } of texts.values()) {
+          const cv = document.createElement('canvas');
+          cv.width = 1600; cv.height = 300;
+          const g = cv.getContext('2d', { willReadFrequently: true });
+          const box = drawLabel(g, 800, 150, text, Object.assign({}, o, { box: false, ink: '#000' }));
+          const d = g.getImageData(0, 0, cv.width, cv.height).data;
+          let out = 0;
+          for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) {
+            if (d[(y * cv.width + x) * 4 + 3] < 60) continue;
+            if (x < box.x - box.w / 2 || x > box.x + box.w / 2 || y < box.y - box.h / 2 || y > box.y + box.h / 2) out++;
+          }
+          if (out) bad.push(`${where} "${text}"${mode}: ${out} pixels of its text outside the box`);
+        }
+      };
+      check('');
+      // Pretend to be a browser whose measureText is a third short and whose
+      // centred text starts at the anchor.
+      proto.measureText = function (t) { const m = real.measure.call(this, t); return { width: m.width * 0.66, actualBoundingBoxLeft: 0, actualBoundingBoxRight: m.width * 0.66 }; };
+      proto.fillText = function (t, x, y, ...r) { if (this.textAlign === 'center') { const a = this.textAlign; this.textAlign = 'left'; real.fill.call(this, t, x, y, ...r); this.textAlign = a; } else real.fill.call(this, t, x, y, ...r); };
+      try { check(' (Safari-like text measuring)'); } finally { proto.measureText = real.measure; proto.fillText = real.fill; labelInkCache.clear(); }
+      if (texts.size < 20) bad.push(`only ${texts.size} labels found to check`);
+      return bad;
+    });
+    for (const e of labels) { console.log(`${look}${halloween ? ' (Halloween)' : ''}${christmas ? ' (Christmas)' : ''}: ${e}`); failed++; }
     if (!items.n) items.bad.push('no wardrobe items');
     for (const e of items.bad.concat(scenes, errors)) { console.log(`${look}${halloween ? ' (Halloween)' : ''}${christmas ? ' (Christmas)' : ''}: ${e}`); failed++; }
     await page.close();

@@ -1087,40 +1087,19 @@ function caveDrawPow(ctx, f, k, s) {
   ctx.lineWidth = 1.5 * s;
   ctx.fill();
   ctx.stroke();
-  ctx.font = `800 ${8 * z}px "Baloo 2", "Trebuchet MS", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineWidth = 2 * s;
-  ctx.strokeStyle = '#ffffff';
-  ctx.strokeText(f.text, 0, z * 0.5);
-  ctx.fillStyle = f.block ? '#1f6fb8' : '#e8344f';
-  ctx.fillText(f.text, 0, z * 0.5);
+  drawLabel(ctx, 0, 0, f.text, { size: 8 * z, box: false, ink: f.block ? '#1f6fb8' : '#e8344f', outline: '#ffffff', outlineWidth: 2 * s });
   ctx.restore();
 }
 
 // A speech bubble with a short line in it, its tail pointing down to (p.x, p.y + …).
 function caveDrawBubble(ctx, p, text, s, pop) {
   ctx.save();
-  ctx.font = `800 ${7 * s}px "Baloo 2", "Trebuchet MS", sans-serif`;
-  const w = ctx.measureText(text).width + 8 * s;
-  const h = 12 * s;
   ctx.translate(p.x, p.y);
   ctx.scale(pop, pop);
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#4a2c4f';
-  ctx.lineWidth = s * 0.8;
-  roundRect(ctx, -w / 2, -h / 2, w, h, 4 * s);
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(w / 4 - 2 * s, h / 2 - 1);
-  ctx.lineTo(w / 4 + 2 * s, h / 2 + 4 * s);
-  ctx.lineTo(w / 4 + 3 * s, h / 2 - 1);
-  ctx.fill();
-  ctx.fillStyle = '#4a2c4f';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 0, 0.5 * s);
+  const look = { size: 7 * s, ink: '#4a2c4f', fill: '#ffffff', stroke: '#4a2c4f', line: s * 0.8, radius: 4 * s, padX: 4 * s, padY: 1 * s, minH: 12 * s };
+  const box = labelBox(text, look);
+  look.tail = { x: box.w / 4, w: 4 * s, h: 4 * s, lean: s };
+  drawLabel(ctx, 0, 0, text, Object.assign({ layout: box }, look));
   ctx.restore();
 }
 

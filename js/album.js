@@ -468,11 +468,10 @@ function drawMedalBadges() {
   for (const sg of sc.signs) {
     const m = /^([A-Z])([a-z])$/.exec(sg.text);
     if (!m || m[2] !== m[1].toLowerCase() || !state.medals[`house:${m[1]}`]) continue;
-    const p = toScreen(sg.x, sg.y);
-    if (p.x < -60 || p.y < -60 || p.x > screen.width + 60 || p.y > screen.height + 60) continue;
-    ctx.font = `800 ${(sg.big ? 22 : 11) * s}px "Baloo 2", "Trebuchet MS", sans-serif`;
-    const w = ctx.measureText(sg.text).width + (sg.plain ? 0 : 8 * s);
-    drawStarBadge(ctx, p.x + w / 2 + (sg.big ? 4 : 1) * s, p.y - (sg.big ? 9 : 6) * s, (sg.big ? 7 : 5) * s);
+    // On the corner of the sign where it was drawn (drawOverlay, js/label.js).
+    const p = sg.shown;
+    if (!p || p.x < -60 || p.y < -60 || p.x > screen.width + 60 || p.y > screen.height + 60) continue;
+    drawStarBadge(ctx, p.x + p.w / 2 + (sg.big ? 4 : 1) * s, p.y - (sg.big ? 9 : 6) * s, (sg.big ? 7 : 5) * s);
   }
 }
 

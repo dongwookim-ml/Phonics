@@ -143,16 +143,9 @@ function drawFriendHint(now) {
   ctx.lineCap = 'butt';
   if (!state.dust || friendGrown(key)) return;
   const b = toScreen(f.x + d.x, f.y + d.y - 21 + Math.sin(now / 280) * 1.5);
-  ctx.fillStyle = '#fff4b8';
-  ctx.strokeStyle = inkColors().ink;
-  ctx.lineWidth = s * 0.8;
-  roundRect(ctx, b.x - 7 * s, b.y - 5 * s, 14 * s, 10 * s, 4 * s);
-  ctx.fill();
-  ctx.stroke();
-  ctx.font = `${7 * s}px "Baloo 2", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(friendDustIcon(), b.x, b.y + 0.5 * s);
+  drawLabel(ctx, b.x, b.y, friendDustIcon(), {
+    size: 7 * s, weight: '400', fill: '#fff4b8', stroke: inkColors().ink, line: s * 0.8, radius: 4 * s, minW: 14 * s, minH: 10 * s, padX: 2 * s, padY: 1 * s,
+  });
 }
 
 // A tap on her flying friend: in her room it opens the feeding card,
