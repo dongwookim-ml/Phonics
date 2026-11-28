@@ -42,23 +42,25 @@
 // with an ink outline, seen from the same quarter-view angle as the game.
 const params = new URLSearchParams(location.search);
 const STYLES = {
-  storybook: {
-    label: '📖 Storybook', sky: ['#9fd3f0', '#fde9e4'], sun: '#fff1dc', sunI: 2.6, hemi: ['#e6f2ff', '#a9c98a', 1.25],
-    steps: [0.38, 0.72, 1.0], soft: false, outline: '#5b3a46', thick: 0.05, fog: ['#f3e6ea', 105, 190],
-    grass: ['#8fd07a', '#a6dc84', '#7cc26e'], paper: 0.0, shadowOpacity: 1, night: false
+  cartoon: {
+    label: '🖍️ Cartoon', sky: ['#7cc8f5', '#d8f1ff'], sun: '#fff6e0', sunI: 1.75, hemi: ['#d6d0ff', '#b3aae6', 1.95],
+    steps: [0, 1], ink: '#2a1a2e', line: 1.7, inkMix: 0.2, rim: 0.32, fog: ['#d8f1ff', 400, 500],
+    grass: ['#79cc5a', '#6cbf4f', '#8bd968'], night: false
   },
-  watercolor: {
-    label: '🎨 Watercolor', sky: ['#bfe2ee', '#fff3e2'], sun: '#ffe9c7', sunI: 2.3, hemi: ['#fff6ec', '#b8d6a0', 1.5],
-    steps: [0.55, 0.7, 0.85, 1.0], soft: true, outline: '#9b7f86', thick: 0.025, fog: ['#f7efe6', 95, 160],
-    grass: ['#a9d995', '#bfe3a2', '#97cc8c'], paper: 0.85, filter: 'saturate(0.82) contrast(0.92) brightness(1.05)', shadowOpacity: 0.7, night: false
+  anime: {
+    label: '✨ Anime', sky: ['#8fd6ff', '#fff0f6'], sun: '#fff8ea', sunI: 1.6, hemi: ['#e2dcff', '#bdb3ec', 2.0],
+    steps: [0, 0.55, 1], ink: '#3a2440', line: 1.15, inkMix: 0.65, rim: 0.5, fog: ['#fff0f6', 400, 500],
+    grass: ['#8ad86a', '#7ccb5c', '#9fe27c'], night: false
   },
   night: {
-    label: '🌙 Winter night', sky: ['#1b2350', '#5b4d86'], sun: '#a9c0ff', sunI: 0.9, hemi: ['#5c6fb8', '#2e3560', 0.9],
-    steps: [0.3, 0.65, 1.0], soft: false, outline: '#1a1733', thick: 0.05, fog: ['#3a3d70', 100, 175],
-    grass: ['#e8eef8', '#f4f7fc', '#dbe4f2'], paper: 0.0, shadowOpacity: 1, night: true
+    label: '🌙 Winter night', sky: ['#1b2350', '#5b4d86'], sun: '#a9c0ff', sunI: 1.7, hemi: ['#8f95e0', '#5a5aa0', 1.8],
+    steps: [0, 1], ink: '#120e26', line: 1.7, inkMix: 0.2, rim: 0.4, fog: ['#3a3d70', 400, 500],
+    grass: ['#e8eef8', '#dbe4f2', '#f4f7fc'], night: true
   }
 };
-const styleName = STYLES[params.get('style')] ? params.get('style') : 'storybook';
+STYLES.storybook = STYLES.cartoon; // older links
+for (const k in STYLES) STYLES[k].thick = 0; // screen-space lines replace the old hull outline
+const styleName = STYLES[params.get('style')] && params.get('style') !== 'storybook' ? params.get('style') : 'cartoon';
 const S = STYLES[styleName];
 const heroKind = params.get('hero') === 'captain' ? 'captain' : 'princess';
 
@@ -70,17 +72,17 @@ function link(label, on, q) {
   b.onclick = () => { const p = new URLSearchParams(location.search); for (const k in q) p.set(k, q[k]); location.search = p.toString(); };
   bar.appendChild(b);
 }
-for (const k in STYLES) link(STYLES[k].label, k === styleName, { style: k });
+for (const k of ['cartoon', 'anime', 'night']) link(STYLES[k].label, k === styleName, { style: k });
 link(heroKind === 'princess' ? '🤖 Captain' : '👑 Princess', false, { hero: heroKind === 'princess' ? 'captain' : 'princess' });
-document.getElementById('paper').style.opacity = S.paper;
+document.getElementById('paper').style.opacity = 0;
+document.getElementById('vignette').style.display = 'none';
 
 // Renderer, scene and quarter-view camera.
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 document.body.prepend(renderer.domElement);
-if (S.filter) renderer.domElement.style.filter = S.filter;
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(S.fog[0], S.fog[1], S.fog[2]);
 
@@ -103,13 +105,66 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 
+// Ink lines: render normals and depth, then draw a line wherever either jumps.
+// This gives every silhouette and crease the same pen width on screen.
+const normalMat = new THREE.MeshNormalMaterial();
+let colorRT, normalRT;
+const post = new THREE.ShaderMaterial({
+  uniforms: { tColor: { value: null }, tNormal: { value: null }, tDepth: { value: null }, res: { value: new THREE.Vector2() },
+    ink: { value: new THREE.Color(S.ink) }, width: { value: 1 }, inkMix: { value: S.inkMix } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+  fragmentShader: `
+    uniform sampler2D tColor, tNormal, tDepth; uniform vec2 res; uniform vec3 ink; uniform float width, inkMix;
+    varying vec2 vUv;
+    float edgeAt(vec2 o) {
+      vec2 a = vUv + o / res, b = vUv - o / res;
+      float d = abs(texture2D(tDepth, a).r - texture2D(tDepth, b).r) * 400.0;
+      vec3 na = texture2D(tNormal, a).rgb * 2.0 - 1.0, nb = texture2D(tNormal, b).rgb * 2.0 - 1.0;
+      float n = 1.0 - dot(normalize(na), normalize(nb));
+      return max(smoothstep(0.35, 0.6, d), smoothstep(0.25, 0.45, n));
+    }
+    void main() {
+      vec4 c = texture2D(tColor, vUv);
+      float e = 0.0;
+      e = max(e, edgeAt(vec2(width, 0.0)));
+      e = max(e, edgeAt(vec2(0.0, width)));
+      e = max(e, edgeAt(vec2(width, width) * 0.7071));
+      e = max(e, edgeAt(vec2(width, -width) * 0.7071));
+      vec3 line = mix(ink, c.rgb * 0.35, inkMix);
+      gl_FragColor = vec4(mix(c.rgb, line, e), 1.0);
+      #include <colorspace_fragment>
+    }`,
+  depthTest: false, depthWrite: false
+});
+const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), post));
+function makeTargets() {
+  const r = renderer.getPixelRatio(), w = Math.round(innerWidth * r), h = Math.round(innerHeight * r);
+  if (colorRT) { colorRT.dispose(); normalRT.dispose(); }
+  colorRT = new THREE.WebGLRenderTarget(w, h, { samples: 4 }); colorRT.texture.colorSpace = THREE.SRGBColorSpace;
+  normalRT = new THREE.WebGLRenderTarget(w, h); normalRT.depthTexture = new THREE.DepthTexture(w, h);
+  Object.assign(post.uniforms, {});
+  post.uniforms.tColor.value = colorRT.texture; post.uniforms.tNormal.value = normalRT.texture;
+  post.uniforms.tDepth.value = normalRT.depthTexture; post.uniforms.res.value.set(w, h);
+  post.uniforms.width.value = S.line * r * (w < 900 ? 0.8 : 1);
+}
+addEventListener('resize', makeTargets); makeTargets();
+function draw() {
+  const bg = scene.background;
+  particles.visible = blob.visible = false; scene.background = null; scene.overrideMaterial = normalMat;
+  renderer.setClearColor('#8080ff', 1); renderer.setRenderTarget(normalRT); renderer.render(scene, camera);
+  particles.visible = blob.visible = true; scene.background = bg; scene.overrideMaterial = null;
+  renderer.setRenderTarget(colorRT); renderer.render(scene, camera);
+  renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+}
+
 // Lights.
 const hemi = new THREE.HemisphereLight(S.hemi[0], S.hemi[1], S.hemi[2]);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(S.sun, S.sunI);
-sun.position.set(-30, 50, 25);
+sun.position.set(-14, 50, 38);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(4096, 4096);
 Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, near: 1, far: 140 });
 sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.07;
 scene.add(sun); scene.add(sun.target);
@@ -117,14 +172,23 @@ scene.add(sun); scene.add(sun.target);
 // Toon ramp: a few flat bands of light give the hand-painted cel look.
 const ramp = new Uint8Array(S.steps.map(v => Math.round(v * 255)));
 const gradientMap = new THREE.DataTexture(ramp, ramp.length, 1, THREE.RedFormat);
-gradientMap.minFilter = gradientMap.magFilter = S.soft ? THREE.LinearFilter : THREE.NearestFilter;
+gradientMap.minFilter = gradientMap.magFilter = THREE.NearestFilter;
 gradientMap.needsUpdate = true;
 
 const mats = new Map();
 function toon(color, extra) {
   const key = color + JSON.stringify(extra || {});
-  if (!mats.has(key)) mats.set(key, new THREE.MeshToonMaterial(Object.assign({ color, gradientMap }, extra || {})));
+  if (!mats.has(key)) mats.set(key, rimmed(new THREE.MeshToonMaterial(Object.assign({ color, gradientMap }, extra || {}))));
   return mats.get(key);
+}
+// A hard rim of light along the edges facing away from the camera, a classic cel touch.
+function rimmed(m) {
+  m.onBeforeCompile = sh => {
+    sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>',
+      'float rimF = 1.0 - max(dot(normal, vec3(0.0, 0.0, 1.0)), 0.0);\n' +
+      'outgoingLight += diffuseColor.rgb * ' + S.rim.toFixed(2) + ' * smoothstep(0.66, 0.7, rimF);\n#include <opaque_fragment>');
+  };
+  return m;
 }
 
 // Ink outline: draw the back faces pushed out along smoothed normals.
@@ -170,10 +234,8 @@ function blotchTexture(colors, size, blobs, repeat) {
   const g = c.getContext('2d'); g.fillStyle = colors[0]; g.fillRect(0, 0, size, size);
   for (let i = 0; i < blobs; i++) {
     const x = rnd() * size, y = rnd() * size, r = 6 + rnd() * 26;
-    const gr = g.createRadialGradient(x, y, 0, x, y, r);
-    const col = colors[1 + (i % (colors.length - 1))];
-    gr.addColorStop(0, col); gr.addColorStop(1, col + '00');
-    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.fillStyle = colors[1 + (i % (colors.length - 1))];
+    g.beginPath(); g.ellipse(x, y, r, r * 0.6, rnd() * 3, 0, 7); g.fill();
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.anisotropy = 4;
@@ -182,12 +244,13 @@ function blotchTexture(colors, size, blobs, repeat) {
 function cobbleTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 256;
   const g = c.getContext('2d');
-  g.fillStyle = S.night ? '#c9cde0' : '#e9d9cf'; g.fillRect(0, 0, 256, 256);
+  g.fillStyle = S.night ? '#b9bdd6' : '#dcc3b6'; g.fillRect(0, 0, 256, 256);
   const tones = S.night ? ['#dfe3f0', '#d2d6e8', '#e8ebf5'] : ['#f6e7dc', '#efd8cc', '#f3e1d8', '#e8cfc6'];
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
     const ox = (y % 2) * 16;
     g.fillStyle = tones[(x * 3 + y * 5) % tones.length];
     g.beginPath(); g.roundRect(x * 32 + ox + 2 + rnd() * 2, y * 32 + 2 + rnd() * 2, 27, 27, 9); g.fill();
+    g.lineWidth = 2.5; g.strokeStyle = S.night ? '#a9aecb' : '#cfb3a6'; g.stroke();
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(5, 5); t.anisotropy = 4;
@@ -196,7 +259,7 @@ function cobbleTexture() {
 
 // Ground, plaza and paths.
 const ground = mesh(new THREE.PlaneGeometry(220, 220), null,
-  { material: new THREE.MeshToonMaterial({ map: blotchTexture(S.grass, 256, 220, 14), gradientMap }), outline: false, cast: false });
+  { material: new THREE.MeshToonMaterial({ map: blotchTexture(S.grass, 512, 70, 6), gradientMap }), outline: false, cast: false });
 ground.rotation.x = -Math.PI / 2; ground.name = 'ground'; scene.add(ground);
 const cobble = new THREE.MeshToonMaterial({ map: cobbleTexture(), gradientMap });
 const plaza = mesh(new THREE.CylinderGeometry(9, 9, 0.12, 48), null, { material: cobble, outline: false, cast: false, at: [1, 0.06, 3] });
@@ -320,7 +383,7 @@ function tree(x, z, s = 1) {
   const g = new THREE.Group();
   put(g, mesh(new THREE.CylinderGeometry(0.28, 0.4, 2.2, 10), '#9a6a4e', { at: [0, 1.1, 0] }));
   const blobs = [[0, 2.9, 0, 1.5], [0.8, 2.5, 0.3, 1.0], [-0.7, 2.6, -0.2, 1.1], [0.1, 3.7, -0.1, 1.0]];
-  blobs.forEach((b, i) => put(g, mesh(new THREE.IcosahedronGeometry(b[3], 2), leaf[i % leaf.length], { at: [b[0], b[1], b[2]] })));
+  blobs.forEach((b, i) => put(g, mesh(new THREE.SphereGeometry(b[3], 18, 14), leaf[i % leaf.length], { at: [b[0], b[1], b[2]] })));
   if (S.night) put(g, mesh(new THREE.SphereGeometry(1.25, 16, 10, 0, 7, 0, 1.1), '#ffffff', { at: [0, 3.25, 0], outline: false }));
   if (!S.night && rnd() < 0.5) for (let k = 0; k < 4; k++) put(g, mesh(new THREE.SphereGeometry(0.16, 8, 6), '#ff6b6b', { at: [Math.cos(k * 1.7) * 1.3, 2.6 + k * 0.25, Math.sin(k * 1.7) * 1.3], outline: false, cast: false }));
   g.position.set(x, 0, z); g.scale.setScalar(s); g.rotation.y = rnd() * 6; scene.add(g);
@@ -338,7 +401,7 @@ function pine(x, z, s = 1) {
 
 // Flowers and bushes for a soft, busy storybook edge.
 const petals = S.night ? ['#ffffff'] : ['#ff8fb8', '#ffd35c', '#ffffff', '#c7a0ff', '#ff9e6b'];
-for (let i = 0; i < 110; i++) {
+for (let i = 0; i < (S.night ? 0 : 60); i++) {
   const a = rnd() * 6.283, r = 10.5 + rnd() * 16;
   const x = 1 + Math.cos(a) * r, z = 3 + Math.sin(a) * r;
   if (Math.abs(x - 1) < 2 && z > 10) continue;
@@ -360,6 +423,7 @@ for (const [x, z] of [[-6, 9], [8, 9], [-6, -3], [8, -3]]) {
 }
 
 // The hero, built from round shapes so she reads well at tablet size.
+const eyeGeo = new THREE.SphereGeometry(0.115, 16, 12); eyeGeo.scale(1, 1.4, 0.55);
 function princess() {
   const g = new THREE.Group();
   const dress = new THREE.LatheGeometry([[0, 0], [0.95, 0.05], [0.85, 0.35], [0.55, 0.9], [0.38, 1.3], [0.36, 1.55], [0, 1.6]].map(p => new THREE.Vector2(p[0], p[1])), 28);
@@ -373,8 +437,8 @@ function princess() {
   put(head, mesh(new THREE.SphereGeometry(0.3, 16, 12), '#8a5236', { at: [0, 0.55, -0.4] }));
   for (const s of [-1, 1]) {
     put(head, mesh(new THREE.CapsuleGeometry(0.17, 0.7, 4, 10), '#8a5236', { at: [s * 0.55, -0.3, -0.15] }));
-    put(head, mesh(new THREE.SphereGeometry(0.085, 10, 8), '#3a2630', { at: [s * 0.22, -0.02, 0.56], outline: false }));
-    put(head, mesh(new THREE.SphereGeometry(0.03, 6, 4), '#ffffff', { at: [s * 0.22 + 0.03, 0.03, 0.635], outline: false }));
+    put(head, mesh(eyeGeo, '#2e1d2c', { at: [s * 0.22, -0.02, 0.56], outline: false }));
+    put(head, mesh(new THREE.SphereGeometry(0.045, 8, 6), '#ffffff', { at: [s * 0.22 + 0.035, 0.07, 0.64], outline: false }));
     put(head, mesh(new THREE.SphereGeometry(0.1, 10, 8), '#ffadc0', { at: [s * 0.36, -0.2, 0.48], outline: false, mat: { transparent: true, opacity: 0.8 } }));
   }
   put(head, mesh(new THREE.TorusGeometry(0.09, 0.025, 6, 12, Math.PI), '#c0506a', { at: [0, -0.24, 0.58], rot: [0, 0, Math.PI], outline: false }));
@@ -405,8 +469,8 @@ function captain() {
   put(head, mesh(new THREE.SphereGeometry(0.11, 10, 8), '#ff5a5a', { at: [0, 1.22, 0], outline: false, mat: { emissive: '#ff3030', emissiveIntensity: 0.5 } }));
   for (const s of [-1, 1]) {
     put(head, mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.14, 12), '#c6cee6', { at: [s * 0.68, 0, 0], rot: [0, 0, Math.PI / 2] }));
-    put(head, mesh(new THREE.SphereGeometry(0.085, 10, 8), '#3a2630', { at: [s * 0.22, -0.08, 0.56], outline: false }));
-    put(head, mesh(new THREE.SphereGeometry(0.03, 6, 4), '#ffffff', { at: [s * 0.22 + 0.03, -0.03, 0.635], outline: false }));
+    put(head, mesh(eyeGeo, '#2e1d2c', { at: [s * 0.22, -0.08, 0.56], outline: false }));
+    put(head, mesh(new THREE.SphereGeometry(0.045, 8, 6), '#ffffff', { at: [s * 0.22 + 0.035, 0.01, 0.64], outline: false }));
     put(head, mesh(new THREE.SphereGeometry(0.1, 10, 8), '#ffadc0', { at: [s * 0.36, -0.25, 0.48], outline: false, mat: { transparent: true, opacity: 0.8 } }));
   }
   put(head, mesh(new THREE.TorusGeometry(0.09, 0.025, 6, 12, Math.PI), '#c0506a', { at: [0, -0.3, 0.58], rot: [0, 0, Math.PI], outline: false }));
@@ -516,8 +580,8 @@ function frame() {
   const focus = params.get('zoom') ? new THREE.Vector3(hero.position.x, 1.5, hero.position.z) : new THREE.Vector3(hero.position.x * 0.6, 0, hero.position.z * 0.6 - 5.5);
   look.lerp(focus, Math.min(1, dt * 2.5));
   camera.position.copy(look).add(camOffset); camera.lookAt(look);
-  sun.target.position.copy(look); sun.position.copy(look).add(new THREE.Vector3(-30, 50, 25));
-  renderer.render(scene, camera);
+  sun.target.position.copy(look); sun.position.copy(look).add(new THREE.Vector3(-14, 50, 38));
+  draw();
   requestAnimationFrame(frame);
 }
 look.set(hero.position.x * 0.6, 0, hero.position.z * 0.6 - 5.5);
